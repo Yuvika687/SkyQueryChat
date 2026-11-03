@@ -141,6 +141,8 @@ Deployment notes:
 ## 9. Environment notes (discovered during setup, 2026-11-02)
 
 - Python 3.13.15 in `.venv` (run tools via `.venv/bin/python`). Node v26.7.0, npm 11.19.0.
+- **Node 26 became LTS on 28 October 2026.** Still confirm the chosen Next.js version
+  officially supports Node 26 before starting the frontend (Day 3).
 - **DuckDB 2.0:** relations no longer have `fetchone()`. Use
   `con = duckdb.connect(); con.execute(sql).fetchone()` (or `.fetchall()` / `.df()`).
 - **Sophos SSL inspection** is active on this machine. pip showed an untrusted-certificate
