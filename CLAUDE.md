@@ -85,7 +85,33 @@ Diwali dates live in a verified config file:
 - Open-Meteo for Diwali is **clearly labelled modelled context**, never the main evidence.
 - Measured Diwali 2025 vs 2026 only after 8 Nov 2026 **and only if coverage is sufficient**.
 - If the app has no measured data for a period, it must say so.
-- OpenCity Delhi files: timestamps say `+0000` but are **IST** (verified identical to OpenAQ).
+- OpenCity Delhi files: timestamps say `+0000` but are **IST** (verified identical to OpenAQ
+  for values ≤ 999). **OpenCity blanks every value > 999 µg/m³.**
+- **Diwali (decided 2026-11-03):** CPCB bulletin AQI is the MAIN Diwali comparison for all six
+  cities, including Delhi. Delhi OpenCity PM2.5/PM10 is SUPPORTING context only, always shown
+  with the >999 blanking warning and blank rates. **Never calculate or show PM % changes for
+  Diwali 2024 vs 2025.** Same rule for Delhi Diwali 2025 vs 2026 unless a source without the
+  999 limit is verified. Other five cities: measured Diwali 2025 PM is marked incomplete
+  (reason stored separately; user text: "Measured PM data is incomplete for Diwali 2025.").
+- Festival days = D and D+1; baseline = D−14…D−8; bulletins aligned to D+1, D+2 (4 PM period).
+
+### Value rules (decided 2026-11-03)
+
+- Invalid (removed, counted with reason): values ≤ 0 and values > 5,000 µg/m³.
+- Values > 1,000 µg/m³ are KEPT and flagged (real Diwali peaks reach ~1,800).
+- Sensor-fault patterns (flat-lines of identical values, isolated spikes that nearby stations
+  do not show) are FLAGGED for review, never deleted without clear evidence.
+- Never impute blank readings. Label a blank as "blanked by source limit" only where the
+  source proves it (OpenCity blank where OpenAQ has a value > 999 at the same time);
+  otherwise it is "missing or blank".
+- Archive/OpenCity timestamps mark the END of each interval: hour = floor(ts − interval).
+  Old-format OpenAQ (to ~2026-08-17) truly lacks readings ending 00:00/00:15/00:30 IST.
+- Recent days the archive has not published yet are "not yet available", not outages.
+- City value = equal-weight mean of valid station-days, needs ≥ max(3, ceil(50%)) of primary
+  stations. Comparisons use a fixed station group. A date with a network-wide gap is low
+  quality for comparisons even if stations reach 16 valid hours.
+- Narela, Najafgarh and the four Hyderabad outskirt stations (Patancheru, Ramachandrapuram,
+  Pashamylaram, Kandi) stay out of primary city averages (possible later additions).
 
 ### Data design rules
 

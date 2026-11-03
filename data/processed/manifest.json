@@ -1,0 +1,50 @@
+{
+ "built_utc": "2026-11-03T13:46:14+00:00",
+ "cities": [
+  "Delhi",
+  "Mumbai",
+  "Kolkata",
+  "Chennai",
+  "Bengaluru",
+  "Hyderabad"
+ ],
+ "openaq_requested": [
+  "2025-02-18",
+  "2026-11-02"
+ ],
+ "openaq_data_end": "2026-10-30",
+ "not_yet_published": [
+  "2026-10-31",
+  "2026-11-01",
+  "2026-11-02"
+ ],
+ "rules": {
+  "valid_hour_fraction": 0.75,
+  "valid_day_hours": 16,
+  "city_min_stations": "max(3, ceil(0.5 * primary stations))",
+  "invalid_values": "<= 0.0 or > 5000.0",
+  "flagged_kept": "> 1000.0; flat-lines >= 6 h; isolated spikes",
+  "gap_rule": "fraction of active primary sensors with any reading < 0.5",
+  "timestamps": "labels mark END of interval; hour = floor(ts - interval)",
+  "diwali": "AQI is the main comparison; PM rows are supporting/status only; no PM % change"
+ },
+ "rows": {
+  "stations": 204,
+  "station_hourly": 3494989,
+  "station_daily": 158120,
+  "city_daily": 6816,
+  "city_daily_aqi": 24026,
+  "network_gaps": 1415,
+  "date_quality": 5074,
+  "recurring_gap_hours": 192,
+  "diwali": 53,
+  "data_status_reasons": 5,
+  "cleaning_log": 271,
+  "opencity_blanks": 54154
+ },
+ "other_sensor_rows_ignored": 0,
+ "delhi_panel": {
+  "pm25": 31,
+  "pm10": 28
+ }
+}

@@ -1,0 +1,13 @@
+{
+  "_doc": "Verified festival dates. Evidence: docs/data-source-check.md (Part 2, section A). Do not edit without new evidence.",
+  "rule": {
+    "festival_days": "D and D+1 (local IST calendar dates)",
+    "baseline_days": "D-14 .. D-8 (7 local dates, before Dhanteras/pre-Diwali activity)",
+    "bulletin_alignment": "CPCB bulletin dated X = average of 16:00 IST on X-1 to 16:00 IST on X. Festival nights D and D+1 therefore appear in bulletins dated D+1 and D+2; baseline bulletins are D-13 .. D-7."
+  },
+  "diwali": {
+    "2024": {"date": "2024-10-31", "note": "DoPT: Thu 31 Oct 2024. Drik Panchang (New Delhi): 1 Nov. Festival days D, D+1 = 31 Oct + 1 Nov."},
+    "2025": {"date": "2025-10-20", "note": "DoPT and Drik Panchang: Mon 20 Oct 2025."},
+    "2026": {"date": "2026-11-08", "note": "DoPT 2026 list (secondary copies): Sun 8 Nov 2026. Measured data only after it happens."}
+  }
+}

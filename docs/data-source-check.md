@@ -290,3 +290,289 @@ The primary counts are close to the number of stations CPCB uses in its own city
 6. **Outages:** feed-wide gaps (the same gap at several stations) are recorded as outages and shown as "no data", never filled in.
 7. **OpenCity (if used for Delhi 2024):** treat timestamps as IST, flag values ≥ 990, and label it "CPCB via OpenCity". It only covers Delhi.
 8. **Network:** Sophos HTTPS inspection intermittently breaks Python TLS. Use retries now. A trust-store fix (`truststore`) needs approval.
+
+---
+
+# Part 3: Pre-download audit (2026-11-03, about 08:30–09:30 UTC)
+
+**Approved before this step:** candidate stations (subject to this audit), `truststore` for local development only, and the Diwali 2024 plan (bulletin AQI for all six cities; Delhi measured PM from OpenCity 2024 + OpenAQ 2025).
+
+**Status: STOPPED at check 3.** A check failed and a decision is needed. The full download was **not** started.
+
+## Setup
+- `truststore` 0.10.5 is in `requirements-dev.txt` only, not in `requirements.txt`. It's loaded optionally in `backend/pipeline/net.py`, and verification stays on (`CERT_REQUIRED`). Test: 11 of 12 TLS requests succeeded. One still failed because Sophos's CA isn't fully trusted even in the keychain, so retries remain necessary.
+- `backend/config/events.json` holds the verified Diwali dates and the rule. Festival days are **D and D+1** (Delhi 2024 = 31 Oct + 1 Nov). Baseline is **D−14 … D−8**. Bulletins are aligned to **D+1 and D+2** for the festival and **D−13 … D−7** for the baseline, because the bulletin dated X covers 16:00 on X−1 to 16:00 on X.
+- `backend/pipeline/transform.py` contains the readers, cleaning, hourly/daily aggregation, city rule and bulletin alignment. Tests are pending.
+
+## Check 1: name-rule audit (PASS)
+
+Every station inside 25 km that the name rule rejected was reviewed. All rejections are correct:
+
+| City | Rejected | Why |
+|---|---:|---|
+| Delhi | 18 | 16 Noida/Ghaziabad/Gurugram/Faridabad (UPPCB/HSPCB/IMD), including 3 AirGradient; 2 old records with no PM dates ("Civil Lines", "IGI Airport") |
+| Mumbai | 13 | Navi Mumbai (its name contains "Mumbai" but CPCB reports it separately), Thane, CBD Belapur, Mira-Bhayandar |
+| Kolkata | 7 | 5 Howrah, Barrackpore, 1 old 2017 record (Victoria Memorial – WBSPCB) |
+| Chennai | 2 | Old 2018 records ("IIT", "Alandur Bus Depot") |
+| Bengaluru | 2 | Old 2018 records ("City Railway Station – KSPCB", "SaneguravaHalli – KSPCB") of stations already included under newer names. The "Bangalore"/"Blore" spellings were checked and none was wrongly rejected. |
+| Hyderabad | 0 | — |
+
+**Open question (not blocking):** some stations CPCB names after the city lie just **outside** 25 km:
+- **Delhi:** Narela (25.5 km) and Najafgarh (27.3 km). Both are inside Delhi. OpenCity's 39 Delhi files are exactly our 37 plus these 2.
+- **Hyderabad:** ICRISAT Patancheru and Ramachandrapuram (26.6 km), IDA Pashamylaram (32.8 km), IITH Kandi (44.3 km). These are industrial outskirts in Sangareddy district.
+
+The approved 25 km rule is kept for now.
+
+## Check 2: OpenCity timestamps and match with OpenAQ (PASS)
+
+**8 Delhi stations × 8 dates in 2025** (Feb, Apr, Jun, Aug, Sep, 20 Oct, Nov, Dec) were compared at raw 15-minute level:
+- **8,689 reading pairs, 100.00% identical at 0 shift** for every station and every date with data.
+- **Validation note (added in Part 5):** this match test only compared readings present in *both* sources. It did **not** cover values above 999 µg/m³, because OpenCity blanks them (Part 4). The 100% match holds for values ≤ 999 only.
+- ±15 min: 11–77% identical (CPCB repeats values within an hour). ±5.5 h: 0–4%.
+- **The timestamps are IST and the station mapping is correct.** *(Correction, Part 4: the labels mark the END of each interval, not the start.)*
+- 2025-04-10: no archive file for any of the 8 stations (a feed-wide outage).
+- All 37 Delhi primary stations map one-to-one to OpenCity files by name.
+
+**New archive limitation:** OpenAQ archive files **never contain the 00:00, 00:15 and 00:30 IST readings**. They're in no other file, while OpenCity has them. So with archive data the midnight hour is never valid, and a day has at most 23 valid hours. To keep cross-source comparisons fair, those 3 slots are also dropped from OpenCity (`align_to_archive_slots`, counted, raw files untouched). This choice is reversible.
+
+## Check 3: Delhi Diwali coverage and same-station panel (FAIL with the approved sources)
+
+Rule: a station passes a year for a pollutant if **both festival days are valid (≥ 16 valid hours) and at least 5 of 7 baseline days are valid.**
+
+| Source plan | PM2.5 pass 2024 | PM2.5 pass 2025 | PM2.5 panel | PM10 pass 2024 | PM10 pass 2025 | PM10 panel |
+|---|---:|---:|---:|---:|---:|---:|
+| **Approved:** OpenCity 2024 + OpenAQ archive 2025 | 33 | **0** | **0** | 33 | **0** | **0** |
+| **Alternative:** OpenCity for both years | 33 | 33 | **30** | 33 | 28 | **25** |
+
+**Cause: on 2025-10-20 (Diwali day), OpenAQ is missing 10:00–14:00 and 20:00–22:00 IST at every station.**
+- Delhi archive, valid PM2.5 stations by hour: hours 10–14 and 20–21 are **0/37**; hour 22 is 1/37.
+- **OpenCity has those same hours** (about 137–148 PM2.5 readings per hour across 37 stations). So CPCB recorded the data and OpenAQ didn't ingest it.
+- **The OpenAQ API has the same gap.** `/sensors/{id}/measurements` for Mandir Marg and Kurla had 0 readings in hours 10–13 and 21.
+- **All six cities are affected.** Two nearest primary stations per city, archive, 2025-10-20: Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad are all missing IST hours 10–14 and 20–22, leaving only 13–15 valid hours. Chennai Royapuram has no file at all.
+- 21 Oct 2025, 00:00–05:00: data is thin in **both** sources, so that's a real CPCB data gap.
+
+**Implications:**
+1. With OpenAQ, Diwali day 2025 is invalid in all six cities, and the missing hours are exactly the firecracker evening. Relaxing the 16-hour rule would bias results **low**, so it isn't acceptable.
+2. The planned *measured* Diwali 2025 vs 2026 comparison isn't possible from OpenAQ for any city. For Delhi it is possible using OpenCity 2025.
+3. Bulletin AQI is unaffected: it comes straight from CPCB, with 22/22 days in both years.
+
+## Check 4: proposed city-average rule (ready; not yet applied)
+
+- **Station-day:** valid when it has at least 16 valid IST hours. An hour is valid with at least 75% of its expected readings (3 of 4 for 15-minute data). The daily mean uses valid hours only; otherwise it's empty, never filled.
+- **City-day:** equal-weight mean of valid primary station-days. The median, minimum and maximum are stored too.
+- **Minimum stations:** `max(3, ceil(50% of the city's primary stations))`, so the value never rests on one or two monitors.
+- Event comparisons use a **fixed panel** (the same stations in every period), not "whatever reported".
+
+| City | Primary stations | Minimum valid stations for a city value |
+|---|---:|---:|
+| Delhi | 37 | 19 |
+| Mumbai | 22 | 11 |
+| Kolkata | 7 | 4 |
+| Chennai | 6 | 3 |
+| Bengaluru | 6 | 3 |
+| Hyderabad | 9 | 5 |
+
+## Checks 5 and the full build: not run (waiting for a decision)
+
+---
+
+# Part 4: Midnight readings, pilot findings (2026-11-03, about 10:00–11:30 UTC)
+
+**Decisions received:**
+- Delhi Option A (OpenCity both years, fixed panel). Other cities use bulletin AQI for Diwali, with measured Diwali 2025 PM marked incomplete.
+- City rule approved.
+- Don't drop midnight readings in OpenCity-only comparisons.
+- Narela, Najafgarh and the 4 Hyderabad outskirt stations stay out of primary city averages and are listed as possible later additions.
+
+**Status: STOPPED during the pilot.** A new decision is needed (section 4.3). The full build was not run, and nothing new is committed.
+
+## 4.1 Midnight readings: what's actually missing
+
+Checked on 12 primary stations (2 per city) × 6 dates (Mar 2025 – Sep 2026), reading each day's file and both neighbouring files (209 files); the API was also checked.
+
+1. **Archive timestamps mark the END of each interval.** Archive `datetime` equals API `period.datetimeTo` for 100% of matched readings (2025-06-15: 87/87; 2026-09-15: 83/83). Equality with `datetimeFrom` was only 76–78%. OpenCity matches the archive at the same labels, so **OpenCity also labels interval ends**. *This corrects Part 3, which said "start".*
+2. **Old format (2025-02 → about 2026-08-17):** each day file holds readings ending 00:45 … 23:45. **Readings ending 00:00, 00:15 and 00:30 are missing.** They're not in neighbouring files, and the API lacks them too (on 2025-06-15 the first API period is 00:30→00:45). **They are truly missing from OpenAQ.**
+3. **New format (from about 2026-08-18; mixed 18–27 Aug, consistent from Sep 2026):** each day file holds readings ending 00:15 … 24:00. The reading ending at 24:00 is stored in day d's file, labelled with day d+1. **These days are complete.**
+4. **Fix applied:** a reading belongs to the hour in which its interval **starts**: `hour = floor(ts − native interval)`. OpenAQ daily values keep the missing readings out (nothing is filled). Because of this, hour 00 is valid on only ~3% of old-format days, against ~95% for other hours.
+5. **Matching rule:** `align_to_archive_slots` drops the same three slots from the OpenCity side **only** when a comparison mixes OpenCity with old-format OpenAQ data. Delhi 2025 (OpenCity) vs 2026 (OpenAQ, new format) won't need it. OpenCity-only comparisons use every reading.
+
+## 4.2 Pilot (Delhi + Chennai; 1–31 Oct 2025 and 3 Oct – 2 Nov 2026)
+
+Passed: one unit (`µg/m³`); **0 duplicate** sensor-hours or sensor-days; IST dates; every hour on the hour; `daily_mean` is empty exactly when the day has fewer than 16 valid hours; no gap filling; city rule met on 94–100% of city-days.
+
+Problems found:
+1. **The upper-value rule removed real Diwali peaks (my bug).** 1,460 OpenAQ readings above 1,000 µg/m³ were dropped in Oct 2025, almost all at Delhi stations on 15–24 Oct (Anand Vihar peaked at 1,824). **Proposed fix:** keep values above 1,000 and flag them (`n_above_1000`); only remove physically implausible values (above 5,000).
+2. **OpenCity blanks every value above 999 µg/m³.** All 1,158 OpenAQ readings above 999 on 19–22 Oct 2025 are blank in OpenCity, while readings at or below 999 match 99.99% (21,856 pairs). OpenCity's maximum over all 37 files is exactly 1000.0. **OpenCity's "Diwali-night gap" (2025-10-20 23:00 → 21 Oct 03:00, 24% of stations reporting) is this blanking, not an outage.**
+3. **The blanking hits the two Diwalis very differently** (OpenCity blank share, 18:00–06:00):
+
+| Night | PM2.5 blank | PM10 blank | Values ≥ 950 present |
+|---|---:|---:|---|
+| 2024 baseline (17–23 Oct) | 10.9% | 7.9% | 0.0% / 0.2% |
+| 2024 Diwali (31 Oct) | 11.9% | 20.4% | 1.4% / 2.1% |
+| 2024 (1 Nov) | 11.2% | 13.2% | 0.2% / 1.6% |
+| 2025 baseline (6–12 Oct) | 4.2% | 3.6% | 0% / 0% |
+| **2025 Diwali (20 Oct)** | **35.2%** | **45.7%** | 2.5% / 1.9% |
+
+With Option A, 2025 Diwali values are understated much more than 2024. The pilot output (31 PM2.5 / 28 PM10 panel stations; PM2.5 baseline→festival +37% in 2024 vs +394% in 2025) is **not a fair comparison** and must not be used.
+
+4. **The archive publishes with a delay.** 2026-10-31 → 11-02 shows as a 72-hour "gap", but the files simply haven't been published yet. Fix: end the build at the last date most stations have published, and label later days "not yet available", not as gaps.
+5. **New-format hour 23** often has only 1–3 of 4 readings (the reading ending at 24:00 is often absent), so hour 23 is valid on ~72% of days against ~98% for other hours. This is a limitation to record.
+
+Network-wide OpenAQ gaps in the pilot windows (all-city scope, fraction of primary sensors reporting < 0.5):
+- **2025:** 10 Oct 17:00 (1 h), 11 Oct 00:00 (1 h), 15 Oct 18:00–20:00 (2 h), **20 Oct 10:00–14:00 and 20:00–22:00**, 20 Oct 23:00 → 21 Oct 03:00 (4 h, 31% reporting), **26 Oct 11:00 → 27 Oct 03:00 (16 h)**, 28 Oct 11:00 and 20:00–22:00.
+- **2026:** 4 Oct 18:00 → 5 Oct 03:00 (9 h), 7 Oct 20:00–23:00, 18 Oct 14:00–23:00, **23 Oct 21:00 → 27 Oct 08:00 (83 h)**, plus 31 Oct onward (publishing delay, not an outage).
+
+## 4.3 Decision needed
+
+The approved Delhi plan (OpenCity for both years) is consistent in *source* but not in *data completeness*. See the summary to the user for the options.
+
+---
+
+# Part 5: Decisions applied and full build (2026-11-03)
+
+## 5.1 Decisions (user, 2026-11-03)
+
+**Diwali comparison (Option A):**
+- **CPCB bulletin AQI is the main Diwali comparison for all six cities, including Delhi.**
+- Delhi OpenCity PM2.5/PM10 is **supporting context only**, always shown with the warning: "Readings above 999 µg/m³ are blank in this source; Diwali-night peaks are under-represented", plus the blank rates.
+- **No PM percentage changes** are calculated or shown for Diwali 2024 vs 2025. The pilot's +37% / +394% figures are withdrawn and not stored in any app output.
+- The same rule applies to a future Delhi Diwali 2025 vs 2026 comparison unless a source without the 999 limit is verified.
+
+**Value rules:**
+- Invalid (removed, counted per reason): **≤ 0** and **> 5,000 µg/m³**.
+- Values **> 1,000 µg/m³ are kept and flagged.**
+- Sensor-fault patterns are **flagged for review, not deleted**: flat-lines (identical hourly values) and isolated spikes that nearby stations don't show.
+- **No imputation.** A blank is labelled "blanked by source limit" only where it's proven (OpenCity blank while OpenAQ has a value > 999 at the same station and time). Otherwise it's "missing or blank".
+
+## 5.2 Code changes
+
+- **Value rule:** removed if `≤ 0` or `> 5,000` (counted as `n_nonpositive` / `n_above_max`). Values above 1,000 are kept and counted (`n_above_1000` in the cleaning log, `n_readings_above_1000` per sensor-day).
+- **Fault flags** (hourly booleans, plus daily counts `n_flatline_hours` / `n_spike_hours`; nothing deleted):
+  - *Flat-line:* 6 or more consecutive hours with an identical hourly value.
+  - *Isolated spike:* value > 3× the same-city reference median **and** > median + 250 µg/m³, with at least 3 peers, **and** the sensor's own previous and next hours are ≤ 50% of the value. A citywide rise (like Diwali) is never flagged.
+- **Blanks:** `opencity_blanks.parquet` gives per sensor-day `n_blank`, `n_blank_source_limit_proven` (OpenCity blank while OpenAQ shows > 999 at the same time; only provable from 2025-02-18) and `n_missing_or_blank` (everything else). Nothing is imputed.
+- **Publishing delay:** the build ends at the last date on which at least 50% of primary stations have an archive file. Later days are written to `date_quality` as `status = not_yet_published` and aren't treated as gaps.
+- **Diwali output:** `role = main` (AQI), `supporting` (Delhi OpenCity PM, with `warning`, `blank_rate_festival_nights`, `blank_rate_baseline_nights` and `blank_proven_share_festival_nights`) or `status` (other cities' PM). The build asserts that **no PM row has a `change_pct`**. The pilot's +37% / +394% figures no longer exist in any output.
+
+## 5.3 Pilot rerun (Delhi + Chennai)
+
+| Check | 1–31 Oct 2025 | 3 Oct – 2 Nov 2026 |
+|---|---|---|
+| Duplicate sensor-hours / sensor-days | 0 / 0 | 0 / 0 |
+| Units | µg/m³ only | µg/m³ only |
+| Removed ≤ 0 | 5,436 (mostly US embassy monitors) | 3,428 |
+| Removed > 5,000 | 19: sensor faults (Manali, Chennai up to 85,370; CRRI Mathura Road 1.1×10¹⁴) | 0 |
+| Kept and flagged > 1,000 | 1,441 (Delhi, 15–24 Oct) | 0 |
+| Flat-line hours flagged | 3,739 (3,554 in OpenCity 2024–25, e.g. stuck at 5.0 or 13.0) | 4,051 |
+| Isolated-spike hours flagged | 241 | 225 |
+| Not yet published | — | 31 Oct – 2 Nov 2026 (labelled, not treated as a gap) |
+| PM `change_pct` stored | none | none |
+
+Blank rates now use the **fixed panel** and **both festival nights** (18:00–06:00 after D and D+1), so they're lower than the single-night, all-station figures in Part 4. In 2025: PM2.5 17.8% vs 3.9% on baseline nights, of which 10.0% are proven > 999. PM10: 23.2% vs 2.6%, with 15.9% proven. In 2024: PM2.5 7.4% vs 4.7%; PM10 15.1% vs 4.2%. Whether 2024 blanks were above 999 can't be proven, because there is no OpenAQ data for 2024.
+
+*(The pilot outputs are in the gitignored `data/raw/pilot/` and aren't used by the app.)*
+
+## 5.4 Full six-city build (finished 2026-11-03; command: `python scripts/build_dataset.py`)
+
+- **OpenAQ range:** 2025-02-18 → **2026-10-30** (last published date). 2026-10-31 → 11-02 are `not_yet_published`.
+- 62,927 location-days checked, 57,103 archive files present. 46 downloads failed on the first pass because of Sophos TLS errors and all succeeded on retry; a failed download is never counted as missing data.
+- Build time was 3.7 h, mostly downloads through Sophos. Reruns reuse the cache in `data/raw/openaq_archive/`.
+- **0 duplicate** sensor-hours, sensor-days or city-days. One unit (µg/m³). 0 rows from non-selected sensors.
+- Output: about 19 MB of Parquet in `data/processed/` (the largest is `station_hourly.parquet` at 16.8 MB, 3.49 M rows).
+
+**Stations (locations):**
+
+| City | Primary (reference) | Low-cost | US supporting | Delhi Diwali panel |
+|---|---:|---:|---:|---|
+| Delhi | 37 | 5 | 2 | PM2.5 31, PM10 28 (OpenCity, both years) |
+| Mumbai | 22 | 1 | 1 | — |
+| Kolkata | 7 | 1 | 2 | — |
+| Chennai | 6 | 0 | 2 | — |
+| Bengaluru | 6 | 7 | 0 | — |
+| Hyderabad | 9 | 1 | 2 | — |
+
+**Coverage (OpenAQ, primary stations, 2025-02-19 → 2026-10-30):**
+
+| City | Sensor-days | Valid (≥ 16 h) | Mean valid hours | City-days meeting rule (PM2.5 / PM10) | City-days low quality |
+|---|---:|---:|---:|---|---:|
+| Delhi | 43,278 | 83.3% | 19.4 | 96.7% / 97.4% | 26.4% |
+| Mumbai | 24,125 | 74.6% | 18.2 | 95.1% / 94.0% | 26.2% |
+| Kolkata | 7,966 | 87.0% | 19.5 | 96.6% / 96.6% | 25.8% |
+| Chennai | 6,685 | 84.3% | 19.6 | 96.7% / 96.8% | 28.1% |
+| Bengaluru | 6,757 | 76.4% | 18.5 | 92.4% / 93.5% | 29.3% |
+| Hyderabad | 10,179 | 74.8% | 18.4 | 91.9% / 91.4% | 28.1% |
+
+OpenCity Delhi: 52,931 sensor-days (2024-01-01 → 2025-12-31), 95.0% valid. Low-cost: 4,917 sensor-days; US supporting: 1,282 sensor-days (kept out of city values).
+
+**Cleaning (counts per reason):**
+
+| Source | Raw | Missing / blank | Removed ≤ 0 | Removed > 5,000 | Kept and flagged > 1,000 | Flat-line hours | Isolated-spike hours |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| OpenAQ archive | 8,010,630 | 0 | 71,714 | 4,031 | 10,036 | 20,496 | 1,158 |
+| CPCB via OpenCity | 5,183,956 | 401,343 | 0 | 0 | 0 (source caps at 999) | 3,554 | 220 |
+
+There were no exact or conflicting duplicates and no unexpected units.
+
+**Network-wide gaps (OpenAQ, all six cities; < 50% of active primary sensors reporting):**
+- 179 runs, 1,036 hours in total. **185 of 620 dates are low quality** (at least 1 gap hour).
+- Largest runs:
+
+| Start (IST) | End (IST) | Hours |
+|---|---|---:|
+| 2026-01-10 18:00 | 2026-01-20 20:00 | **242** |
+| 2026-10-23 21:00 | 2026-10-27 08:00 | 83 |
+| 2025-04-09 06:00 | 2025-04-11 19:00 | 61 (contains 2025-04-10) |
+| 2026-06-23 17:00 | 2026-06-25 21:00 | 52 |
+| 2026-08-27 15:00 | 2026-08-28 23:00 | 32 |
+| 2026-02-16 10:00 | 2026-02-17 12:00 | 26 |
+| 2025-05-25 18:00 | 2025-05-26 18:00 | 24 |
+| 2026-08-29 07:00 | 2026-08-30 06:00 | 23 |
+
+- Repeated hours: no hour of day is systematically missing. Each hour is a gap on 5–9% of days, except hour 00 at 13.7% (the old-format midnight limitation).
+- OpenCity Delhi: only 3 runs (8 h). The largest, 2025-10-20 23:00 → 21 Oct 03:00, is the >999 blanking on Diwali night, not an outage.
+
+**Diwali: MAIN comparison, CPCB bulletin AQI** (baseline bulletins D−13…D−7 vs festival bulletins D+1, D+2):
+
+| City | 2024 baseline → festival | 2024 change | 2025 baseline → festival | 2025 change |
+|---|---|---:|---|---:|
+| Delhi | 307.7 → 327.5 | +6.4% | 139.9 → 352.0 | +151.7% |
+| Mumbai | 74.0 → 188.5 | +154.7% | 113.4 → 160.5 | +41.5% |
+| Kolkata | 79.7 → 198.5 | +149.0% | 87.1 → 160.0 | +83.6% |
+| Chennai | 64.4 → 106.5 | +65.3% | 81.1 → 106.5 | +31.3% |
+| Bengaluru | 51.0 → 128.5 | +152.0% | 70.7 → 88.0 | +24.4% |
+| Hyderabad | 72.7 → 126.0 | +73.3% | 99.6 → 94.5 | −5.1% |
+
+2026: `not_available` (Diwali is on 8 Nov).
+
+**Delhi measured PM: SUPPORTING only** (OpenCity, fixed panel; no % change; warning attached):
+
+| Year | Metric | Panel | Baseline mean | Festival mean | Blank, festival nights | Blank, baseline nights | Proven > 999 |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 2024 | PM2.5 | 31 | 155.6 | 213.7 | 7.4% | 4.7% | not provable |
+| 2025 | PM2.5 | 31 | 48.7 | 240.6 | 17.8% | 3.9% | 10.0% |
+| 2024 | PM10 | 28 | 324.2 | 340.3 | 15.1% | 4.2% | not provable |
+| 2025 | PM10 | 28 | 138.4 | 347.9 | 23.2% | 2.6% | 15.9% |
+
+Festival values are lower bounds. 2025-10-20/21 are low quality in OpenCity because of the blanking.
+
+**Other cities' measured PM (status rows only):** 2024 `no_data` (NO_MEASURED_DATA); 2025 `incomplete` (OPENAQ_INGESTION_GAP, user text "Measured PM data is incomplete for Diwali 2025."); 2026 `not_available`.
+
+## 5.5 Tests
+
+`pytest`: **37 passed**.
+- `tests/test_transform.py`: readers and timezones, cleaning counts, duplicates, units, hour assignment, 75% hourly rule, 16-hour daily rule, no imputation, city rule, bulletin alignment, festival rule.
+- `tests/test_quality.py`: gap detection, partial outages, inactive sensors, recurring hours, flat-lines, isolated spikes vs a citywide rise, publication tail.
+- `tests/test_build.py`: end-to-end on synthetic files; repeatable rerun with identical outputs, no duplicates, > 1,000 kept, old-format midnight hour not filled, proven vs unproven blanks, no PM % change, user message text.
+
+## 5.6 Remaining limitations
+
+1. Old-format OpenAQ (to about 2026-08-17) lacks readings ending 00:00/00:15/00:30, so hour 00 is rarely valid. The new format sometimes lacks the reading ending 24:00 (hour 23 valid about 72%).
+2. 30% of dates have at least one network-wide gap hour, including a 10-day outage in January 2026. These dates are low quality for comparisons.
+3. Delhi Diwali PM is censored at 999 in OpenCity, so it's supporting only. 2024 blanks can't be proven to be > 999.
+4. Measured PM for Diwali 2025 is incomplete for five cities, and there is no measured PM for 2024 outside Delhi.
+5. Bulletin AQI is a city average of whichever stations reported (24 h to 4 PM). The station mix changes daily, and AQI is capped at 500. Delhi's 2024 baseline was already "Very Poor" (307.7), so its 2024 % change is small.
+6. Fault flags are heuristics for review: 20,496 flat-line hours and 1,158 isolated-spike hours in OpenAQ. Nothing is deleted.
+7. US supporting data before 2025-02-18 was downloaded but isn't included (the build window starts 2025-02-18).
+8. The bulletin parquet ends 2026-10-25, so Diwali 2026 AQI needs a refresh after 8 Nov.
+9. Narela, Najafgarh and the 4 Hyderabad outskirt stations are excluded from city averages (possible later additions).
+10. The full build takes hours through Sophos. Cached reruns are faster.

@@ -15,7 +15,15 @@ real data (OpenAQ measurements, Open-Meteo models) and shows its source, data ty
 - **Data:** OpenAQ, Open-Meteo, pandas, Parquet, DuckDB
 
 ## Status
-Day 1 — project setup. Data pipeline, agent and UI not built yet.
+Day 1 complete: data pipeline and processed dataset (`data/processed/`, Parquet).
+Agent, API and UI not built yet. Evidence and rules: `docs/data-source-check.md`.
+
+## Rebuild the dataset
+```bash
+pip install -r requirements-dev.txt     # dev only: adds truststore for TLS-inspecting proxies
+python scripts/build_dataset.py         # downloads/caches raw data, rebuilds data/processed
+pytest                                  # transformation and build tests
+```
 
 ## Local setup
 ```bash

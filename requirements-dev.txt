@@ -1,0 +1,5 @@
+# Local development only (NOT a deployment dependency).
+-r requirements.txt
+# Makes Python trust the macOS keychain (needed behind Sophos HTTPS inspection).
+# Certificate verification stays ON; only the trust source changes.
+truststore==0.10.5
