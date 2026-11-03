@@ -67,11 +67,37 @@ Open-Meteo:
 - If OpenAQ is not usable, STOP and explain the evidence and options before changing the data plan.
 
 Diwali dates live in a verified config file:
-- 2026: 8 November. Confirm 2025 and 2024 dates from reliable sources.
+- Verified: 2024 = Thu 31 Oct (Delhi celebrated 31 Oct–1 Nov; include both nights),
+  2025 = Mon 20 Oct, 2026 = Sun 8 Nov (DoPT holiday lists; Drik Panchang).
 - If 2026 data is not available yet, the agent must say so instead of guessing.
 - Use the same stations across years wherever possible.
 - Compare each festival period against a pre-festival baseline (dates fall at different
   points in the season).
+
+### Source rules (agreed 2026-11-03; evidence in docs/data-source-check.md)
+
+- **Archive first:** OpenAQ S3 archive for history; API only for station discovery,
+  metadata and recent data.
+- **Never treat AQI and PM2.5 as the same metric.**
+- CPCB bulletin data (UrbanEmissions `AQI_bulletins`) is shown as **official measured AQI**
+  (city average, past 24 h up to 4 PM — Diwali night shows in the D+1 bulletin).
+- US embassy/consulate data is **supporting, single-station** only.
+- Open-Meteo for Diwali is **clearly labelled modelled context**, never the main evidence.
+- Measured Diwali 2025 vs 2026 only after 8 Nov 2026 **and only if coverage is sufficient**.
+- If the app has no measured data for a period, it must say so.
+- OpenCity Delhi files: timestamps say `+0000` but are **IST** (verified identical to OpenAQ).
+
+### Data design rules
+
+- Never average overlapping hourly windows (API `/hours` can return `:00` and `:30` periods).
+- Calculate coverage ourselves; ignore the API `coverage` field.
+- **2022-11-01 → 2025-02-18 is a hard gap**: never treat a date range as continuous across it,
+  never stitch old and new sensors into one series.
+- Select sensors by their **own** first/last dates, not location dates.
+- City assignment = distance **and** station name names the city (25 km alone mixes in
+  Noida/Ghaziabad/Gurugram/Faridabad, Navi Mumbai/Thane, Howrah).
+- Track hourly OpenAQ API use (only the per-minute window is in headers); show outages as "no data".
+- Exclude provider "N/A" locations unless verified. Keep low-cost sensors in a separate tier.
 
 ## 5. Agent rules
 
@@ -149,3 +175,6 @@ Deployment notes:
   retry once; `httpx` reached `api.openaq.org` fine. If HTTPS calls fail with
   `CERTIFICATE_VERIFY_FAILED`, that is the cause — do not disable SSL verification.
 - `data/raw/` is gitignored; `data/processed/` (Parquet) is committed.
+- Sophos also breaks TLS for some hosts more often (GitHub API, S3). macOS `/usr/bin/curl`
+  and authenticated `gh` usually work; anonymous GitHub API is rate-limited on this network IP.
+  Never disable verification.

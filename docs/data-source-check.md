@@ -157,3 +157,136 @@ Sophos SSL inspection caused one `CERTIFICATE_VERIFY_FAILED` error on S3. The ne
    - 2024: either (a) use the US embassy/consulate PM2.5 monitors, which give one station per city, PM2.5 only, no Bengaluru reference monitor, and different stations from the CPCB set; or (b) use Open-Meteo **modelled** data, clearly labelled; or (c) say "no measured data".
    - A separate CPCB-portal fallback would be a bigger plan change and isn't recommended now.
 3. Cleaning must handle duplicate sensors per location, overlapping hourly windows, NaN and negative values, and feed-wide outages. Calculate our own coverage.
+
+---
+
+# Part 2: Diwali 2024 sources and candidate stations
+
+**Date:** 2026-11-03, about 07:30–08:15 UTC (13:00–13:45 IST)
+**Approved before this step:** the archive-first approach (OpenAQ S3 archive for history; API for station discovery and recent data).
+**No Groq or Gemini calls. No full-dataset download.** Small sample files were saved to `data/raw/probe/bulletins/` and `data/raw/probe/opencity/` (gitignored).
+
+## A. Diwali dates (verified)
+
+| Year | Main Diwali / Lakshmi Puja | Evidence | Notes |
+|---|---|---|---|
+| 2024 | **Thu 31 Oct 2024** | DoPT O.M. dated 03-07-2023 (central government holidays 2024): "Diwali (Deepavali) … Thursday, October 31, 2024". Most state holiday notices (TN, KA, TS, AP and others) give 31 Oct. | Drik Panchang lists Lakshmi Puja in New Delhi on **Fri 1 Nov 2024**, and Haryana declared 1 Nov. Celebrations ran across **both nights**, so the analysis window must include 31 Oct and 1 Nov. |
+| 2025 | **Mon 20 Oct 2025** | DoPT O.M. dated 09-07-2024: "Monday, October 20, 2025". Drik Panchang (New Delhi): Lakshmi Puja Mon 20 Oct 2025. | Some outlets suggested 21 Oct. The official sources say 20 Oct. |
+| 2026 | **Sun 8 Nov 2026** | DoPT O.M. dated 03-07-2025, as reported by several sites. I didn't open the official PDF. | Some states observe Naraka Chaturdashi a day earlier (7 Nov). |
+
+DoPT memos also note that "in certain States" Diwali is observed a day earlier, on Naraka Chaturdashi, which matters for Chennai.
+
+Sources: [DoPT 2024 list (staffnews)](https://www.staffnews.in/2023/07/list-of-holidays-2024-dopt-order-reg-gazetted-and-restricted-holidays.html), [DoPT 2025 list (staffnews)](https://www.staffnews.in/2024/07/holidays-to-be-observed-in-central-government-offices-year-2025.html), [DoPT 2026 list (staffnews)](https://www.staffnews.in/2025/07/list-of-holidays-2026-dopt-order-reg-closed-and-restricted-holidays.html), [Drik Panchang 2024](https://www.drikpanchang.com/festivals/lakshmipuja/festivals-lakshmipuja-timings.html?year=2024), [Drik Panchang 2025](https://www.drikpanchang.com/festivals/lakshmipuja/festivals-lakshmipuja-timings.html?year=2025).
+
+## B. CPCB daily AQI bulletins (UrbanEmissions `AQI_bulletins`)
+
+| Field | Finding |
+|---|---|
+| Source | CPCB daily AQI bulletin PDFs ([cpcb.gov.in/AQI_Bulletin.php](https://cpcb.gov.in/AQI_Bulletin.php)), parsed by UrbanEmissions.info ([github.com/urbanemissionsinfo/AQI_bulletins](https://github.com/urbanemissionsinfo/AQI_bulletins)) |
+| Repo status | Active: last push 2026-11-01 18:04 UTC |
+| File checked | `data/Processed/aqi-bulletins.parquet` (1.9 MB): 543,294 rows, **2015-05-01 → 2026-10-25**, 329 cities |
+| Columns | `date, city, no_stations, aqi_category, aqi, prominent_pollutant, year, month` |
+| **Metric** | **City-level AQI (a unitless 0–500 index)**, not a concentration. It covers all measured pollutants, and the "prominent pollutant" is the one driving the AQI. |
+| Averaging | From CPCB's own PDF (bulletin dated 2 Nov 2026): **"Air Quality Index on Nov 02, 2026 @ 4 PM (Average of past 24 hours)"**. **Diwali-night pollution appears in the D+1 bulletin.** |
+| City value | CPCB note: "In case of a city with multiple monitoring locations, average value is used… averaging is not a scientifically sound approach." Cities can be dropped "due to insufficient data". |
+| Licence | Repo code: **GPL-3.0**. Dataset `metadata.json`: **GODL** (Government Open Data License – India), source CPCB. The CPCB PDF asks users to "duly acknowledge the contribution of respective agencies". |
+| City names | Exact matches for Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad. Navi Mumbai is a separate city. |
+
+**Coverage around Diwali** (window D−14 … D+7 = 22 days):
+
+| City | 2024 days | 2024 stations | 2025 days | 2025 stations |
+|---|---:|---|---:|---|
+| Delhi | 22/22 | 31–40 | 22/22 | 35–39 |
+| Mumbai | 22/22 | 21–25 | 22/22 | 19–28 |
+| Kolkata | 22/22 | 6–7 | 22/22 | 5–7 |
+| Chennai | 22/22 | 6–8 | 22/22 | 4–8 |
+| Bengaluru | 22/22 | 9–13 | 22/22 | 7–14 |
+| Hyderabad | 22/22 | 9–14 | 22/22 | 10–14 |
+
+There are no duplicate city-days, and `no_stations == 0` occurred in 0% of rows for these cities from 2016 to 2026.
+
+**Limitations:** AQI is not PM2.5 and must never be presented as PM2.5. There's one value per city per day, with no station or hourly detail, and the 4 PM-to-4 PM window doesn't match a calendar day. Which stations are averaged changes from day to day. The parquet currently stops at 2026-10-25, so Diwali 2026 (8 Nov) will need a later repo update or the CPCB PDFs.
+
+## C. OpenCity: Delhi CPCB station files
+
+| Field | Finding |
+|---|---|
+| Source | [data.opencity.in/dataset/delhi-hourly-air-quality-reports](https://data.opencity.in/dataset/delhi-hourly-air-quality-reports); organisation listed as CPCB; the ITO resource names the CPCB CAAQM repository as its source |
+| Licence | Catalogue: "Other (Public Domain)" (`other-pd`) |
+| Contents | 78 CSV resources: 39 Delhi stations × (2017–2023 hourly, **2024–25 at 15 minutes**). Metadata last modified 2026-01-15. |
+| **Delhi only** | No files for the other five cities |
+| File checked | Mandir Marg DPCC 2024–25 (11.9 MB): 70,177 rows, 2024-01-01 00:00 → 2025-12-31 23:45, 15-minute steps. Columns include `PM2.5 (µg/m³)`, `PM10 (µg/m³)` and weather (AT, RH, WS, WD, RF). |
+| Metric / units | **Measured concentration, µg/m³**: the same metric as OpenAQ |
+| Diwali 2024 window (17 Oct – 7 Nov) | 2,112/2,112 time slots present; **PM2.5 non-null 1,850 (88%)**, **PM10 1,956 (93%)** |
+| Values | PM2.5 1–996, PM10 2–998; 0 values ≤ 0. Values ≥ 990 (4 each) may be the monitor's upper limit and need flagging. |
+| **Timezone** | Timestamps are labelled `+0000`, but **they are IST**. Matched against the OpenAQ archive (IST) for 2025-10-20: **67/67 readings identical, correlation 1.000, at 0 h shift**; 0% identical at ±5.5 h. **Treat OpenCity times as IST and ignore the `+0000` label.** |
+| Same source as OpenAQ? | **Yes**: identical values show they come from the same CPCB feed |
+
+Sample daily means at Mandir Marg (IST days, simple mean of 15-minute values, for inspection only):
+
+| Date | PM2.5 | n | PM10 | n |
+|---|---:|---:|---:|---:|
+| 2024-10-29 | 118.7 | 83 | 170.6 | 91 |
+| 2024-10-30 | 153.9 | 89 | 213.0 | 96 |
+| 2024-10-31 (Diwali) | 209.1 | 87 | 264.4 | 96 |
+| 2024-11-01 | 217.5 | 88 | 265.9 | 88 |
+| 2024-11-02 | 222.4 | 95 | 271.9 | 96 |
+
+**Limitations:** Delhi only. The timezone label is wrong. Only one of 39 files was checked, so others may have different gaps. Metadata text says "2017–2023" while file names say 2024–25.
+
+## D. US embassy / consulate monitors (AirNow / StateAir)
+
+These were already checked in Part 1. Each city has one station, **PM2.5 only**, measured with a reference-grade monitor. Coverage: New Delhi and Mumbai are current; Chennai stopped 2026-10-15, Hyderabad 2026-04-06 and Kolkata 2025-03-04. Bengaluru has none. Mumbai returned NaN and negative values. **Use only as single-station supporting data.**
+
+## E. Open-Meteo (not re-checked in this step)
+
+This source is modelled (CAMS), about 45 km resolution, from Aug 2022, and may under-predict South Asian extremes. **Use for Diwali only as clearly labelled modelled context, never as primary evidence.** It hasn't been tested yet; that's scheduled for the pipeline step.
+
+## F. Agreed source rules (2026-11-03)
+
+- AQI and PM2.5 are different metrics and are never interchangeable or shown on the same axis without saying so.
+- Bulletin data is shown as **official measured AQI (city average, 24 h to 4 PM)**.
+- US embassy data is **supporting, single-station** only.
+- Open-Meteo for Diwali is **modelled context** only.
+- Measured Diwali 2025 vs 2026 runs after 8 Nov **only if coverage is sufficient**.
+- If there is no measured data for a period, the app says so.
+
+## G. Candidate stations (status: candidate, not final)
+
+Script: `scripts/select_candidates.py` → `data/processed/station_candidates.json`. Each entry stores its coordinates, location last-updated time, the chosen PM2.5/PM10 sensor IDs **with that sensor's own first and last dates**, and the older sensors.
+
+**Rules applied:**
+- Within 25 km of the centre **and** the station name names the target city.
+- Reference monitors only for "primary". The primary sensor must start ≤ 2025-10-05 and still report ≥ 2026-10-25.
+- Low-cost sensors are a separate tier.
+- "N/A" provider is excluded.
+- US monitors are a separate supporting tier.
+
+**25 km mixing check:** without the name rule, the 25 km circle would have pulled in 16 Delhi-area stations from Noida, Ghaziabad, Gurugram, Faridabad and Khora/Loni (UPPCB/HSPCB), 11 Mumbai-area stations from Navi Mumbai, Thane and Mira-Bhayandar, and 5 Howrah stations into Kolkata. All are excluded now.
+
+| City | Primary (reference, PM2.5 + PM10) | Partial | US supporting | Low-cost | Excluded | CPCB bulletin station count, Oct 2025 |
+|---|---:|---:|---:|---:|---:|---|
+| Delhi | **37** | 25 (all retired pre-gap records) | 2 (1 current) | 5 | 26 | 35–39 |
+| Mumbai | **22** | 7 (4 retired, 3 stopped in 2026) | 1 | 1 | 13 | 19–28 |
+| Kolkata | **7** | 2 (retired) | 2 (0 current) | 1 | 7 | 5–7 |
+| Chennai | **6** | 1 (PM10 stopped 2026-10-21) | 2 (0 current) | 0 | 2 | 4–8 |
+| Bengaluru | **6** | 10 (4 retired, 4 stopped, 2 no PM2.5) | 0 | 8 | 2 | 7–14 |
+| Hyderabad | **9** | 2 (1 retired, 1 no PM10) | 2 (0 current) | 1 | 0 | 10–14 |
+
+The primary counts are close to the number of stations CPCB uses in its own city bulletins, which is a useful check. Every primary sensor starts on or after 2025-02-18, so **none spans the 2022–2025 gap**.
+
+**Open questions:**
+- Four CPCB-provider sites flagged `isMonitor=false` (New Moti Bagh MHUA, BKC IITM, BWSSB Kadabesanahalli, Jigani) are kept in the low-cost tier until their type is verified.
+- The 8 "N/A" Delhi-area locations have DPCC/IITM-style names but are unverified.
+- Bengaluru has only 6 primary stations, with 4 stopping during 2026. Watch coverage.
+
+## H. Data design decisions (agreed)
+
+1. **Archive first:** raw 15-minute readings from the OpenAQ S3 archive. The API is only for discovery, metadata and recent top-ups.
+2. **No overlapping hourly windows** in any average. If API `/hours` data is used, keep only IST-aligned (`:30 UTC`) periods and deduplicate by `(sensor, period start)`.
+3. **Coverage is calculated by us:** valid readings ÷ expected readings, per sensor-day and per city-day. The API `coverage` field is ignored.
+4. **No continuity across the gap:** 2022-11-01 → 2025-02-18 is a hard gap. Old and new sensors are never stitched into one series.
+5. **Hourly API budget:** the client counts requests in a rolling 60-minute window, stays under 2,000/h with a margin, honours `x-ratelimit-*` headers and backs off on 429.
+6. **Outages:** feed-wide gaps (the same gap at several stations) are recorded as outages and shown as "no data", never filled in.
+7. **OpenCity (if used for Delhi 2024):** treat timestamps as IST, flag values ≥ 990, and label it "CPCB via OpenCity". It only covers Delhi.
+8. **Network:** Sophos HTTPS inspection intermittently breaks Python TLS. Use retries now. A trust-store fix (`truststore`) needs approval.
