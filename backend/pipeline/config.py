@@ -58,3 +58,10 @@ def bulletin_dates_for(local_days: list[date]) -> list[date]:
     """Bulletin dated X covers 16:00 IST X-1 -> 16:00 IST X, so the evening/night of
     local day L is reported in the bulletin dated L+1."""
     return [d + timedelta(days=1) for d in local_days]
+
+# City centres (same as scripts/select_candidates.py)
+CITY_CENTRES = {
+    "Delhi": (28.6139, 77.2090), "Mumbai": (19.0760, 72.8777), "Kolkata": (22.5726, 88.3639),
+    "Chennai": (13.0827, 80.2707), "Bengaluru": (12.9716, 77.5946), "Hyderabad": (17.3850, 78.4867),
+}
+CITIES = list(CITY_CENTRES)

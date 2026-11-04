@@ -1,0 +1,47 @@
+{
+ "derived_from": "2026-11-03T13:46:14+00:00",
+ "openaq_data_end": "2026-10-30",
+ "default_analysis_rule": "exclude hours flagged flat-line (>= 6 identical h) or isolated spike; exclude station-days where PM2.5 > 1.2 x PM10 and > PM10 + 20 (impossible); peer-outlier station-days are flagged, not excluded",
+ "diwali_percent_status": "pending_user_approval",
+ "attribution": {
+  "openaq": "OpenAQ (openaq.org), CPCB data",
+  "opencity": "CPCB data via OpenCity (data.opencity.in), public domain",
+  "bulletins": "CPCB daily AQI bulletins, parsed by UrbanEmissions.info (GODL)",
+  "weather": "Weather data by Open-Meteo.com (https://open-meteo.com/), CC BY 4.0; reanalysis from the Copernicus Climate Change Service (C3S)."
+ },
+ "weather_units": {
+  "temperature_mean_c": "\u00b0C",
+  "relative_humidity_mean_pct": "%",
+  "wind_speed_mean_kmh": "km/h",
+  "precipitation_sum_mm": "mm"
+ },
+ "rows": {
+  "station_daily": 158120,
+  "date_quality": 4469,
+  "city_daily": 6816,
+  "diwali_aqi_levels": 324,
+  "diwali_aqi_baselines": 72,
+  "delhi_pm_diwali_support": 4,
+  "diwali_pm_status": 30,
+  "data_status_reasons": 5,
+  "stations": 204,
+  "city_daily_aqi": 24026,
+  "weather_daily": 3744,
+  "network_gaps": 1415
+ },
+ "bytes": {
+  "city_daily.parquet": 304243,
+  "city_daily_aqi.parquet": 238969,
+  "data_status_reasons.parquet": 3530,
+  "date_quality.parquet": 13737,
+  "delhi_pm_diwali_support.parquet": 12419,
+  "diwali_aqi_baselines.parquet": 10480,
+  "diwali_aqi_levels.parquet": 10632,
+  "diwali_pm_status.parquet": 6560,
+  "network_gaps.parquet": 13826,
+  "station_daily.parquet": 2409576,
+  "stations.parquet": 17764,
+  "weather_daily.parquet": 26192
+ },
+ "total_bytes": 3067928
+}

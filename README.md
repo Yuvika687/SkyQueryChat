@@ -16,13 +16,16 @@ real data (OpenAQ measurements, Open-Meteo models) and shows its source, data ty
 
 ## Status
 Day 1 complete: data pipeline and processed dataset (`data/processed/`, Parquet).
+Day 2 (part 1): weather, app tables (`data/app/`) and analysis functions (`backend/analysis/`).
 Agent, API and UI not built yet. Evidence and rules: `docs/data-source-check.md`.
 
 ## Rebuild the dataset
 ```bash
 pip install -r requirements-dev.txt     # dev only: adds truststore for TLS-inspecting proxies
 python scripts/build_dataset.py         # downloads/caches raw data, rebuilds data/processed
-pytest                                  # transformation and build tests
+python scripts/fetch_weather.py         # Open-Meteo daily weather (6 requests)
+python scripts/derive_app_tables.py     # compact app tables in data/app (deploy only these)
+pytest                                  # pipeline, analysis and real-data tests
 ```
 
 ## Local setup

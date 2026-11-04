@@ -576,3 +576,216 @@ Festival values are lower bounds. 2025-10-20/21 are low quality in OpenCity beca
 8. The bulletin parquet ends 2026-10-25, so Diwali 2026 AQI needs a refresh after 8 Nov.
 9. Narela, Najafgarh and the 4 Hyderabad outskirt stations are excluded from city averages (possible later additions).
 10. The full build takes hours through Sophos. Cached reruns are faster.
+
+---
+
+# Part 6: Day-2 data checks, weather and analysis functions (2026-11-04)
+
+No full re-download was needed. All checks used `data/processed/`, the cached raw files and 6 new weather requests.
+
+## 6.1 Exact bulletin dates (check 1)
+
+The bulletin dated X covers 16:00 IST on X−1 → 16:00 IST on X.
+
+| Year | "During" bulletins | "Before" bulletins (original method W1) |
+|---|---|---|
+| 2024 | 2024-11-01, 2024-11-02 (evenings of 31 Oct, 1 Nov) | 2024-10-18 … 2024-10-24 |
+| 2025 | 2025-10-21, 2025-10-22 (evenings of 20, 21 Oct) | 2025-10-07 … 2025-10-13 |
+
+Per city, the AQI values on those bulletins are stored in `data/app/diwali_aqi_levels.parquet` (role `festival` / `context`, D−14 … D+3).
+
+## 6.2 Delhi's 2025 baseline and alternative windows (checks 2–3)
+
+Delhi 2025, by local day: bulletin AQI for that evening / rainfall that day (Open-Meteo):
+
+5 Oct 105/1 mm · **6 Oct 73/15 mm · 7 Oct 81/5 mm** · 8 Oct 100 · 9 Oct 170 · 10 Oct 199 · 11 Oct 167 · 12 Oct 189 · 13 Oct 211 · 14 Oct 233 · 15 Oct 245 · 16 Oct 254 · 17 Oct 268 · 18 Oct 296 · 19 Oct 345 · **20 Oct 351 · 21 Oct 353** · 22 Oct 305.
+
+**Explanation:** the original window (D−14 … D−8) begins right after 20 mm of rain cleaned the air (AQI 73–100). AQI then rose every day with no rain and reached 345 the day *before* Diwali. The baseline of 140 mixes the post-rain clean spell with the build-up, so +152% mostly reflects the season, not only Diwali.
+
+Baselines by window (AQI; bulletins = local day + 1):
+
+| Year | City | During | W1 D−14…D−8 | W2 D−7…D−1 | W3 D−3…D−1 | W4 after D+7…D+13 | W5 = W2 + W4 |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 2024 | Delhi | 328 | 308 | 298 | 301 | 371 | 334 |
+| 2024 | Mumbai | 188 | 74 | 124 | 119 | 142 | 133 |
+| 2024 | Kolkata | 198 | 80 | 63 | 68 | 112 | 88 |
+| 2024 | Chennai | 106 | 64 | 123 | 140 | 62 | 93 |
+| 2024 | Bengaluru | 128 | 51 | 123 | 116 | 71 | 97 |
+| 2024 | Hyderabad | 126 | 73 | 108 | 115 | 105 | 107 |
+| 2025 | Delhi | 352 | 140 | 265 | 303 | 306 | 285 |
+| 2025 | Mumbai | 160 | 113 | 136 | 155 | 57 | 97 |
+| 2025 | Kolkata | 160 | 87 | 133 | 119 | 54 | 93 |
+| 2025 | Chennai | 106 | 81 | 69 | 89 | 82 | 75 |
+| 2025 | Bengaluru | 88 | 71 | 61 | 57 | 69 | 65 |
+| 2025 | Hyderabad | 94 | 100 | 87 | 97 | 61 | 74 |
+
+% change vs each window (spread = max − min across W1, W2, W3, W5):
+
+| Year | City | W1 | W2 | W3 | W4 | W5 | Spread (pp) |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 2024 | Delhi | +6 | +10 | +9 | −12 | −2 | 12 |
+| 2024 | Mumbai | +155 | +52 | +58 | +32 | +41 | 113 |
+| 2024 | Kolkata | +149 | +213 | +190 | +78 | +127 | 86 |
+| 2024 | Chennai | +65 | −14 | −24 | +71 | +15 | 89 |
+| 2024 | Bengaluru | +152 | +4 | +10 | +81 | +32 | 148 |
+| 2024 | Hyderabad | +73 | +17 | +10 | +20 | +18 | 63 |
+| 2025 | Delhi | +152 | +33 | +16 | +15 | +23 | 136 |
+| 2025 | Mumbai | +41 | +18 | +4 | +180 | +66 | 62 |
+| 2025 | Kolkata | +84 | +20 | +34 | +199 | +71 | 63 |
+| 2025 | Chennai | +31 | +54 | +20 | +31 | +41 | 35 |
+| 2025 | Bengaluru | +24 | +44 | +54 | +28 | +35 | 30 |
+| 2025 | Hyderabad | −5 | +9 | −2 | +55 | +28 | 33 |
+
+Rain in 2025 windows (mm, W1/W2/W3/W4):
+- Delhi 20/0/0/0; Mumbai 4/9/2/41; Kolkata 30/2/2/48; Chennai 35/125/49/102; Bengaluru 75/52/40/5; Hyderabad 15/5/2/46.
+- Chennai's W2 included 125 mm of rain. Weather data starts 2025-02-18, so 2024 rainfall isn't available here.
+
+**Conclusion:** percentages aren't stable (spread 12–148 points). **AQI levels are the main result.** Percentages are stored with `percent_status = pending_user_approval`, and the analysis function withholds them (`APPROVED_DIWALI_BASELINE = None`).
+
+**Recommended method (for approval):**
+1. Headline: festival-level AQI (bulletins D+1, D+2) with its category and the bulletin dates.
+2. Context: the daily AQI line from D−14 to D+3, so the build-up is visible, with rainfall shown.
+3. If a % is wanted: use **W2 (D−7 … D−1)**, labelled "vs the week before Diwali". Show it only when W1/W2/W3 agree within 25 points. Otherwise show "varies with baseline: X–Y%". Under that rule only Delhi 2024 would show a single %.
+
+## 6.3 Blank rates reconciled (check 4)
+
+Blank share of 15-min OpenCity slots, 18:00–06:00 IST, by definition:
+
+| Definition | 2024 PM2.5 | 2024 PM10 | 2025 PM2.5 | 2025 PM10 |
+|---|---:|---:|---:|---:|
+| A (pilot, Part 4): all 37 stations, Diwali night only, slots by end label | 11.9% | 20.4% | 35.2% | 45.7% |
+| B: panel stations, Diwali night only, by interval start | 8.7% | 19.2% | 33.8% | 45.1% |
+| C: all 37 stations, both festival nights, by interval start | 11.5% | 16.8% | 19.1% | 24.7% |
+| **D (final build): panel, both festival nights, by interval start** | **7.4%** | **15.1%** | **17.8%** | **23.2%** |
+
+The difference is mainly **one night vs two nights**; the second night is far less affected. Station group changes figures by 1–3 points. `delhi_pm_diwali_support.parquet` stores: Diwali night (panel), both festival nights (panel), Diwali night (all 37), baseline nights (panel), and the proven-above-999 share (2025 only). The definition is stored with the data.
+
+## 6.4 Severity levels (check 5)
+
+Per city and IST date, gap hours = city-scope gaps ∪ network-wide gaps:
+- **none:** 0 gap hours
+- **minor:** 1–2 h and the run is < 6 h
+- **moderate:** 3–7 h or a 6–23 h run
+- **severe:** ≥ 8 h, or part of a run ≥ 24 h
+
+`extent` = **network** (≥ 4 cities affected that date) or **local**. Days the archive hasn't published are `not_yet_published`.
+
+| City | none | minor | moderate | severe |
+|---|---:|---:|---:|---:|
+| Delhi | 424 | 106 | 40 | 50 |
+| Mumbai | 421 | 110 | 40 | 49 |
+| Kolkata | 418 | 109 | 40 | 53 |
+| Chennai | 410 | 105 | 43 | 62 |
+| Bengaluru | 402 | 114 | 46 | 58 |
+| Hyderabad | 409 | 108 | 47 | 56 |
+
+1,126 of 1,236 non-none city-dates are network-wide. OpenCity Delhi: 727 none, 3 minor, 1 moderate. Analysis functions report the worst severity and the severe dates within each requested period.
+
+## 6.5 Effect of fault flags (check 6)
+
+Measured on 2.13 M primary OpenAQ hours (flat-line 0.93%, isolated spike 0.054%), city-day values vs the all-hours values:
+
+| Rule | Median change | 95th percentile | City-days changed > 5% | > 10% | City values lost |
+|---|---:|---:|---:|---:|---:|
+| Drop isolated spikes | 0.0% | 3.4% | 284 | 206 | 3 |
+| Drop flat-lines | 0.0% | 14.1% | 482 | 398 | 25 |
+| Drop both | 0.0% | 21.7% | 695 | 555 | 28 |
+
+- Flat-line runs are clearly faults. 794 runs, median 15 h, longest 283 h. Two Mumbai stations (Borivali East, Colaba) were stuck at **985.0 for 283 h** at the same time, and Mulund West at 1000.0 for 209 h. Chennai's flat-line share is 3.9%, Mumbai's 2.0%.
+- Isolated spikes skew small cities by up to 67% (Chennai, 2026-04-24).
+- **Recommended and applied default rule:** exclude both flag types from analysis values; keep them stored; report `flagged_hours_excluded` with every result. The all-hours value is also kept (`city_mean_all_hours`).
+
+**New checks from check 7:**
+- **Physically impossible PM2.5 > PM10** (PM2.5 > 1.2 × PM10 and > PM10 + 20): 102 station-days are flagged and excluded from the default value. Most are at Chennai Kodungaiyur/Manali, Delhi NSIT Dwarka and Mumbai Powai/Sion. Example: Royapuram on 2025-08-17/18 had PM2.5 1,553–1,939 against PM10 44–60.
+- **Peer outlier** (> 3 × the median of other same-city stations and > +100): 192 station-days, flagged only.
+
+## 6.6 Cross-check against CPCB bulletins (check 7)
+
+Our measured PM was converted to a **PM-only AQI estimate**. This is *not* the official AQI, which uses up to 8 pollutants.
+- CPCB sub-index breakpoints were applied to 24-hour means over the same 16:00–16:00 window, with ≥ 16 valid hours per station and flagged hours excluded.
+- Station value = max of the PM2.5 and PM10 sub-indices; city value = mean over stations (≥ 3).
+- Compared on 3,260 bulletin days where PM is a prominent pollutant (96.8% of all days), 2025-02-19 → 2026-10-25.
+
+| City | Days | Correlation | Median (ours − official) | Within ±20% | Same category | Ours > official + 20% | Ours < official − 20% |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Delhi | 516 | 0.987 | +1.4 | 97.5% | 89.1% | 1.2% | 1.4% |
+| Kolkata | 520 | 0.988 | −2.8 | 90.0% | 88.3% | 1.5% | 8.5% |
+| Mumbai | 564 | 0.982 | −2.9 | 93.1% | 84.9% | 2.5% | 4.4% |
+| Hyderabad | 565 | 0.901 | +1.8 | 94.7% | 88.5% | 4.2% | 1.1% |
+| Bengaluru | 545 | 0.924 | −5.9 | 75.8% | 73.4% | 1.8% | **22.4%** |
+| Chennai | 550 | 0.758 | −3.2 | 76.5% | 80.5% | **10.0%** | 13.5% |
+
+Sample days (official AQI / our PM-only estimate):
+
+| City | 2025-06-15 | 2025-10-21 | 2025-12-15 | 2026-03-15 | 2026-09-15 |
+|---|---|---|---|---|---|
+| Delhi | 140 / 136 | 351 / **481** | 427 / 441 | 175 / 167 | 98 / 100 |
+| Mumbai | 53 / 50 | 211 / 241 | 122 / 117 | 91 / 96 | 44 / 38 |
+| Kolkata | 46 / 44 | 174 / 180 | 142 / 135 | 57 / 58 | 65 / 57 |
+| Chennai | 53 / 41 | 142 / **326** | 108 / 105 | 60 / 54 | 90 / 59 |
+| Bengaluru | 48 / 30 | 97 / 68 | 103 / 108 | 111 / 112 | 68 / 59 |
+| Hyderabad | 80 / 65 | 116 / 107 | 104 / 113 | 73 / 78 | 52 / 53 |
+
+**Mismatches explained:**
+- **Chennai:** most high mismatches (25 days > +50%) came from **Royapuram**, which reported impossible PM2.5 (1,500–1,900 with PM10 44–73). These station-days are now excluded by the PM2.5 > PM10 rule.
+- **Bengaluru:** ours is lower on 22% of days. We use 6 primary stations within 25 km; CPCB's bulletin uses 7–14, including stations our rules exclude (outside 25 km, or partial).
+- **Delhi on Diwali 2025-10-21:** ours 481 vs official 351. 268 of 1,438 valid hours were > 999. Removing them gives 422 from 24 stations. **The 999 limit explains part of the gap, not all of it** (unproven; CPCB's method on extreme days isn't documented here).
+- These are **different metrics and station sets**. The cross-check validates our data's level and timing; it doesn't make ours official.
+
+## 6.7 Weather (Part 2)
+
+- **Source:** Open-Meteo Historical Weather API (`archive-api.open-meteo.com/v1/archive`), reanalysis = **modelled**.
+- **Request:** one per city (6 in total), daily variables, `timezone=Asia/Kolkata` (`utc_offset_seconds` = 19800, checked on parse).
+- **Coverage:** **2025-02-18 → 2026-11-03, 624 days × 6 cities, 0 missing values.** The last 7 days are flagged `preliminary`. The grid cell used is stored (for example, Delhi 28.576, 77.187).
+- **Variables and units** (checked against the API's `daily_units`): `temperature_mean_c` (°C), `relative_humidity_mean_pct` (%), `wind_speed_mean_kmh` (km/h), `precipitation_sum_mm` (mm).
+- **Limits** (open-meteo.com/en/terms, read 2026-11-04): 600/min, 5,000/h, 10,000/day, 300,000/month; **free tier is non-commercial only**. Header seen: `x-ratelimit-limit: 600`; a long request costs about 11.4 calls.
+- **Attribution (CC BY 4.0):** "Weather data by Open-Meteo.com" with a link, plus Copernicus C3S for the reanalysis. Stored in every row and in the app manifest.
+- Kept in a separate table (`weather_daily.parquet`) and never merged into pollution tables.
+
+## 6.8 App tables and sizes (check 8)
+
+`python scripts/derive_app_tables.py` reads `data/processed` and writes `data/app/` (no downloads, about 11 s).
+
+| Table | Rows | Size |
+|---|---:|---:|
+| station_daily | 158,120 | 2.41 MB |
+| city_daily | 6,816 | 304 KB |
+| city_daily_aqi (6 cities, 2015 → 2026-10-25) | 24,026 | 239 KB |
+| weather_daily | 3,744 | 26 KB |
+| stations | 204 | 18 KB |
+| date_quality (severity) | 4,469 | 14 KB |
+| network_gaps | 1,415 | 14 KB |
+| diwali_aqi_levels / diwali_aqi_baselines | 324 / 72 | 11 / 10 KB |
+| delhi_pm_diwali_support / diwali_pm_status / data_status_reasons | 4 / 30 / 5 | 12 / 7 / 4 KB |
+| **Total deployed** | | **3.07 MB** |
+
+**Not deployed:** `data/processed/station_hourly.parquet` (16.8 MB), the other processed tables (rebuild source, about 19 MB in git) and `data/raw/` (808 MB, gitignored).
+
+## 6.9 Analysis functions (Part 3)
+
+`backend/analysis/` reads `data/app` through DuckDB. Every function returns `AnalysisResult` with: kind, title, metric, units, data_type, source, date_range, stations, coverage, quality (severity counts, worst severity, severe dates), method, warnings, values and a typed `ChartSpec`. The output is JSON-safe.
+
+| Function | What it does |
+|---|---|
+| `city_trend(city, pollutant, start, end, freq D/W/M)` | Period means of valid city-days, coverage per period, highest/lowest day |
+| `compare_cities(cities, pollutant, start, end)` | Ranks on **common days only** (every city valid); all-valid-day means for context |
+| `diwali_aqi(city, years)` | **Main Diwali result:** festival AQI level and category, bulletin dates, D−14…D+3 line, baseline candidates; % withheld |
+| `delhi_pm_context(year)` | Supporting Delhi PM (panel, lower bounds) with blank rates and warning; never a % |
+| `unusual_days(city, pollutant, start, end, window=15, threshold=3)` | Rolling median of the surrounding 15 days (excluding the day); robust scale 1.4826 × MAD; method explained |
+| `weather_relationship(city, pollutant, variable, start, end)` | Spearman ρ, quartile or dry/rain groups, association-only statement; severe and preliminary days excluded |
+| `coverage_summary(city, start, end)` | Stations by tier, valid shares, exclusions, flags, severity; calendar chart |
+| `calendar_quality_chart`, `aqi_calendar_chart` | Calendar heatmap specs (AQI uses CPCB category colours and Diwali bands) |
+| `aqi.sub_index`, `aqi.category` | CPCB PM sub-index (cross-check only) and AQI category |
+
+Sample real results (2025-03-01 → 2026-10-30):
+- Delhi PM2.5 vs wind speed: ρ = −0.24 (weak), 543 days. Mean PM2.5 is 102.9 in the calmest quarter vs 58.2 in the windiest.
+- Mumbai PM10 vs rain: ρ = −0.72 (strong), 516 days. Dry days 99.8 vs rain days 51.8 µg/m³.
+- These are associations, not causes.
+
+## 6.10 Tests
+
+`pytest`: **77 passed**.
+- Pipeline: 37 tests (transform, quality, build).
+- Weather: 3 tests (IST, units, fail-loud, preliminary flag, real completeness).
+- Derive: 15 tests (severity, flag rule, impossible PM2.5 > PM10, peer outlier, Diwali tables, blank-rate definition).
+- Analysis: 22 tests. Synthetic: envelope, JSON, common days, injected spike/dip, flat series, association sign and wording, severe-day exclusion, validation, CPCB sub-index, categories. Real data: Diwali levels equal the bulletins, Delhi PM never has a %, the trend equals an independent pandas recomputation, compare and coverage are consistent, Mumbai rain groups, unusual-days results are reproducible.

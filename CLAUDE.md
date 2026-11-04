@@ -125,6 +125,24 @@ Diwali dates live in a verified config file:
 - Track hourly OpenAQ API use (only the per-minute window is in headers); show outages as "no data".
 - Exclude provider "N/A" locations unless verified. Keep low-cost sensors in a separate tier.
 
+### Analysis rules (decided 2026-11-04)
+
+- **Diwali: AQI LEVELS are the main result** (festival bulletins D+1, D+2). Percentage changes are
+  WITHHELD (`APPROVED_DIWALI_BASELINE = None` in backend/analysis/functions.py) until the user
+  approves a baseline window; they swing 12-148 points with the window.
+- Default analysis value excludes flat-line hours (>= 6 identical h), isolated-spike hours and
+  physically impossible station-days (PM2.5 > 1.2 x PM10 and > PM10 + 20). Data stays stored;
+  every result reports what was excluded. Peer-outlier station-days are flagged only.
+- Data quality is a severity level per city-date (none/minor/moderate/severe; network/local),
+  not a single flag. Severe days are excluded from weather associations.
+- Weather (Open-Meteo reanalysis) is MODELLED, kept in its own table, IST dates, CC BY 4.0 with
+  attribution "Weather data by Open-Meteo.com" + Copernicus C3S. Free tier is non-commercial.
+  Weather results are associations, never causes.
+- Every analysis result carries data type, source, dates, stations, coverage, quality,
+  warnings, units, method and a chart spec (backend/analysis/result.py).
+- Deploy ONLY `data/app/` (about 3 MB). `data/processed/` is the rebuild source; `data/raw/` is never
+  committed or deployed.
+
 ## 5. Agent rules
 
 Real agent loop: plan → call tool → inspect result → continue if needed → verify → answer.
