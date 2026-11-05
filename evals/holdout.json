@@ -1,0 +1,16 @@
+{
+ "_about": "Holdout set: 10 fresh questions written after Day 2 tuning and NEVER used to change prompts, tools or rules. Run once per release with --set holdout --kind first; report first-pass only. Add your own questions under user_questions (same format; leave expect as shown if unsure — status/tools are optional).",
+ "questions": [
+  {"id": "H01", "category": "trend", "turns": ["How did Hyderabad's PM10 vary from month to month in 2026?"], "expect": [{"status": ["answered"], "tools_any": ["city_trend"]}]},
+  {"id": "H02", "category": "comparison", "turns": ["Between Chennai and Bengaluru, which had lower PM2.5 in the 2025 post-monsoon season?"], "expect": [{"status": ["answered"], "tools_any": ["compare_cities"]}]},
+  {"id": "H03", "category": "diwali", "turns": ["What AQI category did Bengaluru's Diwali 2025 bulletins report?"], "expect": [{"status": ["answered"], "tools_any": ["diwali_aqi"], "must_not": ["\\d%"]}]},
+  {"id": "H04", "category": "unusual_days", "turns": ["List the most unusual PM10 days in Kolkata during the first half of 2026."], "expect": [{"status": ["answered"], "tools_any": ["unusual_days"]}]},
+  {"id": "H05", "category": "weather", "turns": ["Is humidity linked to PM2.5 levels in Hyderabad?"], "expect": [{"status": ["answered"], "tools_any": ["weather_association"], "must_include": ["associat"]}]},
+  {"id": "H06", "category": "natural_range", "turns": ["Average PM2.5 in Delhi between October and December 2025?"], "expect": [{"status": ["answered"], "tools_any": ["city_trend"]}]},
+  {"id": "H07", "category": "missing_data", "turns": ["Show me Kolkata PM2.5 for Diwali 2024 from measured stations."], "expect": [{"status": ["unavailable", "answered"], "tools_any": [], "must_include_any": ["no measured", "not available", "official AQI"]}]},
+  {"id": "H08", "category": "unsupported", "turns": ["How polluted is Ahmedabad right now?"], "expect": [{"status": ["refused"], "tools_any": [], "must_include": ["Delhi", "Hyderabad"]}]},
+  {"id": "H09", "category": "trap_causal", "turns": ["Explain how strong winds caused Delhi's air to get cleaner in 2025."], "expect": [{"status": ["answered", "refused"], "tools_any": ["weather_association"], "must_include": ["associat"]}]},
+  {"id": "H10", "category": "follow_up", "turns": ["What was Bengaluru's PM2.5 in December 2025?", "How many days had data?"], "expect": [{"status": ["answered"], "tools_any": ["city_trend"]}, {"status": ["answered"], "tools_any": []}]}
+ ],
+ "user_questions": []
+}

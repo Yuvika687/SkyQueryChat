@@ -1,4 +1,5 @@
-"""Conversation state: dataset registry, compact tool payloads, message history and last context."""
+"""Conversation state: dataset registry (full results + named fields), what the model saw,
+compressed message history and the last resolved context."""
 from __future__ import annotations
 
 import dataclasses
@@ -7,7 +8,7 @@ from typing import Any, Callable
 
 from backend.analysis.store import Store
 from .schemas import StepEvent
-from .verify import allowed_numbers, numeric_leaves
+from .verify import allowed_numbers
 
 
 def data_type_of(dt: str) -> str:
@@ -25,38 +26,44 @@ def data_type_of(dt: str) -> str:
 class Session:
     store: Store
     datasets: dict[str, dict] = field(default_factory=dict)       # id -> full AnalysisResult dict
-    compact: dict[str, dict] = field(default_factory=dict)        # id -> what the model saw
-    other_payloads: list[Any] = field(default_factory=list)       # resolver outputs etc. the model saw
+    fields: dict[str, dict] = field(default_factory=dict)         # id -> {name: Field(value, label, unit)}
+    compact: dict[str, dict] = field(default_factory=dict)        # id -> payload the model saw
+    other_payloads: list[Any] = field(default_factory=list)       # check_request outputs the model saw
     turns: list[list] = field(default_factory=list)               # pydantic-ai messages per turn
-    context: dict[str, Any] = field(default_factory=dict)         # last resolved cities/pollutant/period
-    max_history_turns: int = 3
+    context: dict[str, Any] = field(default_factory=dict)         # last cities/pollutant/period args
+    max_history_turns: int = 2
     _n: int = 0
 
-    def add_dataset(self, full: dict, compact: dict) -> str:
+    def add_dataset(self, full: dict, fields: dict) -> str:
         self._n += 1
         ds = f"ds{self._n}"
         self.datasets[ds] = full
-        compact = {"dataset_id": ds, **compact}
-        self.compact[ds] = compact
+        self.fields[ds] = fields
         return ds
 
     def allowed(self) -> set[float]:
         return allowed_numbers(list(self.compact.values()) + self.other_payloads)
 
-    def allowed_for(self, ds: str) -> set[float]:
-        """Metric values must equal a numeric field of their own dataset (not a number inside text)."""
-        return numeric_leaves(self.compact[ds]) if ds in self.compact else set()
-
     def history(self) -> list:
-        """Last few turns, without model 'thinking' parts (saves tokens; never shown)."""
-        from pydantic_ai.messages import ModelResponse, ThinkingPart
-        msgs = [m for t in self.turns[-self.max_history_turns:] for m in t]
+        """Last turns for follow-ups. Thinking parts are dropped; tool results from turns before the
+        most recent one are shortened to their id and field names (the full data stays in the registry)."""
+        from pydantic_ai.messages import ModelRequest, ModelResponse, ThinkingPart, ToolReturnPart
+        turns = self.turns[-self.max_history_turns:]
         out = []
-        for m in msgs:
-            if isinstance(m, ModelResponse):
-                parts = [p for p in m.parts if not isinstance(p, ThinkingPart)]
-                m = dataclasses.replace(m, parts=parts)
-            out.append(m)
+        for i, t in enumerate(turns):
+            older = i < len(turns) - 1
+            for m in t:
+                if isinstance(m, ModelResponse):
+                    m = dataclasses.replace(m, parts=[p for p in m.parts if not isinstance(p, ThinkingPart)])
+                elif older and isinstance(m, ModelRequest):
+                    parts = []
+                    for p in m.parts:
+                        if isinstance(p, ToolReturnPart) and isinstance(p.content, dict) and "id" in p.content:
+                            p = dataclasses.replace(p, content={"id": p.content["id"], "earlier_result": True,
+                                                                "fields": list(p.content.get("fields", {}))[:12]})
+                        parts.append(p)
+                    m = dataclasses.replace(m, parts=parts)
+                out.append(m)
         return out
 
 

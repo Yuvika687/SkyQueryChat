@@ -37,6 +37,7 @@
  "limits": {
   "request_limit": 10,
   "output_retries": 3,
-  "max_history_turns": 3
+  "max_history_turns": 2,
+  "max_tokens_per_question": 16000
  }
 }

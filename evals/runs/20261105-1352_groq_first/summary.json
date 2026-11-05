@@ -1,0 +1,57 @@
+{
+ "overall": {
+  "turns": 1,
+  "pass": 0,
+  "pass_pct": 0.0,
+  "tool_choice_pct": 0.0,
+  "tool_choice_n": 1,
+  "numbers_traceable_pct": null,
+  "answered": 0,
+  "reference_checks_pct": 0.0,
+  "reference_checks_n": 1,
+  "reference_failures": [
+   "mumbai_pm10_nov2025"
+  ],
+  "refusals_correct_pct": null,
+  "refusals_n": 0,
+  "errors": [],
+  "failed": [
+   "G01.1"
+  ],
+  "verifier_retries": 0,
+  "tokens_median": 2610,
+  "tokens_mean": 2610,
+  "tokens_max": 2610,
+  "tokens_total": 2610
+ },
+ "by_model": {
+  "openai/gpt-oss-120b": {
+   "turns": 1,
+   "pass": 0,
+   "pass_pct": 0.0,
+   "tool_choice_pct": 0.0,
+   "tool_choice_n": 1,
+   "numbers_traceable_pct": null,
+   "answered": 0,
+   "reference_checks_pct": 0.0,
+   "reference_checks_n": 1,
+   "reference_failures": [
+    "mumbai_pm10_nov2025"
+   ],
+   "refusals_correct_pct": null,
+   "refusals_n": 0,
+   "errors": [],
+   "failed": [
+    "G01.1"
+   ],
+   "verifier_retries": 0,
+   "tokens_median": 2610,
+   "tokens_mean": 2610,
+   "tokens_max": 2610,
+   "tokens_total": 2610
+  }
+ },
+ "by_category": {
+  "trend": "0/1"
+ }
+}

@@ -74,14 +74,89 @@ def _month_range(y: int, m: int) -> tuple[date, date]:
     return date(y, m, 1), date(y, m, calendar.monthrange(y, m)[1])
 
 
+MON = r"(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+SEP = r"\s*(?:to|until|till|through|thru|and|-|–|—)\s*"
+
+
+def _mon(t: str) -> int:
+    return MONTHS[t[:3]] if t[:3] in MONTHS else MONTHS[t]
+
+
+def _latest_year_for(month: int, anchor: date) -> int:
+    """Most recent year in which `month` has started on or before the anchor date."""
+    return anchor.year if date(anchor.year, month, 1) <= anchor else anchor.year - 1
+
+
+def _natural_range(t: str, anchor: date) -> tuple[date, date, str | None] | None:
+    """Ranges like 'March to June 2026', 'between Oct 2025 and Jan 2026', '15 Oct to 5 Nov 2025',
+    '1-15 November 2025', 'since August 2025', 'until March 2026', 'Q1 2026', 'first half of 2026',
+    'March to June' (year inferred from the latest data)."""
+    # month (year) to month year
+    m = re.fullmatch(rf"{MON}\.?(?:\s+(\d{{4}}))?{SEP}{MON}\.?(?:\s+(\d{{4}}))?", t)
+    if m:
+        m1, y1, m2, y2 = _mon(m.group(1)), m.group(2), _mon(m.group(3)), m.group(4)
+        note = None
+        if y2 is None and y1 is None:
+            y2 = _latest_year_for(m2, anchor)
+            note = f"year not given; taken as the latest {calendar.month_name[m1]}–{calendar.month_name[m2]} in the data"
+        y2 = int(y2) if y2 else int(y1) + (1 if m2 < m1 else 0)
+        y1 = int(y1) if y1 else (y2 - 1 if m1 > m2 else y2)
+        return _month_range(y1, m1)[0], _month_range(y2, m2)[1], note
+    # day month (year) to day month year
+    m = re.fullmatch(rf"(\d{{1,2}})\s+{MON}\.?(?:\s+(\d{{4}}))?{SEP}(\d{{1,2}})\s+{MON}\.?\s+(\d{{4}})", t)
+    if m:
+        y2 = int(m.group(6))
+        m1, m2 = _mon(m.group(2)), _mon(m.group(5))
+        y1 = int(m.group(3)) if m.group(3) else (y2 - 1 if m1 > m2 else y2)
+        return date(y1, m1, int(m.group(1))), date(y2, m2, int(m.group(4))), None
+    # 1-15 November 2025
+    m = re.fullmatch(rf"(\d{{1,2}}){SEP}(\d{{1,2}})\s+{MON}\.?\s+(\d{{4}})", t)
+    if m:
+        mo, y = _mon(m.group(3)), int(m.group(4))
+        return date(y, mo, int(m.group(1))), date(y, mo, int(m.group(2))), None
+    # since / from <month> <year>
+    m = re.fullmatch(rf"(?:since|from|after)\s+{MON}\.?\s+(\d{{4}})", t)
+    if m:
+        return _month_range(int(m.group(2)), _mon(m.group(1)))[0], anchor, f"up to the latest data ({anchor})"
+    m = re.fullmatch(rf"(?:until|till|up to|before|through)\s+{MON}\.?\s+(\d{{4}})", t)
+    if m:
+        return DATA["measured_start"], _month_range(int(m.group(2)), _mon(m.group(1)))[1], "from the start of the data"
+    m = re.fullmatch(r"q([1-4])\s+(\d{4})", t)
+    if m:
+        q, y = int(m.group(1)), int(m.group(2))
+        return _month_range(y, 3 * q - 2)[0], _month_range(y, 3 * q)[1], None
+    m = re.fullmatch(r"(first|second) half(?: of)? (\d{4})", t)
+    if m:
+        y = int(m.group(2))
+        return (date(y, 1, 1), date(y, 6, 30), None) if m.group(1) == "first" else (date(y, 7, 1), date(y, 12, 31), None)
+    # month without year
+    m = re.fullmatch(rf"{MON}\.?", t)
+    if m:
+        mo = _mon(m.group(1))
+        y = _latest_year_for(mo, anchor)
+        a, b = _month_range(y, mo)
+        return a, b, f"year not given; taken as {calendar.month_name[mo]} {y} (latest in the data)"
+    return None
+
+
 def resolve_period(text: str | None, anchor: date | None = None) -> dict:
     """Parse a period phrase. Relative phrases ('last month') are anchored to the latest measured
     data date, not today, and the answer says so."""
     if not text:
         return {"period": None}
     anchor = anchor or DATA["measured_end"]
-    t = text.lower().strip()
+    t = text.lower().strip().rstrip("?.!")
     t = re.sub(r"\s+", " ", t)
+    t = re.sub(r"^(?:between|during|in|over|for|the)\s+", "", t)
+    t = re.sub(r"\bsept\b", "sep", t)
+    t = re.sub(r"^(\d{4})-(\d{2})$", lambda m: f"{calendar.month_abbr[int(m.group(2))].lower()} {m.group(1)}"
+               if 1 <= int(m.group(2)) <= 12 else m.group(0), t)                      # 2025-11
+    t = re.sub(r"^(\d{1,2})/(\d{4})$", lambda m: f"{calendar.month_abbr[int(m.group(1))].lower()} {m.group(2)}"
+               if 1 <= int(m.group(1)) <= 12 else m.group(0), t)                      # 11/2025
+    t = re.sub(r"^([a-z]+)[-,]\s*(\d{4})$", r"\1 \2", t)                              # Nov-2025, November, 2025
+    t = re.sub(r"^(\d{4}-\d{2}-\d{2})\s*/\s*(\d{4}-\d{2}-\d{2})$", r"\1 to \2", t)   # ISO interval
+    if t.startswith("from ") and re.search(r"\s(?:to|until|till|through)\s|[-–—]", t):
+        t = t[5:]
     start = end = None
     note = None
     m = re.fullmatch(r"(\d{4}-\d{2}-\d{2})\s*(?:to|until|-|–|and|through)\s*(\d{4}-\d{2}-\d{2})", t)
@@ -118,6 +193,8 @@ def resolve_period(text: str | None, anchor: date | None = None) -> dict:
         start, end = date(anchor.year - 1, 1, 1), date(anchor.year - 1, 12, 31)
     elif t in ("this year", "so far this year"):
         start, end = date(anchor.year, 1, 1), anchor
+    elif (nr := _natural_range(t, anchor)) is not None:
+        start, end, note = nr
     elif t in ("all", "all data", "entire period", "whole period", "all available data", "overall"):
         start, end = DATA["measured_start"], DATA["measured_end"]
     if start is None:

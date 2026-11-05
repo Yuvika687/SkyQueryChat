@@ -1,0 +1,13 @@
+{
+ "set": "main",
+ "kind": "first",
+ "started": "2026-11-05 13:48",
+ "model_chain": [
+  "google:gemini-3.5-flash-lite",
+  "google:gemini-3.8-flash"
+ ],
+ "commit": "f89f15a",
+ "ids": "all",
+ "complete": true,
+ "stopped": null
+}

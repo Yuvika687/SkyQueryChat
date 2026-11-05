@@ -71,8 +71,11 @@ FALLBACK_LOG: list[dict] = []     # why the chain moved on (error class + HTTP s
 
 def _record_fallback(exc: Exception) -> bool:
     from pydantic_ai.exceptions import ModelAPIError
+    text = str(exc).lower()
     FALLBACK_LOG.append({"model": getattr(exc, "model_name", None), "error": type(exc).__name__,
-                         "status": getattr(exc, "status_code", None)})
+                         "status": getattr(exc, "status_code", None),
+                         "rate_limited": type(exc).__name__ == "ModelRateLimitError" or getattr(exc, "status_code", None) == 429,
+                         "per_day": "per day" in text or "(tpd)" in text or "per_day" in text})
     del FALLBACK_LOG[:-50]
     return isinstance(exc, ModelAPIError)
 
@@ -84,7 +87,8 @@ def build_model(chain: list[ModelEntry] | None = None):
     models = [m for m in (_build_one(e) for e in chain) if m is not None]
     if not models:
         raise RuntimeError("No model available: add GROQ_API_KEY or GEMINI_API_KEY to .env")
-    return models[0] if len(models) == 1 else FallbackModel(*models, fallback_on=_record_fallback)
+    # Always wrap (even one model) so provider errors are recorded for quota handling.
+    return FallbackModel(*models, fallback_on=_record_fallback)
 
 
 def setup_network() -> None:

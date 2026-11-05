@@ -1,0 +1,7734 @@
+{
+ "answers": [
+  {
+   "question": "How bad was Delhi's air on Diwali 2025?",
+   "final": {
+    "status": "answered",
+    "answer": "On Diwali 2025 in Delhi, the official CPCB AQI (an index) was 352 in the Very Poor category, with bulletin values of 351 on 2025-10-21 and 353 on 2025-10-22. Data type: official AQI.",
+    "explanation": "Official CPCB AQI (index, not a concentration): Diwali air quality in Delhi (official AQI), 2025-10-06 to 2025-10-24. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
+    "cards": [
+     {
+      "label": "Delhi official AQI, Diwali 2025 (mean of festival bulletins)",
+      "value": 352.0,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2025_festival_aqi",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "AQI was already rising in the days before Diwali, so the festival level cannot be attributed to Diwali alone."
+      ]
+     },
+     {
+      "label": "Delhi official AQI, bulletin 2025-10-21 (2025-10-20 16:00 to 2025-10-21 16:00 IST)",
+      "value": 351.0,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2025_bulletin_2025-10-21",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "AQI was already rising in the days before Diwali, so the festival level cannot be attributed to Diwali alone."
+      ]
+     },
+     {
+      "label": "Delhi official AQI, bulletin 2025-10-22 (2025-10-21 16:00 to 2025-10-22 16:00 IST)",
+      "value": 353.0,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2025_bulletin_2025-10-22",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "AQI was already rising in the days before Diwali, so the festival level cannot be attributed to Diwali alone."
+      ]
+     }
+    ],
+    "chart": {
+     "type": "line",
+     "title": "Delhi: official CPCB AQI by bulletin date around Diwali",
+     "x": {
+      "field": "x",
+      "label": "Bulletin day relative to Diwali (bulletin D+1 reports Diwali evening; each bulletin = 24 h to 4 PM IST)",
+      "tooltip_fields": [
+       "bulletin_date",
+       "reporting_period",
+       "category"
+      ]
+     },
+     "y": {
+      "field": "aqi",
+      "label": "AQI (index)"
+     },
+     "series": [
+      {
+       "name": "Diwali 2025",
+       "data": [
+        {
+         "x": -13,
+         "aqi": 73.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2025-10-07",
+         "reporting_period": "2025-10-06 16:00 to 2025-10-07 16:00 IST"
+        },
+        {
+         "x": -12,
+         "aqi": 81.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2025-10-08",
+         "reporting_period": "2025-10-07 16:00 to 2025-10-08 16:00 IST"
+        },
+        {
+         "x": -11,
+         "aqi": 100.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2025-10-09",
+         "reporting_period": "2025-10-08 16:00 to 2025-10-09 16:00 IST"
+        },
+        {
+         "x": -10,
+         "aqi": 170.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-10",
+         "reporting_period": "2025-10-09 16:00 to 2025-10-10 16:00 IST"
+        },
+        {
+         "x": -9,
+         "aqi": 199.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-11",
+         "reporting_period": "2025-10-10 16:00 to 2025-10-11 16:00 IST"
+        },
+        {
+         "x": -8,
+         "aqi": 167.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-12",
+         "reporting_period": "2025-10-11 16:00 to 2025-10-12 16:00 IST"
+        },
+        {
+         "x": -7,
+         "aqi": 189.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-13",
+         "reporting_period": "2025-10-12 16:00 to 2025-10-13 16:00 IST"
+        },
+        {
+         "x": -6,
+         "aqi": 211.0,
+         "category": "Poor",
+         "bulletin_date": "2025-10-14",
+         "reporting_period": "2025-10-13 16:00 to 2025-10-14 16:00 IST"
+        },
+        {
+         "x": -5,
+         "aqi": 233.0,
+         "category": "Poor",
+         "bulletin_date": "2025-10-15",
+         "reporting_period": "2025-10-14 16:00 to 2025-10-15 16:00 IST"
+        },
+        {
+         "x": -4,
+         "aqi": 245.0,
+         "category": "Poor",
+         "bulletin_date": "2025-10-16",
+         "reporting_period": "2025-10-15 16:00 to 2025-10-16 16:00 IST"
+        },
+        {
+         "x": -3,
+         "aqi": 254.0,
+         "category": "Poor",
+         "bulletin_date": "2025-10-17",
+         "reporting_period": "2025-10-16 16:00 to 2025-10-17 16:00 IST"
+        },
+        {
+         "x": -2,
+         "aqi": 268.0,
+         "category": "Poor",
+         "bulletin_date": "2025-10-18",
+         "reporting_period": "2025-10-17 16:00 to 2025-10-18 16:00 IST"
+        },
+        {
+         "x": -1,
+         "aqi": 296.0,
+         "category": "Poor",
+         "bulletin_date": "2025-10-19",
+         "reporting_period": "2025-10-18 16:00 to 2025-10-19 16:00 IST"
+        },
+        {
+         "x": 0,
+         "aqi": 345.0,
+         "category": "Very Poor",
+         "bulletin_date": "2025-10-20",
+         "reporting_period": "2025-10-19 16:00 to 2025-10-20 16:00 IST"
+        },
+        {
+         "x": 1,
+         "aqi": 351.0,
+         "category": "Very Poor",
+         "bulletin_date": "2025-10-21",
+         "reporting_period": "2025-10-20 16:00 to 2025-10-21 16:00 IST"
+        },
+        {
+         "x": 2,
+         "aqi": 353.0,
+         "category": "Very Poor",
+         "bulletin_date": "2025-10-22",
+         "reporting_period": "2025-10-21 16:00 to 2025-10-22 16:00 IST"
+        },
+        {
+         "x": 3,
+         "aqi": 305.0,
+         "category": "Very Poor",
+         "bulletin_date": "2025-10-23",
+         "reporting_period": "2025-10-22 16:00 to 2025-10-23 16:00 IST"
+        },
+        {
+         "x": 4,
+         "aqi": 275.0,
+         "category": "Poor",
+         "bulletin_date": "2025-10-24",
+         "reporting_period": "2025-10-23 16:00 to 2025-10-24 16:00 IST"
+        }
+       ]
+      }
+     ],
+     "units": "index (0-500)",
+     "bands": [
+      {
+       "label": "Diwali 2025 festival bulletins (2025-10-21, 2025-10-22)",
+       "start": 1,
+       "end": 2
+      }
+     ],
+     "colour_scale": "cpcb_aqi",
+     "notes": [
+      "Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on the bulletin date.",
+      "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF9900', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"
+     ]
+    },
+    "sources": [
+     {
+      "dataset_id": "ds1",
+      "title": "Diwali air quality in Delhi (official AQI)",
+      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "data_type": "official_aqi",
+      "date_range": {
+       "start": "2025-10-06",
+       "end": "2025-10-24"
+      }
+     }
+    ],
+    "coverage": {
+     "ds1": {
+      "years_available": [
+       2025
+      ]
+     }
+    },
+    "warnings": [
+     "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+     "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated D+1 reports Diwali evening.",
+     "City AQI is CPCB's average over whichever stations reported; the station mix changes daily.",
+     "Percentage changes are withheld: they vary strongly with the baseline window (see baseline_candidates).",
+     "AQI was already rising in the days before Diwali, so the festival level cannot be attributed to Diwali alone.",
+     "Do not read this as Diwali causing the change: AQI often rises through October and November for seasonal reasons, and other weather and emission changes happen at the same time."
+    ],
+    "data_types": [
+     "official_aqi"
+    ],
+    "clarifying_question": null,
+    "verification": {
+     "passed": true,
+     "retries": 0,
+     "numbers_checked": 4
+    },
+    "model": "gemini-3.5-flash-lite",
+    "usage": {
+     "requests": 2,
+     "input_tokens": 3171,
+     "output_tokens": 194
+    }
+   },
+   "steps": [
+    {
+     "seq": 3,
+     "type": "plan",
+     "title": "Plan: diwali_aqi",
+     "detail": {
+      "steps": [
+       {
+        "tool": "diwali_aqi",
+        "args": {
+         "years": [
+          2025
+         ],
+         "city": "Delhi"
+        }
+       }
+      ]
+     },
+     "ts": "2026-11-05T08:54:17.575+00:00"
+    },
+    {
+     "seq": 4,
+     "type": "tool_call",
+     "title": "diwali_aqi",
+     "detail": {
+      "args": {
+       "city": "Delhi",
+       "years": [
+        2025
+       ],
+       "percent": false
+      }
+     },
+     "ts": "2026-11-05T08:54:17.576+00:00"
+    },
+    {
+     "seq": 5,
+     "type": "tool_result",
+     "title": "diwali_aqi: Diwali air quality in Delhi (official AQI)",
+     "detail": {
+      "dataset_id": "ds1",
+      "data_type": "official_aqi",
+      "fields": 6,
+      "warnings": 6
+     },
+     "ts": "2026-11-05T08:54:17.591+00:00"
+    },
+    {
+     "seq": 7,
+     "type": "verification",
+     "title": "passed",
+     "detail": {
+      "checked_numbers": 4,
+      "problems": 0
+     },
+     "ts": "2026-11-05T08:54:19.310+00:00"
+    }
+   ],
+   "context": {
+    "city": "Delhi",
+    "years": [
+     2025
+    ]
+   },
+   "built": "2026-11-05 14:24",
+   "model": "gemini-3.5-flash-lite"
+  },
+  {
+   "question": "Which of the six cities had the highest PM2.5 in winter 2025?",
+   "final": {
+    "status": "answered",
+    "answer": "Using measured PM (µg/m³) for winter 2025 (default pollutant PM2.5), Delhi had the highest PM2.5 with a mean of 164.4 µg/m³ on common valid days.",
+    "explanation": "Measured PM: PM2.5 across Delhi, Mumbai, Kolkata, Chennai, Bengaluru, Hyderabad, 2025-12-01 to 2026-02-28. Stations: Delhi 37, Mumbai 22, Kolkata 7, Chennai 6, Bengaluru 6, Hyderabad 9. 67 days have data for every city. Method: Ranking uses only days on which every city has a valid city value, so cities are compared over the same dates.",
+    "cards": [
+     {
+      "label": "Delhi mean PM2.5 (common days), 2025-12-01 to 2026-02-28",
+      "value": 164.4,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "Delhi_mean",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "20 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable.",
+       "Mumbai: On 1 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2025-12-27 (+41%)); treat those days with caution."
+      ]
+     },
+     {
+      "label": "Delhi rank (1 = highest PM2.5)",
+      "value": 1.0,
+      "unit": "",
+      "dataset_id": "ds1",
+      "field": "Delhi_rank",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "20 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable.",
+       "Mumbai: On 1 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2025-12-27 (+41%)); treat those days with caution."
+      ]
+     }
+    ],
+    "chart": {
+     "type": "bar",
+     "title": "PM2.5: mean on common days",
+     "x": {
+      "field": "city",
+      "type": "category"
+     },
+     "y": {
+      "field": "mean_common_days",
+      "label": "PM2.5 (µg/m³)"
+     },
+     "series": [
+      {
+       "name": "mean (common days)",
+       "data": [
+        [
+         "Delhi",
+         164.4
+        ],
+        [
+         "Kolkata",
+         85.9
+        ],
+        [
+         "Chennai",
+         55.5
+        ],
+        [
+         "Mumbai",
+         51.3
+        ],
+        [
+         "Bengaluru",
+         45.4
+        ],
+        [
+         "Hyderabad",
+         40.2
+        ]
+       ]
+      }
+     ],
+     "units": "µg/m³",
+     "bands": [],
+     "colour_scale": null,
+     "notes": []
+    },
+    "sources": [
+     {
+      "dataset_id": "ds1",
+      "title": "PM2.5 across Delhi, Mumbai, Kolkata, Chennai, Bengaluru, Hyderabad",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "data_type": "measured",
+      "date_range": {
+       "start": "2025-12-01",
+       "end": "2026-02-28"
+      }
+     }
+    ],
+    "coverage": {
+     "ds1": {
+      "days_in_period": 90,
+      "common_days": 67,
+      "valid_days_by_city": {
+       "Delhi": 72,
+       "Mumbai": 72,
+       "Kolkata": 70,
+       "Chennai": 71,
+       "Bengaluru": 72,
+       "Hyderabad": 71
+      }
+     }
+    },
+    "warnings": [
+     "winter taken as December–February",
+     "20 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable.",
+     "Mumbai: On 1 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2025-12-27 (+41%)); treat those days with caution.",
+     "Chennai: On 1 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2026-02-12 (+67%)); treat those days with caution."
+    ],
+    "data_types": [
+     "measured"
+    ],
+    "clarifying_question": null,
+    "verification": {
+     "passed": true,
+     "retries": 0,
+     "numbers_checked": 2
+    },
+    "model": "gemini-3.5-flash-lite",
+    "usage": {
+     "requests": 3,
+     "input_tokens": 5155,
+     "output_tokens": 220
+    }
+   },
+   "steps": [
+    {
+     "seq": 3,
+     "type": "plan",
+     "title": "Plan: check_request",
+     "detail": {
+      "steps": [
+       {
+        "tool": "check_request",
+        "args": {
+         "pollutant": "PM2.5",
+         "cities": [
+          "Delhi",
+          "Mumbai",
+          "Kolkata",
+          "Chennai",
+          "Bengaluru",
+          "Hyderabad"
+         ],
+         "period": "winter 2025"
+        }
+       }
+      ]
+     },
+     "ts": "2026-11-05T08:54:35.852+00:00"
+    },
+    {
+     "seq": 4,
+     "type": "tool_call",
+     "title": "check_request",
+     "detail": {
+      "args": {
+       "cities": [
+        "Delhi",
+        "Mumbai",
+        "Kolkata",
+        "Chennai",
+        "Bengaluru",
+        "Hyderabad"
+       ],
+       "pollutant": "PM2.5",
+       "period": "winter 2025",
+       "event": null
+      }
+     },
+     "ts": "2026-11-05T08:54:35.853+00:00"
+    },
+    {
+     "seq": 5,
+     "type": "tool_result",
+     "title": "check_request",
+     "detail": {
+      "unsupported": []
+     },
+     "ts": "2026-11-05T08:54:35.854+00:00"
+    },
+    {
+     "seq": 7,
+     "type": "tool_call",
+     "title": "compare_cities",
+     "detail": {
+      "args": {
+       "cities": [
+        "Delhi",
+        "Mumbai",
+        "Kolkata",
+        "Chennai",
+        "Bengaluru",
+        "Hyderabad"
+       ],
+       "pollutant": "PM2.5",
+       "period": "winter 2025"
+      }
+     },
+     "ts": "2026-11-05T08:54:36.982+00:00"
+    },
+    {
+     "seq": 8,
+     "type": "tool_result",
+     "title": "compare_cities: PM2.5 across Delhi, Mumbai, Kolkata, Chennai, Bengaluru, Hyderabad",
+     "detail": {
+      "dataset_id": "ds1",
+      "data_type": "measured",
+      "fields": 19,
+      "warnings": 4
+     },
+     "ts": "2026-11-05T08:54:37.041+00:00"
+    },
+    {
+     "seq": 10,
+     "type": "verification",
+     "title": "passed",
+     "detail": {
+      "checked_numbers": 2,
+      "problems": 0
+     },
+     "ts": "2026-11-05T08:54:44.649+00:00"
+    }
+   ],
+   "context": {
+    "cities": [
+     "Delhi",
+     "Mumbai",
+     "Kolkata",
+     "Chennai",
+     "Bengaluru",
+     "Hyderabad"
+    ],
+    "pollutant": "PM2.5",
+    "period": "winter 2025"
+   },
+   "built": "2026-11-05 14:24",
+   "model": "gemini-3.5-flash-lite"
+  },
+  {
+   "question": "Is rain associated with lower PM10 in Mumbai?",
+   "final": {
+    "status": "answered",
+    "answer": "Using measured PM10 (µg/m³) and modelled weather for Mumbai across all data (default period: 2025-02-18..2026-10-30), days with more rainfall tended to have lower PM10 (strong association, Spearman rho = -0.73, 526 days). This is an association, not a cause.",
+    "explanation": "Measured PM + modelled weather: PM10 and rainfall in Mumbai, 2025-02-18 to 2026-10-30. 22 primary stations (primary). 526 matched days. Method: Spearman rank correlation between daily city PM and the daily weather value; days grouped into quartiles (or dry/rain) to show average PM per group.",
+    "cards": [
+     {
+      "label": "Mumbai mean PM10, rain (>= 1 mm)",
+      "value": 51.8,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "rain_mean",
+      "data_type": "mixed",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient); Weather data by Open-Meteo.com (https://open-meteo.com/), CC BY 4.0; reanalysis from the Copernicus Climate Change Service (C3S).",
+      "warnings": [
+       "49 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable.",
+       "On 4 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2025-06-15 (+34%), 2025-08-21 (+32%), 2025-12-27 (+39%), 2026-03-12 (+29%))…"
+      ]
+     },
+     {
+      "label": "Mumbai mean PM10, dry (< 1 mm)",
+      "value": 100.9,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "dry_mean",
+      "data_type": "mixed",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient); Weather data by Open-Meteo.com (https://open-meteo.com/), CC BY 4.0; reanalysis from the Copernicus Climate Change Service (C3S).",
+      "warnings": [
+       "49 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable.",
+       "On 4 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2025-06-15 (+34%), 2025-08-21 (+32%), 2025-12-27 (+39%), 2026-03-12 (+29%))…"
+      ]
+     },
+     {
+      "label": "Mumbai Spearman rho, PM10 vs rainfall",
+      "value": -0.728,
+      "unit": "",
+      "dataset_id": "ds1",
+      "field": "rho",
+      "data_type": "mixed",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient); Weather data by Open-Meteo.com (https://open-meteo.com/), CC BY 4.0; reanalysis from the Copernicus Climate Change Service (C3S).",
+      "warnings": [
+       "49 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable.",
+       "On 4 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2025-06-15 (+34%), 2025-08-21 (+32%), 2025-12-27 (+39%), 2026-03-12 (+29%))…"
+      ]
+     }
+    ],
+    "chart": {
+     "type": "scatter",
+     "title": "Mumbai: PM10 vs rainfall",
+     "x": {
+      "field": "precipitation_sum_mm",
+      "label": "rainfall (mm)"
+     },
+     "y": {
+      "field": "city_mean",
+      "label": "PM10 (µg/m³)"
+     },
+     "series": [
+      {
+       "name": "days",
+       "data": [
+        [
+         0.0,
+         126.8
+        ],
+        [
+         0.0,
+         120.9
+        ],
+        [
+         0.0,
+         117.3
+        ],
+        [
+         0.0,
+         122.0
+        ],
+        [
+         0.0,
+         127.2
+        ],
+        [
+         0.0,
+         108.8
+        ],
+        [
+         0.0,
+         139.6
+        ],
+        [
+         0.0,
+         146.5
+        ],
+        [
+         0.0,
+         146.3
+        ],
+        [
+         0.0,
+         149.6
+        ],
+        [
+         0.0,
+         111.2
+        ],
+        [
+         0.0,
+         114.3
+        ],
+        [
+         0.0,
+         136.4
+        ],
+        [
+         0.0,
+         136.7
+        ],
+        [
+         0.0,
+         129.0
+        ],
+        [
+         0.0,
+         135.2
+        ],
+        [
+         0.0,
+         149.9
+        ],
+        [
+         0.0,
+         139.5
+        ],
+        [
+         0.0,
+         98.6
+        ],
+        [
+         0.0,
+         150.8
+        ],
+        [
+         0.0,
+         163.2
+        ],
+        [
+         0.0,
+         148.8
+        ],
+        [
+         0.0,
+         117.4
+        ],
+        [
+         0.0,
+         103.4
+        ],
+        [
+         0.0,
+         72.9
+        ],
+        [
+         0.0,
+         92.2
+        ],
+        [
+         0.0,
+         109.7
+        ],
+        [
+         0.0,
+         88.0
+        ],
+        [
+         0.0,
+         92.8
+        ],
+        [
+         0.0,
+         93.3
+        ],
+        [
+         0.0,
+         84.9
+        ],
+        [
+         0.0,
+         77.0
+        ],
+        [
+         0.0,
+         98.5
+        ],
+        [
+         0.0,
+         64.4
+        ],
+        [
+         0.0,
+         60.2
+        ],
+        [
+         0.0,
+         99.6
+        ],
+        [
+         0.0,
+         152.8
+        ],
+        [
+         0.0,
+         144.4
+        ],
+        [
+         0.0,
+         108.3
+        ],
+        [
+         0.0,
+         109.5
+        ],
+        [
+         0.0,
+         132.6
+        ],
+        [
+         0.6,
+         91.0
+        ],
+        [
+         1.0,
+         112.6
+        ],
+        [
+         0.0,
+         99.3
+        ],
+        [
+         0.0,
+         80.4
+        ],
+        [
+         0.0,
+         98.6
+        ],
+        [
+         0.0,
+         94.2
+        ],
+        [
+         0.1,
+         66.4
+        ],
+        [
+         0.0,
+         68.1
+        ],
+        [
+         0.0,
+         59.3
+        ],
+        [
+         0.0,
+         53.7
+        ],
+        [
+         0.0,
+         52.1
+        ],
+        [
+         0.0,
+         69.8
+        ],
+        [
+         0.0,
+         64.1
+        ],
+        [
+         0.0,
+         102.5
+        ],
+        [
+         0.0,
+         73.5
+        ],
+        [
+         0.0,
+         64.4
+        ],
+        [
+         0.0,
+         55.5
+        ],
+        [
+         0.0,
+         70.8
+        ],
+        [
+         0.0,
+         69.4
+        ],
+        [
+         0.0,
+         70.4
+        ],
+        [
+         0.0,
+         59.6
+        ],
+        [
+         0.0,
+         52.3
+        ],
+        [
+         0.0,
+         57.8
+        ],
+        [
+         0.0,
+         62.8
+        ],
+        [
+         0.0,
+         54.7
+        ],
+        [
+         0.0,
+         62.0
+        ],
+        [
+         6.3,
+         61.4
+        ],
+        [
+         9.3,
+         47.0
+        ],
+        [
+         2.0,
+         46.3
+        ],
+        [
+         0.5,
+         47.3
+        ],
+        [
+         0.4,
+         47.1
+        ],
+        [
+         1.6,
+         42.1
+        ],
+        [
+         1.7,
+         58.8
+        ],
+        [
+         0.6,
+         83.2
+        ],
+        [
+         1.8,
+         74.8
+        ],
+        [
+         1.0,
+         68.7
+        ],
+        [
+         0.9,
+         64.4
+        ],
+        [
+         0.0,
+         70.7
+        ],
+        [
+         0.2,
+         69.6
+        ],
+        [
+         8.7,
+         77.4
+        ],
+        [
+         1.1,
+         52.7
+        ],
+        [
+         21.2,
+         46.0
+        ],
+        [
+         2.2,
+         84.1
+        ],
+        [
+         8.9,
+         90.4
+        ],
+        [
+         9.1,
+         45.9
+        ],
+        [
+         5.6,
+         90.0
+        ],
+        [
+         1.8,
+         98.5
+        ],
+        [
+         3.5,
+         79.2
+        ],
+        [
+         11.1,
+         59.3
+        ],
+        [
+         8.8,
+         66.9
+        ],
+        [
+         4.5,
+         48.9
+        ],
+        [
+         1.6,
+         88.9
+        ],
+        [
+         4.7,
+         81.3
+        ],
+        [
+         8.1,
+         46.3
+        ],
+        [
+         4.4,
+         65.7
+        ],
+        [
+         2.0,
+         65.4
+        ],
+        [
+         0.8,
+         54.2
+        ],
+        [
+         0.8,
+         43.1
+        ],
+        [
+         2.8,
+         48.2
+        ],
+        [
+         29.6,
+         46.5
+        ],
+        [
+         58.0,
+         53.3
+        ],
+        [
+         55.5,
+         43.0
+        ],
+        [
+         100.9,
+         25.8
+        ],
+        [
+         17.5,
+         61.8
+        ],
+        [
+         86.1,
+         25.7
+        ],
+        [
+         65.8,
+         47.3
+        ],
+        [
+         11.3,
+         51.0
+        ],
+        [
+         15.8,
+         54.0
+        ],
+        [
+         51.2,
+         55.9
+        ],
+        [
+         26.7,
+         53.4
+        ],
+        [
+         25.0,
+         63.1
+        ],
+        [
+         21.5,
+         62.9
+        ],
+        [
+         18.1,
+         51.6
+        ],
+        [
+         34.3,
+         50.6
+        ],
+        [
+         40.8,
+         43.8
+        ],
+        [
+         26.3,
+         42.5
+        ],
+        [
+         20.2,
+         49.6
+        ],
+        [
+         37.9,
+         48.3
+        ],
+        [
+         31.3,
+         48.4
+        ],
+        [
+         7.6,
+         52.2
+        ],
+        [
+         3.7,
+         59.9
+        ],
+        [
+         15.4,
+         60.8
+        ],
+        [
+         6.5,
+         62.5
+        ],
+        [
+         6.1,
+         53.9
+        ],
+        [
+         4.9,
+         49.4
+        ],
+        [
+         14.7,
+         43.1
+        ],
+        [
+         51.0,
+         27.4
+        ],
+        [
+         15.8,
+         46.5
+        ],
+        [
+         7.9,
+         55.4
+        ],
+        [
+         4.1,
+         66.7
+        ],
+        [
+         2.7,
+         65.8
+        ],
+        [
+         6.3,
+         60.2
+        ],
+        [
+         12.3,
+         45.2
+        ],
+        [
+         18.6,
+         38.1
+        ],
+        [
+         14.9,
+         46.4
+        ],
+        [
+         40.3,
+         41.4
+        ],
+        [
+         17.4,
+         46.3
+        ],
+        [
+         10.5,
+         50.7
+        ],
+        [
+         8.8,
+         54.2
+        ],
+        [
+         8.6,
+         55.9
+        ],
+        [
+         7.8,
+         62.9
+        ],
+        [
+         3.9,
+         62.6
+        ],
+        [
+         8.7,
+         45.2
+        ],
+        [
+         4.0,
+         50.2
+        ],
+        [
+         3.5,
+         52.8
+        ],
+        [
+         4.3,
+         50.8
+        ],
+        [
+         1.2,
+         54.9
+        ],
+        [
+         3.2,
+         45.1
+        ],
+        [
+         2.9,
+         51.0
+        ],
+        [
+         1.6,
+         58.2
+        ],
+        [
+         3.2,
+         44.2
+        ],
+        [
+         4.3,
+         46.9
+        ],
+        [
+         5.0,
+         46.7
+        ],
+        [
+         15.4,
+         39.6
+        ],
+        [
+         38.9,
+         31.0
+        ],
+        [
+         35.8,
+         28.6
+        ],
+        [
+         34.2,
+         26.9
+        ],
+        [
+         16.3,
+         26.3
+        ],
+        [
+         127.0,
+         28.5
+        ],
+        [
+         136.5,
+         33.8
+        ],
+        [
+         61.5,
+         43.9
+        ],
+        [
+         26.0,
+         60.1
+        ],
+        [
+         4.5,
+         41.2
+        ],
+        [
+         10.4,
+         44.9
+        ],
+        [
+         6.7,
+         42.2
+        ],
+        [
+         23.2,
+         37.8
+        ],
+        [
+         14.9,
+         47.9
+        ],
+        [
+         7.6,
+         47.0
+        ],
+        [
+         16.3,
+         48.6
+        ],
+        [
+         7.5,
+         41.0
+        ],
+        [
+         2.8,
+         38.1
+        ],
+        [
+         10.0,
+         44.4
+        ],
+        [
+         6.7,
+         52.0
+        ],
+        [
+         5.7,
+         48.9
+        ],
+        [
+         4.8,
+         55.5
+        ],
+        [
+         17.2,
+         45.9
+        ],
+        [
+         18.2,
+         47.8
+        ],
+        [
+         24.9,
+         35.6
+        ],
+        [
+         9.2,
+         44.8
+        ],
+        [
+         0.7,
+         60.8
+        ],
+        [
+         0.3,
+         71.5
+        ],
+        [
+         1.5,
+         58.6
+        ],
+        [
+         1.2,
+         48.6
+        ],
+        [
+         12.7,
+         60.9
+        ],
+        [
+         12.2,
+         47.6
+        ],
+        [
+         65.5,
+         31.6
+        ],
+        [
+         5.2,
+         42.1
+        ],
+        [
+         25.7,
+         37.5
+        ],
+        [
+         10.4,
+         33.5
+        ],
+        [
+         8.2,
+         32.8
+        ],
+        [
+         12.3,
+         43.4
+        ],
+        [
+         15.7,
+         32.5
+        ],
+        [
+         17.0,
+         37.7
+        ],
+        [
+         10.7,
+         46.3
+        ],
+        [
+         2.5,
+         43.5
+        ],
+        [
+         3.1,
+         44.2
+        ],
+        [
+         3.0,
+         66.7
+        ],
+        [
+         14.1,
+         45.8
+        ],
+        [
+         125.7,
+         33.9
+        ],
+        [
+         15.8,
+         46.9
+        ],
+        [
+         11.2,
+         41.7
+        ],
+        [
+         12.0,
+         43.2
+        ],
+        [
+         4.1,
+         38.4
+        ],
+        [
+         2.4,
+         45.9
+        ],
+        [
+         3.1,
+         48.7
+        ],
+        [
+         0.7,
+         66.8
+        ],
+        [
+         1.1,
+         57.5
+        ],
+        [
+         2.1,
+         51.6
+        ],
+        [
+         0.3,
+         73.5
+        ],
+        [
+         0.0,
+         121.3
+        ],
+        [
+         0.1,
+         158.2
+        ],
+        [
+         0.1,
+         184.7
+        ],
+        [
+         0.1,
+         152.9
+        ],
+        [
+         0.0,
+         147.2
+        ],
+        [
+         0.0,
+         141.5
+        ],
+        [
+         1.5,
+         147.4
+        ],
+        [
+         6.2,
+         108.9
+        ],
+        [
+         0.1,
+         94.7
+        ],
+        [
+         1.1,
+         127.7
+        ],
+        [
+         0.5,
+         134.0
+        ],
+        [
+         5.9,
+         151.5
+        ],
+        [
+         4.8,
+         98.3
+        ],
+        [
+         6.1,
+         90.1
+        ],
+        [
+         8.7,
+         67.5
+        ],
+        [
+         13.8,
+         47.7
+        ],
+        [
+         13.3,
+         41.4
+        ],
+        [
+         0.4,
+         60.8
+        ],
+        [
+         0.1,
+         76.5
+        ],
+        [
+         11.5,
+         53.6
+        ],
+        [
+         8.6,
+         50.8
+        ],
+        [
+         3.1,
+         56.3
+        ],
+        [
+         4.2,
+         45.1
+        ],
+        [
+         0.1,
+         72.6
+        ],
+        [
+         0.6,
+         110.4
+        ],
+        [
+         0.0,
+         130.9
+        ],
+        [
+         0.0,
+         111.4
+        ],
+        [
+         0.0,
+         98.6
+        ],
+        [
+         0.0,
+         138.1
+        ],
+        [
+         0.0,
+         138.2
+        ],
+        [
+         0.0,
+         151.1
+        ],
+        [
+         0.0,
+         172.7
+        ],
+        [
+         0.0,
+         159.7
+        ],
+        [
+         0.0,
+         146.2
+        ],
+        [
+         0.0,
+         135.0
+        ],
+        [
+         0.0,
+         153.7
+        ],
+        [
+         0.0,
+         153.3
+        ],
+        [
+         0.0,
+         158.3
+        ],
+        [
+         0.0,
+         173.1
+        ],
+        [
+         0.0,
+         174.5
+        ],
+        [
+         0.0,
+         167.1
+        ],
+        [
+         0.0,
+         178.2
+        ],
+        [
+         0.0,
+         185.2
+        ],
+        [
+         0.0,
+         156.7
+        ],
+        [
+         0.0,
+         142.8
+        ],
+        [
+         0.0,
+         129.6
+        ],
+        [
+         0.0,
+         110.5
+        ],
+        [
+         0.0,
+         130.8
+        ],
+        [
+         0.0,
+         161.5
+        ],
+        [
+         0.0,
+         152.9
+        ],
+        [
+         0.0,
+         151.0
+        ],
+        [
+         0.0,
+         135.1
+        ],
+        [
+         0.0,
+         122.1
+        ],
+        [
+         0.0,
+         125.9
+        ],
+        [
+         0.0,
+         135.4
+        ],
+        [
+         0.0,
+         139.8
+        ],
+        [
+         0.0,
+         119.5
+        ],
+        [
+         0.0,
+         152.3
+        ],
+        [
+         0.0,
+         111.5
+        ],
+        [
+         0.0,
+         131.4
+        ],
+        [
+         0.0,
+         135.8
+        ],
+        [
+         0.0,
+         125.7
+        ],
+        [
+         0.0,
+         122.4
+        ],
+        [
+         0.0,
+         154.5
+        ],
+        [
+         0.0,
+         126.8
+        ],
+        [
+         0.0,
+         106.4
+        ],
+        [
+         0.0,
+         101.2
+        ],
+        [
+         0.0,
+         124.0
+        ],
+        [
+         0.0,
+         113.4
+        ],
+        [
+         0.0,
+         85.7
+        ],
+        [
+         0.0,
+         121.4
+        ],
+        [
+         0.0,
+         138.7
+        ],
+        [
+         0.0,
+         186.3
+        ],
+        [
+         0.0,
+         138.9
+        ],
+        [
+         0.0,
+         140.8
+        ],
+        [
+         0.0,
+         149.8
+        ],
+        [
+         0.0,
+         124.1
+        ],
+        [
+         0.9,
+         73.8
+        ],
+        [
+         0.0,
+         106.8
+        ],
+        [
+         0.0,
+         127.2
+        ],
+        [
+         0.0,
+         167.4
+        ],
+        [
+         0.0,
+         132.6
+        ],
+        [
+         0.0,
+         134.8
+        ],
+        [
+         0.0,
+         142.9
+        ],
+        [
+         0.0,
+         121.1
+        ],
+        [
+         0.0,
+         117.0
+        ],
+        [
+         0.0,
+         143.2
+        ],
+        [
+         0.0,
+         131.3
+        ],
+        [
+         0.0,
+         89.7
+        ],
+        [
+         0.0,
+         88.9
+        ],
+        [
+         0.0,
+         115.1
+        ],
+        [
+         0.0,
+         133.2
+        ],
+        [
+         0.4,
+         83.8
+        ],
+        [
+         0.0,
+         73.9
+        ],
+        [
+         0.0,
+         105.5
+        ],
+        [
+         0.0,
+         130.1
+        ],
+        [
+         0.0,
+         104.6
+        ],
+        [
+         0.0,
+         126.4
+        ],
+        [
+         0.0,
+         144.2
+        ],
+        [
+         0.0,
+         120.9
+        ],
+        [
+         0.0,
+         127.3
+        ],
+        [
+         0.0,
+         126.4
+        ],
+        [
+         0.0,
+         122.6
+        ],
+        [
+         0.0,
+         112.8
+        ],
+        [
+         0.0,
+         130.9
+        ],
+        [
+         0.0,
+         121.9
+        ],
+        [
+         0.0,
+         129.8
+        ],
+        [
+         0.0,
+         144.2
+        ],
+        [
+         0.0,
+         139.4
+        ],
+        [
+         0.0,
+         164.0
+        ],
+        [
+         0.0,
+         155.9
+        ],
+        [
+         0.0,
+         136.6
+        ],
+        [
+         0.0,
+         123.9
+        ],
+        [
+         0.0,
+         117.0
+        ],
+        [
+         0.0,
+         94.2
+        ],
+        [
+         0.0,
+         51.5
+        ],
+        [
+         0.0,
+         49.7
+        ],
+        [
+         0.0,
+         59.5
+        ],
+        [
+         0.0,
+         68.4
+        ],
+        [
+         0.0,
+         129.0
+        ],
+        [
+         0.0,
+         100.4
+        ],
+        [
+         0.0,
+         92.5
+        ],
+        [
+         0.0,
+         85.4
+        ],
+        [
+         0.0,
+         71.3
+        ],
+        [
+         0.0,
+         118.0
+        ],
+        [
+         0.0,
+         141.3
+        ],
+        [
+         0.0,
+         108.3
+        ],
+        [
+         0.0,
+         119.6
+        ],
+        [
+         0.0,
+         107.8
+        ],
+        [
+         0.0,
+         100.7
+        ],
+        [
+         0.0,
+         102.8
+        ],
+        [
+         0.0,
+         87.8
+        ],
+        [
+         0.0,
+         106.0
+        ],
+        [
+         0.0,
+         88.6
+        ],
+        [
+         0.0,
+         55.7
+        ],
+        [
+         0.0,
+         69.6
+        ],
+        [
+         0.0,
+         74.1
+        ],
+        [
+         0.0,
+         91.2
+        ],
+        [
+         0.0,
+         112.3
+        ],
+        [
+         0.0,
+         95.7
+        ],
+        [
+         0.0,
+         76.5
+        ],
+        [
+         0.0,
+         85.3
+        ],
+        [
+         0.0,
+         98.8
+        ],
+        [
+         0.0,
+         59.9
+        ],
+        [
+         0.2,
+         36.1
+        ],
+        [
+         0.0,
+         44.1
+        ],
+        [
+         0.0,
+         32.0
+        ],
+        [
+         0.0,
+         57.7
+        ],
+        [
+         0.0,
+         57.9
+        ],
+        [
+         0.0,
+         80.5
+        ],
+        [
+         0.0,
+         58.3
+        ],
+        [
+         0.0,
+         55.0
+        ],
+        [
+         0.0,
+         47.3
+        ],
+        [
+         0.0,
+         57.0
+        ],
+        [
+         0.0,
+         59.2
+        ],
+        [
+         3.2,
+         97.5
+        ],
+        [
+         0.0,
+         134.7
+        ],
+        [
+         0.0,
+         129.5
+        ],
+        [
+         0.0,
+         111.6
+        ],
+        [
+         0.0,
+         99.2
+        ],
+        [
+         0.0,
+         107.0
+        ],
+        [
+         0.0,
+         72.8
+        ],
+        [
+         0.0,
+         71.1
+        ],
+        [
+         0.0,
+         92.3
+        ],
+        [
+         0.0,
+         90.6
+        ],
+        [
+         0.0,
+         97.7
+        ],
+        [
+         0.0,
+         75.5
+        ],
+        [
+         0.0,
+         97.8
+        ],
+        [
+         0.0,
+         108.1
+        ],
+        [
+         0.0,
+         104.2
+        ],
+        [
+         0.0,
+         102.2
+        ],
+        [
+         0.0,
+         85.8
+        ],
+        [
+         0.0,
+         82.9
+        ],
+        [
+         0.0,
+         70.9
+        ],
+        [
+         0.0,
+         61.7
+        ],
+        [
+         0.0,
+         49.1
+        ],
+        [
+         0.0,
+         58.2
+        ],
+        [
+         0.0,
+         51.0
+        ],
+        [
+         0.0,
+         88.5
+        ],
+        [
+         0.0,
+         81.5
+        ],
+        [
+         0.0,
+         82.9
+        ],
+        [
+         0.0,
+         73.4
+        ],
+        [
+         0.0,
+         70.9
+        ],
+        [
+         0.0,
+         58.1
+        ],
+        [
+         0.0,
+         45.8
+        ],
+        [
+         0.0,
+         44.7
+        ],
+        [
+         0.0,
+         41.0
+        ],
+        [
+         0.0,
+         43.1
+        ],
+        [
+         0.0,
+         52.4
+        ],
+        [
+         0.0,
+         56.6
+        ],
+        [
+         0.1,
+         46.1
+        ],
+        [
+         0.0,
+         41.4
+        ],
+        [
+         1.9,
+         47.2
+        ],
+        [
+         1.2,
+         41.0
+        ],
+        [
+         3.0,
+         32.4
+        ],
+        [
+         2.2,
+         38.0
+        ],
+        [
+         1.0,
+         38.7
+        ],
+        [
+         0.3,
+         39.1
+        ],
+        [
+         0.0,
+         47.5
+        ],
+        [
+         1.2,
+         54.1
+        ],
+        [
+         0.9,
+         55.0
+        ],
+        [
+         4.8,
+         52.7
+        ],
+        [
+         0.3,
+         44.4
+        ],
+        [
+         1.2,
+         57.4
+        ],
+        [
+         2.3,
+         55.1
+        ],
+        [
+         0.6,
+         51.1
+        ],
+        [
+         3.4,
+         61.3
+        ],
+        [
+         2.1,
+         62.4
+        ],
+        [
+         9.7,
+         66.7
+        ],
+        [
+         1.6,
+         64.9
+        ],
+        [
+         1.1,
+         61.3
+        ],
+        [
+         1.2,
+         57.9
+        ],
+        [
+         2.8,
+         51.6
+        ],
+        [
+         0.9,
+         49.8
+        ],
+        [
+         0.7,
+         51.8
+        ],
+        [
+         0.5,
+         43.5
+        ],
+        [
+         0.0,
+         47.7
+        ],
+        [
+         0.5,
+         46.8
+        ],
+        [
+         5.8,
+         53.5
+        ],
+        [
+         0.8,
+         53.9
+        ],
+        [
+         11.5,
+         45.0
+        ],
+        [
+         26.4,
+         34.7
+        ],
+        [
+         57.5,
+         35.4
+        ],
+        [
+         55.7,
+         34.2
+        ],
+        [
+         51.8,
+         28.9
+        ],
+        [
+         78.1,
+         33.4
+        ],
+        [
+         136.9,
+         37.9
+        ],
+        [
+         131.8,
+         45.3
+        ],
+        [
+         55.4,
+         67.4
+        ],
+        [
+         25.9,
+         68.6
+        ],
+        [
+         4.0,
+         71.2
+        ],
+        [
+         3.2,
+         63.5
+        ],
+        [
+         7.6,
+         63.8
+        ],
+        [
+         7.6,
+         63.2
+        ],
+        [
+         0.9,
+         63.1
+        ],
+        [
+         1.3,
+         53.7
+        ],
+        [
+         15.9,
+         51.8
+        ],
+        [
+         8.7,
+         51.4
+        ],
+        [
+         16.4,
+         53.5
+        ],
+        [
+         16.2,
+         48.2
+        ],
+        [
+         33.1,
+         35.6
+        ],
+        [
+         52.9,
+         35.1
+        ],
+        [
+         25.2,
+         43.1
+        ],
+        [
+         71.0,
+         34.9
+        ],
+        [
+         107.0,
+         37.2
+        ],
+        [
+         32.1,
+         42.2
+        ],
+        [
+         42.9,
+         41.8
+        ],
+        [
+         9.2,
+         48.0
+        ],
+        [
+         12.1,
+         61.5
+        ],
+        [
+         9.0,
+         56.5
+        ],
+        [
+         5.8,
+         41.1
+        ],
+        [
+         8.1,
+         42.6
+        ],
+        [
+         30.6,
+         27.5
+        ],
+        [
+         12.0,
+         36.7
+        ],
+        [
+         8.5,
+         45.7
+        ],
+        [
+         13.5,
+         31.4
+        ],
+        [
+         5.0,
+         38.8
+        ],
+        [
+         2.1,
+         35.6
+        ],
+        [
+         9.9,
+         42.5
+        ],
+        [
+         16.7,
+         41.9
+        ],
+        [
+         4.4,
+         41.8
+        ],
+        [
+         7.3,
+         50.3
+        ],
+        [
+         4.2,
+         46.2
+        ],
+        [
+         2.9,
+         37.9
+        ],
+        [
+         4.6,
+         33.9
+        ],
+        [
+         6.1,
+         34.9
+        ],
+        [
+         13.8,
+         34.0
+        ],
+        [
+         5.6,
+         41.2
+        ],
+        [
+         9.1,
+         41.1
+        ],
+        [
+         16.1,
+         33.8
+        ],
+        [
+         5.7,
+         35.9
+        ],
+        [
+         7.3,
+         35.2
+        ],
+        [
+         6.9,
+         34.7
+        ],
+        [
+         4.0,
+         36.8
+        ],
+        [
+         2.8,
+         35.5
+        ],
+        [
+         1.5,
+         39.4
+        ],
+        [
+         4.9,
+         34.2
+        ],
+        [
+         25.5,
+         29.7
+        ],
+        [
+         10.3,
+         31.2
+        ],
+        [
+         8.2,
+         38.6
+        ],
+        [
+         2.9,
+         32.8
+        ],
+        [
+         1.6,
+         42.1
+        ],
+        [
+         6.7,
+         30.2
+        ],
+        [
+         11.2,
+         38.5
+        ],
+        [
+         1.1,
+         52.7
+        ],
+        [
+         1.3,
+         57.7
+        ],
+        [
+         16.9,
+         52.4
+        ],
+        [
+         1.8,
+         54.3
+        ],
+        [
+         3.3,
+         55.7
+        ],
+        [
+         5.0,
+         54.0
+        ],
+        [
+         0.9,
+         47.2
+        ],
+        [
+         0.3,
+         44.8
+        ],
+        [
+         5.3,
+         52.8
+        ],
+        [
+         3.3,
+         61.1
+        ],
+        [
+         0.4,
+         74.1
+        ],
+        [
+         0.5,
+         94.3
+        ],
+        [
+         0.0,
+         85.0
+        ],
+        [
+         0.1,
+         93.5
+        ],
+        [
+         1.1,
+         83.8
+        ],
+        [
+         0.4,
+         76.5
+        ],
+        [
+         1.0,
+         97.8
+        ],
+        [
+         0.2,
+         119.3
+        ],
+        [
+         0.0,
+         103.4
+        ],
+        [
+         1.4,
+         90.1
+        ],
+        [
+         0.0,
+         83.0
+        ],
+        [
+         0.0,
+         81.5
+        ],
+        [
+         0.0,
+         96.5
+        ],
+        [
+         0.0,
+         100.4
+        ],
+        [
+         0.0,
+         93.3
+        ],
+        [
+         0.0,
+         103.5
+        ],
+        [
+         0.7,
+         124.3
+        ],
+        [
+         1.9,
+         111.1
+        ],
+        [
+         1.6,
+         102.4
+        ],
+        [
+         0.0,
+         102.5
+        ],
+        [
+         0.0,
+         100.2
+        ],
+        [
+         0.0,
+         86.3
+        ]
+       ]
+      }
+     ],
+     "units": "µg/m³",
+     "bands": [],
+     "colour_scale": null,
+     "notes": []
+    },
+    "sources": [
+     {
+      "dataset_id": "ds1",
+      "title": "PM10 and rainfall in Mumbai",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient); Weather data by Open-Meteo.com (https://open-meteo.com/), CC BY 4.0; reanalysis from the Copernicus Climate Change Service (C3S).",
+      "data_type": "mixed",
+      "date_range": {
+       "start": "2025-02-18",
+       "end": "2026-10-30"
+      }
+     }
+    ],
+    "coverage": {
+     "ds1": {
+      "matched_days": 526,
+      "days_in_period": 620,
+      "excluded": "days without a city value, severe-gap days, preliminary weather days"
+     }
+    },
+    "warnings": [
+     "Weather is modelled reanalysis for one grid cell near the city centre; PM is measured at stations. They are compared, never combined into one number.",
+     "This is an association, not evidence that weather causes the change. Season, emissions and other weather conditions move together.",
+     "49 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable.",
+     "On 4 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2025-06-15 (+34%), 2025-08-21 (+32%), 2025-12-27 (+39%), 2026-03-12 (+29%)); treat those days with caution."
+    ],
+    "data_types": [
+     "measured",
+     "modelled"
+    ],
+    "clarifying_question": null,
+    "verification": {
+     "passed": true,
+     "retries": 0,
+     "numbers_checked": 2
+    },
+    "model": "gemini-3.5-flash-lite",
+    "usage": {
+     "requests": 2,
+     "input_tokens": 3245,
+     "output_tokens": 178
+    }
+   },
+   "steps": [
+    {
+     "seq": 3,
+     "type": "plan",
+     "title": "Plan: weather_association",
+     "detail": {
+      "steps": [
+       {
+        "tool": "weather_association",
+        "args": {
+         "pollutant": "PM10",
+         "city": "Mumbai",
+         "weather": "rain",
+         "period": "all data"
+        }
+       }
+      ]
+     },
+     "ts": "2026-11-05T08:55:09.621+00:00"
+    },
+    {
+     "seq": 4,
+     "type": "tool_call",
+     "title": "weather_association",
+     "detail": {
+      "args": {
+       "city": "Mumbai",
+       "weather": "rain",
+       "pollutant": "PM10",
+       "period": "all data"
+      }
+     },
+     "ts": "2026-11-05T08:55:09.623+00:00"
+    },
+    {
+     "seq": 5,
+     "type": "tool_result",
+     "title": "weather_association: PM10 and rainfall in Mumbai",
+     "detail": {
+      "dataset_id": "ds1",
+      "data_type": "mixed",
+      "fields": 8,
+      "warnings": 4
+     },
+     "ts": "2026-11-05T08:55:09.656+00:00"
+    },
+    {
+     "seq": 7,
+     "type": "verification",
+     "title": "passed",
+     "detail": {
+      "checked_numbers": 2,
+      "problems": 0
+     },
+     "ts": "2026-11-05T08:55:19.171+00:00"
+    }
+   ],
+   "context": {
+    "city": "Mumbai",
+    "pollutant": "PM10",
+    "period": "all data",
+    "weather": "rain"
+   },
+   "built": "2026-11-05 14:25",
+   "model": "gemini-3.5-flash-lite"
+  },
+  {
+   "question": "Were there any unusual PM2.5 days in Delhi in 2025?",
+   "final": {
+    "status": "answered",
+    "answer": "Using measured PM2.5 (µg/m³) for Delhi in 2025, there were 27 unusual days identified out of 296 days tested (20 high, 7 low) using a 15-day rolling median method. For example, 2025-12-14 was unusually high at 384.5 µg/m³ compared to a median of 202.3 µg/m³, while 2025-11-05 was unusually low at 104.4 µg/m³ compared to a median of 212.8 µg/m³.",
+    "explanation": "Measured PM: Unusual PM2.5 days in Delhi, 2025-01-01 to 2025-12-31. 37 primary stations (primary reference). 296 of 365 days have a city value. Method: Each day's city value is compared with the median of the 15 surrounding days (the day itself excluded).",
+    "cards": [
+     {
+      "label": "Delhi PM2.5 on 2025-12-14 (unusually high)",
+      "value": 384.5,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "day3_value",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+       "15 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     },
+     {
+      "label": "Delhi PM2.5 on 2025-11-05 (unusually low)",
+      "value": 104.4,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "day6_value",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+       "15 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     },
+     {
+      "label": "Delhi unusual PM2.5 days",
+      "value": 27.0,
+      "unit": "days",
+      "dataset_id": "ds1",
+      "field": "unusual_count",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+       "15 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     }
+    ],
+    "chart": {
+     "type": "line",
+     "title": "Delhi PM2.5 with unusual days",
+     "x": {
+      "field": "date",
+      "type": "time"
+     },
+     "y": {
+      "field": "value",
+      "label": "PM2.5 (µg/m³)"
+     },
+     "series": [
+      {
+       "name": "daily city value",
+       "data": [
+        [
+         "2025-02-19",
+         78.2
+        ],
+        [
+         "2025-02-20",
+         59.5
+        ],
+        [
+         "2025-02-21",
+         82.9
+        ],
+        [
+         "2025-02-22",
+         59.9
+        ],
+        [
+         "2025-02-23",
+         69.2
+        ],
+        [
+         "2025-02-24",
+         85.8
+        ],
+        [
+         "2025-02-25",
+         94.3
+        ],
+        [
+         "2025-02-26",
+         120.1
+        ],
+        [
+         "2025-02-27",
+         70.7
+        ],
+        [
+         "2025-02-28",
+         61.5
+        ],
+        [
+         "2025-03-01",
+         61.2
+        ],
+        [
+         "2025-03-02",
+         52.0
+        ],
+        [
+         "2025-03-03",
+         65.5
+        ],
+        [
+         "2025-03-04",
+         51.8
+        ],
+        [
+         "2025-03-05",
+         31.2
+        ],
+        [
+         "2025-03-06",
+         53.0
+        ],
+        [
+         "2025-03-07",
+         87.3
+        ],
+        [
+         "2025-03-08",
+         71.0
+        ],
+        [
+         "2025-03-09",
+         95.5
+        ],
+        [
+         "2025-03-10",
+         90.2
+        ],
+        [
+         "2025-03-11",
+         119.7
+        ],
+        [
+         "2025-03-12",
+         97.5
+        ],
+        [
+         "2025-03-13",
+         83.0
+        ],
+        [
+         "2025-03-14",
+         86.9
+        ],
+        [
+         "2025-03-15",
+         26.5
+        ],
+        [
+         "2025-03-16",
+         43.7
+        ],
+        [
+         "2025-03-17",
+         51.2
+        ],
+        [
+         "2025-03-18",
+         60.0
+        ],
+        [
+         "2025-03-19",
+         73.1
+        ],
+        [
+         "2025-03-20",
+         65.4
+        ],
+        [
+         "2025-03-21",
+         64.3
+        ],
+        [
+         "2025-03-22",
+         73.6
+        ],
+        [
+         "2025-03-23",
+         75.7
+        ],
+        [
+         "2025-03-24",
+         91.2
+        ],
+        [
+         "2025-03-25",
+         107.3
+        ],
+        [
+         "2025-03-26",
+         103.2
+        ],
+        [
+         "2025-03-27",
+         92.1
+        ],
+        [
+         "2025-03-28",
+         56.4
+        ],
+        [
+         "2025-03-29",
+         40.7
+        ],
+        [
+         "2025-03-30",
+         46.9
+        ],
+        [
+         "2025-03-31",
+         69.2
+        ],
+        [
+         "2025-04-01",
+         77.8
+        ],
+        [
+         "2025-04-02",
+         103.5
+        ],
+        [
+         "2025-04-03",
+         82.9
+        ],
+        [
+         "2025-04-04",
+         82.3
+        ],
+        [
+         "2025-04-05",
+         66.3
+        ],
+        [
+         "2025-04-06",
+         94.0
+        ],
+        [
+         "2025-04-07",
+         109.7
+        ],
+        [
+         "2025-04-08",
+         99.1
+        ],
+        [
+         "2025-04-12",
+         42.8
+        ],
+        [
+         "2025-04-13",
+         60.2
+        ],
+        [
+         "2025-04-17",
+         73.3
+        ],
+        [
+         "2025-04-18",
+         69.0
+        ],
+        [
+         "2025-04-19",
+         51.3
+        ],
+        [
+         "2025-04-20",
+         55.1
+        ],
+        [
+         "2025-04-21",
+         70.5
+        ],
+        [
+         "2025-04-22",
+         78.5
+        ],
+        [
+         "2025-04-23",
+         81.8
+        ],
+        [
+         "2025-04-24",
+         100.9
+        ],
+        [
+         "2025-04-25",
+         98.2
+        ],
+        [
+         "2025-04-26",
+         99.6
+        ],
+        [
+         "2025-04-27",
+         82.9
+        ],
+        [
+         "2025-04-28",
+         100.5
+        ],
+        [
+         "2025-04-29",
+         58.9
+        ],
+        [
+         "2025-04-30",
+         69.0
+        ],
+        [
+         "2025-05-01",
+         72.9
+        ],
+        [
+         "2025-05-02",
+         49.7
+        ],
+        [
+         "2025-05-03",
+         84.4
+        ],
+        [
+         "2025-05-04",
+         93.4
+        ],
+        [
+         "2025-05-05",
+         40.2
+        ],
+        [
+         "2025-05-06",
+         56.3
+        ],
+        [
+         "2025-05-07",
+         58.7
+        ],
+        [
+         "2025-05-08",
+         73.4
+        ],
+        [
+         "2025-05-09",
+         63.6
+        ],
+        [
+         "2025-05-10",
+         92.3
+        ],
+        [
+         "2025-05-11",
+         63.0
+        ],
+        [
+         "2025-05-12",
+         51.0
+        ],
+        [
+         "2025-05-13",
+         35.8
+        ],
+        [
+         "2025-05-14",
+         64.6
+        ],
+        [
+         "2025-05-15",
+         213.7
+        ],
+        [
+         "2025-05-16",
+         91.8
+        ],
+        [
+         "2025-05-17",
+         47.4
+        ],
+        [
+         "2025-05-18",
+         62.5
+        ],
+        [
+         "2025-05-19",
+         78.0
+        ],
+        [
+         "2025-05-20",
+         71.7
+        ],
+        [
+         "2025-05-21",
+         68.6
+        ],
+        [
+         "2025-05-22",
+         29.3
+        ],
+        [
+         "2025-05-23",
+         45.1
+        ],
+        [
+         "2025-05-24",
+         60.4
+        ],
+        [
+         "2025-05-27",
+         53.8
+        ],
+        [
+         "2025-05-29",
+         59.3
+        ],
+        [
+         "2025-05-30",
+         66.6
+        ],
+        [
+         "2025-05-31",
+         89.4
+        ],
+        [
+         "2025-06-01",
+         55.1
+        ],
+        [
+         "2025-06-02",
+         44.5
+        ],
+        [
+         "2025-06-04",
+         58.4
+        ],
+        [
+         "2025-06-05",
+         56.3
+        ],
+        [
+         "2025-06-06",
+         48.7
+        ],
+        [
+         "2025-06-07",
+         68.3
+        ],
+        [
+         "2025-06-08",
+         74.3
+        ],
+        [
+         "2025-06-09",
+         76.2
+        ],
+        [
+         "2025-06-10",
+         61.3
+        ],
+        [
+         "2025-06-11",
+         73.4
+        ],
+        [
+         "2025-06-12",
+         69.1
+        ],
+        [
+         "2025-06-13",
+         57.1
+        ],
+        [
+         "2025-06-14",
+         63.1
+        ],
+        [
+         "2025-06-15",
+         41.8
+        ],
+        [
+         "2025-06-16",
+         44.8
+        ],
+        [
+         "2025-06-17",
+         37.9
+        ],
+        [
+         "2025-06-18",
+         44.6
+        ],
+        [
+         "2025-06-19",
+         34.5
+        ],
+        [
+         "2025-06-20",
+         28.9
+        ],
+        [
+         "2025-06-21",
+         35.3
+        ],
+        [
+         "2025-06-22",
+         37.8
+        ],
+        [
+         "2025-06-23",
+         45.5
+        ],
+        [
+         "2025-06-24",
+         45.3
+        ],
+        [
+         "2025-06-26",
+         32.7
+        ],
+        [
+         "2025-06-27",
+         23.3
+        ],
+        [
+         "2025-06-28",
+         35.9
+        ],
+        [
+         "2025-06-29",
+         39.9
+        ],
+        [
+         "2025-07-01",
+         31.3
+        ],
+        [
+         "2025-07-02",
+         32.2
+        ],
+        [
+         "2025-07-03",
+         29.7
+        ],
+        [
+         "2025-07-04",
+         29.8
+        ],
+        [
+         "2025-07-05",
+         36.3
+        ],
+        [
+         "2025-07-06",
+         36.4
+        ],
+        [
+         "2025-07-07",
+         20.5
+        ],
+        [
+         "2025-07-08",
+         38.8
+        ],
+        [
+         "2025-07-09",
+         21.1
+        ],
+        [
+         "2025-07-10",
+         19.1
+        ],
+        [
+         "2025-07-11",
+         38.2
+        ],
+        [
+         "2025-07-12",
+         36.5
+        ],
+        [
+         "2025-07-13",
+         29.8
+        ],
+        [
+         "2025-07-14",
+         19.7
+        ],
+        [
+         "2025-07-15",
+         19.4
+        ],
+        [
+         "2025-07-16",
+         29.0
+        ],
+        [
+         "2025-07-17",
+         24.5
+        ],
+        [
+         "2025-07-18",
+         24.4
+        ],
+        [
+         "2025-07-19",
+         20.0
+        ],
+        [
+         "2025-07-20",
+         26.5
+        ],
+        [
+         "2025-07-21",
+         37.0
+        ],
+        [
+         "2025-07-22",
+         39.2
+        ],
+        [
+         "2025-07-23",
+         25.4
+        ],
+        [
+         "2025-07-24",
+         34.9
+        ],
+        [
+         "2025-07-25",
+         41.8
+        ],
+        [
+         "2025-07-26",
+         29.2
+        ],
+        [
+         "2025-07-27",
+         29.4
+        ],
+        [
+         "2025-07-28",
+         39.8
+        ],
+        [
+         "2025-07-29",
+         26.8
+        ],
+        [
+         "2025-07-30",
+         28.2
+        ],
+        [
+         "2025-07-31",
+         22.2
+        ],
+        [
+         "2025-08-02",
+         28.0
+        ],
+        [
+         "2025-08-03",
+         31.7
+        ],
+        [
+         "2025-08-04",
+         33.2
+        ],
+        [
+         "2025-08-05",
+         28.8
+        ],
+        [
+         "2025-08-06",
+         30.1
+        ],
+        [
+         "2025-08-07",
+         29.2
+        ],
+        [
+         "2025-08-08",
+         32.0
+        ],
+        [
+         "2025-08-09",
+         23.4
+        ],
+        [
+         "2025-08-10",
+         34.5
+        ],
+        [
+         "2025-08-11",
+         33.5
+        ],
+        [
+         "2025-08-12",
+         31.2
+        ],
+        [
+         "2025-08-13",
+         37.4
+        ],
+        [
+         "2025-08-14",
+         26.3
+        ],
+        [
+         "2025-08-15",
+         46.4
+        ],
+        [
+         "2025-08-16",
+         48.1
+        ],
+        [
+         "2025-08-17",
+         37.3
+        ],
+        [
+         "2025-08-18",
+         35.8
+        ],
+        [
+         "2025-08-19",
+         36.2
+        ],
+        [
+         "2025-08-20",
+         26.7
+        ],
+        [
+         "2025-08-21",
+         31.8
+        ],
+        [
+         "2025-08-22",
+         48.6
+        ],
+        [
+         "2025-08-23",
+         34.7
+        ],
+        [
+         "2025-08-24",
+         24.2
+        ],
+        [
+         "2025-08-25",
+         26.2
+        ],
+        [
+         "2025-08-26",
+         22.1
+        ],
+        [
+         "2025-08-27",
+         34.4
+        ],
+        [
+         "2025-08-28",
+         55.5
+        ],
+        [
+         "2025-08-29",
+         39.1
+        ],
+        [
+         "2025-08-30",
+         30.6
+        ],
+        [
+         "2025-08-31",
+         28.9
+        ],
+        [
+         "2025-09-01",
+         14.5
+        ],
+        [
+         "2025-09-02",
+         16.1
+        ],
+        [
+         "2025-09-03",
+         22.3
+        ],
+        [
+         "2025-09-04",
+         28.1
+        ],
+        [
+         "2025-09-05",
+         28.2
+        ],
+        [
+         "2025-09-06",
+         35.3
+        ],
+        [
+         "2025-09-07",
+         31.3
+        ],
+        [
+         "2025-09-09",
+         30.6
+        ],
+        [
+         "2025-09-10",
+         25.5
+        ],
+        [
+         "2025-09-11",
+         30.8
+        ],
+        [
+         "2025-09-12",
+         31.2
+        ],
+        [
+         "2025-09-13",
+         30.3
+        ],
+        [
+         "2025-09-14",
+         37.7
+        ],
+        [
+         "2025-09-15",
+         35.1
+        ],
+        [
+         "2025-09-16",
+         38.5
+        ],
+        [
+         "2025-09-17",
+         45.4
+        ],
+        [
+         "2025-09-18",
+         51.8
+        ],
+        [
+         "2025-09-19",
+         53.1
+        ],
+        [
+         "2025-09-20",
+         41.6
+        ],
+        [
+         "2025-09-21",
+         40.8
+        ],
+        [
+         "2025-09-22",
+         41.7
+        ],
+        [
+         "2025-09-23",
+         37.0
+        ],
+        [
+         "2025-09-24",
+         37.8
+        ],
+        [
+         "2025-09-25",
+         38.6
+        ],
+        [
+         "2025-09-26",
+         38.7
+        ],
+        [
+         "2025-09-27",
+         67.7
+        ],
+        [
+         "2025-09-28",
+         36.9
+        ],
+        [
+         "2025-09-29",
+         41.8
+        ],
+        [
+         "2025-09-30",
+         43.4
+        ],
+        [
+         "2025-10-01",
+         47.8
+        ],
+        [
+         "2025-10-02",
+         46.8
+        ],
+        [
+         "2025-10-03",
+         36.9
+        ],
+        [
+         "2025-10-04",
+         69.0
+        ],
+        [
+         "2025-10-05",
+         66.2
+        ],
+        [
+         "2025-10-06",
+         32.0
+        ],
+        [
+         "2025-10-07",
+         23.9
+        ],
+        [
+         "2025-10-08",
+         37.7
+        ],
+        [
+         "2025-10-09",
+         40.5
+        ],
+        [
+         "2025-10-10",
+         65.3
+        ],
+        [
+         "2025-10-11",
+         71.2
+        ],
+        [
+         "2025-10-12",
+         63.2
+        ],
+        [
+         "2025-10-13",
+         74.7
+        ],
+        [
+         "2025-10-14",
+         79.1
+        ],
+        [
+         "2025-10-15",
+         100.6
+        ],
+        [
+         "2025-10-16",
+         105.9
+        ],
+        [
+         "2025-10-17",
+         113.5
+        ],
+        [
+         "2025-10-18",
+         123.3
+        ],
+        [
+         "2025-10-19",
+         159.3
+        ],
+        [
+         "2025-10-21",
+         382.8
+        ],
+        [
+         "2025-10-22",
+         200.5
+        ],
+        [
+         "2025-10-23",
+         135.8
+        ],
+        [
+         "2025-10-24",
+         122.9
+        ],
+        [
+         "2025-10-25",
+         155.8
+        ],
+        [
+         "2025-10-27",
+         150.8
+        ],
+        [
+         "2025-10-28",
+         132.3
+        ],
+        [
+         "2025-10-29",
+         160.6
+        ],
+        [
+         "2025-10-30",
+         202.4
+        ],
+        [
+         "2025-10-31",
+         99.6
+        ],
+        [
+         "2025-11-01",
+         231.3
+        ],
+        [
+         "2025-11-02",
+         183.1
+        ],
+        [
+         "2025-11-05",
+         104.4
+        ],
+        [
+         "2025-11-06",
+         197.4
+        ],
+        [
+         "2025-11-07",
+         219.1
+        ],
+        [
+         "2025-11-08",
+         254.1
+        ],
+        [
+         "2025-11-09",
+         212.8
+        ],
+        [
+         "2025-11-11",
+         304.3
+        ],
+        [
+         "2025-11-12",
+         325.5
+        ],
+        [
+         "2025-11-13",
+         287.1
+        ],
+        [
+         "2025-11-14",
+         222.6
+        ],
+        [
+         "2025-11-15",
+         244.0
+        ],
+        [
+         "2025-11-16",
+         240.3
+        ],
+        [
+         "2025-11-17",
+         201.4
+        ],
+        [
+         "2025-11-19",
+         281.2
+        ],
+        [
+         "2025-11-20",
+         237.9
+        ],
+        [
+         "2025-11-21",
+         213.7
+        ],
+        [
+         "2025-11-22",
+         236.8
+        ],
+        [
+         "2025-11-23",
+         276.2
+        ],
+        [
+         "2025-11-24",
+         218.1
+        ],
+        [
+         "2025-11-25",
+         192.3
+        ],
+        [
+         "2025-11-26",
+         198.0
+        ],
+        [
+         "2025-11-27",
+         251.8
+        ],
+        [
+         "2025-11-28",
+         214.5
+        ],
+        [
+         "2025-11-29",
+         137.8
+        ],
+        [
+         "2025-11-30",
+         140.9
+        ],
+        [
+         "2025-12-01",
+         167.8
+        ],
+        [
+         "2025-12-02",
+         243.3
+        ],
+        [
+         "2025-12-03",
+         156.8
+        ],
+        [
+         "2025-12-04",
+         172.0
+        ],
+        [
+         "2025-12-05",
+         174.1
+        ],
+        [
+         "2025-12-06",
+         161.8
+        ],
+        [
+         "2025-12-07",
+         157.5
+        ],
+        [
+         "2025-12-08",
+         152.7
+        ],
+        [
+         "2025-12-09",
+         134.5
+        ],
+        [
+         "2025-12-10",
+         131.1
+        ],
+        [
+         "2025-12-11",
+         160.1
+        ],
+        [
+         "2025-12-12",
+         240.5
+        ],
+        [
+         "2025-12-13",
+         372.8
+        ],
+        [
+         "2025-12-14",
+         384.5
+        ],
+        [
+         "2025-12-15",
+         270.3
+        ],
+        [
+         "2025-12-16",
+         176.2
+        ],
+        [
+         "2025-12-17",
+         196.8
+        ],
+        [
+         "2025-12-18",
+         252.0
+        ],
+        [
+         "2025-12-19",
+         212.2
+        ],
+        [
+         "2025-12-20",
+         276.1
+        ],
+        [
+         "2025-12-21",
+         207.7
+        ],
+        [
+         "2025-12-22",
+         269.4
+        ],
+        [
+         "2025-12-23",
+         241.9
+        ],
+        [
+         "2025-12-24",
+         111.5
+        ],
+        [
+         "2025-12-25",
+         140.5
+        ],
+        [
+         "2025-12-26",
+         227.3
+        ],
+        [
+         "2025-12-27",
+         241.9
+        ],
+        [
+         "2025-12-28",
+         287.0
+        ],
+        [
+         "2025-12-29",
+         268.1
+        ],
+        [
+         "2025-12-30",
+         238.4
+        ],
+        [
+         "2025-12-31",
+         244.1
+        ]
+       ]
+      },
+      {
+       "name": "rolling median",
+       "data": [
+        [
+         "2025-02-19",
+         82.9
+        ],
+        [
+         "2025-02-20",
+         80.6
+        ],
+        [
+         "2025-02-21",
+         70.7
+        ],
+        [
+         "2025-02-22",
+         74.5
+        ],
+        [
+         "2025-02-23",
+         70.7
+        ],
+        [
+         "2025-02-24",
+         67.3
+        ],
+        [
+         "2025-02-25",
+         65.5
+        ],
+        [
+         "2025-02-26",
+         63.5
+        ],
+        [
+         "2025-02-27",
+         61.4
+        ],
+        [
+         "2025-02-28",
+         67.3
+        ],
+        [
+         "2025-03-01",
+         67.3
+        ],
+        [
+         "2025-03-02",
+         70.0
+        ],
+        [
+         "2025-03-03",
+         70.9
+        ],
+        [
+         "2025-03-04",
+         70.9
+        ],
+        [
+         "2025-03-05",
+         70.9
+        ],
+        [
+         "2025-03-06",
+         70.9
+        ],
+        [
+         "2025-03-07",
+         68.2
+        ],
+        [
+         "2025-03-08",
+         74.2
+        ],
+        [
+         "2025-03-09",
+         68.2
+        ],
+        [
+         "2025-03-10",
+         68.2
+        ],
+        [
+         "2025-03-11",
+         65.5
+        ],
+        [
+         "2025-03-12",
+         72.0
+        ],
+        [
+         "2025-03-13",
+         72.0
+        ],
+        [
+         "2025-03-14",
+         72.0
+        ],
+        [
+         "2025-03-15",
+         73.4
+        ],
+        [
+         "2025-03-16",
+         74.7
+        ],
+        [
+         "2025-03-17",
+         74.7
+        ],
+        [
+         "2025-03-18",
+         74.7
+        ],
+        [
+         "2025-03-19",
+         74.7
+        ],
+        [
+         "2025-03-20",
+         74.7
+        ],
+        [
+         "2025-03-21",
+         73.4
+        ],
+        [
+         "2025-03-22",
+         64.9
+        ],
+        [
+         "2025-03-23",
+         64.9
+        ],
+        [
+         "2025-03-24",
+         67.3
+        ],
+        [
+         "2025-03-25",
+         71.1
+        ],
+        [
+         "2025-03-26",
+         73.4
+        ],
+        [
+         "2025-03-27",
+         74.7
+        ],
+        [
+         "2025-03-28",
+         80.1
+        ],
+        [
+         "2025-03-29",
+         80.1
+        ],
+        [
+         "2025-03-30",
+         82.6
+        ],
+        [
+         "2025-03-31",
+         87.0
+        ],
+        [
+         "2025-04-01",
+         87.5
+        ],
+        [
+         "2025-04-02",
+         82.3
+        ],
+        [
+         "2025-04-03",
+         80.1
+        ],
+        [
+         "2025-04-04",
+         77.8
+        ],
+        [
+         "2025-04-05",
+         82.3
+        ],
+        [
+         "2025-04-06",
+         77.8
+        ],
+        [
+         "2025-04-07",
+         80.1
+        ],
+        [
+         "2025-04-08",
+         82.3
+        ],
+        [
+         "2025-04-12",
+         71.2
+        ],
+        [
+         "2025-04-13",
+         71.2
+        ],
+        [
+         "2025-04-17",
+         69.0
+        ],
+        [
+         "2025-04-18",
+         71.9
+        ],
+        [
+         "2025-04-19",
+         73.3
+        ],
+        [
+         "2025-04-20",
+         78.5
+        ],
+        [
+         "2025-04-21",
+         81.8
+        ],
+        [
+         "2025-04-22",
+         77.6
+        ],
+        [
+         "2025-04-23",
+         73.3
+        ],
+        [
+         "2025-04-24",
+         73.1
+        ],
+        [
+         "2025-04-25",
+         71.7
+        ],
+        [
+         "2025-04-26",
+         75.7
+        ],
+        [
+         "2025-04-27",
+         80.1
+        ],
+        [
+         "2025-04-28",
+         80.1
+        ],
+        [
+         "2025-04-29",
+         82.3
+        ],
+        [
+         "2025-04-30",
+         82.3
+        ],
+        [
+         "2025-05-01",
+         78.2
+        ],
+        [
+         "2025-05-02",
+         73.2
+        ],
+        [
+         "2025-05-03",
+         70.9
+        ],
+        [
+         "2025-05-04",
+         66.3
+        ],
+        [
+         "2025-05-05",
+         66.3
+        ],
+        [
+         "2025-05-06",
+         63.3
+        ],
+        [
+         "2025-05-07",
+         64.1
+        ],
+        [
+         "2025-05-08",
+         63.3
+        ],
+        [
+         "2025-05-09",
+         63.8
+        ],
+        [
+         "2025-05-10",
+         63.3
+        ],
+        [
+         "2025-05-11",
+         63.0
+        ],
+        [
+         "2025-05-12",
+         63.3
+        ],
+        [
+         "2025-05-13",
+         64.1
+        ],
+        [
+         "2025-05-14",
+         66.1
+        ],
+        [
+         "2025-05-15",
+         64.1
+        ],
+        [
+         "2025-05-16",
+         63.3
+        ],
+        [
+         "2025-05-17",
+         63.8
+        ],
+        [
+         "2025-05-18",
+         63.0
+        ],
+        [
+         "2025-05-19",
+         61.4
+        ],
+        [
+         "2025-05-20",
+         61.4
+        ],
+        [
+         "2025-05-21",
+         62.5
+        ],
+        [
+         "2025-05-22",
+         62.5
+        ],
+        [
+         "2025-05-23",
+         62.5
+        ],
+        [
+         "2025-05-24",
+         62.5
+        ],
+        [
+         "2025-05-27",
+         59.9
+        ],
+        [
+         "2025-05-29",
+         55.7
+        ],
+        [
+         "2025-05-30",
+         55.7
+        ],
+        [
+         "2025-05-31",
+         57.3
+        ],
+        [
+         "2025-06-01",
+         58.9
+        ],
+        [
+         "2025-06-02",
+         59.3
+        ],
+        [
+         "2025-06-04",
+         63.9
+        ],
+        [
+         "2025-06-05",
+         66.6
+        ],
+        [
+         "2025-06-06",
+         66.6
+        ],
+        [
+         "2025-06-07",
+         61.3
+        ],
+        [
+         "2025-06-08",
+         58.4
+        ],
+        [
+         "2025-06-09",
+         58.4
+        ],
+        [
+         "2025-06-10",
+         58.4
+        ],
+        [
+         "2025-06-11",
+         57.7
+        ],
+        [
+         "2025-06-12",
+         56.7
+        ],
+        [
+         "2025-06-13",
+         55.0
+        ],
+        [
+         "2025-06-14",
+         51.0
+        ],
+        [
+         "2025-06-15",
+         51.0
+        ],
+        [
+         "2025-06-16",
+         45.1
+        ],
+        [
+         "2025-06-17",
+         45.1
+        ],
+        [
+         "2025-06-18",
+         44.8
+        ],
+        [
+         "2025-06-19",
+         44.6
+        ],
+        [
+         "2025-06-20",
+         41.8
+        ],
+        [
+         "2025-06-21",
+         37.9
+        ],
+        [
+         "2025-06-22",
+         37.9
+        ],
+        [
+         "2025-06-23",
+         36.8
+        ],
+        [
+         "2025-06-24",
+         35.6
+        ],
+        [
+         "2025-06-26",
+         34.9
+        ],
+        [
+         "2025-06-27",
+         34.0
+        ],
+        [
+         "2025-06-28",
+         34.0
+        ],
+        [
+         "2025-06-29",
+         34.3
+        ],
+        [
+         "2025-07-01",
+         34.3
+        ],
+        [
+         "2025-07-02",
+         32.0
+        ],
+        [
+         "2025-07-03",
+         32.2
+        ],
+        [
+         "2025-07-04",
+         32.2
+        ],
+        [
+         "2025-07-05",
+         32.2
+        ],
+        [
+         "2025-07-06",
+         31.3
+        ],
+        [
+         "2025-07-07",
+         31.3
+        ],
+        [
+         "2025-07-08",
+         29.8
+        ],
+        [
+         "2025-07-09",
+         29.8
+        ],
+        [
+         "2025-07-10",
+         29.7
+        ],
+        [
+         "2025-07-11",
+         26.7
+        ],
+        [
+         "2025-07-12",
+         24.5
+        ],
+        [
+         "2025-07-13",
+         24.5
+        ],
+        [
+         "2025-07-14",
+         25.5
+        ],
+        [
+         "2025-07-15",
+         27.8
+        ],
+        [
+         "2025-07-16",
+         25.0
+        ],
+        [
+         "2025-07-17",
+         27.8
+        ],
+        [
+         "2025-07-18",
+         29.4
+        ],
+        [
+         "2025-07-19",
+         29.1
+        ],
+        [
+         "2025-07-20",
+         29.1
+        ],
+        [
+         "2025-07-21",
+         27.8
+        ],
+        [
+         "2025-07-22",
+         27.9
+        ],
+        [
+         "2025-07-23",
+         29.1
+        ],
+        [
+         "2025-07-24",
+         27.5
+        ],
+        [
+         "2025-07-25",
+         28.2
+        ],
+        [
+         "2025-07-26",
+         28.2
+        ],
+        [
+         "2025-07-27",
+         29.2
+        ],
+        [
+         "2025-07-28",
+         29.4
+        ],
+        [
+         "2025-07-29",
+         29.4
+        ],
+        [
+         "2025-07-30",
+         29.4
+        ],
+        [
+         "2025-07-31",
+         29.4
+        ],
+        [
+         "2025-08-02",
+         29.2
+        ],
+        [
+         "2025-08-03",
+         29.2
+        ],
+        [
+         "2025-08-04",
+         29.2
+        ],
+        [
+         "2025-08-05",
+         30.1
+        ],
+        [
+         "2025-08-06",
+         31.2
+        ],
+        [
+         "2025-08-07",
+         31.2
+        ],
+        [
+         "2025-08-08",
+         31.2
+        ],
+        [
+         "2025-08-09",
+         31.8
+        ],
+        [
+         "2025-08-10",
+         31.8
+        ],
+        [
+         "2025-08-11",
+         32.6
+        ],
+        [
+         "2025-08-12",
+         34.0
+        ],
+        [
+         "2025-08-13",
+         32.7
+        ],
+        [
+         "2025-08-14",
+         34.0
+        ],
+        [
+         "2025-08-15",
+         34.0
+        ],
+        [
+         "2025-08-16",
+         34.6
+        ],
+        [
+         "2025-08-17",
+         34.6
+        ],
+        [
+         "2025-08-18",
+         34.1
+        ],
+        [
+         "2025-08-19",
+         33.3
+        ],
+        [
+         "2025-08-20",
+         35.3
+        ],
+        [
+         "2025-08-21",
+         35.3
+        ],
+        [
+         "2025-08-22",
+         35.3
+        ],
+        [
+         "2025-08-23",
+         35.1
+        ],
+        [
+         "2025-08-24",
+         34.6
+        ],
+        [
+         "2025-08-25",
+         33.1
+        ],
+        [
+         "2025-08-26",
+         31.2
+        ],
+        [
+         "2025-08-27",
+         27.8
+        ],
+        [
+         "2025-08-28",
+         28.5
+        ],
+        [
+         "2025-08-29",
+         28.2
+        ],
+        [
+         "2025-08-30",
+         28.2
+        ],
+        [
+         "2025-08-31",
+         28.2
+        ],
+        [
+         "2025-09-01",
+         28.9
+        ],
+        [
+         "2025-09-02",
+         30.6
+        ],
+        [
+         "2025-09-03",
+         30.6
+        ],
+        [
+         "2025-09-04",
+         30.6
+        ],
+        [
+         "2025-09-05",
+         30.6
+        ],
+        [
+         "2025-09-06",
+         28.9
+        ],
+        [
+         "2025-09-07",
+         28.9
+        ],
+        [
+         "2025-09-09",
+         30.8
+        ],
+        [
+         "2025-09-10",
+         31.2
+        ],
+        [
+         "2025-09-11",
+         31.3
+        ],
+        [
+         "2025-09-12",
+         35.1
+        ],
+        [
+         "2025-09-13",
+         35.3
+        ],
+        [
+         "2025-09-14",
+         35.1
+        ],
+        [
+         "2025-09-15",
+         38.5
+        ],
+        [
+         "2025-09-16",
+         37.4
+        ],
+        [
+         "2025-09-17",
+         37.8
+        ],
+        [
+         "2025-09-18",
+         38.2
+        ],
+        [
+         "2025-09-19",
+         38.5
+        ],
+        [
+         "2025-09-20",
+         38.6
+        ],
+        [
+         "2025-09-21",
+         38.6
+        ],
+        [
+         "2025-09-22",
+         39.8
+        ],
+        [
+         "2025-09-23",
+         41.6
+        ],
+        [
+         "2025-09-24",
+         41.8
+        ],
+        [
+         "2025-09-25",
+         41.8
+        ],
+        [
+         "2025-09-26",
+         41.6
+        ],
+        [
+         "2025-09-27",
+         41.2
+        ],
+        [
+         "2025-09-28",
+         41.8
+        ],
+        [
+         "2025-09-29",
+         40.2
+        ],
+        [
+         "2025-09-30",
+         38.6
+        ],
+        [
+         "2025-10-01",
+         38.6
+        ],
+        [
+         "2025-10-02",
+         39.6
+        ],
+        [
+         "2025-10-03",
+         42.6
+        ],
+        [
+         "2025-10-04",
+         42.6
+        ],
+        [
+         "2025-10-05",
+         42.6
+        ],
+        [
+         "2025-10-06",
+         47.3
+        ],
+        [
+         "2025-10-07",
+         55.5
+        ],
+        [
+         "2025-10-08",
+         64.2
+        ],
+        [
+         "2025-10-09",
+         65.7
+        ],
+        [
+         "2025-10-10",
+         67.6
+        ],
+        [
+         "2025-10-11",
+         67.6
+        ],
+        [
+         "2025-10-12",
+         73.0
+        ],
+        [
+         "2025-10-13",
+         71.2
+        ],
+        [
+         "2025-10-14",
+         74.7
+        ],
+        [
+         "2025-10-15",
+         79.1
+        ],
+        [
+         "2025-10-16",
+         100.6
+        ],
+        [
+         "2025-10-17",
+         105.9
+        ],
+        [
+         "2025-10-18",
+         113.5
+        ],
+        [
+         "2025-10-19",
+         118.2
+        ],
+        [
+         "2025-10-21",
+         127.8
+        ],
+        [
+         "2025-10-22",
+         134.1
+        ],
+        [
+         "2025-10-23",
+         153.3
+        ],
+        [
+         "2025-10-24",
+         153.3
+        ],
+        [
+         "2025-10-25",
+         155.0
+        ],
+        [
+         "2025-10-27",
+         160.6
+        ],
+        [
+         "2025-10-28",
+         160.6
+        ],
+        [
+         "2025-10-29",
+         150.8
+        ],
+        [
+         "2025-10-30",
+         150.8
+        ],
+        [
+         "2025-10-31",
+         160.6
+        ],
+        [
+         "2025-11-01",
+         160.6
+        ],
+        [
+         "2025-11-02",
+         197.4
+        ],
+        [
+         "2025-11-05",
+         212.8
+        ],
+        [
+         "2025-11-06",
+         219.1
+        ],
+        [
+         "2025-11-07",
+         222.6
+        ],
+        [
+         "2025-11-08",
+         222.6
+        ],
+        [
+         "2025-11-09",
+         240.3
+        ],
+        [
+         "2025-11-11",
+         222.6
+        ],
+        [
+         "2025-11-12",
+         231.4
+        ],
+        [
+         "2025-11-13",
+         239.1
+        ],
+        [
+         "2025-11-14",
+         242.2
+        ],
+        [
+         "2025-11-15",
+         239.1
+        ],
+        [
+         "2025-11-16",
+         241.0
+        ],
+        [
+         "2025-11-17",
+         242.2
+        ],
+        [
+         "2025-11-19",
+         236.8
+        ],
+        [
+         "2025-11-20",
+         236.8
+        ],
+        [
+         "2025-11-21",
+         236.8
+        ],
+        [
+         "2025-11-22",
+         218.1
+        ],
+        [
+         "2025-11-23",
+         214.5
+        ],
+        [
+         "2025-11-24",
+         213.7
+        ],
+        [
+         "2025-11-25",
+         218.1
+        ],
+        [
+         "2025-11-26",
+         216.3
+        ],
+        [
+         "2025-11-27",
+         205.8
+        ],
+        [
+         "2025-11-28",
+         195.1
+        ],
+        [
+         "2025-11-29",
+         195.1
+        ],
+        [
+         "2025-11-30",
+         183.2
+        ],
+        [
+         "2025-12-01",
+         173.1
+        ],
+        [
+         "2025-12-02",
+         164.8
+        ],
+        [
+         "2025-12-03",
+         164.8
+        ],
+        [
+         "2025-12-04",
+         158.8
+        ],
+        [
+         "2025-12-05",
+         158.8
+        ],
+        [
+         "2025-12-06",
+         158.8
+        ],
+        [
+         "2025-12-07",
+         164.8
+        ],
+        [
+         "2025-12-08",
+         169.9
+        ],
+        [
+         "2025-12-09",
+         173.1
+        ],
+        [
+         "2025-12-10",
+         173.1
+        ],
+        [
+         "2025-12-11",
+         175.1
+        ],
+        [
+         "2025-12-12",
+         175.1
+        ],
+        [
+         "2025-12-13",
+         186.5
+        ],
+        [
+         "2025-12-14",
+         202.3
+        ],
+        [
+         "2025-12-15",
+         210.0
+        ],
+        [
+         "2025-12-16",
+         241.2
+        ],
+        [
+         "2025-12-17",
+         241.2
+        ],
+        [
+         "2025-12-18",
+         226.4
+        ],
+        [
+         "2025-12-19",
+         241.2
+        ],
+        [
+         "2025-12-20",
+         234.6
+        ],
+        [
+         "2025-12-21",
+         241.9
+        ],
+        [
+         "2025-12-22",
+         234.6
+        ],
+        [
+         "2025-12-23",
+         232.9
+        ],
+        [
+         "2025-12-24",
+         241.9
+        ],
+        [
+         "2025-12-25",
+         241.9
+        ],
+        [
+         "2025-12-26",
+         240.1
+        ],
+        [
+         "2025-12-27",
+         232.9
+        ],
+        [
+         "2025-12-28",
+         217.7
+        ],
+        [
+         "2025-12-29",
+         217.7
+        ],
+        [
+         "2025-12-30",
+         182.4
+        ],
+        [
+         "2025-12-31",
+         149.8
+        ]
+       ]
+      },
+      {
+       "name": "unusual days",
+       "type": "markers",
+       "data": [
+        [
+         "2025-02-26",
+         120.1
+        ],
+        [
+         "2025-03-11",
+         119.7
+        ],
+        [
+         "2025-03-15",
+         26.5
+        ],
+        [
+         "2025-05-15",
+         213.7
+        ],
+        [
+         "2025-10-21",
+         382.8
+        ],
+        [
+         "2025-10-22",
+         200.5
+        ],
+        [
+         "2025-10-30",
+         202.4
+        ],
+        [
+         "2025-10-31",
+         99.6
+        ],
+        [
+         "2025-11-01",
+         231.3
+        ],
+        [
+         "2025-11-05",
+         104.4
+        ],
+        [
+         "2025-11-11",
+         304.3
+        ],
+        [
+         "2025-11-12",
+         325.5
+        ],
+        [
+         "2025-11-13",
+         287.1
+        ],
+        [
+         "2025-11-23",
+         276.2
+        ],
+        [
+         "2025-11-29",
+         137.8
+        ],
+        [
+         "2025-12-02",
+         243.3
+        ],
+        [
+         "2025-12-12",
+         240.5
+        ],
+        [
+         "2025-12-13",
+         372.8
+        ],
+        [
+         "2025-12-14",
+         384.5
+        ],
+        [
+         "2025-12-15",
+         270.3
+        ],
+        [
+         "2025-12-16",
+         176.2
+        ],
+        [
+         "2025-12-24",
+         111.5
+        ],
+        [
+         "2025-12-25",
+         140.5
+        ],
+        [
+         "2025-12-28",
+         287.0
+        ],
+        [
+         "2025-12-29",
+         268.1
+        ],
+        [
+         "2025-12-30",
+         238.4
+        ],
+        [
+         "2025-12-31",
+         244.1
+        ]
+       ]
+      }
+     ],
+     "units": "µg/m³",
+     "bands": [],
+     "colour_scale": null,
+     "notes": []
+    },
+    "sources": [
+     {
+      "dataset_id": "ds1",
+      "title": "Unusual PM2.5 days in Delhi",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "data_type": "measured",
+      "date_range": {
+       "start": "2025-01-01",
+       "end": "2025-12-31"
+      }
+     }
+    ],
+    "coverage": {
+     "ds1": {
+      "days_in_period": 365,
+      "days_with_city_value": 296,
+      "share_of_days_with_city_value": 0.811,
+      "mean_valid_stations": 32.2,
+      "flagged_hours_excluded": 393,
+      "impossible_pm25_gt_pm10_station_days_excluded": 14
+     }
+    },
+    "warnings": [
+     "Measured PM data starts 2025-02-18; earlier dates are not covered.",
+     "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+     "15 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+    ],
+    "data_types": [
+     "measured"
+    ],
+    "clarifying_question": null,
+    "verification": {
+     "passed": true,
+     "retries": 0,
+     "numbers_checked": 10
+    },
+    "model": "gemini-3.5-flash-lite",
+    "usage": {
+     "requests": 2,
+     "input_tokens": 3407,
+     "output_tokens": 241
+    }
+   },
+   "steps": [
+    {
+     "seq": 3,
+     "type": "plan",
+     "title": "Plan: unusual_days",
+     "detail": {
+      "steps": [
+       {
+        "tool": "unusual_days",
+        "args": {
+         "pollutant": "PM2.5",
+         "city": "Delhi",
+         "period": "2025"
+        }
+       }
+      ]
+     },
+     "ts": "2026-11-05T08:55:40.158+00:00"
+    },
+    {
+     "seq": 4,
+     "type": "tool_call",
+     "title": "unusual_days",
+     "detail": {
+      "args": {
+       "city": "Delhi",
+       "pollutant": "PM2.5",
+       "period": "2025"
+      }
+     },
+     "ts": "2026-11-05T08:55:40.159+00:00"
+    },
+    {
+     "seq": 5,
+     "type": "tool_result",
+     "title": "unusual_days: Unusual PM2.5 days in Delhi",
+     "detail": {
+      "dataset_id": "ds1",
+      "data_type": "measured",
+      "fields": 18,
+      "warnings": 3
+     },
+     "ts": "2026-11-05T08:55:40.241+00:00"
+    },
+    {
+     "seq": 7,
+     "type": "verification",
+     "title": "passed",
+     "detail": {
+      "checked_numbers": 10,
+      "problems": 0
+     },
+     "ts": "2026-11-05T08:55:49.863+00:00"
+    }
+   ],
+   "context": {
+    "city": "Delhi",
+    "pollutant": "PM2.5",
+    "period": "2025"
+   },
+   "built": "2026-11-05 14:25",
+   "model": "gemini-3.5-flash-lite"
+  },
+  {
+   "question": "What was Delhi's average PM2.5 in November 2025?",
+   "final": {
+    "status": "answered",
+    "answer": "In November 2025, Delhi's average measured PM2.5 (default pollutant, period November 2025) was 224.1 µg/m³ based on measured PM data.",
+    "explanation": "Measured PM: PM2.5 trend in Delhi, 2025-11-01 to 2025-11-30. 37 primary stations (primary reference). 26 of 30 days have a city value. Method: City value per day = equal-weight mean of valid primary station-days (>= 16 valid IST hours; >= max(3, 50%) stations).",
+    "cards": [
+     {
+      "label": "Delhi mean PM2.5, 2025-11-01 to 2025-11-30",
+      "value": 224.1,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "mean",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "2 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     }
+    ],
+    "chart": {
+     "type": "line",
+     "title": "Delhi PM2.5 (monthly mean)",
+     "x": {
+      "field": "period",
+      "type": "category"
+     },
+     "y": {
+      "field": "mean",
+      "label": "PM2.5 (µg/m³)"
+     },
+     "series": [
+      {
+       "name": "Delhi",
+       "data": [
+        [
+         "2025-11",
+         224.1
+        ]
+       ]
+      }
+     ],
+     "units": "µg/m³",
+     "bands": [],
+     "colour_scale": null,
+     "notes": []
+    },
+    "sources": [
+     {
+      "dataset_id": "ds1",
+      "title": "PM2.5 trend in Delhi",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "data_type": "measured",
+      "date_range": {
+       "start": "2025-11-01",
+       "end": "2025-11-30"
+      }
+     }
+    ],
+    "coverage": {
+     "ds1": {
+      "days_in_period": 30,
+      "days_with_city_value": 26,
+      "share_of_days_with_city_value": 0.867,
+      "mean_valid_stations": 33.7,
+      "flagged_hours_excluded": 42,
+      "impossible_pm25_gt_pm10_station_days_excluded": 0
+     }
+    },
+    "warnings": [
+     "2 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+    ],
+    "data_types": [
+     "measured"
+    ],
+    "clarifying_question": null,
+    "verification": {
+     "passed": true,
+     "retries": 0,
+     "numbers_checked": 3
+    },
+    "model": "gemini-3.5-flash-lite",
+    "usage": {
+     "requests": 2,
+     "input_tokens": 3178,
+     "output_tokens": 127
+    }
+   },
+   "steps": [
+    {
+     "seq": 3,
+     "type": "plan",
+     "title": "Plan: city_trend",
+     "detail": {
+      "steps": [
+       {
+        "tool": "city_trend",
+        "args": {
+         "pollutant": "PM2.5",
+         "period": "November 2025",
+         "freq": "M",
+         "city": "Delhi"
+        }
+       }
+      ]
+     },
+     "ts": "2026-11-05T08:56:14.358+00:00"
+    },
+    {
+     "seq": 4,
+     "type": "tool_call",
+     "title": "city_trend",
+     "detail": {
+      "args": {
+       "city": "Delhi",
+       "pollutant": "PM2.5",
+       "period": "November 2025",
+       "freq": "M"
+      }
+     },
+     "ts": "2026-11-05T08:56:14.359+00:00"
+    },
+    {
+     "seq": 5,
+     "type": "tool_result",
+     "title": "city_trend: PM2.5 trend in Delhi",
+     "detail": {
+      "dataset_id": "ds1",
+      "data_type": "measured",
+      "fields": 11,
+      "warnings": 1
+     },
+     "ts": "2026-11-05T08:56:14.383+00:00"
+    },
+    {
+     "seq": 7,
+     "type": "verification",
+     "title": "passed",
+     "detail": {
+      "checked_numbers": 3,
+      "problems": 0
+     },
+     "ts": "2026-11-05T08:56:18.836+00:00"
+    }
+   ],
+   "context": {
+    "city": "Delhi",
+    "pollutant": "PM2.5",
+    "period": "November 2025"
+   },
+   "built": "2026-11-05 14:26",
+   "model": "gemini-3.5-flash-lite"
+  },
+  {
+   "question": "Compare Mumbai's Diwali AQI in 2024 and 2025.",
+   "final": {
+    "status": "answered",
+    "answer": "Using official CPCB AQI (an index, not a concentration), Mumbai's Diwali festival AQI was 188.5 with a Moderate category in 2024 (bulletin dates 2024-11-01: 169, 2024-11-02: 208), and 160.5 with a Moderate category in 2025 (bulletin dates 2025-10-21: 211, 2025-10-22: 110).",
+    "explanation": "Official CPCB AQI (index, not a concentration): Diwali air quality in Mumbai (official AQI), 2024-10-17 to 2025-10-24. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
+    "cards": [
+     {
+      "label": "Mumbai official AQI, Diwali 2024 (mean of festival bulletins)",
+      "value": 188.5,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2024_festival_aqi",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "No measured PM data is available for Diwali 2024. Measured PM is not used for this Diwali answer."
+      ]
+     },
+     {
+      "label": "Mumbai official AQI, Diwali 2025 (mean of festival bulletins)",
+      "value": 160.5,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2025_festival_aqi",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "No measured PM data is available for Diwali 2024. Measured PM is not used for this Diwali answer."
+      ]
+     }
+    ],
+    "chart": {
+     "type": "line",
+     "title": "Mumbai: official CPCB AQI by bulletin date around Diwali",
+     "x": {
+      "field": "x",
+      "label": "Bulletin day relative to Diwali (bulletin D+1 reports Diwali evening; each bulletin = 24 h to 4 PM IST)",
+      "tooltip_fields": [
+       "bulletin_date",
+       "reporting_period",
+       "category"
+      ]
+     },
+     "y": {
+      "field": "aqi",
+      "label": "AQI (index)"
+     },
+     "series": [
+      {
+       "name": "Diwali 2024",
+       "data": [
+        {
+         "x": -13,
+         "aqi": 87.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2024-10-18",
+         "reporting_period": "2024-10-17 16:00 to 2024-10-18 16:00 IST"
+        },
+        {
+         "x": -12,
+         "aqi": 45.0,
+         "category": "Good",
+         "bulletin_date": "2024-10-19",
+         "reporting_period": "2024-10-18 16:00 to 2024-10-19 16:00 IST"
+        },
+        {
+         "x": -11,
+         "aqi": 76.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2024-10-20",
+         "reporting_period": "2024-10-19 16:00 to 2024-10-20 16:00 IST"
+        },
+        {
+         "x": -10,
+         "aqi": 51.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2024-10-21",
+         "reporting_period": "2024-10-20 16:00 to 2024-10-21 16:00 IST"
+        },
+        {
+         "x": -9,
+         "aqi": 86.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2024-10-22",
+         "reporting_period": "2024-10-21 16:00 to 2024-10-22 16:00 IST"
+        },
+        {
+         "x": -8,
+         "aqi": 71.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2024-10-23",
+         "reporting_period": "2024-10-22 16:00 to 2024-10-23 16:00 IST"
+        },
+        {
+         "x": -7,
+         "aqi": 102.0,
+         "category": "Moderate",
+         "bulletin_date": "2024-10-24",
+         "reporting_period": "2024-10-23 16:00 to 2024-10-24 16:00 IST"
+        },
+        {
+         "x": -6,
+         "aqi": 124.0,
+         "category": "Moderate",
+         "bulletin_date": "2024-10-25",
+         "reporting_period": "2024-10-24 16:00 to 2024-10-25 16:00 IST"
+        },
+        {
+         "x": -5,
+         "aqi": 112.0,
+         "category": "Moderate",
+         "bulletin_date": "2024-10-26",
+         "reporting_period": "2024-10-25 16:00 to 2024-10-26 16:00 IST"
+        },
+        {
+         "x": -4,
+         "aqi": 144.0,
+         "category": "Moderate",
+         "bulletin_date": "2024-10-27",
+         "reporting_period": "2024-10-26 16:00 to 2024-10-27 16:00 IST"
+        },
+        {
+         "x": -3,
+         "aqi": 132.0,
+         "category": "Moderate",
+         "bulletin_date": "2024-10-28",
+         "reporting_period": "2024-10-27 16:00 to 2024-10-28 16:00 IST"
+        },
+        {
+         "x": -2,
+         "aqi": 96.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2024-10-29",
+         "reporting_period": "2024-10-28 16:00 to 2024-10-29 16:00 IST"
+        },
+        {
+         "x": -1,
+         "aqi": 94.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2024-10-30",
+         "reporting_period": "2024-10-29 16:00 to 2024-10-30 16:00 IST"
+        },
+        {
+         "x": 0,
+         "aqi": 167.0,
+         "category": "Moderate",
+         "bulletin_date": "2024-10-31",
+         "reporting_period": "2024-10-30 16:00 to 2024-10-31 16:00 IST"
+        },
+        {
+         "x": 1,
+         "aqi": 169.0,
+         "category": "Moderate",
+         "bulletin_date": "2024-11-01",
+         "reporting_period": "2024-10-31 16:00 to 2024-11-01 16:00 IST"
+        },
+        {
+         "x": 2,
+         "aqi": 208.0,
+         "category": "Poor",
+         "bulletin_date": "2024-11-02",
+         "reporting_period": "2024-11-01 16:00 to 2024-11-02 16:00 IST"
+        },
+        {
+         "x": 3,
+         "aqi": 157.0,
+         "category": "Moderate",
+         "bulletin_date": "2024-11-03",
+         "reporting_period": "2024-11-02 16:00 to 2024-11-03 16:00 IST"
+        },
+        {
+         "x": 4,
+         "aqi": 159.0,
+         "category": "Moderate",
+         "bulletin_date": "2024-11-04",
+         "reporting_period": "2024-11-03 16:00 to 2024-11-04 16:00 IST"
+        }
+       ]
+      },
+      {
+       "name": "Diwali 2025",
+       "data": [
+        {
+         "x": -13,
+         "aqi": 54.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2025-10-07",
+         "reporting_period": "2025-10-06 16:00 to 2025-10-07 16:00 IST"
+        },
+        {
+         "x": -12,
+         "aqi": 70.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2025-10-08",
+         "reporting_period": "2025-10-07 16:00 to 2025-10-08 16:00 IST"
+        },
+        {
+         "x": -11,
+         "aqi": 94.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2025-10-09",
+         "reporting_period": "2025-10-08 16:00 to 2025-10-09 16:00 IST"
+        },
+        {
+         "x": -10,
+         "aqi": 132.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-10",
+         "reporting_period": "2025-10-09 16:00 to 2025-10-10 16:00 IST"
+        },
+        {
+         "x": -9,
+         "aqi": 152.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-11",
+         "reporting_period": "2025-10-10 16:00 to 2025-10-11 16:00 IST"
+        },
+        {
+         "x": -8,
+         "aqi": 153.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-12",
+         "reporting_period": "2025-10-11 16:00 to 2025-10-12 16:00 IST"
+        },
+        {
+         "x": -7,
+         "aqi": 139.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-13",
+         "reporting_period": "2025-10-12 16:00 to 2025-10-13 16:00 IST"
+        },
+        {
+         "x": -6,
+         "aqi": 135.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-14",
+         "reporting_period": "2025-10-13 16:00 to 2025-10-14 16:00 IST"
+        },
+        {
+         "x": -5,
+         "aqi": 137.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-15",
+         "reporting_period": "2025-10-14 16:00 to 2025-10-15 16:00 IST"
+        },
+        {
+         "x": -4,
+         "aqi": 130.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-16",
+         "reporting_period": "2025-10-15 16:00 to 2025-10-16 16:00 IST"
+        },
+        {
+         "x": -3,
+         "aqi": 88.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2025-10-17",
+         "reporting_period": "2025-10-16 16:00 to 2025-10-17 16:00 IST"
+        },
+        {
+         "x": -2,
+         "aqi": 122.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-18",
+         "reporting_period": "2025-10-17 16:00 to 2025-10-18 16:00 IST"
+        },
+        {
+         "x": -1,
+         "aqi": 155.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-19",
+         "reporting_period": "2025-10-18 16:00 to 2025-10-19 16:00 IST"
+        },
+        {
+         "x": 0,
+         "aqi": 188.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-20",
+         "reporting_period": "2025-10-19 16:00 to 2025-10-20 16:00 IST"
+        },
+        {
+         "x": 1,
+         "aqi": 211.0,
+         "category": "Poor",
+         "bulletin_date": "2025-10-21",
+         "reporting_period": "2025-10-20 16:00 to 2025-10-21 16:00 IST"
+        },
+        {
+         "x": 2,
+         "aqi": 110.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-22",
+         "reporting_period": "2025-10-21 16:00 to 2025-10-22 16:00 IST"
+        },
+        {
+         "x": 3,
+         "aqi": 108.0,
+         "category": "Moderate",
+         "bulletin_date": "2025-10-23",
+         "reporting_period": "2025-10-22 16:00 to 2025-10-23 16:00 IST"
+        },
+        {
+         "x": 4,
+         "aqi": 75.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2025-10-24",
+         "reporting_period": "2025-10-23 16:00 to 2025-10-24 16:00 IST"
+        }
+       ]
+      }
+     ],
+     "units": "index (0-500)",
+     "bands": [
+      {
+       "label": "Diwali 2024 festival bulletins (2024-11-01, 2024-11-02)",
+       "start": 1,
+       "end": 2
+      },
+      {
+       "label": "Diwali 2025 festival bulletins (2025-10-21, 2025-10-22)",
+       "start": 1,
+       "end": 2
+      }
+     ],
+     "colour_scale": "cpcb_aqi",
+     "notes": [
+      "Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on the bulletin date.",
+      "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF9900', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"
+     ]
+    },
+    "sources": [
+     {
+      "dataset_id": "ds1",
+      "title": "Diwali air quality in Mumbai (official AQI)",
+      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "data_type": "official_aqi",
+      "date_range": {
+       "start": "2024-10-17",
+       "end": "2025-10-24"
+      }
+     }
+    ],
+    "coverage": {
+     "ds1": {
+      "years_available": [
+       2024,
+       2025
+      ]
+     }
+    },
+    "warnings": [
+     "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+     "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated D+1 reports Diwali evening.",
+     "City AQI is CPCB's average over whichever stations reported; the station mix changes daily.",
+     "Percentage changes are withheld: they vary strongly with the baseline window (see baseline_candidates).",
+     "No measured PM data is available for Diwali 2024. Measured PM is not used for this Diwali answer.",
+     "Measured PM data is incomplete for Diwali 2025. Measured PM is not used for this Diwali answer.",
+     "AQI was already rising in the days before Diwali, so the festival level cannot be attributed to Diwali alone.",
+     "Do not read this as Diwali causing the change: AQI often rises through October and November for seasonal reasons, and other weather and emission changes happen at the same time."
+    ],
+    "data_types": [
+     "official_aqi"
+    ],
+    "clarifying_question": null,
+    "verification": {
+     "passed": true,
+     "retries": 0,
+     "numbers_checked": 8
+    },
+    "model": "gemini-3.5-flash-lite",
+    "usage": {
+     "requests": 2,
+     "input_tokens": 3327,
+     "output_tokens": 221
+    }
+   },
+   "steps": [
+    {
+     "seq": 3,
+     "type": "plan",
+     "title": "Plan: diwali_aqi",
+     "detail": {
+      "steps": [
+       {
+        "tool": "diwali_aqi",
+        "args": {
+         "years": [
+          2024,
+          2025
+         ],
+         "city": "Mumbai"
+        }
+       }
+      ]
+     },
+     "ts": "2026-11-05T08:56:39.348+00:00"
+    },
+    {
+     "seq": 4,
+     "type": "tool_call",
+     "title": "diwali_aqi",
+     "detail": {
+      "args": {
+       "city": "Mumbai",
+       "years": [
+        2024,
+        2025
+       ],
+       "percent": false
+      }
+     },
+     "ts": "2026-11-05T08:56:39.349+00:00"
+    },
+    {
+     "seq": 5,
+     "type": "tool_result",
+     "title": "diwali_aqi: Diwali air quality in Mumbai (official AQI)",
+     "detail": {
+      "dataset_id": "ds1",
+      "data_type": "official_aqi",
+      "fields": 14,
+      "warnings": 8
+     },
+     "ts": "2026-11-05T08:56:39.371+00:00"
+    },
+    {
+     "seq": 7,
+     "type": "verification",
+     "title": "passed",
+     "detail": {
+      "checked_numbers": 8,
+      "problems": 0
+     },
+     "ts": "2026-11-05T08:56:42.429+00:00"
+    }
+   ],
+   "context": {
+    "city": "Mumbai",
+    "years": [
+     2024,
+     2025
+    ]
+   },
+   "built": "2026-11-05 14:26",
+   "model": "gemini-3.5-flash-lite"
+  },
+  {
+   "question": "What was Delhi's AQI on Diwali 2026?",
+   "final": {
+    "status": "unavailable",
+    "answer": "Official AQI for Delhi on Diwali 2026 is not available yet, as data is unavailable for that period.",
+    "explanation": "Official CPCB AQI (index, not a concentration): Diwali air quality in Delhi (official AQI), 2026-10-25 to 2026-11-12. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
+    "cards": [],
+    "chart": {
+     "type": "line",
+     "title": "Delhi: official CPCB AQI by bulletin date around Diwali",
+     "x": {
+      "field": "x",
+      "label": "Bulletin day relative to Diwali (bulletin D+1 reports Diwali evening; each bulletin = 24 h to 4 PM IST)",
+      "tooltip_fields": [
+       "bulletin_date",
+       "reporting_period",
+       "category"
+      ]
+     },
+     "y": {
+      "field": "aqi",
+      "label": "AQI (index)"
+     },
+     "series": [],
+     "units": "index (0-500)",
+     "bands": [],
+     "colour_scale": "cpcb_aqi",
+     "notes": [
+      "Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on the bulletin date.",
+      "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF9900', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"
+     ]
+    },
+    "sources": [
+     {
+      "dataset_id": "ds1",
+      "title": "Diwali air quality in Delhi (official AQI)",
+      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "data_type": "official_aqi",
+      "date_range": {
+       "start": "2026-10-25",
+       "end": "2026-11-12"
+      }
+     }
+    ],
+    "coverage": {
+     "ds1": {
+      "years_available": []
+     }
+    },
+    "warnings": [
+     "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+     "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated D+1 reports Diwali evening.",
+     "City AQI is CPCB's average over whichever stations reported; the station mix changes daily.",
+     "Percentage changes are withheld: they vary strongly with the baseline window (see baseline_candidates).",
+     "Do not read this as Diwali causing the change: AQI often rises through October and November for seasonal reasons, and other weather and emission changes happen at the same time."
+    ],
+    "data_types": [
+     "official_aqi"
+    ],
+    "clarifying_question": null,
+    "verification": {
+     "passed": true,
+     "retries": 1,
+     "numbers_checked": 1
+    },
+    "model": "gemini-3.5-flash-lite",
+    "usage": {
+     "requests": 3,
+     "input_tokens": 4864,
+     "output_tokens": 131
+    }
+   },
+   "steps": [
+    {
+     "seq": 3,
+     "type": "plan",
+     "title": "Plan: diwali_aqi",
+     "detail": {
+      "steps": [
+       {
+        "tool": "diwali_aqi",
+        "args": {
+         "city": "Delhi",
+         "years": [
+          2026
+         ]
+        }
+       }
+      ]
+     },
+     "ts": "2026-11-05T08:56:59.401+00:00"
+    },
+    {
+     "seq": 4,
+     "type": "tool_call",
+     "title": "diwali_aqi",
+     "detail": {
+      "args": {
+       "city": "Delhi",
+       "years": [
+        2026
+       ],
+       "percent": false
+      }
+     },
+     "ts": "2026-11-05T08:56:59.403+00:00"
+    },
+    {
+     "seq": 5,
+     "type": "tool_result",
+     "title": "diwali_aqi: Diwali air quality in Delhi (official AQI)",
+     "detail": {
+      "dataset_id": "ds1",
+      "data_type": "official_aqi",
+      "fields": 1,
+      "warnings": 5
+     },
+     "ts": "2026-11-05T08:56:59.414+00:00"
+    },
+    {
+     "seq": 7,
+     "type": "verification",
+     "title": "failed",
+     "detail": {
+      "checked_numbers": 1,
+      "problems": 1
+     },
+     "ts": "2026-11-05T08:57:02.875+00:00"
+    },
+    {
+     "seq": 10,
+     "type": "verification",
+     "title": "passed",
+     "detail": {
+      "checked_numbers": 1,
+      "problems": 0
+     },
+     "ts": "2026-11-05T08:57:04.104+00:00"
+    }
+   ],
+   "context": {
+    "city": "Delhi",
+    "years": [
+     2026
+    ]
+   },
+   "built": "2026-11-05 14:27",
+   "model": "gemini-3.5-flash-lite"
+  },
+  {
+   "question": "How complete is the data for Chennai in 2025?",
+   "final": {
+    "status": "answered",
+    "answer": "For Chennai in 2025 using measured PM (µg/m³), there are 365 days in period across 6 primary stations, with PM2.5 data present on 286 days (78.4% share) and PM10 data present on 290 days (79.5% share). Note that there is no measured OpenAQ data before 2025-02-18 due to a CPCB data gap, and 19 date(s) in this period have severe network-wide data gaps.",
+    "explanation": "Measured PM: Data coverage and quality for Chennai, 2025-01-01 to 2025-12-31. Method: Valid station-day: >= 16 valid IST hours after excluding flagged hours.",
+    "cards": [
+     {
+      "label": "Chennai PM2.5 share of days",
+      "value": 78.4,
+      "unit": "%",
+      "dataset_id": "ds1",
+      "field": "pm25_share_pct",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+       "19 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     },
+     {
+      "label": "Chennai PM10 share of days",
+      "value": 79.5,
+      "unit": "%",
+      "dataset_id": "ds1",
+      "field": "pm10_share_pct",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+       "19 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     },
+     {
+      "label": "Chennai primary stations",
+      "value": 6.0,
+      "unit": "stations",
+      "dataset_id": "ds1",
+      "field": "primary_stations",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+       "19 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     },
+     {
+      "label": "days with severe network gaps",
+      "value": 19.0,
+      "unit": "days",
+      "dataset_id": "ds1",
+      "field": "severe_days",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+       "19 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     }
+    ],
+    "chart": {
+     "type": "calendar_heatmap",
+     "title": "Chennai: data-quality severity by day",
+     "x": {
+      "field": "date",
+      "type": "time"
+     },
+     "y": {
+      "field": "severity",
+      "type": "category"
+     },
+     "series": [
+      {
+       "name": "severity",
+       "data": [
+        [
+         "2025-02-18",
+         "none"
+        ],
+        [
+         "2025-02-19",
+         "none"
+        ],
+        [
+         "2025-02-20",
+         "none"
+        ],
+        [
+         "2025-02-21",
+         "none"
+        ],
+        [
+         "2025-02-22",
+         "none"
+        ],
+        [
+         "2025-02-23",
+         "none"
+        ],
+        [
+         "2025-02-24",
+         "moderate"
+        ],
+        [
+         "2025-02-25",
+         "severe"
+        ],
+        [
+         "2025-02-26",
+         "none"
+        ],
+        [
+         "2025-02-27",
+         "none"
+        ],
+        [
+         "2025-02-28",
+         "none"
+        ],
+        [
+         "2025-03-01",
+         "none"
+        ],
+        [
+         "2025-03-02",
+         "none"
+        ],
+        [
+         "2025-03-03",
+         "minor"
+        ],
+        [
+         "2025-03-04",
+         "none"
+        ],
+        [
+         "2025-03-05",
+         "none"
+        ],
+        [
+         "2025-03-06",
+         "none"
+        ],
+        [
+         "2025-03-07",
+         "none"
+        ],
+        [
+         "2025-03-08",
+         "none"
+        ],
+        [
+         "2025-03-09",
+         "none"
+        ],
+        [
+         "2025-03-10",
+         "none"
+        ],
+        [
+         "2025-03-11",
+         "none"
+        ],
+        [
+         "2025-03-12",
+         "none"
+        ],
+        [
+         "2025-03-13",
+         "none"
+        ],
+        [
+         "2025-03-14",
+         "none"
+        ],
+        [
+         "2025-03-15",
+         "none"
+        ],
+        [
+         "2025-03-16",
+         "none"
+        ],
+        [
+         "2025-03-17",
+         "none"
+        ],
+        [
+         "2025-03-18",
+         "none"
+        ],
+        [
+         "2025-03-19",
+         "none"
+        ],
+        [
+         "2025-03-20",
+         "none"
+        ],
+        [
+         "2025-03-21",
+         "none"
+        ],
+        [
+         "2025-03-22",
+         "none"
+        ],
+        [
+         "2025-03-23",
+         "none"
+        ],
+        [
+         "2025-03-24",
+         "none"
+        ],
+        [
+         "2025-03-25",
+         "none"
+        ],
+        [
+         "2025-03-26",
+         "none"
+        ],
+        [
+         "2025-03-27",
+         "none"
+        ],
+        [
+         "2025-03-28",
+         "none"
+        ],
+        [
+         "2025-03-29",
+         "none"
+        ],
+        [
+         "2025-03-30",
+         "none"
+        ],
+        [
+         "2025-03-31",
+         "none"
+        ],
+        [
+         "2025-04-01",
+         "minor"
+        ],
+        [
+         "2025-04-02",
+         "none"
+        ],
+        [
+         "2025-04-03",
+         "none"
+        ],
+        [
+         "2025-04-04",
+         "none"
+        ],
+        [
+         "2025-04-05",
+         "none"
+        ],
+        [
+         "2025-04-06",
+         "none"
+        ],
+        [
+         "2025-04-07",
+         "none"
+        ],
+        [
+         "2025-04-08",
+         "none"
+        ],
+        [
+         "2025-04-09",
+         "severe"
+        ],
+        [
+         "2025-04-10",
+         "severe"
+        ],
+        [
+         "2025-04-11",
+         "severe"
+        ],
+        [
+         "2025-04-12",
+         "severe"
+        ],
+        [
+         "2025-04-13",
+         "severe"
+        ],
+        [
+         "2025-04-14",
+         "severe"
+        ],
+        [
+         "2025-04-15",
+         "severe"
+        ],
+        [
+         "2025-04-16",
+         "severe"
+        ],
+        [
+         "2025-04-17",
+         "none"
+        ],
+        [
+         "2025-04-18",
+         "none"
+        ],
+        [
+         "2025-04-19",
+         "none"
+        ],
+        [
+         "2025-04-20",
+         "none"
+        ],
+        [
+         "2025-04-21",
+         "none"
+        ],
+        [
+         "2025-04-22",
+         "minor"
+        ],
+        [
+         "2025-04-23",
+         "none"
+        ],
+        [
+         "2025-04-24",
+         "none"
+        ],
+        [
+         "2025-04-25",
+         "none"
+        ],
+        [
+         "2025-04-26",
+         "none"
+        ],
+        [
+         "2025-04-27",
+         "none"
+        ],
+        [
+         "2025-04-28",
+         "none"
+        ],
+        [
+         "2025-04-29",
+         "minor"
+        ],
+        [
+         "2025-04-30",
+         "none"
+        ],
+        [
+         "2025-05-01",
+         "none"
+        ],
+        [
+         "2025-05-02",
+         "none"
+        ],
+        [
+         "2025-05-03",
+         "none"
+        ],
+        [
+         "2025-05-04",
+         "minor"
+        ],
+        [
+         "2025-05-05",
+         "moderate"
+        ],
+        [
+         "2025-05-06",
+         "none"
+        ],
+        [
+         "2025-05-07",
+         "none"
+        ],
+        [
+         "2025-05-08",
+         "none"
+        ],
+        [
+         "2025-05-09",
+         "none"
+        ],
+        [
+         "2025-05-10",
+         "none"
+        ],
+        [
+         "2025-05-11",
+         "none"
+        ],
+        [
+         "2025-05-12",
+         "none"
+        ],
+        [
+         "2025-05-13",
+         "none"
+        ],
+        [
+         "2025-05-14",
+         "minor"
+        ],
+        [
+         "2025-05-15",
+         "none"
+        ],
+        [
+         "2025-05-16",
+         "none"
+        ],
+        [
+         "2025-05-17",
+         "none"
+        ],
+        [
+         "2025-05-18",
+         "none"
+        ],
+        [
+         "2025-05-19",
+         "none"
+        ],
+        [
+         "2025-05-20",
+         "minor"
+        ],
+        [
+         "2025-05-21",
+         "minor"
+        ],
+        [
+         "2025-05-22",
+         "none"
+        ],
+        [
+         "2025-05-23",
+         "none"
+        ],
+        [
+         "2025-05-24",
+         "none"
+        ],
+        [
+         "2025-05-25",
+         "severe"
+        ],
+        [
+         "2025-05-26",
+         "severe"
+        ],
+        [
+         "2025-05-27",
+         "minor"
+        ],
+        [
+         "2025-05-28",
+         "severe"
+        ],
+        [
+         "2025-05-29",
+         "none"
+        ],
+        [
+         "2025-05-30",
+         "none"
+        ],
+        [
+         "2025-05-31",
+         "none"
+        ],
+        [
+         "2025-06-01",
+         "minor"
+        ],
+        [
+         "2025-06-02",
+         "minor"
+        ],
+        [
+         "2025-06-03",
+         "severe"
+        ],
+        [
+         "2025-06-04",
+         "none"
+        ],
+        [
+         "2025-06-05",
+         "none"
+        ],
+        [
+         "2025-06-06",
+         "none"
+        ],
+        [
+         "2025-06-07",
+         "none"
+        ],
+        [
+         "2025-06-08",
+         "none"
+        ],
+        [
+         "2025-06-09",
+         "none"
+        ],
+        [
+         "2025-06-10",
+         "none"
+        ],
+        [
+         "2025-06-11",
+         "none"
+        ],
+        [
+         "2025-06-12",
+         "none"
+        ],
+        [
+         "2025-06-13",
+         "minor"
+        ],
+        [
+         "2025-06-14",
+         "none"
+        ],
+        [
+         "2025-06-15",
+         "none"
+        ],
+        [
+         "2025-06-16",
+         "none"
+        ],
+        [
+         "2025-06-17",
+         "none"
+        ],
+        [
+         "2025-06-18",
+         "minor"
+        ],
+        [
+         "2025-06-19",
+         "none"
+        ],
+        [
+         "2025-06-20",
+         "none"
+        ],
+        [
+         "2025-06-21",
+         "moderate"
+        ],
+        [
+         "2025-06-22",
+         "minor"
+        ],
+        [
+         "2025-06-23",
+         "none"
+        ],
+        [
+         "2025-06-24",
+         "minor"
+        ],
+        [
+         "2025-06-25",
+         "severe"
+        ],
+        [
+         "2025-06-26",
+         "none"
+        ],
+        [
+         "2025-06-27",
+         "moderate"
+        ],
+        [
+         "2025-06-28",
+         "moderate"
+        ],
+        [
+         "2025-06-29",
+         "moderate"
+        ],
+        [
+         "2025-06-30",
+         "severe"
+        ],
+        [
+         "2025-07-01",
+         "none"
+        ],
+        [
+         "2025-07-02",
+         "minor"
+        ],
+        [
+         "2025-07-03",
+         "none"
+        ],
+        [
+         "2025-07-04",
+         "moderate"
+        ],
+        [
+         "2025-07-05",
+         "minor"
+        ],
+        [
+         "2025-07-06",
+         "none"
+        ],
+        [
+         "2025-07-07",
+         "none"
+        ],
+        [
+         "2025-07-08",
+         "none"
+        ],
+        [
+         "2025-07-09",
+         "none"
+        ],
+        [
+         "2025-07-10",
+         "none"
+        ],
+        [
+         "2025-07-11",
+         "none"
+        ],
+        [
+         "2025-07-12",
+         "none"
+        ],
+        [
+         "2025-07-13",
+         "none"
+        ],
+        [
+         "2025-07-14",
+         "none"
+        ],
+        [
+         "2025-07-15",
+         "none"
+        ],
+        [
+         "2025-07-16",
+         "none"
+        ],
+        [
+         "2025-07-17",
+         "none"
+        ],
+        [
+         "2025-07-18",
+         "none"
+        ],
+        [
+         "2025-07-19",
+         "none"
+        ],
+        [
+         "2025-07-20",
+         "none"
+        ],
+        [
+         "2025-07-21",
+         "none"
+        ],
+        [
+         "2025-07-22",
+         "none"
+        ],
+        [
+         "2025-07-23",
+         "none"
+        ],
+        [
+         "2025-07-24",
+         "minor"
+        ],
+        [
+         "2025-07-25",
+         "none"
+        ],
+        [
+         "2025-07-26",
+         "none"
+        ],
+        [
+         "2025-07-27",
+         "none"
+        ],
+        [
+         "2025-07-28",
+         "none"
+        ],
+        [
+         "2025-07-29",
+         "none"
+        ],
+        [
+         "2025-07-30",
+         "none"
+        ],
+        [
+         "2025-07-31",
+         "minor"
+        ],
+        [
+         "2025-08-01",
+         "moderate"
+        ],
+        [
+         "2025-08-02",
+         "none"
+        ],
+        [
+         "2025-08-03",
+         "none"
+        ],
+        [
+         "2025-08-04",
+         "none"
+        ],
+        [
+         "2025-08-05",
+         "minor"
+        ],
+        [
+         "2025-08-06",
+         "none"
+        ],
+        [
+         "2025-08-07",
+         "none"
+        ],
+        [
+         "2025-08-08",
+         "none"
+        ],
+        [
+         "2025-08-09",
+         "minor"
+        ],
+        [
+         "2025-08-10",
+         "none"
+        ],
+        [
+         "2025-08-11",
+         "none"
+        ],
+        [
+         "2025-08-12",
+         "none"
+        ],
+        [
+         "2025-08-13",
+         "none"
+        ],
+        [
+         "2025-08-14",
+         "none"
+        ],
+        [
+         "2025-08-15",
+         "none"
+        ],
+        [
+         "2025-08-16",
+         "none"
+        ],
+        [
+         "2025-08-17",
+         "none"
+        ],
+        [
+         "2025-08-18",
+         "minor"
+        ],
+        [
+         "2025-08-19",
+         "none"
+        ],
+        [
+         "2025-08-20",
+         "none"
+        ],
+        [
+         "2025-08-21",
+         "none"
+        ],
+        [
+         "2025-08-22",
+         "moderate"
+        ],
+        [
+         "2025-08-23",
+         "none"
+        ],
+        [
+         "2025-08-24",
+         "none"
+        ],
+        [
+         "2025-08-25",
+         "none"
+        ],
+        [
+         "2025-08-26",
+         "none"
+        ],
+        [
+         "2025-08-27",
+         "minor"
+        ],
+        [
+         "2025-08-28",
+         "none"
+        ],
+        [
+         "2025-08-29",
+         "none"
+        ],
+        [
+         "2025-08-30",
+         "none"
+        ],
+        [
+         "2025-08-31",
+         "none"
+        ],
+        [
+         "2025-09-01",
+         "none"
+        ],
+        [
+         "2025-09-02",
+         "none"
+        ],
+        [
+         "2025-09-03",
+         "none"
+        ],
+        [
+         "2025-09-04",
+         "none"
+        ],
+        [
+         "2025-09-05",
+         "none"
+        ],
+        [
+         "2025-09-06",
+         "none"
+        ],
+        [
+         "2025-09-07",
+         "none"
+        ],
+        [
+         "2025-09-08",
+         "moderate"
+        ],
+        [
+         "2025-09-09",
+         "none"
+        ],
+        [
+         "2025-09-10",
+         "minor"
+        ],
+        [
+         "2025-09-11",
+         "none"
+        ],
+        [
+         "2025-09-12",
+         "none"
+        ],
+        [
+         "2025-09-13",
+         "none"
+        ],
+        [
+         "2025-09-14",
+         "none"
+        ],
+        [
+         "2025-09-15",
+         "none"
+        ],
+        [
+         "2025-09-16",
+         "none"
+        ],
+        [
+         "2025-09-17",
+         "none"
+        ],
+        [
+         "2025-09-18",
+         "moderate"
+        ],
+        [
+         "2025-09-19",
+         "none"
+        ],
+        [
+         "2025-09-20",
+         "none"
+        ],
+        [
+         "2025-09-21",
+         "none"
+        ],
+        [
+         "2025-09-22",
+         "none"
+        ],
+        [
+         "2025-09-23",
+         "none"
+        ],
+        [
+         "2025-09-24",
+         "none"
+        ],
+        [
+         "2025-09-25",
+         "none"
+        ],
+        [
+         "2025-09-26",
+         "minor"
+        ],
+        [
+         "2025-09-27",
+         "minor"
+        ],
+        [
+         "2025-09-28",
+         "minor"
+        ],
+        [
+         "2025-09-29",
+         "none"
+        ],
+        [
+         "2025-09-30",
+         "none"
+        ],
+        [
+         "2025-10-01",
+         "none"
+        ],
+        [
+         "2025-10-02",
+         "none"
+        ],
+        [
+         "2025-10-03",
+         "none"
+        ],
+        [
+         "2025-10-04",
+         "none"
+        ],
+        [
+         "2025-10-05",
+         "none"
+        ],
+        [
+         "2025-10-06",
+         "none"
+        ],
+        [
+         "2025-10-07",
+         "none"
+        ],
+        [
+         "2025-10-08",
+         "none"
+        ],
+        [
+         "2025-10-09",
+         "none"
+        ],
+        [
+         "2025-10-10",
+         "minor"
+        ],
+        [
+         "2025-10-11",
+         "minor"
+        ],
+        [
+         "2025-10-12",
+         "none"
+        ],
+        [
+         "2025-10-13",
+         "none"
+        ],
+        [
+         "2025-10-14",
+         "none"
+        ],
+        [
+         "2025-10-15",
+         "minor"
+        ],
+        [
+         "2025-10-16",
+         "none"
+        ],
+        [
+         "2025-10-17",
+         "none"
+        ],
+        [
+         "2025-10-18",
+         "none"
+        ],
+        [
+         "2025-10-19",
+         "none"
+        ],
+        [
+         "2025-10-20",
+         "moderate"
+        ],
+        [
+         "2025-10-21",
+         "none"
+        ],
+        [
+         "2025-10-22",
+         "none"
+        ],
+        [
+         "2025-10-23",
+         "none"
+        ],
+        [
+         "2025-10-24",
+         "none"
+        ],
+        [
+         "2025-10-25",
+         "none"
+        ],
+        [
+         "2025-10-26",
+         "severe"
+        ],
+        [
+         "2025-10-27",
+         "moderate"
+        ],
+        [
+         "2025-10-28",
+         "moderate"
+        ],
+        [
+         "2025-10-29",
+         "none"
+        ],
+        [
+         "2025-10-30",
+         "none"
+        ],
+        [
+         "2025-10-31",
+         "none"
+        ],
+        [
+         "2025-11-01",
+         "minor"
+        ],
+        [
+         "2025-11-02",
+         "none"
+        ],
+        [
+         "2025-11-03",
+         "moderate"
+        ],
+        [
+         "2025-11-04",
+         "severe"
+        ],
+        [
+         "2025-11-05",
+         "none"
+        ],
+        [
+         "2025-11-06",
+         "minor"
+        ],
+        [
+         "2025-11-07",
+         "none"
+        ],
+        [
+         "2025-11-08",
+         "none"
+        ],
+        [
+         "2025-11-09",
+         "none"
+        ],
+        [
+         "2025-11-10",
+         "moderate"
+        ],
+        [
+         "2025-11-11",
+         "none"
+        ],
+        [
+         "2025-11-12",
+         "none"
+        ],
+        [
+         "2025-11-13",
+         "none"
+        ],
+        [
+         "2025-11-14",
+         "minor"
+        ],
+        [
+         "2025-11-15",
+         "none"
+        ],
+        [
+         "2025-11-16",
+         "none"
+        ],
+        [
+         "2025-11-17",
+         "none"
+        ],
+        [
+         "2025-11-18",
+         "moderate"
+        ],
+        [
+         "2025-11-19",
+         "minor"
+        ],
+        [
+         "2025-11-20",
+         "none"
+        ],
+        [
+         "2025-11-21",
+         "none"
+        ],
+        [
+         "2025-11-22",
+         "none"
+        ],
+        [
+         "2025-11-23",
+         "minor"
+        ],
+        [
+         "2025-11-24",
+         "none"
+        ],
+        [
+         "2025-11-25",
+         "none"
+        ],
+        [
+         "2025-11-26",
+         "none"
+        ],
+        [
+         "2025-11-27",
+         "none"
+        ],
+        [
+         "2025-11-28",
+         "none"
+        ],
+        [
+         "2025-11-29",
+         "none"
+        ],
+        [
+         "2025-11-30",
+         "none"
+        ],
+        [
+         "2025-12-01",
+         "minor"
+        ],
+        [
+         "2025-12-02",
+         "none"
+        ],
+        [
+         "2025-12-03",
+         "severe"
+        ],
+        [
+         "2025-12-04",
+         "severe"
+        ],
+        [
+         "2025-12-05",
+         "none"
+        ],
+        [
+         "2025-12-06",
+         "minor"
+        ],
+        [
+         "2025-12-07",
+         "none"
+        ],
+        [
+         "2025-12-08",
+         "none"
+        ],
+        [
+         "2025-12-09",
+         "none"
+        ],
+        [
+         "2025-12-10",
+         "none"
+        ],
+        [
+         "2025-12-11",
+         "minor"
+        ],
+        [
+         "2025-12-12",
+         "none"
+        ],
+        [
+         "2025-12-13",
+         "none"
+        ],
+        [
+         "2025-12-14",
+         "none"
+        ],
+        [
+         "2025-12-15",
+         "none"
+        ],
+        [
+         "2025-12-16",
+         "none"
+        ],
+        [
+         "2025-12-17",
+         "none"
+        ],
+        [
+         "2025-12-18",
+         "minor"
+        ],
+        [
+         "2025-12-19",
+         "minor"
+        ],
+        [
+         "2025-12-20",
+         "none"
+        ],
+        [
+         "2025-12-21",
+         "none"
+        ],
+        [
+         "2025-12-22",
+         "none"
+        ],
+        [
+         "2025-12-23",
+         "none"
+        ],
+        [
+         "2025-12-24",
+         "minor"
+        ],
+        [
+         "2025-12-25",
+         "none"
+        ],
+        [
+         "2025-12-26",
+         "none"
+        ],
+        [
+         "2025-12-27",
+         "minor"
+        ],
+        [
+         "2025-12-28",
+         "minor"
+        ],
+        [
+         "2025-12-29",
+         "none"
+        ],
+        [
+         "2025-12-30",
+         "minor"
+        ],
+        [
+         "2025-12-31",
+         "none"
+        ]
+       ]
+      }
+     ],
+     "units": "severity level",
+     "bands": [],
+     "colour_scale": null,
+     "notes": []
+    },
+    "sources": [
+     {
+      "dataset_id": "ds1",
+      "title": "Data coverage and quality for Chennai",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "data_type": "measured",
+      "date_range": {
+       "start": "2025-01-01",
+       "end": "2025-12-31"
+      }
+     }
+    ],
+    "coverage": {
+     "ds1": {
+      "by_pollutant": [
+       {
+        "pollutant": "pm25",
+        "station_days": 1662,
+        "valid_station_day_share": 0.815,
+        "days_with_city_value": 286,
+        "share_of_days_with_city_value": 0.784,
+        "flagged_hours_excluded": 481,
+        "impossible_pm25_gt_pm10_station_days": 26,
+        "peer_outlier_station_days_flagged": 12
+       },
+       {
+        "pollutant": "pm10",
+        "station_days": 1687,
+        "valid_station_day_share": 0.841,
+        "days_with_city_value": 290,
+        "share_of_days_with_city_value": 0.795,
+        "flagged_hours_excluded": 237,
+        "impossible_pm25_gt_pm10_station_days": 26,
+        "peer_outlier_station_days_flagged": 18
+       }
+      ],
+      "days_in_period": 365
+     }
+    },
+    "warnings": [
+     "Measured PM data starts 2025-02-18; earlier dates are not covered.",
+     "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+     "19 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+    ],
+    "data_types": [
+     "measured"
+    ],
+    "clarifying_question": null,
+    "verification": {
+     "passed": true,
+     "retries": 0,
+     "numbers_checked": 8
+    },
+    "model": "gemini-3.5-flash-lite",
+    "usage": {
+     "requests": 2,
+     "input_tokens": 3244,
+     "output_tokens": 221
+    }
+   },
+   "steps": [
+    {
+     "seq": 3,
+     "type": "plan",
+     "title": "Plan: data_coverage",
+     "detail": {
+      "steps": [
+       {
+        "tool": "data_coverage",
+        "args": {
+         "city": "Chennai",
+         "period": "2025"
+        }
+       }
+      ]
+     },
+     "ts": "2026-11-05T08:57:25.291+00:00"
+    },
+    {
+     "seq": 4,
+     "type": "tool_call",
+     "title": "data_coverage",
+     "detail": {
+      "args": {
+       "city": "Chennai",
+       "period": "2025"
+      }
+     },
+     "ts": "2026-11-05T08:57:25.292+00:00"
+    },
+    {
+     "seq": 5,
+     "type": "tool_result",
+     "title": "data_coverage: Data coverage and quality for Chennai",
+     "detail": {
+      "dataset_id": "ds1",
+      "data_type": "measured",
+      "fields": 13,
+      "warnings": 3
+     },
+     "ts": "2026-11-05T08:57:25.346+00:00"
+    },
+    {
+     "seq": 7,
+     "type": "verification",
+     "title": "passed",
+     "detail": {
+      "checked_numbers": 8,
+      "problems": 0
+     },
+     "ts": "2026-11-05T08:57:29.081+00:00"
+    }
+   ],
+   "context": {
+    "city": "Chennai",
+    "period": "2025"
+   },
+   "built": "2026-11-05 14:27",
+   "model": "gemini-3.5-flash-lite"
+  }
+ ]
+}

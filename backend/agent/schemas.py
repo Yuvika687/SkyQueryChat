@@ -10,33 +10,25 @@ DataType = Literal["measured", "modelled", "official_aqi", "mixed"]
 
 
 # ----------------------------------------------------------------------------- what the LLM returns
-class MetricRef(BaseModel):
-    """A number to show as a metric card. `value` must appear in the referenced tool result."""
-    label: str = Field(description="Short label, e.g. 'Delhi festival AQI 2025'")
-    value: float = Field(description="Copied exactly from the tool result; never calculated")
-    unit: str = Field(default="", description="Optional; filled from the dataset if empty")
-    dataset_id: str = Field(description="dataset_id of the tool result this number came from")
-
-
 class LLMAnswer(BaseModel):
-    status: Literal["answered", "clarify", "refused", "unavailable"] = Field(
-        description="answered | clarify (ask one question) | refused (unsupported/unsafe) | unavailable (no data)")
-    answer: str = Field(description="Direct answer in 1-3 sentences. Numbers only as written in tool results.")
-    explanation: str = Field(default="", description="Short explanation: metric, dates, stations, coverage, caveats")
-    metrics: list[MetricRef] = Field(default_factory=list, description="Up to 6 key numbers")
-    chart_dataset_id: str | None = Field(default=None, description="dataset_id whose chart to show, if any")
-    dataset_ids: list[str] = Field(default_factory=list, description="dataset_ids used for this answer")
-    clarifying_question: str | None = Field(default=None, description="Only when status is clarify")
+    status: Literal["answered", "clarify", "refused", "unavailable"]
+    answer: str = Field(description="1-3 sentences; numbers exactly as in tool fields")
+    cards: list[str] = Field(default_factory=list, description="up to 4 'dataset_id.field' for metric cards")
+    chart: str | None = Field(default=None, description="dataset_id to chart")
+    question: str | None = Field(default=None, description="clarifying question (status clarify)")
 
 
 # ----------------------------------------------------------------------------- what the user gets
-class Metric(BaseModel):
+class Card(BaseModel):
+    """Metric card built by code from a tool-result field (the model only names the field)."""
     label: str
     value: float
     unit: str
     dataset_id: str
+    field: str
     data_type: DataType
     source: str
+    warnings: list[str] = Field(default_factory=list)
 
 
 class SourceRef(BaseModel):
@@ -51,7 +43,7 @@ class FinalAnswer(BaseModel):
     status: Literal["answered", "clarify", "refused", "unavailable", "error"]
     answer: str
     explanation: str = ""
-    metrics: list[Metric] = Field(default_factory=list)
+    cards: list[Card] = Field(default_factory=list)
     chart: dict[str, Any] | None = None
     sources: list[SourceRef] = Field(default_factory=list)
     coverage: dict[str, Any] = Field(default_factory=dict)

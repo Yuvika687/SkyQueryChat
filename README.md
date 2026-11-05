@@ -17,7 +17,8 @@ real data (OpenAQ measurements, Open-Meteo models) and shows its source, data ty
 ## Status
 Day 1 complete: data pipeline and processed dataset (`data/processed/`, Parquet).
 Day 2: weather, app tables (`data/app/`), analysis functions (`backend/analysis/`) and the
-terminal agent (`backend/agent/`). API and UI not built yet. Evidence and rules: `docs/data-source-check.md`.
+terminal agent (`backend/agent/`). Day 3 (part 1): FastAPI with SSE streaming (`backend/api/`).
+Frontend not built yet. Evidence and rules: `docs/data-source-check.md`.
 
 ## Rebuild the dataset
 ```bash
@@ -35,6 +36,18 @@ python scripts/ask.py "Delhi PM2.5 in November 2025?"   # one question (add --js
 python scripts/run_eval.py                              # live evaluation, paced for free tiers
 ```
 Models are configured in `backend/config/models.json` (override with `SKYQ_MODEL_CHAIN`).
+
+## Run the API
+```bash
+uvicorn backend.api.main:app --port 8000
+curl -N -X POST localhost:8000/api/chat -H 'Content-Type: application/json' \
+     -d '{"message":"How bad was Delhi'"'"'s air on Diwali 2025?"}'      # Server-Sent Events
+```
+Endpoints: `POST /api/chat` (SSE), `GET /api/health`, `/api/meta`, `/api/limits`, `/api/stations`,
+`/api/cities`, `/api/cities/{city}/summary`, `/api/trends`, `/api/coverage`, `/api/diwali/{city}`,
+`/api/accuracy`. Docs at `/api/docs`. Environment: `ALLOWED_ORIGINS`, `RATE_PER_MINUTE`,
+`RATE_PER_DAY`, `DAILY_TOKEN_BUDGET`, `TOKENS_PER_QUESTION`, `QUESTION_TIMEOUT_S` (keys stay in the
+backend `.env`; the frontend never sees them).
 
 ## Local setup
 ```bash

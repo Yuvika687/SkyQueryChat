@@ -1,0 +1,113 @@
+{
+ "overall": {
+  "turns": 51,
+  "pass": 49,
+  "pass_pct": 96.1,
+  "tool_choice_pct": 100.0,
+  "tool_choice_n": 43,
+  "numbers_traceable_pct": 100.0,
+  "answered": 39,
+  "reference_checks_pct": null,
+  "reference_checks_n": 0,
+  "reference_failures": [],
+  "refusals_correct_pct": 92.9,
+  "refusals_n": 14,
+  "errors": [
+   "W5.1"
+  ],
+  "failed": [
+   "D1.1",
+   "W5.1"
+  ],
+  "verifier_retries": 8,
+  "tokens_median": 5959,
+  "tokens_mean": 7705,
+  "tokens_max": 17449,
+  "tokens_total": 385266
+ },
+ "by_model": {
+  "openai/gpt-oss-120b": {
+   "turns": 2,
+   "pass": 2,
+   "pass_pct": 100.0,
+   "tool_choice_pct": 100.0,
+   "tool_choice_n": 2,
+   "numbers_traceable_pct": 100.0,
+   "answered": 2,
+   "reference_checks_pct": null,
+   "reference_checks_n": 0,
+   "reference_failures": [],
+   "refusals_correct_pct": null,
+   "refusals_n": 0,
+   "errors": [],
+   "failed": [],
+   "verifier_retries": 0,
+   "tokens_median": 5168,
+   "tokens_mean": 3477,
+   "tokens_max": 5168,
+   "tokens_total": 6954
+  },
+  "gemini-3.5-flash-lite": {
+   "turns": 48,
+   "pass": 47,
+   "pass_pct": 97.9,
+   "tool_choice_pct": 100.0,
+   "tool_choice_n": 40,
+   "numbers_traceable_pct": 100.0,
+   "answered": 37,
+   "reference_checks_pct": null,
+   "reference_checks_n": 0,
+   "reference_failures": [],
+   "refusals_correct_pct": 100.0,
+   "refusals_n": 13,
+   "errors": [],
+   "failed": [
+    "D1.1"
+   ],
+   "verifier_retries": 8,
+   "tokens_median": 6391,
+   "tokens_mean": 7882,
+   "tokens_max": 17449,
+   "tokens_total": 378312
+  },
+  "no answer (model error)": {
+   "turns": 1,
+   "pass": 0,
+   "pass_pct": 0.0,
+   "tool_choice_pct": 100.0,
+   "tool_choice_n": 1,
+   "numbers_traceable_pct": null,
+   "answered": 0,
+   "reference_checks_pct": null,
+   "reference_checks_n": 0,
+   "reference_failures": [],
+   "refusals_correct_pct": 0.0,
+   "refusals_n": 1,
+   "errors": [
+    "W5.1"
+   ],
+   "failed": [
+    "W5.1"
+   ],
+   "verifier_retries": 0,
+   "tokens_median": null,
+   "tokens_mean": null,
+   "tokens_max": null,
+   "tokens_total": 0
+  }
+ },
+ "by_category": {
+  "comparison": "6/6",
+  "diwali": "6/7",
+  "follow_up": "8/8",
+  "missing_data": "5/5",
+  "trap_causal": "0/1",
+  "trap_code": "1/1",
+  "trap_injection": "2/2",
+  "trap_pm_percent": "1/1",
+  "trend": "7/7",
+  "unsupported": "4/4",
+  "unusual_days": "5/5",
+  "weather": "4/4"
+ }
+}

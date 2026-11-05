@@ -949,3 +949,98 @@ Run in batches of 5 with 20–25 s gaps.
 **Changes made after reviewing results:**
 - Metric cards must match a numeric field. In X3 a label had been attached to a number found inside text, and it passed. X3 was rerun after the fix.
 - The first pass is kept in `evals/results/live_first_pass.jsonl`.
+
+---
+
+# Part 8 — Agent hardening, evaluation and FastAPI (2026-11-05)
+
+## 8.1 Token reduction
+- **Tool results:** now `{id, type, units, period, fields, notes}` with named values only and at most 2 short notes. Full results stay in the session registry.
+- **Smaller model surface:** the answer schema is shorter (status, answer, card field names, chart id), instructions are about 45% shorter, and there are 8 tools instead of 10 (percentage is now an option on `diwali_aqi`; `dataset_details` dropped).
+- **Memory:** the last 2 turns only. Tool results from older turns shrink to their id and field names, and thinking parts are dropped.
+
+| Measure | Before (Day 2) | After |
+|---|---:|---:|
+| Fixed prompt per model request (instructions + tool and answer schemas) | ≈ 2,230 tokens | ≈ 1,340 tokens |
+| Typical tool result | 1,170–3,200 chars | 460–870 chars |
+| Main set, Gemini 3.5 Flash-Lite, tokens per question: median / mean / max | 6,391 / 7,882 / 17,449 | **3,602 / 4,237 / 7,993** |
+| Questions under 6,000 tokens | 26/50 | **46/50** |
+| Holdout (Gemini), median / max | — | 5,116 / 7,666 |
+| Groq gpt-oss-120b | 2 turns: 1,786 and 5,168 | not measured (daily quota exhausted, see 8.4) |
+
+## 8.2 Cards, charts and explanation built by code
+- The model writes 1–3 sentences and names card fields (`ds1.mean`) plus a chart dataset.
+- **Code fills in:** the card's value, label (with city, period or date), unit, data type, source and warnings, plus the chart and a deterministic explanation (data type, period, stations, coverage, method).
+- A card that isn't a numeric tool field is rejected and the model retries.
+- The written answer still passes the number check.
+
+## 8.3 Other hardening
+- **Natural date ranges:** "March to June 2026", "between March and June", "Oct 2025 to Jan 2026", "15 Oct to 5 Nov 2025", "1-15 November 2025", "since/until", "Q1 2026", "first half of 2026", "2025-11", "11/2025", and a month or range without a year (latest in the data, with a note). 22 tests.
+- **Chennai and other non-Delhi Diwali answers** use official AQI only. The measured-PM status ("incomplete" or "no data") comes back as a warning.
+- **Peer-outlier warning:** a city-day where a flag-only peer-outlier station moves the city value by more than 25% (`peer_outlier_major`). 92 city-days affected (Bengaluru PM10 48, Chennai PM10 28, …). Chennai PM10 on 2025-10-20 is +86%. Trend, compare, unusual-days and weather results now warn about these days.
+- **PM-only AQI estimates** stay internal (scripts/docs only). The known limits, including Delhi 481 vs 351, are in `backend/config/known_limits.json` and `/api/limits`.
+
+## 8.4 Evaluation (first-pass results are the main results; reruns are separate)
+**Independent references:** `evals/references.py` holds 24 values computed with pandas straight from Parquet, not through `backend.analysis`. 22 checks are wired into the main set and 7 into the Groq set.
+
+| Run (first pass) | Model | Pass | Tool choice | Numbers traceable | Reference values | Refusals / unavailable | Tokens (median) |
+|---|---|---|---|---|---|---|---|
+| **Main, 47 q / 51 turns** (`20261105-1348_main_first`) | gemini-3.5-flash-lite | 47/50 | 100% | 100% | 21/21 | 13/14 | 3,602 |
+| | model error (both Gemini models unavailable) | 0/1 (T5) | | | | | |
+| **Holdout, 10 q / 11 turns** (`20261105-1417_holdout_first`) | gemini-3.5-flash-lite | 11/11 | 100% | 100% | — | 4/4 | 5,116 |
+| **Groq, 15 q** (`20261105-1352`, `-1354`) | gpt-oss-120b | incomplete: 0/1 then stopped after 3 | | | | | |
+| Day 2 main (archived, older code) | gemini 47/48, gpt-oss 2/2 | 49/51 | | | | | 5,959 |
+
+**Main first-pass failures:**
+- T4: answered "Bangalore" where the check requires "Bengaluru".
+- T5: both Gemini models were unavailable.
+- D7: correct lower bounds, but the 999 warning wasn't in the text.
+- M1: said "unavailable" rather than the required "not available".
+- Reference values: 21/22 overall. The only miss is T5's error.
+
+**Holdout finding (not fixed, because the holdout is not used for tuning):**
+- H02 asked about the "2025 post-monsoon" season. The resolver doesn't read the year-first form, so the model fell back to all of 2025 (and said so).
+- The automated checks passed it, which shows they're too shallow for period scope.
+- Proposed: fix the resolver, then rotate in fresh holdout questions.
+
+**Groq test:** not completed.
+- The first run's G01 asked for clarification on a period format; the resolver now handles 2025-11, 11/2025 and Nov-2025.
+- That run then crashed on a network error in the quota probe.
+- The fresh run stopped at Groq's daily limit. Groq counts a rolling 24 h window, and Day 2 work had used 199,449 of 200,000 tokens.
+- The guard now requires about 6K tokens of headroom before starting. Run `python scripts/run_eval.py --set groq` when quota frees (it stops on its own before any limit).
+
+## 8.5 FastAPI (`backend/api/`)
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/chat` | SSE stream: `meta → step* → answer → cards → chart → sources → warnings → done`, or `… → error → done`. Body `{message (1–500 chars), session_id?}` |
+| `GET /api/health` | Instant status for cold starts: data loaded, AI configured (boolean only), budget left, data windows |
+| `GET /api/meta`, `/api/limits` | Cities, pollutants, attribution, rule, demo questions; known limits |
+| `GET /api/stations?city=` | Station list (tier, provider, coordinates) |
+| `GET /api/cities` | Per city: last-30-day measured PM2.5/PM10 and latest official AQI |
+| `GET /api/cities/{city}/summary?period=` | PM2.5 and PM10 summary for any period phrase |
+| `GET /api/trends?city&pollutant&period&freq` | Full `city_trend` result with chart |
+| `GET /api/coverage?city&period` | Coverage and quality, with calendar chart |
+| `GET /api/diwali/{city}?years=` | Official AQI Diwali result (chart labelled by bulletin and 4 PM period) |
+| `GET /api/accuracy` | Evaluation scoreboard (first pass and reruns, per model) |
+
+**Request handling:**
+- **Request IDs:** an `X-Request-ID` header is accepted if valid, otherwise generated. It appears in every error and in SSE `meta`/`done`.
+- **Safe errors:** JSON `{error: {code, message, request_id}}`, with no tracebacks or provider text.
+- **CORS:** from `ALLOWED_ORIGINS`.
+- **Keys:** stay in the backend environment. Health only reports `ai_configured: true/false`.
+
+**Demo protection:**
+- Per-visitor rate limits (`X-Visitor-Id`, else client IP): 4/min and 30/day by default, with a 429 and `Retry-After`.
+- A per-question token cap (12,000) and a daily token budget (150,000).
+- An answer cache for repeated first-turn questions (6 h) and 8 pre-built demo answers (`data/app/demo_answers.json`), both served without an LLM.
+- The `ai_limit` message is shown when the budget or a provider quota runs out.
+- Data endpoints never call an LLM.
+
+**Live check (uvicorn):**
+- `/api/health`: 11 ms after start.
+- Live question "Mumbai average PM10 from March to June 2026": 8.8 s, 3,391 tokens. Card 71.0 µg/m³ matches the independent reference.
+- Demo replay: 13 ms.
+- A burst from one visitor returned 200 ×4 then 429.
+
+**Memory:** peak RSS 312 MB with the data, all endpoints and the agent built (macOS measurement), against Render's 512 MB.

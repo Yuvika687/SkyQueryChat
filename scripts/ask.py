@@ -46,8 +46,8 @@ def show_answer(a, as_json=False):
         print(f"  ? {a.clarifying_question}")
     if a.explanation:
         print(f"\n{a.explanation}")
-    for m in a.metrics:
-        print(f"  • {m.label}: {m.value:g} {m.unit}   ({m.data_type}, {m.dataset_id})")
+    for m in a.cards:
+        print(f"  • {m.label}: {m.value:g} {m.unit}   ({m.data_type}, {m.dataset_id}.{m.field})")
     if a.chart:
         print(f"  chart: {a.chart['type']} — {a.chart['title']}")
     for s in a.sources:

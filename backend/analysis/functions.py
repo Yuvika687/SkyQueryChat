@@ -100,6 +100,25 @@ def _common_warnings(start: date, end: date, quality: dict, data_end: date | Non
     return w
 
 
+def _peer_warning(cd: pd.DataFrame) -> list[str]:
+    """Warn when a flag-only peer-outlier station moves a city value by more than 25%."""
+    if cd.empty or "peer_outlier_major" not in cd:
+        return []
+    m = cd[cd["peer_outlier_major"].fillna(False).astype(bool)]
+    if m.empty:
+        return []
+    ex = ", ".join(f"{_d(d)} ({e:+.0f}%)" for d, e in zip(m["local_date"].head(5), m["peer_outlier_effect_pct"].head(5)))
+    return [f"On {len(m)} day(s) one station flagged as a peer outlier moves the city value by more than 25% "
+            f"(e.g. {ex}); treat those days with caution."]
+
+
+def _is_major(cd: pd.DataFrame, d) -> bool:
+    if "peer_outlier_major" not in cd:
+        return False
+    x = cd.loc[pd.to_datetime(cd["local_date"]) == pd.Timestamp(d), "peer_outlier_major"]
+    return bool(x.fillna(False).any())
+
+
 def _data_end(s: Store) -> date | None:
     d = s.q("SELECT MAX(local_date) AS d FROM date_quality WHERE source=? AND severity <> 'not_yet_published'",
             [SRC_OPENAQ])["d"].iat[0]
@@ -139,10 +158,12 @@ def city_trend(s: Store, city: str, pollutant: str, start: date, end: date, freq
     if not v.empty:
         imax, imin = v["city_mean"].idxmax(), v["city_mean"].idxmin()
         summary = {"mean_of_daily_values": r(v["city_mean"].mean()), "median": r(v["city_mean"].median()),
-                   "highest_day": {"date": v.at[imax, "local_date"].date(), "value": r(v.at[imax, "city_mean"])},
-                   "lowest_day": {"date": v.at[imin, "local_date"].date(), "value": r(v.at[imin, "city_mean"])}}
+                   "highest_day": {"date": v.at[imax, "local_date"].date(), "value": r(v.at[imax, "city_mean"]),
+                                   "peer_outlier_over_25pct": _is_major(cd, v.at[imax, "local_date"])},
+                   "lowest_day": {"date": v.at[imin, "local_date"].date(), "value": r(v.at[imin, "city_mean"]),
+                                  "peer_outlier_over_25pct": _is_major(cd, v.at[imin, "local_date"])}}
     q = _quality(s, [city], start, end)
-    warns = _common_warnings(start, end, q, _data_end(s))
+    warns = _common_warnings(start, end, q, _data_end(s)) + _peer_warning(cd)
     low = [p["period"] for p in periods if p["coverage"] is not None and p["coverage"] < 0.7]
     if low:
         warns.append(f"Periods with < 70% of days having a city value: {', '.join(low[:12])}.")
@@ -184,6 +205,8 @@ def compare_cities(s: Store, cities: list[str], pollutant: str, start: date, end
         row["rank_highest_first"] = i if row["mean_common_days"] is not None else None
     q = _quality(s, cities, start, end)
     warns = _common_warnings(start, end, q, _data_end(s))
+    for c, f in frames.items():
+        warns += [f"{c}: {w}" for w in _peer_warning(f)]
     if len(common) < 30:
         warns.append(f"Only {len(common)} day(s) have values for every city; comparison is weak.")
     n_st = {c: int(len(_primary_stations(s, c))) for c in cities}
@@ -254,6 +277,16 @@ def diwali_aqi(s: Store, city: str, years: tuple[int, ...] = (2024, 2025)) -> An
     if APPROVED_DIWALI_BASELINE is None:
         warns.append("Percentage changes are withheld: they vary strongly with the baseline window "
                      "(see baseline_candidates).")
+    if city != "Delhi":
+        stt = s.q("SELECT p.year, p.status, r.user_message FROM diwali_pm_status p JOIN data_status_reasons r "
+                  "USING (reason_code) WHERE p.city=? AND p.metric='pm25'", [city]) \
+            if {"diwali_pm_status", "data_status_reasons"} <= set(s.tables) else pd.DataFrame()
+        for o in out:
+            m = stt[stt["year"] == o["year"]]
+            if len(m):
+                o["measured_pm_status"] = m["status"].iat[0]
+                warns.append(m["user_message"].iat[0].format(year=o["year"]) +
+                             " Measured PM is not used for this Diwali answer.")
     if any(o.get("pre_festival_trend") == "rising" for o in out):
         warns.append("AQI was already rising in the days before Diwali, so the festival level cannot be "
                      "attributed to Diwali alone.")
@@ -402,12 +435,16 @@ def unusual_days(s: Store, city: str, pollutant: str, start: date, end: date,
             days.append({"date": t.date(), "value": r(row["city_mean"]), "rolling_median": r(row["rolling_median"]),
                          "difference": r(row["residual"]), "robust_z": r(z[t], 2),
                          "direction": "unusually high" if row["residual"] > 0 else "unusually low",
-                         "data_quality": row["severity"]})
+                         "data_quality": row["severity"], "peer_outlier_over_25pct": _is_major(cd, t)})
     lowq = [d for d in days if d["data_quality"] in ("moderate", "severe")]
     if lowq:
         warns.append(f"{len(lowq)} flagged day(s) fall on dates with moderate/severe data gaps.")
     q = _quality(s, [city], start, end)
     warns += _common_warnings(start, end, q, _data_end(s))
+    po = [d for d in days if d["peer_outlier_over_25pct"]]
+    if po:
+        warns.append(f"{len(po)} unusual day(s) depend on one peer-outlier station (> 25% effect): "
+                     + ", ".join(str(d["date"]) for d in po[:5]) + ".")
     series = [[str(t.date()), r(x)] for t, x in in_period["city_mean"].items()]
     chart = ChartSpec(type="line", title=f"{city} {POLLUTANT_NAMES[pollutant]} with unusual days",
                       x={"field": "date", "type": "time"}, y={"field": "value", "label": f"{POLLUTANT_NAMES[pollutant]} ({PM_UNITS})"},
@@ -482,7 +519,7 @@ def weather_relationship(s: Store, city: str, pollutant: str, variable: str, sta
         f"({_strength(rho)} association, Spearman rho = {r(rho, 2)}, {len(j)} days). This is an association, "
         f"not a cause.")
     q = _quality(s, [city], start, end)
-    warns += _common_warnings(start, end, q, _data_end(s))
+    warns += _common_warnings(start, end, q, _data_end(s)) + _peer_warning(cd)
     chart = ChartSpec(type="scatter", title=f"{city}: {POLLUTANT_NAMES[pollutant]} vs {name}",
                       x={"field": variable, "label": f"{name} ({wunit})"},
                       y={"field": "city_mean", "label": f"{POLLUTANT_NAMES[pollutant]} ({PM_UNITS})"},

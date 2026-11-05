@@ -184,6 +184,23 @@ Rules:
   match their own dataset. Causal wording and prompt quotes are rejected. Up to 2 retries, then a
   clear error. Tests use FunctionModel/TestModel only (no quota).
 
+### Day 3 part 1 decisions (2026-11-05)
+
+- Tools return `{id, type, units, period, fields, notes}`; the model writes the answer text and picks
+  cards as "dataset_id.field" and a chart dataset. CODE builds card value/label/unit/source/warnings,
+  the explanation and the chart. The written answer still passes the number check.
+- Chennai and other non-Delhi Diwali answers use official AQI only; measured PM status is a warning.
+- Warn when a flag-only peer-outlier station moves a city value by > 25% (`peer_outlier_major`).
+- PM-only AQI estimates stay internal; known limits (incl. Delhi 481 vs 351) in
+  `backend/config/known_limits.json` (served at /api/limits).
+- Evaluation: per-run folders `evals/runs/`; first-pass runs are the main result, reruns separate;
+  scores per model; references computed independently (`evals/references.py`); Groq test
+  (`evals/groq_test.json`) runs Groq-only with a quota guard; holdout (`evals/holdout.json`) is never
+  used for tuning.
+- API: `backend/api/` (FastAPI). Demo protection: per-visitor rate limits, per-question token cap,
+  daily token budget, answer cache + demo answers (`data/app/demo_answers.json`), clear AI-limit
+  message; data endpoints never call an LLM.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

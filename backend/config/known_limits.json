@@ -1,0 +1,18 @@
+{
+ "_note": "Known limits shown by the API (/api/limits) and docs. PM-only AQI estimates are internal data checks and are never shown as AQI.",
+ "limits": [
+  {"id": "delhi_diwali_estimate_gap", "title": "Delhi Diwali 2025: our PM-only check does not match official AQI",
+   "detail": "For the 2025-10-21 bulletin, our internal PM-only AQI estimate is 481 while CPCB's official AQI is 351. The source's 999 µg/m³ limit explains about 60 points; the 4 PM window and our data gaps do not explain the rest. The remaining gap is unexplained (likely CPCB's own feed or validation). The app shows official AQI for Diwali and never shows PM-only estimates."},
+  {"id": "network_gaps", "title": "Network-wide data gaps", "detail": "About 30% of city-days have network-wide gaps in the OpenAQ archive; severe days are labelled and excluded from weather associations."},
+  {"id": "midnight_readings", "title": "Missing midnight readings (older data)", "detail": "OpenAQ archive files before about 2026-08-17 lack readings ending 00:00-00:30 IST."},
+  {"id": "delhi_999", "title": "Delhi PM above 999 µg/m³ is blank in OpenCity", "detail": "Delhi Diwali PM is supporting context only, shown as lower bounds; no PM percentage changes."},
+  {"id": "five_city_diwali_pm", "title": "Diwali PM incomplete outside Delhi", "detail": "Measured PM for Diwali 2025 is incomplete in Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad; Diwali answers use official AQI."},
+  {"id": "station_sets", "title": "Station sets differ from CPCB", "detail": "Bengaluru and Chennai use fewer stations than CPCB's bulletins, so their measured values match official AQI less closely."},
+  {"id": "peer_outliers", "title": "Single-station outliers", "detail": "Peer-outlier stations are flagged, not removed; a warning is shown when one moves a city value by more than 25% (92 city-days)."},
+  {"id": "fault_flags", "title": "Fault flags are rules of thumb", "detail": "Flat-line, spike and PM2.5 > PM10 checks are heuristics; supported events (Diwali nights, corroborated plumes) are kept."},
+  {"id": "data_end", "title": "Data end dates", "detail": "Measured PM ends 2026-10-30; official AQI bulletins end 2026-10-25 and need a refresh after Diwali 2026 (8 November)."},
+  {"id": "weather_modelled", "title": "Weather is modelled", "detail": "Open-Meteo reanalysis for one grid cell per city, from 2025-02-18 (none for Diwali 2024). Free tier is non-commercial. Results are associations, not causes."},
+  {"id": "verifier_scope", "title": "Number check covers numbers, not meaning", "detail": "Every number in an answer must come from a tool result, and cards are built by code, but the wording around numbers is not semantically verified."},
+  {"id": "llm_quota", "title": "Free-tier AI limits", "detail": "Live answers depend on Groq and Gemini free tiers; when they are exhausted the app serves cached answers and data pages only."}
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "set": "groq",
+ "kind": "first",
+ "started": "2026-11-05 13:52",
+ "model_chain": [
+  "groq:openai/gpt-oss-120b"
+ ],
+ "commit": "f89f15a",
+ "ids": "all",
+ "complete": false,
+ "stopped": "crashed: network error in quota probe after G01; superseded by a fresh run (resolver period formats fixed after G01)"
+}

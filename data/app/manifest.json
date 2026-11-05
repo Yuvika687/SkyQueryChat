@@ -37,7 +37,7 @@
   "network_gaps": 1415
  },
  "bytes": {
-  "city_daily.parquet": 305153,
+  "city_daily.parquet": 370726,
   "city_daily_aqi.parquet": 238969,
   "data_status_reasons.parquet": 3530,
   "date_quality.parquet": 13737,
@@ -50,5 +50,5 @@
   "stations.parquet": 17764,
   "weather_daily.parquet": 26192
  },
- "total_bytes": 3068511
+ "total_bytes": 3134084
 }

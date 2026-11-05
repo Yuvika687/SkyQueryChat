@@ -96,6 +96,9 @@ def daily_with_flag_rule(hourly: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+PEER_OUTLIER_WARN_PCT = 25.0   # warn when flag-only peer outliers move a city value by more than this
+
+
 def peer_outlier_days(daily: pd.DataFrame, ratio: float = 3.0, min_excess: float = 100.0,
                       min_peers: int = 3) -> pd.Series:
     """Station-day far above the median of OTHER same-city stations that day (review only)."""
@@ -364,6 +367,15 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
            .merge(nout.reset_index(), on=["city", "pollutant", "local_date"], how="left") \
            .merge(nkept.reset_index(), on=["city", "pollutant", "local_date"], how="left") \
            .merge(nimp.reset_index(), on=["city", "pollutant", "local_date"], how="left")
+    # effect of flag-only peer outliers on the city value (warning when > 25%)
+    v = p[p["is_valid_day"] & p["daily_mean"].notna()]
+    excl = v[~v["flag_peer_outlier_day"]].groupby(["city", "pollutant", "local_date"])["daily_mean"].mean() \
+        .rename("city_mean_without_peer_outliers")
+    cd = cd.merge(excl.reset_index(), on=["city", "pollutant", "local_date"], how="left")
+    has = cd["n_peer_outlier_stations"].fillna(0) > 0
+    cd["peer_outlier_effect_pct"] = np.where(
+        has, (cd["city_mean"] - cd["city_mean_without_peer_outliers"]) / cd["city_mean_without_peer_outliers"] * 100, 0.0)
+    cd["peer_outlier_major"] = has & cd["meets_rule"] & (cd["peer_outlier_effect_pct"].abs() > PEER_OUTLIER_WARN_PCT)
     cd = cd.merge(sev[sev["source"] == SRC_OPENAQ][["city", "local_date", "gap_hours", "longest_run_hours",
                                                      "severity", "extent"]], on=["city", "local_date"], how="left")
     cd["source"], cd["data_type"], cd["units"] = SRC_OPENAQ, "measured", C.UNITS

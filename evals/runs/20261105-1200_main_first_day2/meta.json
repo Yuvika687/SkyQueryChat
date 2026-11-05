@@ -1,0 +1,13 @@
+{
+ "set": "main",
+ "kind": "first",
+ "started": "2026-11-05",
+ "model_chain": [
+  "groq:openai/gpt-oss-120b (daily limit hit after 2 turns)",
+  "google:gemini-3.5-flash-lite"
+ ],
+ "commit": "f89f15a",
+ "complete": true,
+ "legacy_day2": true,
+ "note": "Day 2 code (before token reduction). Scored with Day 2 checks (fewer reference values)."
+}

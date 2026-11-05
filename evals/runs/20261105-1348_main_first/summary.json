@@ -1,0 +1,100 @@
+{
+ "overall": {
+  "turns": 51,
+  "pass": 47,
+  "pass_pct": 92.2,
+  "tool_choice_pct": 97.7,
+  "tool_choice_n": 43,
+  "numbers_traceable_pct": 100.0,
+  "answered": 38,
+  "reference_checks_pct": 95.5,
+  "reference_checks_n": 22,
+  "reference_failures": [
+   "chennai_pm25_2026_max"
+  ],
+  "refusals_correct_pct": 92.9,
+  "refusals_n": 14,
+  "errors": [
+   "T5.1"
+  ],
+  "failed": [
+   "T4.1",
+   "T5.1",
+   "D7.1",
+   "M1.1"
+  ],
+  "verifier_retries": 7,
+  "tokens_median": 3602,
+  "tokens_mean": 4237,
+  "tokens_max": 7993,
+  "tokens_total": 211867
+ },
+ "by_model": {
+  "gemini-3.5-flash-lite": {
+   "turns": 50,
+   "pass": 47,
+   "pass_pct": 94.0,
+   "tool_choice_pct": 100.0,
+   "tool_choice_n": 42,
+   "numbers_traceable_pct": 100.0,
+   "answered": 38,
+   "reference_checks_pct": 100.0,
+   "reference_checks_n": 21,
+   "reference_failures": [],
+   "refusals_correct_pct": 92.9,
+   "refusals_n": 14,
+   "errors": [],
+   "failed": [
+    "T4.1",
+    "D7.1",
+    "M1.1"
+   ],
+   "verifier_retries": 7,
+   "tokens_median": 3602,
+   "tokens_mean": 4237,
+   "tokens_max": 7993,
+   "tokens_total": 211867
+  },
+  "no answer (model error)": {
+   "turns": 1,
+   "pass": 0,
+   "pass_pct": 0.0,
+   "tool_choice_pct": 0.0,
+   "tool_choice_n": 1,
+   "numbers_traceable_pct": null,
+   "answered": 0,
+   "reference_checks_pct": 0.0,
+   "reference_checks_n": 1,
+   "reference_failures": [
+    "chennai_pm25_2026_max"
+   ],
+   "refusals_correct_pct": null,
+   "refusals_n": 0,
+   "errors": [
+    "T5.1"
+   ],
+   "failed": [
+    "T5.1"
+   ],
+   "verifier_retries": 0,
+   "tokens_median": null,
+   "tokens_mean": null,
+   "tokens_max": null,
+   "tokens_total": 0
+  }
+ },
+ "by_category": {
+  "comparison": "6/6",
+  "diwali": "6/7",
+  "follow_up": "8/8",
+  "missing_data": "4/5",
+  "trap_causal": "1/1",
+  "trap_code": "1/1",
+  "trap_injection": "2/2",
+  "trap_pm_percent": "1/1",
+  "trend": "5/7",
+  "unsupported": "4/4",
+  "unusual_days": "5/5",
+  "weather": "4/4"
+ }
+}

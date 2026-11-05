@@ -1,0 +1,75 @@
+{
+ "overall": {
+  "turns": 3,
+  "pass": 0,
+  "pass_pct": 0.0,
+  "tool_choice_pct": 66.7,
+  "tool_choice_n": 3,
+  "numbers_traceable_pct": null,
+  "answered": 0,
+  "reference_checks_pct": 0.0,
+  "reference_checks_n": 3,
+  "reference_failures": [
+   "mumbai_pm10_nov2025",
+   "mumbai_pm10_mar_jun2026",
+   "winter2025_top_city"
+  ],
+  "refusals_correct_pct": null,
+  "refusals_n": 0,
+  "errors": [
+   "G01.1",
+   "G02.1",
+   "G03.1"
+  ],
+  "failed": [
+   "G01.1",
+   "G02.1",
+   "G03.1"
+  ],
+  "verifier_retries": 0,
+  "tokens_median": null,
+  "tokens_mean": null,
+  "tokens_max": null,
+  "tokens_total": 0
+ },
+ "by_model": {
+  "no answer (model error)": {
+   "turns": 3,
+   "pass": 0,
+   "pass_pct": 0.0,
+   "tool_choice_pct": 66.7,
+   "tool_choice_n": 3,
+   "numbers_traceable_pct": null,
+   "answered": 0,
+   "reference_checks_pct": 0.0,
+   "reference_checks_n": 3,
+   "reference_failures": [
+    "mumbai_pm10_nov2025",
+    "mumbai_pm10_mar_jun2026",
+    "winter2025_top_city"
+   ],
+   "refusals_correct_pct": null,
+   "refusals_n": 0,
+   "errors": [
+    "G01.1",
+    "G02.1",
+    "G03.1"
+   ],
+   "failed": [
+    "G01.1",
+    "G02.1",
+    "G03.1"
+   ],
+   "verifier_retries": 0,
+   "tokens_median": null,
+   "tokens_mean": null,
+   "tokens_max": null,
+   "tokens_total": 0
+  }
+ },
+ "by_category": {
+  "comparison": "0/1",
+  "trend": "0/1",
+  "trend_natural_range": "0/1"
+ }
+}
