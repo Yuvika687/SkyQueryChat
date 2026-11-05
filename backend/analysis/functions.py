@@ -26,8 +26,31 @@ WEATHER_VARS = {"temperature_mean_c": ("temperature", "°C"), "relative_humidity
 DATA_START = date(2025, 2, 18)
 SEVERITY_RANK = {"none": 0, "minor": 1, "moderate": 2, "severe": 3, "not_yet_published": 4}
 
-# Diwali percentage change: None until the user approves a baseline window.
-APPROVED_DIWALI_BASELINE: str | None = None
+# Diwali percentage change (approved 2026-11-04): NEVER in the default answer. Only when a user asks,
+# via diwali_aqi_percent(): baseline W2 (D-7..D-1); a single figure only if W1, W2, W3 agree within
+# 25 percentage points, otherwise a range.
+APPROVED_DIWALI_BASELINE: str | None = None        # default diwali_aqi() keeps percentages withheld
+PERCENT_BASELINE = "W2_d7_d1"
+PERCENT_STABILITY_WINDOWS = ("W1_d14_d8", "W2_d7_d1", "W3_d3_d1")
+PERCENT_MAX_SPREAD_PP = 25.0
+CAUSAL_WARNING = ("Do not read this as Diwali causing the change: AQI often rises through October and November "
+                  "for seasonal reasons, and other weather and emission changes happen at the same time.")
+
+
+def _period_label(bulletin_date) -> str:
+    b = pd.Timestamp(bulletin_date).date()
+    return f"{b - timedelta(days=1)} 16:00 to {b} 16:00 IST"
+
+
+def _pre_trend(g: pd.DataFrame) -> dict:
+    """Was AQI already rising before the festival? Mean of evenings D-7..D-5 vs D-3..D-1."""
+    early = g[(g["offset_days"] >= -7) & (g["offset_days"] <= -5)]["aqi"]
+    late = g[(g["offset_days"] >= -3) & (g["offset_days"] <= -1)]["aqi"]
+    if early.isna().any() or late.isna().any() or early.empty or late.empty:
+        return {"pre_festival_trend": None}
+    e, l_ = float(early.mean()), float(late.mean())
+    t = "rising" if l_ > e * 1.1 else "falling" if l_ < e * 0.9 else "flat"
+    return {"pre_festival_trend": t, "aqi_d7_to_d5_mean": r(e), "aqi_d3_to_d1_mean": r(l_)}
 
 
 # ----------------------------------------------------------------------------- helpers
@@ -206,17 +229,24 @@ def diwali_aqi(s: Store, city: str, years: tuple[int, ...] = (2024, 2025)) -> An
         out.append({
             "year": y, "status": "ok", "diwali_date": str(C.diwali_date(y)),
             "festival_bulletins": [{"bulletin_date": _d(x.bulletin_date), "evening_of": _d(x.evening_of),
+                                    "reporting_period": _period_label(x.bulletin_date),
                                     "aqi": r(x.aqi, 0), "category": x.aqi_category,
                                     "prominent_pollutant": x.prominent_pollutant,
                                     "stations": int(x.no_stations) if pd.notna(x.no_stations) else None}
                                    for x in fest.itertuples()],
             "festival_level_aqi": r(level), "festival_level_category": category(level),
             "pre_festival_week_aqi": r(g[(g["offset_days"] >= -7) & (g["offset_days"] <= -1)]["aqi"].mean()),
-            "baseline_candidates": cands,
-            "percent_status": "approved" if APPROVED_DIWALI_BASELINE else "withheld: baseline not yet approved"})
-        series.append({"name": str(y), "data": [[int(x.offset_days), r(x.aqi, 0), x.aqi_category]
-                                                for x in g.itertuples()]})
-        bands.append({"label": f"Diwali {y} (D, D+1)", "start": 0, "end": 1})
+            "baseline_candidates": cands, **_pre_trend(g),
+            "percent_status": "approved" if APPROVED_DIWALI_BASELINE else
+                              "not shown by default (ask for a percentage to get the D-7..D-1 comparison)"})
+        # x = bulletin day relative to Diwali (bulletin dated D+1 -> +1); each point carries its bulletin
+        # date and CPCB's 16:00-16:00 reporting period so no value is shown on the wrong calendar day
+        series.append({"name": f"Diwali {y}", "data": [
+            {"x": int(x.offset_days) + 1, "aqi": r(x.aqi, 0), "category": x.aqi_category,
+             "bulletin_date": _d(x.bulletin_date), "reporting_period": _period_label(x.bulletin_date)}
+            for x in g.itertuples()]})
+        bands.append({"label": f"Diwali {y} festival bulletins ({_d(fest['bulletin_date'].iat[0])}, "
+                               f"{_d(fest['bulletin_date'].iat[-1])})", "start": 1, "end": 2})
     warns += ["This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
               "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated "
               "D+1 reports Diwali evening.",
@@ -224,11 +254,18 @@ def diwali_aqi(s: Store, city: str, years: tuple[int, ...] = (2024, 2025)) -> An
     if APPROVED_DIWALI_BASELINE is None:
         warns.append("Percentage changes are withheld: they vary strongly with the baseline window "
                      "(see baseline_candidates).")
-    chart = ChartSpec(type="line", title=f"{city}: official AQI around Diwali",
-                      x={"field": "offset_days", "label": "days from Diwali (evening of)"},
+    if any(o.get("pre_festival_trend") == "rising" for o in out):
+        warns.append("AQI was already rising in the days before Diwali, so the festival level cannot be "
+                     "attributed to Diwali alone.")
+    warns.append(CAUSAL_WARNING)
+    chart = ChartSpec(type="line", title=f"{city}: official CPCB AQI by bulletin date around Diwali",
+                      x={"field": "x", "label": "Bulletin day relative to Diwali (bulletin D+1 reports "
+                                                "Diwali evening; each bulletin = 24 h to 4 PM IST)",
+                         "tooltip_fields": ["bulletin_date", "reporting_period", "category"]},
                       y={"field": "aqi", "label": "AQI (index)"}, series=series, units="index (0-500)",
                       bands=bands, colour_scale="cpcb_aqi",
-                      notes=[f"AQI category colours: {AQI_COLOURS}"])
+                      notes=["Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on "
+                             "the bulletin date.", f"AQI category colours: {AQI_COLOURS}"])
     n_st = [x["stations"] for o in out if o.get("festival_bulletins") for x in o["festival_bulletins"]]
     return AnalysisResult(
         kind="diwali_aqi", title=f"Diwali air quality in {city} (official AQI)", metric="aqi",
@@ -242,6 +279,50 @@ def diwali_aqi(s: Store, city: str, years: tuple[int, ...] = (2024, 2025)) -> An
                "bulletins dated D+1 and D+2. Baseline candidates are listed but no percentage is reported "
                "until a baseline window is approved.",
         warnings=warns, values={"years": out}, chart=chart)
+
+
+def diwali_aqi_percent(s: Store, city: str, year: int) -> AnalysisResult:
+    """ONLY when a user explicitly asks for a percentage. Official AQI, festival level vs the week
+    before (D-7..D-1). Single figure only if W1, W2, W3 agree within 25 points; else a range.
+    Never for PM concentrations."""
+    _check(city)
+    bl = s.q("SELECT * FROM diwali_aqi_baselines WHERE city=? AND year=?", [city, year]).set_index("window")
+    lv = s.q("SELECT * FROM diwali_aqi_levels WHERE city=? AND year=? ORDER BY offset_days", [city, year])
+    base = {"kind": "diwali_aqi_percent", "title": f"Diwali {year} AQI change in {city} (official AQI)",
+            "metric": "aqi", "units": "% change in AQI index", "data_type": "official measured AQI (city average)",
+            "source": SRC_BULLETIN}
+    fest = lv[lv["role"] == "festival"]
+    if bl.empty or fest.empty or fest["aqi"].isna().any() or bl.loc[list(PERCENT_STABILITY_WINDOWS), "baseline_aqi"].isna().any():
+        return AnalysisResult(**base, date_range={"start": None, "end": None}, stations={}, coverage={}, quality={},
+                              method="", warnings=[f"Official AQI for Diwali {year} is not available, so no "
+                                                   "percentage can be given."], values={"status": "not_available"})
+    pcts = {w: float(bl.at[w, "percent_change"]) for w in PERCENT_STABILITY_WINDOWS}
+    spread = max(pcts.values()) - min(pcts.values())
+    stable = spread <= PERCENT_MAX_SPREAD_PP
+    w2 = bl.loc[PERCENT_BASELINE]
+    vals = {"status": "ok", "year": year, "festival_level_aqi": r(w2.festival_aqi),
+            "baseline_window": "D-7..D-1 (week before Diwali)", "baseline_bulletin_dates": w2.bulletin_dates,
+            "baseline_aqi": r(w2.baseline_aqi), "stable": stable, "spread_between_windows_pp": r(spread),
+            "percent_change": r(pcts[PERCENT_BASELINE]) if stable else None,
+            "percent_range": None if stable else [r(min(pcts.values())), r(max(pcts.values()))],
+            "windows": [{"window": w, "bulletin_dates": bl.at[w, "bulletin_dates"], "baseline_aqi": r(bl.at[w, "baseline_aqi"]),
+                         "percent_change": r(p)} for w, p in pcts.items()],
+            "festival_bulletins": [_d(b) for b in fest["bulletin_date"]], **_pre_trend(lv)}
+    warns = ["Percentage change in the official AQI index, not in PM2.5 or PM10 concentration.",
+             CAUSAL_WARNING]
+    if not stable:
+        warns.insert(0, f"The change depends strongly on which days are used as the baseline (windows differ by "
+                        f"{r(spread)} points), so only a range is given.")
+    if vals.get("pre_festival_trend") == "rising":
+        warns.append("AQI was already rising before Diwali.")
+    return AnalysisResult(**base, date_range={"start": str(C.diwali_date(year) - timedelta(days=13)),
+                                              "end": _d(fest["bulletin_date"].iat[-1])},
+                          stations={"note": "stations chosen by CPCB for the city bulletin"},
+                          coverage={"baseline_days": int(w2.n_days)}, quality={},
+                          method="Festival level = mean of bulletins dated D+1 and D+2. Baseline = mean of bulletins "
+                                 "for the evenings D-7..D-1. A single percentage is shown only when the D-14..D-8, "
+                                 "D-7..D-1 and D-3..D-1 baselines give percentages within 25 points of each other; "
+                                 "otherwise the range is shown.", warnings=warns, values=vals)
 
 
 # ----------------------------------------------------------------------------- 4. Delhi PM

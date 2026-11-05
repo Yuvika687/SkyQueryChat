@@ -5,3 +5,4 @@ pandas==3.1.0
 pyarrow==26.0.0
 duckdb==2.0.0
 pytest==9.2.0
+pydantic-ai-slim[groq,google]==2.66.0   # agent; pulls groq 1.7.0, google-genai 2.34.0, pydantic 2.14.2

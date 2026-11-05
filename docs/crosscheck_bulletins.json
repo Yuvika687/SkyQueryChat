@@ -1,0 +1,134 @@
+{
+ "what": "PM-only AQI estimate vs official CPCB bulletin AQI (NOT official AQI)",
+ "by_city": {
+  "Bengaluru": {
+   "days": 545,
+   "correlation": 0.924,
+   "mean_difference_ours_minus_official": -6.2,
+   "mean_absolute_difference": 9.7,
+   "median_difference": -5.9,
+   "within_20pct": 75.8,
+   "period": "2025-02-20..2026-10-23"
+  },
+  "Chennai": {
+   "days": 550,
+   "correlation": 0.754,
+   "mean_difference_ours_minus_official": -0.1,
+   "mean_absolute_difference": 13.3,
+   "median_difference": -3.2,
+   "within_20pct": 76.4,
+   "period": "2025-02-20..2026-10-23"
+  },
+  "Delhi": {
+   "days": 516,
+   "correlation": 0.987,
+   "mean_difference_ours_minus_official": 6.0,
+   "mean_absolute_difference": 10.4,
+   "median_difference": 1.5,
+   "within_20pct": 97.5,
+   "period": "2025-02-20..2026-10-23"
+  },
+  "Hyderabad": {
+   "days": 565,
+   "correlation": 0.901,
+   "mean_difference_ours_minus_official": 1.8,
+   "mean_absolute_difference": 5.5,
+   "median_difference": 1.8,
+   "within_20pct": 94.7,
+   "period": "2025-02-20..2026-10-23"
+  },
+  "Kolkata": {
+   "days": 520,
+   "correlation": 0.988,
+   "mean_difference_ours_minus_official": -2.9,
+   "mean_absolute_difference": 5.7,
+   "median_difference": -2.8,
+   "within_20pct": 90.0,
+   "period": "2025-02-20..2026-10-23"
+  },
+  "Mumbai": {
+   "days": 564,
+   "correlation": 0.981,
+   "mean_difference_ours_minus_official": -2.3,
+   "mean_absolute_difference": 5.6,
+   "median_difference": -2.9,
+   "within_20pct": 92.9,
+   "period": "2025-02-20..2026-10-23"
+  }
+ },
+ "delhi_diwali_2025": {
+  "official": {
+   "bulletin_date": "2025-10-21",
+   "aqi": 351,
+   "stations": 35,
+   "period": "2025-10-20 16:00:00+05:30 -> 2025-10-21 16:00:00+05:30"
+  },
+  "A_default_4pm_window": {
+   "estimate": 481.1,
+   "stations": 35,
+   "note": "16:00 -> 16:00 window, default rule, mean of station AQIs"
+  },
+  "B_calendar_day_20_oct": {
+   "estimate": 410.9,
+   "stations": 20,
+   "note": "midnight-to-midnight 20 Oct instead of the bulletin window"
+  },
+  "C_drop_hours_over_999": {
+   "estimate": 421.6,
+   "stations": 24,
+   "note": "as if the >999 hours were blank (OpenCity-style)"
+  },
+  "D_cap_hours_at_999": {
+   "estimate": 477.6,
+   "stations": 35,
+   "note": "hourly values capped at 999"
+  },
+  "E_aqi_of_city_mean": {
+   "estimate": 500.0,
+   "stations": 35,
+   "note": "sub-index of the city-mean PM (not station mean)"
+  },
+  "F_without_night_20h_to_06h": {
+   "estimate": null,
+   "stations": 0,
+   "note": "night hours removed (what a feed missing the night would show)"
+  },
+  "diagnostics": {
+   "stations_reporting_per_hour_min_median_max": [
+    29,
+    35,
+    37
+   ],
+   "hours_in_window": 21,
+   "valid_hours_total": 1438,
+   "hours_over_999": 268,
+   "stations_with_pm25_24h_over_250 (sub-index > 400)": 31,
+   "stations_with_pm25_24h_over_380 (sub-index capped at 500)": 21,
+   "station_pm25_24h_median": 453.0,
+   "city_pm25_hourly_median_by_hour": {
+    "20 16:00": 90.0,
+    "20 17:00": 95.0,
+    "20 18:00": 112.0,
+    "20 19:00": 150.0,
+    "20 22:00": 591.0,
+    "20 23:00": 857.0,
+    "21 01:00": 1188.0,
+    "21 02:00": 1249.0,
+    "21 03:00": 954.0,
+    "21 04:00": 718.0,
+    "21 05:00": 566.0,
+    "21 06:00": 476.0,
+    "21 07:00": 400.0,
+    "21 08:00": 352.0,
+    "21 09:00": 264.0,
+    "21 10:00": 204.0,
+    "21 11:00": 158.0,
+    "21 12:00": 125.0,
+    "21 13:00": 99.0,
+    "21 14:00": 90.0,
+    "21 15:00": 90.0
+   },
+   "official_pm25_needed_for_351": "a station-mean PM2.5 sub-index of 351 corresponds to about 187 ug/m3"
+  }
+ }
+}

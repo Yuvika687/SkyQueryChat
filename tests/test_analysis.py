@@ -195,3 +195,46 @@ def test_real_unusual_days_are_reproducible(S):
     a = F.unusual_days(S, "Mumbai", "pm10", date(2025, 3, 1), date(2026, 10, 30)).to_dict()
     b = F.unusual_days(S, "Mumbai", "pm10", date(2025, 3, 1), date(2026, 10, 30)).to_dict()
     assert a == b and a["values"]["n_days_tested"] > 300
+
+
+# ----------------------------------------------------------------------------- Diwali percent rule
+def _diwali_store(aqi_by_offset):
+    from backend.pipeline import derive as Dv
+    from backend.pipeline import config as C
+    D = C.diwali_date(2025)
+    rows = [{"city": "Delhi", "bulletin_date": D + timedelta(days=k), "aqi": aqi_by_offset(k), "aqi_category": "x",
+             "prominent_pollutant": "PM2.5", "no_stations": 35} for k in range(-20, 6)]
+    lv, bl = Dv.diwali_aqi_table(pd.DataFrame(rows), years=(2025,))
+    return Store({"diwali_aqi_levels": lv, "diwali_aqi_baselines": bl})
+
+
+def test_percent_single_value_when_windows_agree():
+    s = _diwali_store(lambda k: 300.0 if k in (1, 2) else 200.0)   # flat baseline -> all windows +50%
+    v = F.diwali_aqi_percent(s, "Delhi", 2025).to_dict()["values"]
+    assert v["stable"] and v["percent_change"] == 50.0 and v["percent_range"] is None
+    assert v["baseline_window"].startswith("D-7..D-1")
+
+
+def test_percent_range_when_windows_disagree():
+    s = _diwali_store(lambda k: 300.0 if k in (1, 2) else (100.0 if k <= -6 else 250.0))
+    v = F.diwali_aqi_percent(s, "Delhi", 2025).to_dict()["values"]
+    assert not v["stable"] and v["percent_change"] is None and v["percent_range"][0] < v["percent_range"][1]
+
+
+def test_default_diwali_answer_has_no_percent_and_labels_bulletin_period():
+    s = _diwali_store(lambda k: 300.0 if k in (1, 2) else 100.0 + 10 * k + 200)
+    d = F.diwali_aqi(s, "Delhi", (2025,)).to_dict()
+    y = d["values"]["years"][0]
+    assert all(c["percent_change"] is None for c in y["baseline_candidates"])
+    assert y["festival_bulletins"][0]["reporting_period"] == "2025-10-20 16:00 to 2025-10-21 16:00 IST"
+    pt = [p for p in d["chart"]["series"][0]["data"] if p["bulletin_date"] == "2025-10-21"][0]
+    assert pt["x"] == 1 and "4 PM" in d["chart"]["x"]["label"]
+    assert y["pre_festival_trend"] == "rising" and any("cannot be attributed" in w for w in d["warnings"])
+
+
+@real
+def test_real_percent_rule_and_2026_unavailable(S):
+    assert F.diwali_aqi_percent(S, "Delhi", 2024).to_dict()["values"]["percent_change"] is not None
+    v = F.diwali_aqi_percent(S, "Delhi", 2025).to_dict()["values"]
+    assert v["percent_change"] is None and v["percent_range"] is not None      # windows disagree (rain)
+    assert F.diwali_aqi_percent(S, "Delhi", 2026).to_dict()["values"]["status"] == "not_available"

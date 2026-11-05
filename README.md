@@ -16,8 +16,8 @@ real data (OpenAQ measurements, Open-Meteo models) and shows its source, data ty
 
 ## Status
 Day 1 complete: data pipeline and processed dataset (`data/processed/`, Parquet).
-Day 2 (part 1): weather, app tables (`data/app/`) and analysis functions (`backend/analysis/`).
-Agent, API and UI not built yet. Evidence and rules: `docs/data-source-check.md`.
+Day 2: weather, app tables (`data/app/`), analysis functions (`backend/analysis/`) and the
+terminal agent (`backend/agent/`). API and UI not built yet. Evidence and rules: `docs/data-source-check.md`.
 
 ## Rebuild the dataset
 ```bash
@@ -27,6 +27,14 @@ python scripts/fetch_weather.py         # Open-Meteo daily weather (6 requests)
 python scripts/derive_app_tables.py     # compact app tables in data/app (deploy only these)
 pytest                                  # pipeline, analysis and real-data tests
 ```
+
+## Ask questions in the terminal
+```bash
+python scripts/ask.py                                   # interactive, follow-ups keep context
+python scripts/ask.py "Delhi PM2.5 in November 2025?"   # one question (add --json for the typed answer)
+python scripts/run_eval.py                              # live evaluation, paced for free tiers
+```
+Models are configured in `backend/config/models.json` (override with `SKYQ_MODEL_CHAIN`).
 
 ## Local setup
 ```bash

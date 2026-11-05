@@ -1,7 +1,14 @@
 {
  "derived_from": "2026-11-03T13:46:14+00:00",
  "openaq_data_end": "2026-10-30",
- "default_analysis_rule": "exclude hours flagged flat-line (>= 6 identical h) or isolated spike; exclude station-days where PM2.5 > 1.2 x PM10 and > PM10 + 20 (impossible); peer-outlier station-days are flagged, not excluded",
+ "default_analysis_rule": "exclude hours flagged flat-line (>= 6 identical h) or isolated spike, EXCEPT supported spikes (verified Diwali night 18:00-06:00, or corroborated by another clean same-city station within +-1 h at >= 50% of the value and > 2x the city median); exclude station-days where matched-hour PM2.5 > PM10 + max(20% x PM10, 20 ug/m3) (impossible); peer-outlier station-days are flagged, not excluded",
+ "spike_hours": {
+  "CPCB via OpenCity | corroborated": 77,
+  "CPCB via OpenCity | excluded": 143,
+  "OpenAQ archive (CPCB/AirNow/AirGradient) | corroborated": 94,
+  "OpenAQ archive (CPCB/AirNow/AirGradient) | excluded": 1062,
+  "OpenAQ archive (CPCB/AirNow/AirGradient) | festival_night": 2
+ },
  "diwali_percent_status": "pending_user_approval",
  "attribution": {
   "openaq": "OpenAQ (openaq.org), CPCB data",
@@ -30,7 +37,7 @@
   "network_gaps": 1415
  },
  "bytes": {
-  "city_daily.parquet": 304243,
+  "city_daily.parquet": 305153,
   "city_daily_aqi.parquet": 238969,
   "data_status_reasons.parquet": 3530,
   "date_quality.parquet": 13737,
@@ -39,9 +46,9 @@
   "diwali_aqi_levels.parquet": 10632,
   "diwali_pm_status.parquet": 6560,
   "network_gaps.parquet": 13826,
-  "station_daily.parquet": 2409576,
+  "station_daily.parquet": 2409249,
   "stations.parquet": 17764,
   "weather_daily.parquet": 26192
  },
- "total_bytes": 3067928
+ "total_bytes": 3068511
 }

@@ -1,0 +1,42 @@
+{
+ "_note": "Model chain for the agent. First entry is primary; the rest are fallbacks in order. Override with env SKYQ_MODEL_CHAIN='groq:openai/gpt-oss-120b,google:gemini-3.5-flash-lite'. Keys come from .env only. Verified 2026-11-05: Groq key serves gpt-oss-120b/20b, qwen3.8-27b (llama-3.3-70b returns 404); Gemini 2.5 Flash is retired for new users. gpt-oss-120b needs reasoning_effort 'medium': with 'low', Groq rejected 3/3 answers (output_parse_failed); medium answered 3/3.",
+ "chain": [
+  {
+   "provider": "groq",
+   "model": "openai/gpt-oss-120b",
+   "key_env": "GROQ_API_KEY",
+   "settings": {
+    "temperature": 0,
+    "max_tokens": 2500,
+    "groq_reasoning_effort": "medium"
+   }
+  },
+  {
+   "provider": "google",
+   "model": "gemini-3.5-flash-lite",
+   "key_env": "GEMINI_API_KEY",
+   "settings": {
+    "temperature": 0,
+    "max_tokens": 1500
+   }
+  },
+  {
+   "provider": "google",
+   "model": "gemini-3.8-flash",
+   "key_env": "GEMINI_API_KEY",
+   "settings": {
+    "temperature": 0,
+    "max_tokens": 1500
+   }
+  }
+ ],
+ "free_tier_checked_2026_11_05": {
+  "groq:openai/gpt-oss-120b": "1000 requests/day, 8000 tokens/minute (live response headers); 200K tokens/day (docs)",
+  "google": "free-tier quotas are shown only in AI Studio (per project); not verifiable from the API"
+ },
+ "limits": {
+  "request_limit": 10,
+  "output_retries": 3,
+  "max_history_turns": 3
+ }
+}

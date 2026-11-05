@@ -77,17 +77,22 @@ def severity_table(gaps: pd.DataFrame, dates: dict[str, list[date]], source: str
 def daily_with_flag_rule(hourly: pd.DataFrame) -> pd.DataFrame:
     """Station-day values under the DEFAULT rule (flat-line and isolated-spike hours excluded)
     plus the all-hours value for transparency."""
-    base = hourly.drop(columns=[c for c in ("flag_flatline", "flag_spike", "source") if c in hourly])
-    flagged = hourly["flag_flatline"] | hourly["flag_spike"]
+    base = hourly.drop(columns=[c for c in ("flag_flatline", "flag_spike", "source", "spike_supported")
+                                if c in hourly])
+    kept = hourly["spike_supported"] if "spike_supported" in hourly else pd.Series(False, index=hourly.index)
+    flagged = hourly["flag_flatline"] | (hourly["flag_spike"] & ~kept)
     d_all = T.to_daily(base)
     d_def = T.to_daily(base.assign(valid_hour=base["valid_hour"] & ~flagged))
-    nflag = hourly.assign(local_date=hourly["hour"].dt.date, f=flagged & hourly["valid_hour"]).groupby(
-        ["sensor_key", "local_date"])["f"].sum().rename("n_flagged_hours_excluded")
+    g = hourly.assign(local_date=hourly["hour"].dt.date, f=flagged & hourly["valid_hour"],
+                      k=kept & hourly["flag_spike"] & hourly["valid_hour"]).groupby(["sensor_key", "local_date"])
+    nflag = pd.concat([g["f"].sum().rename("n_flagged_hours_excluded"),
+                       g["k"].sum().rename("n_supported_spike_hours_kept")], axis=1)
     k = ["sensor_key", "location_id", "pollutant", "local_date"]
     out = d_def.merge(d_all[k + ["daily_mean", "valid_hours"]].rename(
         columns={"daily_mean": "daily_mean_all_hours", "valid_hours": "valid_hours_all"}), on=k)
     out = out.merge(nflag.reset_index(), on=["sensor_key", "local_date"], how="left")
-    out["n_flagged_hours_excluded"] = out["n_flagged_hours_excluded"].fillna(0).astype("int64")
+    for c in ("n_flagged_hours_excluded", "n_supported_spike_hours_kept"):
+        out[c] = out[c].fillna(0).astype("int64")
     return out
 
 
@@ -106,17 +111,93 @@ def peer_outlier_days(daily: pd.DataFrame, ratio: float = 3.0, min_excess: float
     return flags
 
 
-def pm25_exceeds_pm10(daily: pd.DataFrame, ratio: float = 1.2, min_excess: float = 20.0) -> pd.Series:
-    """True for BOTH pollutant rows of a station-day where PM2.5 > 1.2 x PM10 and > PM10 + 20.
-    Physically impossible beyond measurement error (PM2.5 is part of PM10)."""
+PM_RATIO_TOL = 0.20      # PM2.5 may exceed PM10 by up to 20% ...
+PM_ABS_TOL = 20.0        # ... or 20 µg/m³, whichever is larger (two separate instruments, ~±10% each)
+PM_MIN_MATCHED_HOURS = 16
+
+
+def _bad_pm_pairs(w: pd.DataFrame) -> pd.Index:
+    tol = np.maximum(PM_RATIO_TOL * w["pm10"], PM_ABS_TOL)
+    return w[w["pm25"] > w["pm10"] + tol].index
+
+
+def pm25_exceeds_pm10(daily: pd.DataFrame, hourly: pd.DataFrame | None = None) -> pd.Series:
+    """True for BOTH pollutant rows of a station-day where PM2.5 > PM10 + max(20% x PM10, 20 µg/m³).
+    PM2.5 is part of PM10, so beyond that measurement tolerance it is physically impossible.
+    Two tests, either one flags the day: (1) the two station-day means; (2) with `hourly`, means over
+    MATCHED hours (both pollutants valid and unflagged, >= 16 h). Test 1 alone misses faults hidden by
+    different hour sets; test 2 alone misses faulty PM2.5 hours where PM10 is missing."""
     v = daily[daily["is_valid_day"]]
-    w = v.pivot_table(index=["source", "location_id", "local_date"], columns="pollutant",
-                      values="daily_mean", aggfunc="first")
-    if not {"pm25", "pm10"} <= set(w.columns):
+    dm = v.pivot_table(index=["source", "location_id", "local_date"], columns="pollutant",
+                       values="daily_mean", aggfunc="first")
+    if not {"pm25", "pm10"} <= set(dm.columns):
         return pd.Series(False, index=daily.index)
-    bad = w[(w["pm25"] > ratio * w["pm10"]) & (w["pm25"] > w["pm10"] + min_excess)].index
+    dm = dm.dropna(subset=["pm25", "pm10"])
+    bad = _bad_pm_pairs(dm)
+    if hourly is not None:
+        h = hourly[hourly["valid_hour"] & ~hourly["flag_flatline"] & ~hourly["flag_spike"]]
+        h = h.assign(local_date=h["hour"].dt.date)
+        w = h.pivot_table(index=["source", "location_id", "hour", "local_date"], columns="pollutant",
+                          values="value", aggfunc="first")
+        if {"pm25", "pm10"} <= set(w.columns):
+            w = w.dropna(subset=["pm25", "pm10"]).groupby(["source", "location_id", "local_date"]).agg(
+                n=("pm25", "size"), pm25=("pm25", "mean"), pm10=("pm10", "mean"))
+            w = w[w["n"] >= PM_MIN_MATCHED_HOURS]
+            bad = bad.union(_bad_pm_pairs(w))   # either test failing flags the station-day
     key = pd.MultiIndex.from_frame(daily[["source", "location_id", "local_date"]])
     return pd.Series(key.isin(bad), index=daily.index)
+
+
+# ----------------------------------------------------------------------------- supported spikes
+SPIKE_SUPPORT_RATIO = 0.5     # another clean station within +-1 h reads >= 50% of the spike value ...
+SPIKE_SUPPORT_VS_MEDIAN = 2.0  # ... and > 2 x the city median that hour (a real local plume)
+
+
+def festival_night_hours(years=(2024, 2025, 2026)) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
+    """Verified festival nights: 18:00 IST on D and D+1 to 06:00 the next morning."""
+    out = []
+    for y in years:
+        for d in C.festival_days(y):
+            s = pd.Timestamp(d).tz_localize(C.IST) + pd.Timedelta(hours=18)
+            out.append((s, s + pd.Timedelta(hours=12)))
+    return out
+
+
+def supported_spikes(hourly: pd.DataFrame, city_of: pd.DataFrame) -> pd.DataFrame:
+    """For spike-flagged hours, decide whether the event is SUPPORTED (kept in analysis values):
+      * 'festival_night': the hour lies in a verified Diwali night window (short local bursts expected);
+      * 'corroborated': another unflagged primary station in the same city, within +-1 h, reads
+        >= 50% of the spike value and > 2 x that hour's city median.
+    Returns columns supported (bool) and support_reason, indexed like `hourly`."""
+    out = pd.DataFrame({"supported": False, "support_reason": None}, index=hourly.index)
+    sp = hourly[hourly["flag_spike"]]
+    if sp.empty:
+        return out
+    h = hourly.merge(city_of, on="sensor_key", how="left")
+    h.index = hourly.index
+    ref = h[h["city"].notna() & h["valid_hour"]]
+    med = ref.groupby(["source", "city", "pollutant", "hour"])["value"].median()
+    clean = ref[~ref["flag_spike"] & ~ref["flag_flatline"]].set_index(
+        ["source", "city", "pollutant", "hour"]).sort_index()
+    nights = festival_night_hours()
+    for idx in sp.index:
+        r = h.loc[idx]
+        if any(a <= r["hour"] < b for a, b in nights):
+            out.loc[idx, ["supported", "support_reason"]] = [True, "festival_night"]
+            continue
+        if pd.isna(r["city"]):
+            continue
+        m = med.get((r["source"], r["city"], r["pollutant"], r["hour"]), np.nan)
+        for dh in (-1, 0, 1):
+            k = (r["source"], r["city"], r["pollutant"], r["hour"] + pd.Timedelta(hours=dh))
+            if k not in clean.index:
+                continue
+            o = clean.loc[[k]]
+            o = o[o["sensor_key"] != r["sensor_key"]]
+            if ((o["value"] >= SPIKE_SUPPORT_RATIO * r["value"]) & (o["value"] > SPIKE_SUPPORT_VS_MEDIAN * m)).any():
+                out.loc[idx, ["supported", "support_reason"]] = [True, "corroborated"]
+                break
+    return out
 
 
 # ----------------------------------------------------------------------------- Diwali AQI
@@ -218,6 +299,16 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
     meta = st.drop_duplicates("sensor_key")[["sensor_key", "city", "tier", "monitor_type", "provider"]]
     tables: dict[str, pd.DataFrame] = {}
 
+    # supported spike events are kept in analysis values (reported per station-day)
+    city_of = st[st["tier"] == "primary"].drop_duplicates("sensor_key")[["sensor_key", "city"]]
+    oc_keys = hourly.loc[hourly["source"] == SRC_OPENCITY, "sensor_key"].unique()
+    city_of = pd.concat([city_of, pd.DataFrame({"sensor_key": oc_keys, "city": "Delhi"})], ignore_index=True)
+    sup = supported_spikes(hourly, city_of)
+    hourly["spike_supported"] = sup["supported"].astype(bool)
+    spike_report = hourly.loc[hourly["flag_spike"]].assign(reason=sup.loc[hourly["flag_spike"], "support_reason"]
+                                                          .fillna("excluded"))
+    spike_summary = spike_report.groupby(["source", "reason"]).size().to_dict()
+
     # station-day, default rule
     parts = []
     for src, g in hourly.groupby("source"):
@@ -232,7 +323,7 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
         m = prim_mask & (sd["source"] == src)
         sd.loc[m, "flag_peer_outlier_day"] = peer_outlier_days(sd[m]).values
     # Physically impossible PM2.5 > PM10: flagged AND excluded from the default analysis value
-    sd["flag_pm25_gt_pm10"] = pm25_exceeds_pm10(sd)
+    sd["flag_pm25_gt_pm10"] = pm25_exceeds_pm10(sd, hourly)
     sd.loc[sd["flag_pm25_gt_pm10"], "is_valid_day"] = False
     sd.loc[sd["flag_pm25_gt_pm10"], "daily_mean"] = np.nan
     sd["units"] = C.UNITS
@@ -240,7 +331,7 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
     tables["station_daily"] = sd[[
         "source", "city", "location_id", "sensor_key", "pollutant", "tier", "monitor_type", "provider",
         "local_date", "valid_hours", "coverage", "is_valid_day", "daily_mean", "daily_mean_all_hours",
-        "valid_hours_all", "n_flagged_hours_excluded", "n_readings_above_1000",
+        "valid_hours_all", "n_flagged_hours_excluded", "n_supported_spike_hours_kept", "n_readings_above_1000",
         "flag_peer_outlier_day", "flag_pm25_gt_pm10", "units", "data_type"]]
 
     # severity (OpenAQ: all six cities; OpenCity: Delhi)
@@ -266,9 +357,12 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
     cd = cd.merge(cd_all[["city", "pollutant", "local_date", "city_mean"]].rename(
         columns={"city_mean": "city_mean_all_hours"}), on=["city", "pollutant", "local_date"], how="left")
     nflag = p.groupby(["city", "pollutant", "local_date"])["n_flagged_hours_excluded"].sum().rename("n_flagged_hours_excluded")
+    nkept = p.groupby(["city", "pollutant", "local_date"])["n_supported_spike_hours_kept"].sum().rename(
+        "n_supported_spike_hours_kept")
     nout = p.groupby(["city", "pollutant", "local_date"])["flag_peer_outlier_day"].sum().rename("n_peer_outlier_stations")
     cd = cd.merge(nflag.reset_index(), on=["city", "pollutant", "local_date"], how="left") \
            .merge(nout.reset_index(), on=["city", "pollutant", "local_date"], how="left") \
+           .merge(nkept.reset_index(), on=["city", "pollutant", "local_date"], how="left") \
            .merge(nimp.reset_index(), on=["city", "pollutant", "local_date"], how="left")
     cd = cd.merge(sev[sev["source"] == SRC_OPENAQ][["city", "local_date", "gap_hours", "longest_run_hours",
                                                      "severity", "extent"]], on=["city", "local_date"], how="left")
@@ -305,9 +399,12 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
     sizes = {f.name: f.stat().st_size for f in sorted(out.glob("*.parquet"))}
     manifest = {
         "derived_from": manifest_in["built_utc"], "openaq_data_end": str(data_end),
-        "default_analysis_rule": "exclude hours flagged flat-line (>= 6 identical h) or isolated spike; "
-                                 "exclude station-days where PM2.5 > 1.2 x PM10 and > PM10 + 20 (impossible); "
-                                 "peer-outlier station-days are flagged, not excluded",
+        "default_analysis_rule": "exclude hours flagged flat-line (>= 6 identical h) or isolated spike, EXCEPT "
+                                 "supported spikes (verified Diwali night 18:00-06:00, or corroborated by another "
+                                 "clean same-city station within +-1 h at >= 50% of the value and > 2x the city "
+                                 "median); exclude station-days where matched-hour PM2.5 > PM10 + max(20% x PM10, "
+                                 "20 ug/m3) (impossible); peer-outlier station-days are flagged, not excluded",
+        "spike_hours": {f"{k[0]} | {k[1]}": int(v) for k, v in spike_summary.items()},
         "diwali_percent_status": PERCENT_STATUS,
         "attribution": {"openaq": "OpenAQ (openaq.org), CPCB data",
                         "opencity": "CPCB data via OpenCity (data.opencity.in), public domain",

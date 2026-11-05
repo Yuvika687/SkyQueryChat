@@ -127,12 +127,18 @@ Diwali dates live in a verified config file:
 
 ### Analysis rules (decided 2026-11-04)
 
-- **Diwali: AQI LEVELS are the main result** (festival bulletins D+1, D+2). Percentage changes are
-  WITHHELD (`APPROVED_DIWALI_BASELINE = None` in backend/analysis/functions.py) until the user
-  approves a baseline window; they swing 12-148 points with the window.
-- Default analysis value excludes flat-line hours (>= 6 identical h), isolated-spike hours and
-  physically impossible station-days (PM2.5 > 1.2 x PM10 and > PM10 + 20). Data stays stored;
-  every result reports what was excluded. Peer-outlier station-days are flagged only.
+- **Diwali: AQI LEVELS, categories and exact bulletin dates are the main result** (festival bulletins
+  D+1, D+2). **No percentage in the default answer.** Only when a user asks: `diwali_aqi_percent`
+  (baseline D-7..D-1; single figure only if the D-14..D-8, D-7..D-1 and D-3..D-1 baselines agree
+  within 25 points, otherwise a range). Charts label each point with its bulletin date and CPCB's
+  4 PM-to-4 PM period. Never say Diwali caused a rise (AQI often rises beforehand). (approved 2026-11-04)
+- Default analysis value excludes flat-line hours (>= 6 identical h), UNSUPPORTED isolated-spike
+  hours, and physically impossible station-days: PM2.5 > PM10 + max(20% x PM10, 20 ug/m3) on either
+  the station-day means or >= 16 matched hours. Supported spikes are KEPT: verified Diwali nights
+  (18:00-06:00 on D and D+1) or corroborated by another clean same-city station within +-1 h (>= 50%
+  of the value and > 2x the city median). Data stays stored; every result reports what was excluded
+  or kept. Peer-outlier station-days are flagged only.
+- PM-only AQI estimates (scripts/crosscheck_bulletins.py) are a data check, never shown as AQI.
 - Data quality is a severity level per city-date (none/minor/moderate/severe; network/local),
   not a single flag. Severe days are excluded from weather associations.
 - Weather (Open-Meteo reanalysis) is MODELLED, kept in its own table, IST dates, CC BY 4.0 with
@@ -163,6 +169,20 @@ Rules:
 - If data is missing or too thin, say so clearly.
 - Keep token use low. Check live free-tier limits; handle rate limits with retries,
   fallback and caching.
+
+### Agent implementation (Day 2, 2026-11-05)
+
+- Code: `backend/agent/` (models, resolver, tools, session, verify, schemas, core); terminal:
+  `scripts/ask.py`; evaluation: `evals/questions.json` + `scripts/run_eval.py`.
+- Model names live in `backend/config/models.json` (override: env `SKYQ_MODEL_CHAIN`). Primary
+  Groq `openai/gpt-oss-120b` with `groq_reasoning_effort: medium` (low made Groq reject outputs);
+  fallbacks Gemini `gemini-3.5-flash-lite`, then `gemini-3.8-flash`. Groq free tier for this key:
+  1K requests/day, 8K tokens/min, ~200K tokens/day. Gemini free quotas are only visible in AI Studio.
+- Final answer is accepted from the `final_answer` output tool OR as JSON text (gpt-oss alternates).
+  Groq rejects JSON mode combined with tools.
+- Every number in answer/explanation/metrics must match a tool result (after rounding); metrics must
+  match their own dataset. Causal wording and prompt quotes are rejected. Up to 2 retries, then a
+  clear error. Tests use FunctionModel/TestModel only (no quota).
 
 ## 6. UI requirements
 

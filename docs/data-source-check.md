@@ -789,3 +789,163 @@ Sample real results (2025-03-01 → 2026-10-30):
 - Weather: 3 tests (IST, units, fail-loud, preliminary flag, real completeness).
 - Derive: 15 tests (severity, flag rule, impossible PM2.5 > PM10, peer outlier, Diwali tables, blank-rate definition).
 - Analysis: 22 tests. Synthetic: envelope, JSON, common days, injected spike/dip, flat series, association sign and wording, severe-day exclusion, validation, CPCB sub-index, categories. Real data: Diwali levels equal the bulletins, Delhi PM never has a %, the trend equals an independent pandas recomputation, compare and coverage are consistent, Mumbai rain groups, unusual-days results are reproducible.
+
+---
+
+# Part 7 — Day 2 decisions, rule checks and the agent (2026-11-05)
+
+## 7.1 Decisions applied (user, 2026-11-04)
+- Diwali main result = official AQI **levels, categories and exact bulletin dates**. No percentage in the default answer.
+- A percentage only when asked: baseline **D−7…D−1 (W2)**; a single figure only if W1 (D−14…D−8), W2 and W3 (D−3…D−1) agree within **25 points**, otherwise a range (`diwali_aqi_percent`).
+- Chart: x = bulletin day relative to Diwali (bulletin D+1 reports Diwali evening); every point carries its bulletin date and CPCB period ("2025-10-20 16:00 to 2025-10-21 16:00 IST").
+- Never say Diwali caused a rise. The result reports `pre_festival_trend` (mean of evenings D−7…D−5 vs D−3…D−1, ±10%) and warns when AQI was already rising.
+
+Percentage rule on real data (✔ = single figure):
+
+| City | 2024 | 2025 |
+|---|---|---|
+| Delhi | ✔ +9.8% (spread 3.4) | range +16.2 to +151.7% |
+| Mumbai | range +51.8 to +154.7% | range +3.5 to +41.5% |
+| Kolkata | range +149.0 to +213.0% | range +20.2 to +83.6% |
+| Chennai | range −23.9 to +65.3% | range +19.7 to +54.3% |
+| Bengaluru | range +4.2 to +152.0% | range +24.4 to +54.4% |
+| Hyderabad | range +9.9 to +73.3% | ✔ +8.6% (spread 13.7) |
+
+AQI was already rising before Diwali in 7 of 12 city-years.
+
+## 7.2 Spike exclusion vs real peaks (check)
+1,378 spike-flagged hours in total (OpenAQ 1,158; OpenCity 220).
+- **Diwali windows:** only 4 spike hours fall within D 12:00 → D+2 12:00. One is real. **Hyderabad Somajiguda read 592 µg/m³ at 22:00 on Diwali 2025** while ECIL Kapra (133), Kokapet (131) and New Malakpet (199) also jumped. That's a local firecracker peak, and the old rule removed it.
+- **Corroborated spikes:** 210 spike hours had an unflagged same-city station within ±1 h reading ≥ 50% of the value and > 2 × the city median. Delhi 156, Mumbai 43, Chennai 8.
+
+**New rule (supported events are kept):** a spike-flagged hour stays in analysis values if
+1. it lies in a verified Diwali night (18:00 → 06:00 on D and D+1), or
+2. another unflagged primary station in the same city, within ±1 h, reads ≥ 50% of it **and** > 2 × that hour's city median.
+
+Result: 173 hours kept (OpenAQ 94 corroborated + 2 festival-night; OpenCity 77 corroborated) and 1,205 still excluded. Each station-day/city-day reports `n_supported_spike_hours_kept`.
+
+Effect:
+- 26 city-days change by > 1%, and 9 by > 5%.
+- Unusual-day detections: 327 → 325. Delhi PM2.5 adds 2025-11-27; Mumbai PM10 drops 2025-11-30 and 2025-12-24; Chennai PM2.5 drops 2025-10-09.
+- **Largest effect:** Chennai PM10 on Diwali day 2025-10-20 goes 227.5 → 423.6. Kodungaiyur's festival-night hour (4,909 µg/m³) is kept, which makes its day valid (16 h, mean 1,012). That station-day is a **peer outlier** (flag only, as decided), so the city value carries that flag.
+
+## 7.3 PM2.5 > PM10 tolerance (check)
+On 62,935 station-days with ≥ 16 matched hours, the PM2.5/PM10 ratio has median 0.42, 99th percentile 0.83 and 99.5th 0.90. Only 0.33% exceed 1.0.
+
+| Rule | Station-days flagged |
+|---|---:|
+| ratio > 1.0 | 208 |
+| > 1.1 and +10 | 121 |
+| **> 1.2 and +20 (chosen)** | 89 |
+| > 1.5 and +50 | 49 |
+
+**Tolerance:** PM2.5 > PM10 + max(20% × PM10, 20 µg/m³). That's two separate instruments at about ±10% each, plus an absolute floor for low concentrations.
+
+**Two tests, either one flags the day:**
+- (a) Station-day means.
+- (b) Means over matched hours (both valid and unflagged, ≥ 16 h).
+
+Matched hours alone would have **released real faults**. At Bengaluru 6973 on 2025-05-15, PM2.5 was 12.7 on the 16 matched hours but about 400 on 6 hours without PM10. Daily means alone miss faults hidden by different hour sets.
+
+Result: 103 station-day pairs flagged (was 102). Peer outliers remain flag-only.
+
+## 7.4 Cross-check vs CPCB bulletins (PM-only estimate — not official AQI)
+`scripts/crosscheck_bulletins.py` → `docs/crosscheck_bulletins.json`.
+
+**Method:**
+- Bulletin window 16:00 → 16:00 IST, default rule (supported spikes kept).
+- ≥ 16 h per station; station = max PM sub-index; city = mean of station AQIs (≥ 3).
+- Only days where PM is a prominent pollutant.
+
+| City | Days | Correlation | Mean diff (ours − official) | Mean abs diff | Within ±20% |
+|---|---:|---:|---:|---:|---:|
+| Delhi | 516 | 0.987 | +6.0 | 10.4 | 97.5% |
+| Kolkata | 520 | 0.988 | −2.9 | 5.7 | 90.0% |
+| Mumbai | 564 | 0.981 | −2.3 | 5.6 | 92.9% |
+| Hyderabad | 565 | 0.901 | +1.8 | 5.5 | 94.7% |
+| Bengaluru | 545 | 0.924 | −6.2 | 9.7 | 75.8% |
+| Chennai | 550 | 0.754 | −0.1 | 13.3 | 76.4% |
+
+**Delhi, Diwali 2025 (bulletin 2025-10-21, official 351, 35 stations):**
+
+| Variant | PM-only estimate | Stations |
+|---|---:|---:|
+| A. Bulletin window (16:00 20 Oct → 16:00 21 Oct), default rule | **481.1** | 35 |
+| B. Calendar day 20 Oct instead (wrong window) | 410.9 | 20 |
+| C. Hours > 999 dropped (as the CPCB/OpenCity feed blanks them) | 421.6 | 24 |
+| C′. Same, ≥ 12 h per station | 414.9 | 36 |
+| D. Hours capped at 999 | 477.6 | 35 |
+| E. Sub-index of the city-mean PM | 500.0 | 35 |
+| F. Night 20:00–06:00 removed (≥ 12 h) | 376.7 | 33 |
+
+**Findings:**
+- **The 4 PM window** is already used. A calendar day would be the wrong period.
+- **Gaps:** 3 of 24 hours have no valid readings (20:00, 21:00, 00:00; midnight is the known old-format gap). They fall in the rising phase, so filling them would *raise* our estimate.
+- **The 999 limit** explains about 60 of the 130 points (481 → 422).
+- **Saturation:** the station-median 24-h PM2.5 is 453 µg/m³. 21 of 35 stations exceed 380 µg/m³, so their sub-index is capped at 500.
+- To reach 351, the station-mean PM2.5 would have to be about 187 µg/m³. **No tested variant reaches 351**, not even removing the whole night (377).
+- The rest of the gap is **unexplained**. The likely cause is CPCB's real-time feed or validation at bulletin time, which we can't verify.
+- PM-only estimates are a data check only. The app never shows them as AQI.
+
+## 7.5 Model verification (2026-11-05)
+- **Pydantic AI** `pydantic-ai-slim[groq,google]==2.66.0` (Python ≥ 3.11). It pulls groq 1.7.0, google-genai 2.34.0 and pydantic 2.14.2.
+- **Groq** (live `/models` list for this key): gpt-oss-120b, gpt-oss-20b, qwen3.8-27b. `llama-3.3-70b-versatile` returns **404** for this key, although the docs page lists it.
+  - Live headers for gpt-oss-120b: 1,000 requests/day, 8,000 tokens/min.
+  - Daily tokens are not in the headers. A 429 body confirmed **200,000 tokens/day**.
+- **Gemini:** `gemini-2.5-flash` is retired for new users (404, which recommends gemini-3.8-flash). `gemini-3.5-flash-lite` and `gemini-3.8-flash` respond.
+  - The free-tier quotas are **only visible in AI Studio**. Web sources disagree, so they're unverified.
+- **Tool-calling trials (small requests):**
+  - gpt-oss-120b and gpt-oss-20b both called the tool correctly on a simple request.
+  - With the full agent, gpt-oss-120b at reasoning **low** failed 3/3 (Groq `output_parse_failed`); at **medium** it passed 3/3.
+  - qwen3.8-27b: 1/2, slow.
+  - gpt-oss-20b: parse failure.
+  - Groq rejects JSON mode combined with tools.
+- **Chain (`backend/config/models.json`):** Groq gpt-oss-120b (medium) → Gemini 3.5 Flash-Lite → Gemini 3.8 Flash. Override with env `SKYQ_MODEL_CHAIN`.
+
+## 7.6 Agent (terminal only)
+`backend/agent/`:
+- **resolver:** cities with aliases and typo tolerance, pollutants, periods (relative ones anchored to the latest data), Diwali events with availability.
+- **tools:** 10 typed tools around the analysis functions. Each returns a `dataset_id` plus a compact summary, never raw tables.
+- **session:** dataset registry and last 3 turns of memory (thinking parts dropped).
+- **verify:** number and causal-language checks.
+- **schemas:** `LLMAnswer`, `FinalAnswer`, `StepEvent`.
+- **core:** the loop, verification with up to 3 retries, events and errors.
+
+Run it with `scripts/ask.py`.
+
+**Number rule:**
+- Every number in the answer, explanation and metric labels must equal a tool-result number after rounding (shares may be written as %).
+- Metric values must equal a numeric field of their own dataset.
+- From the question, only years and small counts may be echoed.
+- On failure the model gets the list of bad numbers and retries. If it still fails, a clear error is returned.
+
+**Step events:**
+- Event types: run_started, plan, model_request, tool_call, tool_result, tool_error, verification, retry, fallback (with the error class), answer, error.
+- They're typed and JSON-serialisable, ready for SSE.
+
+## 7.7 Live evaluation (`evals/questions.json`, `scripts/run_eval.py`)
+47 questions (51 turns):
+- trend 7, comparison 6, Diwali 7, unusual days 5, weather 4, follow-up 4×2
+- missing data 5, unsupported 4
+- traps 5 (PM Diwali %, injection ×2, code, causal claim)
+
+Run in batches of 5 with 20–25 s gaps.
+
+| Score | Result |
+|---|---|
+| Tool choice | 43/43 (100%) |
+| Numbers traceable to tool results (answered turns) | 40/40 (100%) |
+| Reference values correct | 7/8 (87.5%); D1 gave both bulletins (351, 353) instead of their average 352 |
+| Correct refusals / unavailable | 14/14 (100%) |
+| Errors | 0 after rerun (first pass: W5 "models unavailable"; both Gemini models failed once) |
+| Overall pass | 50/51 (first pass 49/51) |
+| Verifier retries | 8 across 51 turns |
+
+**Model split:**
+- Only 2 turns ran on Groq. Groq's 200K tokens/day for gpt-oss-120b was used up by development trials earlier that day.
+- After that, the chain fell back to Gemini 3.5 Flash-Lite. The rest of the run used Gemini directly, so no request was spent on a guaranteed 429.
+- **The primary model is therefore under-tested and needs a Groq re-run.**
+
+**Changes made after reviewing results:**
+- Metric cards must match a numeric field. In X3 a label had been attached to a number found inside text, and it passed. X3 was rerun after the fix.
+- The first pass is kept in `evals/results/live_first_pass.jsonl`.

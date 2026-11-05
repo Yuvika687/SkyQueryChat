@@ -98,3 +98,99 @@ def test_blank_rate_definition_uses_interval_start_and_night_window():
     raw = pd.DataFrame({"location_id": 1, "pollutant": "pm25", "ts": ts,
                         "value": [np.nan if i < 12 else 50.0 for i in range(len(ts))]})
     assert Dv.blank_rates(raw, {1}, "pm25", [date(2025, 10, 20)]) == pytest.approx(12 / 48)
+
+
+# ----------------------------------------------------------------------------- Day 2 rule changes
+def _multi(values_by_sensor: dict[str, list[float]], start="2025-06-15 00:00", spike=None):
+    rows = []
+    for k, vals in values_by_sensor.items():
+        hours = pd.date_range(start, periods=len(vals), freq="h", tz=IST)
+        for i, (h, v) in enumerate(zip(hours, vals)):
+            rows.append({"source": "S", "sensor_key": k, "location_id": int(k[-1]), "pollutant": "pm25", "hour": h,
+                         "value": v, "valid_hour": True, "flag_flatline": False,
+                         "flag_spike": bool(spike and (k, i) in spike)})
+    return pd.DataFrame(rows)
+
+
+CITY = pd.DataFrame({"sensor_key": ["s1", "s2", "s3", "s4"], "city": "Delhi"})
+
+
+def test_uncorroborated_spike_is_not_supported():
+    h = _multi({"s1": [40, 40, 900, 40], "s2": [40] * 4, "s3": [45] * 4, "s4": [50] * 4}, spike={("s1", 2)})
+    assert not Dv.supported_spikes(h, CITY)["supported"].any()
+
+
+def test_spike_corroborated_by_neighbour_within_one_hour_is_kept():
+    # s2 reads 600 one hour later (>= 50% of 900 and > 2x the city median) -> real local plume
+    h = _multi({"s1": [40, 40, 900, 40], "s2": [40, 40, 45, 600], "s3": [45] * 4, "s4": [50] * 4}, spike={("s1", 2)})
+    out = Dv.supported_spikes(h, CITY)
+    assert out["supported"].sum() == 1 and out.loc[out["supported"], "support_reason"].iat[0] == "corroborated"
+
+
+def test_corroborating_station_must_itself_be_unflagged():
+    h = _multi({"s1": [40, 40, 900, 40], "s2": [40, 40, 600, 40], "s3": [45] * 4, "s4": [50] * 4},
+               spike={("s1", 2), ("s2", 2)})
+    assert not Dv.supported_spikes(h, CITY)["supported"].any()
+
+
+def test_spike_on_verified_diwali_night_is_kept():
+    # Hyderabad-like case: 592 at 22:00 on Diwali 2025 while neighbours rose only to ~130
+    h = _multi({"s1": [55, 592, 74], "s2": [44, 131, 55], "s3": [40, 133, 57], "s4": [59, 78, 75]},
+               start="2025-10-20 21:00", spike={("s1", 1)})
+    out = Dv.supported_spikes(h, CITY)
+    assert out.loc[out["supported"], "support_reason"].tolist() == ["festival_night"]
+    day = h.assign(spike_supported=out["supported"], n_readings=4, n_above_1000=0, expected=4)
+    assert Dv.daily_with_flag_rule(day.drop(columns=["source"]))["n_supported_spike_hours_kept"].sum() == 1
+
+
+def test_festival_night_window_is_18_to_06():
+    s, e = Dv.festival_night_hours((2025,))[0]
+    assert str(s) == "2025-10-20 18:00:00+05:30" and str(e) == "2025-10-21 06:00:00+05:30"
+
+
+@pytest.mark.parametrize("pm25,pm10,flag", [(110.0, 100.0, False),    # within 20%
+                                            (119.0, 100.0, False),    # within 20%
+                                            (125.0, 100.0, True),     # > 20% and > 20 ug/m3
+                                            (35.0, 20.0, False),      # +75% but only +15 ug/m3
+                                            (45.0, 20.0, True)])      # > 20 ug/m3 above
+def test_pm_tolerance_is_max_of_20pct_and_20ug(pm25, pm10, flag):
+    d = _daily([{"location_id": 1, "local_date": date(2025, 8, 17), "pollutant": "pm25", "daily_mean": pm25},
+                {"location_id": 1, "local_date": date(2025, 8, 17), "pollutant": "pm10", "daily_mean": pm10}])
+    assert Dv.pm25_exceeds_pm10(d).tolist() == [flag, flag]
+
+
+def _pm_hourly(pm25, pm10):
+    hours = pd.date_range("2025-08-17", periods=24, freq="h", tz=IST)
+    rows = []
+    for p, vals in (("pm25", pm25), ("pm10", pm10)):
+        for h, v in zip(hours, vals):
+            rows.append({"source": "S", "location_id": 1, "pollutant": p, "hour": h, "value": v,
+                         "valid_hour": not np.isnan(v), "flag_flatline": False, "flag_spike": False})
+    return pd.DataFrame(rows)
+
+
+def test_pm_check_matched_hours_catch_fault_hidden_by_different_hours():
+    # PM2.5 faulty (300) only in hours 0-17, where PM10 also reports (100); daily means look fine
+    # because PM10 also has 6 extra very high hours that PM2.5 lacks.
+    pm25 = [300.0] * 18 + [np.nan] * 6
+    pm10 = [100.0] * 18 + [2000.0] * 6
+    d = _daily([{"location_id": 1, "local_date": date(2025, 8, 17), "pollutant": "pm25", "daily_mean": 300.0},
+                {"location_id": 1, "local_date": date(2025, 8, 17), "pollutant": "pm10", "daily_mean": 575.0}])
+    assert not Dv.pm25_exceeds_pm10(d).any()                                  # daily means alone miss it
+    assert Dv.pm25_exceeds_pm10(d, _pm_hourly(pm25, pm10)).all()              # matched hours catch it
+
+
+def test_pm_check_daily_means_catch_fault_in_unmatched_hours():
+    # Real case (Bengaluru 6973, 2025-05-15): fine on 16 matched hours, ~400 on 6 hours without PM10
+    pm25 = [12.7] * 16 + [400.0] * 6 + [np.nan] * 2
+    pm10 = [31.9] * 16 + [np.nan] * 8
+    d = _daily([{"location_id": 1, "local_date": date(2025, 8, 17), "pollutant": "pm25", "daily_mean": 118.3},
+                {"location_id": 1, "local_date": date(2025, 8, 17), "pollutant": "pm10", "daily_mean": 31.9}])
+    assert Dv.pm25_exceeds_pm10(d, _pm_hourly(pm25, pm10)).all()
+
+
+def test_peer_outliers_are_flag_only_not_excluded():
+    rows = [{"location_id": i, "local_date": date(2025, 8, 17), "pollutant": "pm25", "daily_mean": v}
+            for i, v in enumerate([288.0, 30.0, 35.0, 28.0, 40.0])]
+    d = _daily(rows)
+    assert Dv.peer_outlier_days(d).iat[0] and d["is_valid_day"].all()       # flag does not touch validity
