@@ -1,0 +1,13 @@
+{
+ "set": "groq",
+ "kind": "first",
+ "started": "2026-11-06 12:13",
+ "model_chain": [
+  "groq:openai/gpt-oss-120b"
+ ],
+ "commit": "1d7a155",
+ "ids": "all",
+ "complete": true,
+ "stopped": null,
+ "invalid": "Harness fault, not a Groq result: the shared quota limiter (added 2026-11-06) gave up after 20 s waiting for Groq's per-minute token window, and the Groq-only chain had no fallback, so 13/16 turns ended as model errors without calling Groq (several in 0.0 s). Fixed by letting evaluations queue up to 90 s."
+}

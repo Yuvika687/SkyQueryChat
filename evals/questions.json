@@ -1,5 +1,5 @@
 {
- "_about": "Main evaluation set (47 questions, 51 turns). Used during Day 2 tuning, so it is NOT a holdout. expect.status: allowed statuses; tools_any: one must be called; forbid_tools; must_include/_any; must_not (regex); refs: independent reference values from evals/references.py (pandas, not backend.analysis).",
+ "_about": "Main evaluation set (47 questions, 51 turns). Used during Day 2 tuning, so it is NOT a holdout. expect.status: allowed statuses; tools_any: one must be called; forbid_tools; must_include/_any; must_not (regex); refs: independent reference values from evals/references.py (pandas, not backend.analysis). 'resolved' = what the tools must use (cities, pollutant, start, end); a wrong period fails (added 2026-11-06, applies to runs from then on).",
  "questions": [
   {
    "id": "T1",
@@ -17,7 +17,15 @@
      ],
      "refs": [
       "delhi_pm25_2025_nov_dec"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-01-01",
+      "end": "2025-12-31"
+     }
     }
    ]
   },
@@ -37,7 +45,15 @@
      ],
      "refs": [
       "mumbai_pm10_nov2025"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Mumbai"
+      ],
+      "pollutant": "PM10",
+      "start": "2025-11-01",
+      "end": "2025-11-30"
+     }
     }
    ]
   },
@@ -57,7 +73,15 @@
      ],
      "refs": [
       "kolkata_pm25_winter2025"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Kolkata"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-12-01",
+      "end": "2026-02-28"
+     }
     }
    ]
   },
@@ -79,7 +103,12 @@
      ],
      "must_include": [
       "Bengaluru"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Bengaluru"
+      ]
+     }
     }
    ]
   },
@@ -99,7 +128,14 @@
      ],
      "refs": [
       "chennai_pm25_2026_max"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Chennai"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2026-01-01"
+     }
     }
    ]
   },
@@ -116,7 +152,15 @@
      ],
      "tools_any": [
       "city_trend"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Hyderabad"
+      ],
+      "pollutant": "PM10",
+      "start": "2025-10-01",
+      "end": "2025-10-31"
+     }
     }
    ]
   },
@@ -136,7 +180,15 @@
      ],
      "refs": [
       "delhi_pm25_monsoon2025"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-06-01",
+      "end": "2025-09-30"
+     }
     }
    ]
   },
@@ -156,7 +208,20 @@
      ],
      "refs": [
       "winter2025_top_city"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Bengaluru",
+       "Chennai",
+       "Delhi",
+       "Hyderabad",
+       "Kolkata",
+       "Mumbai"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-12-01",
+      "end": "2026-02-28"
+     }
     }
    ]
   },
@@ -176,7 +241,16 @@
      ],
      "refs": [
       "delhi_mumbai_pm10_dec2025"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi",
+       "Mumbai"
+      ],
+      "pollutant": "PM10",
+      "start": "2025-12-01",
+      "end": "2025-12-31"
+     }
     }
    ]
   },
@@ -193,7 +267,15 @@
      ],
      "tools_any": [
       "compare_cities"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Chennai",
+       "Kolkata"
+      ],
+      "start": "2026-01-01",
+      "end": "2026-01-31"
+     }
     }
    ]
   },
@@ -213,7 +295,20 @@
      ],
      "refs": [
       "pm25_2025_top_city"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Bengaluru",
+       "Chennai",
+       "Delhi",
+       "Hyderabad",
+       "Kolkata",
+       "Mumbai"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-01-01",
+      "end": "2025-12-31"
+     }
     }
    ]
   },
@@ -234,7 +329,16 @@
      "must_include": [
       "Mumbai",
       "Kolkata"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Kolkata",
+       "Mumbai"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-06-01",
+      "end": "2025-09-30"
+     }
     }
    ]
   },
@@ -254,7 +358,19 @@
      ],
      "refs": [
       "jul2026_cleanest"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Bengaluru",
+       "Chennai",
+       "Delhi",
+       "Hyderabad",
+       "Kolkata",
+       "Mumbai"
+      ],
+      "start": "2026-07-01",
+      "end": "2026-07-31"
+     }
     }
    ]
   },
@@ -277,7 +393,13 @@
      ],
      "refs": [
       "delhi_diwali2025_level"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "AQI"
+     }
     }
    ]
   },
@@ -300,7 +422,13 @@
      ],
      "refs": [
       "mumbai_diwali_2024_2025"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Mumbai"
+      ],
+      "pollutant": "AQI"
+     }
     }
    ]
   },
@@ -320,7 +448,13 @@
      ],
      "refs": [
       "delhi_diwali2025_pct"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "AQI"
+     }
     }
    ]
   },
@@ -340,7 +474,13 @@
      ],
      "refs": [
       "delhi_diwali2024_pct"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "AQI"
+     }
     }
    ]
   },
@@ -362,7 +502,13 @@
       "2025-10-21",
       "21 October",
       "October 21"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Hyderabad"
+      ],
+      "pollutant": "AQI"
+     }
     }
    ]
   },
@@ -385,7 +531,13 @@
      ],
      "refs": [
       "kolkata_diwali2024_category"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Kolkata"
+      ],
+      "pollutant": "AQI"
+     }
     }
    ]
   },
@@ -408,7 +560,13 @@
      ],
      "must_not": [
       "PM2\\.5[^.]{0,60}\\d%"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "PM2.5"
+     }
     }
    ]
   },
@@ -428,7 +586,15 @@
      ],
      "refs": [
       "delhi_unusual_2025"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-01-01",
+      "end": "2025-12-31"
+     }
     }
    ]
   },
@@ -445,7 +611,15 @@
      ],
      "tools_any": [
       "unusual_days"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Mumbai"
+      ],
+      "pollutant": "PM10",
+      "start": "2026-03-01",
+      "end": "2026-06-30"
+     }
     }
    ]
   },
@@ -462,7 +636,13 @@
      ],
      "tools_any": [
       "unusual_days"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Chennai"
+      ],
+      "pollutant": "PM2.5"
+     }
     }
    ]
   },
@@ -479,7 +659,14 @@
      ],
      "tools_any": [
       "unusual_days"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Hyderabad"
+      ],
+      "start": "2025-12-01",
+      "end": "2026-02-28"
+     }
     }
    ]
   },
@@ -522,7 +709,13 @@
      ],
      "refs": [
       "delhi_wind_rho"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "PM2.5"
+     }
     }
    ]
   },
@@ -539,7 +732,13 @@
      ],
      "tools_any": [
       "weather_association"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Kolkata"
+      ],
+      "pollutant": "PM10"
+     }
     }
    ]
   },
@@ -556,7 +755,15 @@
      ],
      "tools_any": [
       "weather_association"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Bengaluru"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-01-01",
+      "end": "2025-12-31"
+     }
     }
    ]
   },
@@ -576,7 +783,13 @@
      ],
      "refs": [
       "chennai_rain_rho"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Chennai"
+      ],
+      "pollutant": "PM2.5"
+     }
     }
    ]
   },
@@ -618,7 +831,15 @@
      ],
      "refs": [
       "delhi_pm25_nov2025"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-11-01",
+      "end": "2025-11-30"
+     }
     },
     {
      "status": [
@@ -629,7 +850,15 @@
      ],
      "refs": [
       "delhi_pm10_nov2025"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "PM10",
+      "start": "2025-11-01",
+      "end": "2025-11-30"
+     }
     }
    ]
   },
@@ -647,7 +876,16 @@
      ],
      "tools_any": [
       "compare_cities"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Kolkata",
+       "Mumbai"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-12-01",
+      "end": "2025-12-31"
+     }
     },
     {
      "status": [
@@ -677,7 +915,13 @@
      ],
      "refs": [
       "hyderabad_diwali2025"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Hyderabad"
+      ],
+      "pollutant": "AQI"
+     }
     },
     {
      "status": [
@@ -691,7 +935,13 @@
      ],
      "refs": [
       "hyderabad_diwali2024"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Hyderabad"
+      ],
+      "pollutant": "AQI"
+     }
     }
    ]
   },
@@ -709,7 +959,15 @@
      ],
      "tools_any": [
       "unusual_days"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "PM10",
+      "start": "2025-01-01",
+      "end": "2025-12-31"
+     }
     },
     {
      "status": [
@@ -720,7 +978,13 @@
      ],
      "must_include": [
       "Delhi"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "PM10"
+     }
     }
    ]
   },

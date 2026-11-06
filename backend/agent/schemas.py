@@ -39,6 +39,22 @@ class SourceRef(BaseModel):
     date_range: dict[str, Any]
 
 
+class ResolvedQuery(BaseModel):
+    """What the tools actually used (from code, not the model's wording)."""
+    city: str | None = None                  # single city, or None when several
+    cities: list[str] = Field(default_factory=list)
+    pollutant: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    assumptions: list[str] = Field(default_factory=list)
+    items: list[dict[str, Any]] = Field(default_factory=list)   # one per dataset (tool, cities, pollutant, dates)
+
+
+class RequiredWarning(BaseModel):
+    code: str
+    text: str
+
+
 class FinalAnswer(BaseModel):
     status: Literal["answered", "clarify", "refused", "unavailable", "error"]
     answer: str
@@ -48,6 +64,8 @@ class FinalAnswer(BaseModel):
     sources: list[SourceRef] = Field(default_factory=list)
     coverage: dict[str, Any] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
+    required_warnings: list[RequiredWarning] = Field(default_factory=list)
+    resolved_query: ResolvedQuery | None = None
     data_types: list[DataType] = Field(default_factory=list)
     clarifying_question: str | None = None
     verification: dict[str, Any] = Field(default_factory=dict)

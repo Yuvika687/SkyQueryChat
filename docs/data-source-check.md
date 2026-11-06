@@ -1087,3 +1087,24 @@ and 3.1 Flash Lite still returned 429. Only the per-minute quota was observed di
 is assumed to be per model too (same quota family naming, and AI Studio lists it per model).
 
 **Final chain:** Groq gpt-oss-120b → gemini-3.5-flash-lite → gemini-3.1-flash-lite → gemini-3.8-flash.
+
+# Part 10 — Pre-frontend fixes and fresh holdout (2026-11-06)
+
+**Model order (owner's decision):** gemini-3.5-flash-lite → gemini-3.1-flash-lite → Groq gpt-oss-120b →
+gemini-3.8-flash. Change only if the full Groq test gives strong evidence.
+
+**Rescoring of earlier runs (separate; headline first-pass scores unchanged):**
+
+| Run | Original | With resolved check | Lenient wording |
+|---|---|---|---|
+| main first pass (1348) | 47/51 | 47/51 (35 checked from stored sources) | 50/51 (+T4, D7, M1) |
+| holdout v1 (1417) | 11/11 | **10/11 — H02 used all of 2025 instead of Oct–Nov** | 11/11 |
+| 3.1 Flash Lite check (1154) | 13/14 | 13/14 | 14/14 (+M1) |
+
+**Fresh holdout v2, first pass (20261106-1213_holdout2_first):** 10/11 turns. Tool choice 100%, numbers
+traceable 100%, references 7/8, resolved checks 7/8, refusals 100%. Answered by gemini-3.5-flash-lite (9 turns)
+and gemini-3.1-flash-lite (2 turns, after the shared per-minute limit on 3.5 Flash-Lite). The failure, N07
+("from August to October 2025"), was caught by the new resolved check: the model passed the period as
+"2025-08-01..2025-10-31" (our own payload format), the resolver rejected it, and the model fell back to all
+of 2025. Fixed generally (accept "a..b"); a separate rerun of N07 passed (51 µg/m³ = reference). The
+first-pass score stays 10/11.

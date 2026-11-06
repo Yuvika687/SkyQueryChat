@@ -28,6 +28,11 @@ class Settings:
     max_sessions: int = field(default_factory=lambda: _int("MAX_SESSIONS", 300))
     cache_ttl_s: int = field(default_factory=lambda: _int("CACHE_TTL_S", 6 * 3600))
     cache_max: int = field(default_factory=lambda: _int("CACHE_MAX", 200))
+    # Header(s) holding the real client IP, set by the platform proxy (Render runs behind Cloudflare,
+    # which sets True-Client-IP / CF-Connecting-IP). X-Forwarded-For and X-Visitor-Id are NOT trusted:
+    # clients can send their own. Empty -> use the socket address (local runs).
+    client_ip_headers: list[str] = field(default_factory=lambda: [h.strip().lower() for h in os.environ.get(
+        "CLIENT_IP_HEADERS", "true-client-ip,cf-connecting-ip").split(",") if h.strip()])
     max_question_chars: int = 500
     heartbeat_s: float = 15.0
 

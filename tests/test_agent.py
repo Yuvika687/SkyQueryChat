@@ -335,7 +335,7 @@ def test_per_question_token_limit(session_factory):
 def test_model_chain_from_config_and_env(monkeypatch):
     from backend.agent import models as M
     chain = M.model_chain()
-    assert chain[0].provider == "groq" and any(e.provider == "google" for e in chain[1:])
+    assert chain[0].label == "google:gemini-3.5-flash-lite" and any(e.provider == "groq" for e in chain[1:])
     monkeypatch.setenv("SKYQ_MODEL_CHAIN", "google:gemini-x,groq:some-model")
     assert [e.label for e in M.model_chain()] == ["google:gemini-x", "groq:some-model"]
     monkeypatch.setenv("SKYQ_MODEL_CHAIN", "openai:gpt")
@@ -451,3 +451,112 @@ def test_range_without_year_uses_latest_and_says_so():
     assert (r["start"], r["end"]) == ("2025-11-01", "2026-01-31")
     r = R.resolve_period("December", anchor=date(2026, 10, 30))
     assert r["start"] == "2025-12-01"
+
+
+# ----------------------------------------------------------------------------- 2026-11-06: seasons, resolved_query,
+# required warnings
+@pytest.mark.parametrize("p,start,end", [
+    ("2025 post-monsoon", "2025-10-01", "2025-11-30"), ("2025 post monsoon season", "2025-10-01", "2025-11-30"),
+    ("post monsoon 2025", "2025-10-01", "2025-11-30"), ("the 2025 monsoon", "2025-06-01", "2025-09-30"),
+    ("monsoon season of 2025", "2025-06-01", "2025-09-30"), ("2025-26 winter", "2025-12-01", "2026-02-28"),
+    ("winter of 2025", "2025-12-01", "2026-02-28"), ("2026 premonsoon", "2026-03-01", "2026-05-31"),
+    ("rainy season 2025", "2025-06-01", "2025-09-30"), ("2025's winter", "2025-12-01", "2026-02-28")])
+def test_seasonal_phrases_year_first(p, start, end):
+    r = R.resolve_period(p)
+    assert (r.get("start"), r.get("end")) == (start, end), r
+    assert any("taken as" in n for n in r["notes"])
+
+
+def test_season_without_year_uses_latest_and_says_so():
+    from datetime import date
+    r = R.resolve_period("winter", anchor=date(2026, 10, 30))
+    assert (r["start"], r["end"]) == ("2025-12-01", "2026-02-28") and "no year given" in r["notes"][0]
+    r = R.resolve_period("winter", anchor=date(2026, 1, 15))                 # winter in progress
+    assert r["start"] == "2025-12-01"
+    assert R.resolve_period("monsoon", anchor=date(2026, 4, 1))["start"] == "2025-06-01"
+
+
+@real
+def test_resolved_query_lists_city_pollutant_dates_and_assumptions(session_factory):
+    def step1(m, info):          # alias city, no pollutant, year-first season
+        return [ToolCallPart("city_trend", {"city": "Bombay", "period": "2025 post-monsoon"})]
+
+    def step2(m, info):
+        p = last_payload(m, "city_trend")
+        return final(info, status="answered", answer=f"Mumbai averaged {p['fields']['mean']} µg/m³.",
+                     cards=[f"{p['id']}.mean"], chart=p["id"])
+    out, _ = run(core.build_agent(scripted([step1, step2])[0]), session_factory(), "Bombay in the 2025 post-monsoon?")
+    rq = out.resolved_query
+    assert (rq.city, rq.cities, rq.pollutant, rq.start_date, rq.end_date) == \
+        ("Mumbai", ["Mumbai"], "PM2.5", "2025-10-01", "2025-11-30")
+    a = " | ".join(rq.assumptions)
+    assert "read 'Bombay' as Mumbai" in a and "pollutant not stated" in a and "post-monsoon taken as" in a
+
+
+@real
+def test_resolved_query_for_comparison_and_all_data_default(session_factory):
+    def step1(m, info):
+        return [ToolCallPart("compare_cities", {"cities": ["Delhi", "Calcutta"], "pollutant": "PM10"})]
+
+    def step2(m, info):
+        p = last_payload(m, "compare_cities")
+        return final(info, status="answered", answer="Compared.", cards=[], chart=p["id"])
+    out, _ = run(core.build_agent(scripted([step1, step2])[0]), session_factory(), "Delhi vs Calcutta PM10?")
+    rq = out.resolved_query
+    assert rq.city is None and rq.cities == ["Delhi", "Kolkata"] and rq.pollutant == "PM10"
+    assert rq.start_date == str(R.DATA["measured_start"]) and any("no period stated" in x for x in rq.assumptions)
+
+
+@real
+def test_999_warning_comes_from_code_even_if_model_omits_it(session_factory):
+    def step1(m, info):
+        return [ToolCallPart("delhi_pm_diwali", {"year": 2025})]
+
+    def step2(m, info):
+        p = last_payload(m, "delhi_pm_diwali")
+        return final(info, status="answered", answer="Here is the supporting PM context.", cards=[], chart=p["id"])
+    out, _ = run(core.build_agent(scripted([step1, step2])[0]), session_factory(), "Delhi PM around Diwali 2025?")
+    codes = [w.code for w in out.required_warnings]
+    assert "source_limit_999" in codes and "999" not in out.answer
+    assert out.warnings[0] == out.required_warnings[0].text                  # required ones first
+
+
+@real
+def test_required_warnings_are_never_truncated(session_factory):
+    def step1(m, info):
+        return [ToolCallPart("diwali_aqi", {"city": "Delhi", "years": [2024, 2025], "percent": True})]
+
+    def step2(m, info):
+        p = last_payload(m, "diwali_aqi")
+        return final(info, status="answered", answer="Delhi's Diwali bulletins are shown.", cards=[], chart=p["id"])
+    out, _ = run(core.build_agent(scripted([step1, step2])[0]), session_factory(), "Delhi Diwali AQI percent?")
+    codes = {w.code for w in out.required_warnings}
+    assert {"aqi_not_concentration", "not_causal"} <= codes
+    assert all(w.text in out.warnings for w in out.required_warnings) and len(out.warnings) <= 10
+    assert out.resolved_query.pollutant.startswith("AQI")
+
+
+def test_eval_resolved_check_fails_wrong_period():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("run_eval", Path(__file__).resolve().parents[1] / "scripts" / "run_eval.py")
+    E = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(E)
+    exp = {"cities": ["Bengaluru", "Chennai"], "pollutant": "PM2.5", "start": "2025-10-01", "end": "2025-11-30"}
+    good = {"cities": ["Chennai", "Bengaluru"], "pollutant": "PM2.5", "start_date": "2025-10-01", "end_date": "2025-11-30"}
+    assert E.check_resolved(exp, good)["ok"]
+    whole_year = dict(good, start_date="2025-01-01", end_date="2025-12-31")           # the old H02 mistake
+    r = E.check_resolved(exp, whole_year)
+    assert not r["ok"] and "start" in r["why"] and "end" in r["why"]
+    assert not E.check_resolved(exp, dict(good, pollutant="PM10"))["ok"]
+    assert not E.check_resolved(exp, None)["ok"]
+    assert E.check_resolved(None, None) is None
+    # lenient wording is separate and only widens wording, never numbers or periods
+    assert E.include_lenient({"must_include": ["Bengaluru"]}, "Bangalore was cleaner", [])
+    assert E.include_lenient({"must_include": ["999"]}, "No limit mentioned.", ["Values above 999 µg/m³ are blank"])
+    assert not E.include_lenient({"must_include": ["999"]}, "No limit mentioned.", [])
+
+
+def test_period_in_our_own_payload_format_is_accepted():
+    """Tool results show periods as 'start..end'; models copy that back (found by holdout2 N07)."""
+    r = R.resolve_period("2025-08-01..2025-10-31")
+    assert (r["start"], r["end"]) == ("2025-08-01", "2025-10-31")

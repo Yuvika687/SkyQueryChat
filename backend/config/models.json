@@ -1,16 +1,6 @@
 {
- "_note": "Model chain for the agent. First entry is primary; the rest are fallbacks in order. Override with env SKYQ_MODEL_CHAIN='groq:openai/gpt-oss-120b,google:gemini-3.5-flash-lite'. Keys come from .env only. Verified 2026-11-05: Groq key serves gpt-oss-120b/20b, qwen3.8-27b (llama-3.3-70b returns 404); Gemini 2.5 Flash is retired for new users. gpt-oss-120b needs reasoning_effort 'medium': with 'low', Groq rejected 3/3 answers (output_parse_failed); medium answered 3/3. 2026-11-06: gemini-3.1-flash-lite added before gemini-3.8-flash after a 13-question sample (13/14 turns; the miss was a wording check) and a provider 429 showing its quota is per model (GenerateRequestsPerMinutePerProjectPerModel-FreeTier, model: gemini-3.1-flash-lite) while gemini-3.5-flash-lite kept answering. gemini-3.8-flash stays last resort (20 RPD).",
+ "_note": "Model chain for the agent. Order set by the owner 2026-11-06: gemini-3.5-flash-lite, gemini-3.1-flash-lite, Groq gpt-oss-120b, gemini-3.8-flash; change only if the full Groq test gives strong evidence. First entry is primary; the rest are fallbacks in order. Override with env SKYQ_MODEL_CHAIN='groq:openai/gpt-oss-120b,google:gemini-3.5-flash-lite'. Keys come from .env only. Verified 2026-11-05: Groq key serves gpt-oss-120b/20b, qwen3.8-27b (llama-3.3-70b returns 404); Gemini 2.5 Flash is retired for new users. gpt-oss-120b needs reasoning_effort 'medium': with 'low', Groq rejected 3/3 answers (output_parse_failed); medium answered 3/3. 2026-11-06: gemini-3.1-flash-lite added before gemini-3.8-flash after a 13-question sample (13/14 turns; the miss was a wording check) and a provider 429 showing its quota is per model (GenerateRequestsPerMinutePerProjectPerModel-FreeTier, model: gemini-3.1-flash-lite) while gemini-3.5-flash-lite kept answering. gemini-3.8-flash stays last resort (20 RPD).",
  "chain": [
-  {
-   "provider": "groq",
-   "model": "openai/gpt-oss-120b",
-   "key_env": "GROQ_API_KEY",
-   "settings": {
-    "temperature": 0,
-    "max_tokens": 2500,
-    "groq_reasoning_effort": "medium"
-   }
-  },
   {
    "provider": "google",
    "model": "gemini-3.5-flash-lite",
@@ -27,6 +17,16 @@
    "settings": {
     "temperature": 0,
     "max_tokens": 1500
+   }
+  },
+  {
+   "provider": "groq",
+   "model": "openai/gpt-oss-120b",
+   "key_env": "GROQ_API_KEY",
+   "settings": {
+    "temperature": 0,
+    "max_tokens": 2500,
+    "groq_reasoning_effort": "medium"
    }
   },
   {

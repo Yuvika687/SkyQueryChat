@@ -139,6 +139,18 @@ def _natural_range(t: str, anchor: date) -> tuple[date, date, str | None] | None
     return None
 
 
+def _season_words(t: str) -> str:
+    """'2025 post-monsoon', 'post monsoon season of 2025', '2025-26 winter' -> '<season> <year>'."""
+    t = re.sub(r"\b(pre|post)\s?-?\s?monsoon\b", r"\1-monsoon", t)
+    t = re.sub(r"\brainy season\b", "monsoon", t)
+    t = re.sub(r"\s+season\b", "", t)
+    t = re.sub(r"^([a-z\-]+) of (\d{4}(?:[-/–]\d{2,4})?)$", r"\1 \2", t)
+    m = re.fullmatch(r"(\d{4}(?:[-/–]\d{2,4})?)(?:'s)? ([a-z\-]+)", t)
+    if m and m.group(2) in SEASONS:
+        t = f"{m.group(2)} {m.group(1)}"
+    return t
+
+
 def resolve_period(text: str | None, anchor: date | None = None) -> dict:
     """Parse a period phrase. Relative phrases ('last month') are anchored to the latest measured
     data date, not today, and the answer says so."""
@@ -155,8 +167,10 @@ def resolve_period(text: str | None, anchor: date | None = None) -> dict:
                if 1 <= int(m.group(1)) <= 12 else m.group(0), t)                      # 11/2025
     t = re.sub(r"^([a-z]+)[-,]\s*(\d{4})$", r"\1 \2", t)                              # Nov-2025, November, 2025
     t = re.sub(r"^(\d{4}-\d{2}-\d{2})\s*/\s*(\d{4}-\d{2}-\d{2})$", r"\1 to \2", t)   # ISO interval
+    t = re.sub(r"^(\d{4}-\d{2}-\d{2})\s*\.\.\s*(\d{4}-\d{2}-\d{2})$", r"\1 to \2", t)  # our own payload format
     if t.startswith("from ") and re.search(r"\s(?:to|until|till|through)\s|[-–—]", t):
         t = t[5:]
+    t = _season_words(t)
     start = end = None
     note = None
     m = re.fullmatch(r"(\d{4}-\d{2}-\d{2})\s*(?:to|until|-|–|and|through)\s*(\d{4}-\d{2}-\d{2})", t)
@@ -179,6 +193,15 @@ def resolve_period(text: str | None, anchor: date | None = None) -> dict:
         start = date(y, sm, 1)
         end = date(y + 1 if cross else y, em, calendar.monthrange(y + 1 if cross else y, em)[1])
         note = f"{m.group(1)} taken as {calendar.month_name[sm]}–{calendar.month_name[em]}"
+    elif t in SEASONS:                                     # season without a year: latest one with data
+        sm, em, cross = SEASONS[t]
+        y = anchor.year if (anchor.month >= sm or (cross and anchor.month <= em)) else anchor.year - 1
+        if cross and anchor.month <= em:
+            y -= 1
+        start = date(y, sm, 1)
+        end = date(y + 1 if cross else y, em, calendar.monthrange(y + 1 if cross else y, em)[1])
+        note = (f"no year given: used the latest {t} in the data ({calendar.month_name[sm]} {y}–"
+                f"{calendar.month_name[em]} {end.year})")
     elif t in ("last month", "previous month"):
         first = anchor.replace(day=1)
         start, end = _month_range((first - timedelta(days=1)).year, (first - timedelta(days=1)).month)

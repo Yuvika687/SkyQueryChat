@@ -11,7 +11,7 @@ real data (OpenAQ measurements, Open-Meteo models) and shows its source, data ty
 ## Stack
 - **Frontend:** Next.js, TypeScript, Tailwind CSS, shadcn/ui, Apache ECharts (Vercel)
 - **Backend:** Python, FastAPI, Server-Sent Events (Render)
-- **Agent:** Pydantic AI — Groq primary, Gemini fallback
+- **Agent:** Pydantic AI — Gemini 3.5 Flash-Lite primary; Gemini 3.1 Flash Lite, Groq gpt-oss-120b and Gemini 3.8 Flash as fallbacks (order set 2026-11-06)
 - **Data:** OpenAQ, Open-Meteo, pandas, Parquet, DuckDB
 
 ## Status

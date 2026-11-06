@@ -142,6 +142,31 @@ def references() -> dict:
         "mumbai_rain_groups_pm25": {"numbers": [dry, rain]},
         "delhi_unusual_2025": {"numbers": [unusual_count("Delhi", "pm25", d(2025, 1, 1), d(2025, 12, 31))]},
         "mumbai_pm10_mar_jun2026": {"numbers": [mean("Mumbai", "pm10", d(2026, 3, 1), d(2026, 6, 30))]},
+        **holdout2_refs(),
+    }
+
+
+def holdout2_refs() -> dict:
+    """Fresh holdout (evals/holdout2.json, 2026-11-06). Written before any run; never used for tuning."""
+    d = date
+    dk, _ = compare(["Delhi", "Kolkata"], "pm10", d(2026, 3, 1), d(2026, 5, 31))
+    ch, ch_valid = compare(["Chennai", "Hyderabad"], "pm25", d(2026, 3, 1), d(2026, 3, 31))
+    ch24 = diwali("Chennai", 2024)
+    more = max(ch_valid, key=ch_valid.get)
+    return {
+        "h2_hyd_pm25_postmonsoon2025": {"numbers": [mean("Hyderabad", "pm25", d(2025, 10, 1), d(2025, 11, 30))]},
+        "h2_delhi_kolkata_pm10_summer2026": {"text": [next(iter(dk))],
+                                             "any_of": [[dk[next(iter(dk))]],
+                                                        [mean(next(iter(dk)), "pm10", d(2026, 3, 1), d(2026, 5, 31))]]},
+        "h2_mumbai_pm25_feb2026_max": {"numbers": [highest("Mumbai", "pm25", d(2026, 2, 1), d(2026, 2, 28))]},
+        "h2_chennai_diwali2024": {"any_of": [[ch24["level"]], ch24["bulletins"]]},
+        "h2_mumbai_temp_pm10_rho": {"numbers": [spearman("Mumbai", "pm10", "temperature_mean_c", d(2025, 2, 18), d(2026, 10, 30))],
+                                    "tol": 0.006},
+        "h2_blr_pm10_aug_oct2025": {"numbers": [mean("Bengaluru", "pm10", d(2025, 8, 1), d(2025, 10, 31))]},
+        "h2_chennai_hyd_pm25_mar2026": {"any_of": [[ch["Chennai"], ch["Hyderabad"]],
+                                                   [mean("Chennai", "pm25", d(2026, 3, 1), d(2026, 3, 31)),
+                                                    mean("Hyderabad", "pm25", d(2026, 3, 1), d(2026, 3, 31))]]},
+        "h2_chennai_hyd_more_days_mar2026": {"text": [more], "numbers": [ch_valid[more]]},
     }
 
 

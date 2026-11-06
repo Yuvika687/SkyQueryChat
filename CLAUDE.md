@@ -29,7 +29,7 @@ multilingual support, or arbitrary Python execution.
 
 - **Frontend:** Next.js, TypeScript, Tailwind CSS, shadcn/ui, Apache ECharts
 - **Backend:** Python, FastAPI, Server-Sent Events
-- **Agent:** Pydantic AI — Groq primary, Gemini fallback
+- **Agent:** Pydantic AI — Gemini 3.5 Flash-Lite primary; Gemini 3.1 Flash Lite, Groq gpt-oss-120b and Gemini 3.8 Flash as fallbacks (order set 2026-11-06)
 - **Data:** OpenAQ, Open-Meteo Air Quality, Open-Meteo Weather, DuckDB, Parquet, pandas
 - **Hosting:** Vercel (frontend), Render (backend)
 
@@ -211,10 +211,24 @@ Rules:
   (measured max; mean 2.43 over 61 questions, `scripts/measure_requests.py`). Separate daily token budget
   per model; the old single 150K budget is gone. SSE `notice` event for low quota, backup model, or a
   saved answer; `ai_limit`/`ai_busy` errors when nothing has room.
-- Chain (2026-11-06): Groq gpt-oss-120b → gemini-3.5-flash-lite → gemini-3.1-flash-lite → gemini-3.8-flash
-  (last resort). AI Studio limits: 3.1 Flash Lite 15 RPM / 250K TPM / 500 RPD; 3.8 Flash 5 / 250K / 20.
+- Chain (owner's order, 2026-11-06): gemini-3.5-flash-lite → gemini-3.1-flash-lite → Groq gpt-oss-120b →
+  gemini-3.8-flash (last resort). Change only if the full Groq test gives strong evidence. AI Studio limits: 3.1 Flash Lite 15 RPM / 250K TPM / 500 RPD; 3.8 Flash 5 / 250K / 20.
   AI Studio "usage" figures are 28-day peaks, not today's use. Google 429s name the quota per project
   per model (`...PerProjectPerModel-FreeTier`, `model` dimension), so Gemini models do not share quota.
+
+### Pre-frontend fixes (2026-11-06)
+
+- Seasons accept year-first and loose forms ("2025 post-monsoon", "winter of 2025", "2025-26 winter"); a
+  season with no year uses the latest one and says so. Periods in our own "start..end" format are accepted.
+- Every answer carries `resolved_query` (city/cities, pollutant, start/end, assumptions) built by code from
+  what the tools used, and `required_warnings` (999 limit, AQI is an index, not causal, modelled weather,
+  association, peer outlier, PM incomplete, no data) that come first and are never truncated.
+- Evaluation: `expect.resolved` checks cities/pollutant/dates; a wrong period fails. Headline first-pass
+  scores never change; `scripts/rescore_runs.py` writes later re-scoring (resolved check, lenient wording)
+  to `evals/rescored/`, listed separately. Holdout v1 retired; `evals/holdout2.json` is the clean holdout.
+- Visitor = hashed IP from True-Client-IP / CF-Connecting-IP (env CLIENT_IP_HEADERS); X-Forwarded-For and
+  X-Visitor-Id are not trusted. Check after deploy with `/api/visitor`.
+- The model no longer describes defaults; code reports assumptions.
 
 ## 6. UI requirements
 

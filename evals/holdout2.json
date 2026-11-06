@@ -1,0 +1,276 @@
+{
+ "_about": "Fresh holdout v2 (written 2026-11-06, before any run). Never used for tuning: after the first pass, failures are reported, not fixed against these questions. 8 independent reference values (evals/references.py holdout2_refs). 'resolved' checks the city, pollutant and dates the tools used. Add your own questions to user_questions (same format: id, turns, expect).",
+ "questions": [
+  {
+   "id": "N01",
+   "category": "season_year_first",
+   "turns": [
+    "What was Hyderabad's average PM2.5 in the 2025 post-monsoon season?"
+   ],
+   "expect": [
+    {
+     "status": [
+      "answered"
+     ],
+     "tools_any": [
+      "city_trend"
+     ],
+     "refs": [
+      "h2_hyd_pm25_postmonsoon2025"
+     ],
+     "resolved": {
+      "cities": [
+       "Hyderabad"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2025-10-01",
+      "end": "2025-11-30"
+     }
+    }
+   ]
+  },
+  {
+   "id": "N02",
+   "category": "comparison",
+   "turns": [
+    "Was Delhi or Kolkata worse for PM10 during summer 2026?"
+   ],
+   "expect": [
+    {
+     "status": [
+      "answered"
+     ],
+     "tools_any": [
+      "compare_cities",
+      "city_trend"
+     ],
+     "refs": [
+      "h2_delhi_kolkata_pm10_summer2026"
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi",
+       "Kolkata"
+      ],
+      "pollutant": "PM10",
+      "start": "2026-03-01",
+      "end": "2026-05-31"
+     }
+    }
+   ]
+  },
+  {
+   "id": "N03",
+   "category": "trend_highest",
+   "turns": [
+    "On which day was Mumbai's PM2.5 highest in February 2026, and what was the value?"
+   ],
+   "expect": [
+    {
+     "status": [
+      "answered"
+     ],
+     "tools_any": [
+      "city_trend"
+     ],
+     "refs": [
+      "h2_mumbai_pm25_feb2026_max"
+     ],
+     "resolved": {
+      "cities": [
+       "Mumbai"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2026-02-01",
+      "end": "2026-02-28"
+     }
+    }
+   ]
+  },
+  {
+   "id": "N04",
+   "category": "diwali",
+   "turns": [
+    "What official AQI did the Diwali 2024 bulletins show for Chennai?"
+   ],
+   "expect": [
+    {
+     "status": [
+      "answered"
+     ],
+     "tools_any": [
+      "diwali_aqi"
+     ],
+     "refs": [
+      "h2_chennai_diwali2024"
+     ],
+     "resolved": {
+      "cities": [
+       "Chennai"
+      ],
+      "pollutant": "AQI"
+     }
+    }
+   ]
+  },
+  {
+   "id": "N05",
+   "category": "unusual_days",
+   "turns": [
+    "Were any PM10 days in Bengaluru unusually high during the 2026 monsoon?"
+   ],
+   "expect": [
+    {
+     "status": [
+      "answered"
+     ],
+     "tools_any": [
+      "unusual_days"
+     ],
+     "resolved": {
+      "cities": [
+       "Bengaluru"
+      ],
+      "pollutant": "PM10",
+      "start": "2026-06-01",
+      "end": "2026-09-30"
+     }
+    }
+   ]
+  },
+  {
+   "id": "N06",
+   "category": "weather",
+   "turns": [
+    "Does temperature move with PM10 in Mumbai?"
+   ],
+   "expect": [
+    {
+     "status": [
+      "answered"
+     ],
+     "tools_any": [
+      "weather_association"
+     ],
+     "refs": [
+      "h2_mumbai_temp_pm10_rho"
+     ],
+     "resolved": {
+      "cities": [
+       "Mumbai"
+      ],
+      "pollutant": "PM10"
+     }
+    }
+   ]
+  },
+  {
+   "id": "N07",
+   "category": "natural_range",
+   "turns": [
+    "Average PM10 in Bengaluru from August to October 2025?"
+   ],
+   "expect": [
+    {
+     "status": [
+      "answered"
+     ],
+     "tools_any": [
+      "city_trend"
+     ],
+     "refs": [
+      "h2_blr_pm10_aug_oct2025"
+     ],
+     "resolved": {
+      "cities": [
+       "Bengaluru"
+      ],
+      "pollutant": "PM10",
+      "start": "2025-08-01",
+      "end": "2025-10-31"
+     }
+    }
+   ]
+  },
+  {
+   "id": "N08",
+   "category": "missing_data",
+   "turns": [
+    "What was Hyderabad's PM10 in December 2024?"
+   ],
+   "expect": [
+    {
+     "status": [
+      "unavailable",
+      "answered"
+     ],
+     "must_include_any": [
+      "not available",
+      "no measured",
+      "2025-02-18",
+      "18 February 2025"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "N09",
+   "category": "unsupported",
+   "turns": [
+    "Give me the NO2 trend for Mumbai in 2025."
+   ],
+   "expect": [
+    {
+     "status": [
+      "refused",
+      "unavailable"
+     ],
+     "must_include_any": [
+      "PM2.5",
+      "PM10"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "N10",
+   "category": "follow_up",
+   "turns": [
+    "Compare Chennai and Hyderabad PM2.5 in March 2026.",
+    "Which of the two had more days with data?"
+   ],
+   "expect": [
+    {
+     "status": [
+      "answered"
+     ],
+     "tools_any": [
+      "compare_cities",
+      "city_trend"
+     ],
+     "refs": [
+      "h2_chennai_hyd_pm25_mar2026"
+     ],
+     "resolved": {
+      "cities": [
+       "Chennai",
+       "Hyderabad"
+      ],
+      "pollutant": "PM2.5",
+      "start": "2026-03-01",
+      "end": "2026-03-31"
+     }
+    },
+    {
+     "status": [
+      "answered"
+     ],
+     "refs": [
+      "h2_chennai_hyd_more_days_mar2026"
+     ]
+    }
+   ]
+  }
+ ],
+ "user_questions": []
+}

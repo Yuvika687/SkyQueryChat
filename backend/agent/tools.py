@@ -33,6 +33,11 @@ def _payload(ds: str, d: dict, fields: dict) -> dict:
 def _store(ctx: RunContext[RunDeps], name: str, res, fctx: dict) -> dict:
     d = res.to_dict() if hasattr(res, "to_dict") else res
     deps = ctx.deps
+    rq = dict(fctx.pop("resolved", None) or {})
+    dr = d.get("date_range") or {}
+    rq.setdefault("start", dr.get("start"))
+    rq.setdefault("end", dr.get("end"))
+    d["resolved"] = {"tool": name, **rq}
     fields = fields_for(d, fctx)
     ds = deps.session.add_dataset(d, fields)
     payload = _payload(ds, d, fields)
@@ -63,25 +68,45 @@ def _call(ctx: RunContext[RunDeps], name: str, args: dict, fn) -> dict:
         return _err(ctx, name, e)
 
 
-def _city(c: str) -> str:
+ALL_DATA = {"all", "all data", "all available data", "entire period", "whole period", "overall"}
+POL_NAME = {"pm25": "PM2.5", "pm10": "PM10"}
+
+
+def _city(c: str, assume: list[str] | None = None) -> str:
     r = R.resolve_city(c)
     if not r.get("city"):
         raise ValueError(r["message"])
+    if assume is not None and c.strip().lower() != r["city"].lower():
+        assume.append(f"read '{c.strip()}' as {r['city']}")
     return r["city"]
 
 
-def _period(period: str | None) -> tuple[date, date, list[str]]:
+def _period(period: str | None, assume: list[str] | None = None) -> tuple[date, date, list[str]]:
     r = R.resolve_period(period or "all data")
     if not r.get("start"):
         raise ValueError(r["message"])
+    if assume is not None:
+        if not period or period.strip().lower() in ALL_DATA:
+            assume.append(f"no period stated: used all measured data ({r['start']} to {r['end']})")
+        assume += [n for n in r.get("notes", []) if "taken as" in n or "no year" in n or "relative to" in n
+                   or "latest" in n]
     return date.fromisoformat(r["start"]), date.fromisoformat(r["end"]), r.get("notes", [])
 
 
-def _pol(p: str | None) -> str:
+def _pol(p: str | None, assume: list[str] | None = None) -> str:
+    if not p and assume is not None:
+        assume.append("pollutant not stated: used PM2.5")
     r = R.resolve_pollutant(p or "PM2.5")
     if r.get("pollutant") not in ("pm25", "pm10"):
         raise ValueError(r.get("message") or "Only PM2.5 and PM10 here; official AQI is used for Diwali.")
     return r["pollutant"]
+
+
+def _rq(cities: list[str], pollutant: str, start=None, end=None, assume=None) -> dict:
+    out = {"cities": cities, "pollutant": pollutant, "assumptions": list(dict.fromkeys(assume or []))}
+    if start is not None:
+        out.update(start=str(start), end=str(end))
+    return out
 
 
 def _noted(res, notes: list[str]):
@@ -107,21 +132,29 @@ def check_request(ctx: RunContext[RunDeps], cities: list[str] | None = None, pol
     return slim
 
 
-def city_trend(ctx: RunContext[RunDeps], city: str, pollutant: str = "PM2.5", period: str = "all data",
+def city_trend(ctx: RunContext[RunDeps], city: str, pollutant: str | None = None, period: str | None = None,
                freq: Literal["M", "W", "D"] = "M") -> dict:
-    """Measured PM trend for one city: mean, median, highest/lowest day, coverage, period means."""
+    """Measured PM trend for one city: mean, median, highest/lowest day, coverage, period means.
+    pollutant defaults to PM2.5; period defaults to all data."""
     def go():
-        s, e, n = _period(period)
-        c = _city(city)
-        return _noted(F.city_trend(ctx.deps.session.store, c, _pol(pollutant), s, e, freq), n), {"city": c}
+        a = []
+        s, e, n = _period(period, a)
+        c, p = _city(city, a), _pol(pollutant, a)
+        return _noted(F.city_trend(ctx.deps.session.store, c, p, s, e, freq), n), \
+            {"city": c, "resolved": _rq([c], POL_NAME[p], s, e, a)}
     return _call(ctx, "city_trend", dict(city=city, pollutant=pollutant, period=period, freq=freq), go)
 
 
-def compare_cities(ctx: RunContext[RunDeps], cities: list[str], pollutant: str = "PM2.5", period: str = "all data") -> dict:
-    """Compare measured PM across 2-6 cities on days when every city has data; rank 1 = highest."""
+def compare_cities(ctx: RunContext[RunDeps], cities: list[str], pollutant: str | None = None,
+                   period: str | None = None) -> dict:
+    """Compare measured PM across 2-6 cities on days when every city has data; rank 1 = highest.
+    pollutant defaults to PM2.5; period defaults to all data."""
     def go():
-        s, e, n = _period(period)
-        return _noted(F.compare_cities(ctx.deps.session.store, [_city(c) for c in cities], _pol(pollutant), s, e), n), {}
+        a = []
+        s, e, n = _period(period, a)
+        cs, p = [_city(c, a) for c in cities], _pol(pollutant, a)
+        return _noted(F.compare_cities(ctx.deps.session.store, cs, p, s, e), n), \
+            {"resolved": _rq(cs, POL_NAME[p], s, e, a)}
     return _call(ctx, "compare_cities", dict(cities=cities, pollutant=pollutant, period=period), go)
 
 
@@ -129,7 +162,8 @@ def diwali_aqi(ctx: RunContext[RunDeps], city: str, years: list[int], percent: b
     """Official CPCB AQI levels, categories and bulletin dates for Diwali (2024, 2025, 2026).
     percent=true ONLY if the user explicitly asks for a percentage change."""
     def go():
-        c = _city(city)
+        a = []
+        c = _city(city, a)
         ys = tuple(sorted({int(y) for y in years}))
         d = F.diwali_aqi(ctx.deps.session.store, c, ys).to_dict()
         if percent:
@@ -138,41 +172,53 @@ def diwali_aqi(ctx: RunContext[RunDeps], city: str, years: list[int], percent: b
                 p = F.diwali_aqi_percent(ctx.deps.session.store, c, y).to_dict()
                 d["values"]["percent"][y] = p
                 d["warnings"] = [w for w in p["warnings"] if w not in d["warnings"]] + d["warnings"]
-        return d, {"city": c}
+        dr = d.get("date_range") or {}
+        a.append("Diwali " + ", ".join(str(y) for y in ys) + ": festival bulletins D+1 and D+2 (CPCB 4 PM-to-4 PM)")
+        return d, {"city": c, "resolved": _rq([c], "AQI (official CPCB)", dr.get("start"), dr.get("end"), a)}
     return _call(ctx, "diwali_aqi", dict(city=city, years=years, percent=percent), go)
 
 
 def delhi_pm_diwali(ctx: RunContext[RunDeps], year: int) -> dict:
     """Supporting context only: Delhi measured PM around Diwali 2024/2025 (lower bounds). Never a %."""
-    return _call(ctx, "delhi_pm_diwali", dict(year=year),
-                 lambda: (F.delhi_pm_context(ctx.deps.session.store, int(year)), {"city": "Delhi"}))
-
-
-def unusual_days(ctx: RunContext[RunDeps], city: str, pollutant: str = "PM2.5", period: str = "all data") -> dict:
-    """Unusually high/low measured PM days (15-day rolling median method)."""
     def go():
-        s, e, n = _period(period)
-        c = _city(city)
-        return _noted(F.unusual_days(ctx.deps.session.store, c, _pol(pollutant), s, e), n), {"city": c}
+        res = F.delhi_pm_context(ctx.deps.session.store, int(year))
+        return res, {"city": "Delhi", "resolved": _rq(["Delhi"], "PM2.5 and PM10", res.date_range.get("start"),
+                                                       res.date_range.get("end"),
+                                                       [f"Diwali {year}: baseline D-14..D-8, festival D and D+1"])}
+    return _call(ctx, "delhi_pm_diwali", dict(year=year), go)
+
+
+def unusual_days(ctx: RunContext[RunDeps], city: str, pollutant: str | None = None, period: str | None = None) -> dict:
+    """Unusually high/low measured PM days (15-day rolling median method). Defaults: PM2.5, all data."""
+    def go():
+        a = []
+        s, e, n = _period(period, a)
+        c, p = _city(city, a), _pol(pollutant, a)
+        return _noted(F.unusual_days(ctx.deps.session.store, c, p, s, e), n), \
+            {"city": c, "resolved": _rq([c], POL_NAME[p], s, e, a)}
     return _call(ctx, "unusual_days", dict(city=city, pollutant=pollutant, period=period), go)
 
 
-def weather_association(ctx: RunContext[RunDeps], city: str, weather: WeatherVar, pollutant: str = "PM2.5",
-                        period: str = "all data") -> dict:
-    """Association (not cause) between measured PM and modelled weather."""
+def weather_association(ctx: RunContext[RunDeps], city: str, weather: WeatherVar, pollutant: str | None = None,
+                        period: str | None = None) -> dict:
+    """Association (not cause) between measured PM and modelled weather. Defaults: PM2.5, all data."""
     def go():
-        s, e, n = _period(period)
-        c = _city(city)
-        return _noted(F.weather_relationship(ctx.deps.session.store, c, _pol(pollutant), WEATHER_COL[weather], s, e), n), {"city": c}
+        a = []
+        s, e, n = _period(period, a)
+        c, p = _city(city, a), _pol(pollutant, a)
+        return _noted(F.weather_relationship(ctx.deps.session.store, c, p, WEATHER_COL[weather], s, e), n), \
+            {"city": c, "resolved": _rq([c], f"{POL_NAME[p]} vs {weather} (modelled)", s, e, a)}
     return _call(ctx, "weather_association", dict(city=city, weather=weather, pollutant=pollutant, period=period), go)
 
 
-def data_coverage(ctx: RunContext[RunDeps], city: str, period: str = "all data") -> dict:
-    """Stations, coverage, exclusions and data-quality severity for a city."""
+def data_coverage(ctx: RunContext[RunDeps], city: str, period: str | None = None) -> dict:
+    """Stations, coverage, exclusions and data-quality severity for a city. Period defaults to all data."""
     def go():
-        s, e, n = _period(period)
-        c = _city(city)
-        return _noted(F.coverage_summary(ctx.deps.session.store, c, s, e), n), {"city": c}
+        a = []
+        s, e, n = _period(period, a)
+        c = _city(city, a)
+        return _noted(F.coverage_summary(ctx.deps.session.store, c, s, e), n), \
+            {"city": c, "resolved": _rq([c], "PM2.5 and PM10", s, e, a)}
     return _call(ctx, "data_coverage", dict(city=city, period=period), go)
 
 

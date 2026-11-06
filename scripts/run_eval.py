@@ -34,7 +34,8 @@ from backend.analysis.store import Store  # noqa: E402
 from evals import references as REF  # noqa: E402
 
 SETS = {"main": ROOT / "evals" / "questions.json", "groq": ROOT / "evals" / "groq_test.json",
-        "holdout": ROOT / "evals" / "holdout.json"}
+        "holdout": ROOT / "evals" / "holdout.json",          # retired 2026-11-06 (used)
+        "holdout2": ROOT / "evals" / "holdout2.json"}
 RUNS = ROOT / "evals" / "runs"
 LEDGER = ROOT / "evals" / "groq_ledger.jsonl"
 GROQ_TPD, GROQ_TPD_STOP, GROQ_EST_PER_Q = 200_000, 185_000, 8_000
@@ -57,6 +58,37 @@ def numbers_written(final: dict) -> list[float]:
     return out + [c["value"] for c in final.get("cards", [])]
 
 
+# Lenient wording/alias scoring: reported SEPARATELY (never replaces the strict first-pass score).
+SYNONYMS = {"bengaluru": ["bangalore"], "mumbai": ["bombay"], "kolkata": ["calcutta"], "chennai": ["madras"],
+            "not available": ["unavailable", "not yet available", "no data", "not yet published"]}
+POL_KEYS = {"PM2.5": "pm2.5", "PM10": "pm10", "AQI": "aqi"}
+
+
+def check_resolved(exp_r: dict | None, rq: dict | None) -> dict | None:
+    """Compare expected city/pollutant/dates with what the tools actually used (resolved_query).
+    A wrong period, city or pollutant fails. None when the question has no expectation."""
+    if not exp_r:
+        return None
+    if not rq:
+        return {"ok": False, "why": "no resolved_query"}
+    why = []
+    if "cities" in exp_r and sorted(exp_r["cities"]) != sorted(rq.get("cities") or []):
+        why.append(f"cities {rq.get('cities')} != {exp_r['cities']}")
+    if "pollutant" in exp_r and POL_KEYS[exp_r["pollutant"]] not in (rq.get("pollutant") or "").lower().replace(" ", ""):
+        why.append(f"pollutant {rq.get('pollutant')} != {exp_r['pollutant']}")
+    for k, rk in (("start", "start_date"), ("end", "end_date")):
+        if k in exp_r and exp_r[k] != rq.get(rk):
+            why.append(f"{k} {rq.get(rk)} != {exp_r[k]}")
+    return {"ok": not why, "why": "; ".join(why)}
+
+
+def include_lenient(exp: dict, text: str, required: list[str]) -> bool:
+    low = (text + "\n" + "\n".join(required)).lower()
+    hit = lambda x: x.lower() in low or any(a in low for a in SYNONYMS.get(x.lower(), []))
+    return all(hit(x) for x in exp.get("must_include", [])) and \
+        (not exp.get("must_include_any") or any(hit(x) for x in exp["must_include_any"]))
+
+
 def score_turn(exp: dict, final, deps, refs: dict, question: str) -> dict:
     text = f"{final.answer}\n{final.clarifying_question or ''}"
     low = text.lower()
@@ -77,8 +109,14 @@ def score_turn(exp: dict, final, deps, refs: dict, question: str) -> dict:
         (not exp.get("must_include_any") or any(x.lower() in low for x in exp["must_include_any"]))
     c["not_ok"] = not any(re.search(p, text, re.I) for p in exp.get("must_not", []))
     c["causal_ok"] = not V.causal_phrases(final.answer)
-    c["pass"] = all(c[k] for k in ("status_ok", "tool_ok", "numbers_supported", "include_ok", "not_ok", "causal_ok")) \
-        and c.get("ref_ok", True) and final.status != "error"
+    rq = final.resolved_query.model_dump() if getattr(final, "resolved_query", None) else None
+    r = check_resolved(exp.get("resolved"), rq)
+    if r is not None:
+        c["resolved_ok"], c["resolved_why"] = r["ok"], r["why"]
+    strict = ("status_ok", "tool_ok", "numbers_supported", "not_ok", "causal_ok")
+    base = all(c[k] for k in strict) and c.get("ref_ok", True) and c.get("resolved_ok", True) and final.status != "error"
+    c["pass"] = base and c["include_ok"]
+    c["pass_lenient"] = base and include_lenient(exp, text, [w.text for w in getattr(final, "required_warnings", [])])
     return c
 
 
@@ -102,6 +140,12 @@ def summarise(rows: list[dict]) -> dict:
             "reference_failures": [k for k, v in refc if not v],
             "refusals_correct_pct": pct(sum(r["checks"]["status_ok"] and r["checks"]["include_ok"] and r["checks"]["not_ok"]
                                             for r in refusal), len(refusal)), "refusals_n": len(refusal),
+            "resolved_checks_pct": pct(sum(r["checks"]["resolved_ok"] for r in rs if "resolved_ok" in r["checks"]),
+                                       sum("resolved_ok" in r["checks"] for r in rs)),
+            "resolved_checks_n": sum("resolved_ok" in r["checks"] for r in rs),
+            "resolved_failures": [f"{r['id']}.{r['turn']}: {r['checks']['resolved_why']}" for r in rs
+                                  if r["checks"].get("resolved_ok") is False],
+            "pass_lenient_wording_SEPARATE": sum(r["checks"].get("pass_lenient", r["checks"]["pass"]) for r in rs),
             "errors": [f"{r['id']}.{r['turn']}" for r in rs if r["final"]["status"] == "error"],
             "failed": [f"{r['id']}.{r['turn']}" for r in rs if not r["checks"]["pass"]],
             "verifier_retries": sum(r["final"]["verification"].get("retries", 0) for r in rs),
@@ -132,7 +176,9 @@ def scoreboard() -> dict:
         entry = {"run": d.parent.name, **{k: meta[k] for k in ("started", "model_chain", "kind", "complete", "commit")},
                  "summary": json.loads(sp.read_text())}
         s = out["sets"].setdefault(meta["set"], {"main_first_pass": None, "reruns": [], "incomplete_first_pass": []})
-        if meta["kind"] == "first" and meta.get("complete"):
+        if meta.get("invalid"):                       # harness fault, not a model result: kept, never scored
+            s.setdefault("invalid_runs", []).append({"run": entry["run"], "reason": meta["invalid"]})
+        elif meta["kind"] == "first" and meta.get("complete"):
             s["main_first_pass"] = entry
         elif meta["kind"] == "first":
             s["incomplete_first_pass"].append(entry)
@@ -140,6 +186,9 @@ def scoreboard() -> dict:
             s.setdefault("model_checks", []).append(entry)
         else:
             s["reruns"].append(entry)
+    # Re-scoring with later checks (scripts/rescore_runs.py) is listed apart; it never changes the headline.
+    out["rescored_separately"] = {p.stem: json.loads(p.read_text())["summary"]
+                                  for p in sorted((ROOT / "evals" / "rescored").glob("*.json"))}
     (ROOT / "evals" / "scoreboard.json").write_text(json.dumps(out, indent=1))
     return out
 
@@ -245,6 +294,9 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
         meta = {"set": set_name, "kind": kind, "started": time.strftime("%Y-%m-%d %H:%M"), "model_chain": chain,
                 "commit": _commit(), "ids": sorted(ids) if ids else "all", "complete": False}
     (rdir / "meta.json").write_text(json.dumps(meta, indent=1))
+    # Evaluations pace themselves; let the shared limiter queue for a full minute window instead of
+    # failing fast (20 s suits live visitors, not a single-model test such as the Groq set).
+    M.QUOTA.cfg.max_queue_wait_s = 90
     agent = core.build_agent()
     store = Store.from_dir()
     refs = REF.references()
@@ -260,7 +312,9 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
         session = core.new_session(store)
         for t, (question, exp) in enumerate(zip(q["turns"], q["expect"])):
             t0 = time.time()
+            n_fb = len(M.FALLBACK_LOG)
             final, deps = await core.ask(agent, session, question)
+            fb = M.FALLBACK_LOG[n_fb:] if len(M.FALLBACK_LOG) >= n_fb else M.FALLBACK_LOG[-3:]
             sc = score_turn(exp, final, deps, refs, question)
             tok = (final.usage.get("input_tokens") or 0) + (final.usage.get("output_tokens") or 0)
             used += tok
@@ -268,7 +322,8 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
                 _ledger_add(tok or GROQ_EST_PER_Q)
             row = {"id": q["id"], "turn": t + 1, "category": q["category"], "question": question, "expected": exp,
                    "final": json.loads(final.model_dump_json()), "tools_called": deps.tools_called,
-                   "events": [{"type": e.type, "title": e.title[:120], "detail": e.detail} for e in deps.events], "checks": sc, "seconds": round(time.time() - t0, 1)}
+                   "events": [{"type": e.type, "title": e.title[:120], "detail": e.detail} for e in deps.events], "checks": sc, "seconds": round(time.time() - t0, 1),
+                   "fallback_log": fb}
             with (rdir / "results.jsonl").open("a") as f:
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
             print(f"{q['id']}.{t + 1} {'PASS' if sc['pass'] else 'FAIL'} [{final.status}] {deps.tools_called} "

@@ -1,0 +1,140 @@
+{
+ "_about": "Re-score saved runs with the 2026-11-06 checks, WITHOUT changing their published first-pass scores.",
+ "summary": {
+  "run": "20261105-1417_holdout_first",
+  "set": "holdout",
+  "kind": "first",
+  "turns": 11,
+  "original_pass": 11,
+  "pass_with_resolved_check": 10,
+  "resolved_checked": 7,
+  "resolved_failures": [
+   "H02.1 (tool_args): start 2025-01-01 != 2025-10-01; end 2025-12-31 != 2025-11-30"
+  ],
+  "pass_lenient_wording": 11,
+  "lenient_changes": []
+ },
+ "turns": [
+  {
+   "id": "H01",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "H02",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": false,
+   "resolved_why": "start 2025-01-01 != 2025-10-01; end 2025-12-31 != 2025-11-30",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": false
+  },
+  {
+   "id": "H03",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "H04",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "H05",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "H06",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "H07",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "H08",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "H09",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "H10",
+   "turn": 1,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "H10",
+   "turn": 2,
+   "model": "gemini-3.5-flash-lite",
+   "original_pass": true,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "from_sources",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  }
+ ]
+}

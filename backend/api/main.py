@@ -7,6 +7,7 @@ when the AI quota is exhausted. API keys stay in the backend environment and are
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import json
 import logging
@@ -40,7 +41,7 @@ load_dotenv(ROOT / ".env")
 log = logging.getLogger("skyquery.api")
 RID = re.compile(r"^[A-Za-z0-9\-]{8,64}$")
 SID = re.compile(r"^[a-f0-9]{32}$")
-VID = re.compile(r"^[A-Za-z0-9\-_]{8,64}$")
+IPV = re.compile(r"^[0-9a-fA-F:.]{2,45}$")
 AI_LIMIT_MSG = ("The live AI limit has been reached for now. Cached answers, demo questions and the data pages "
                 "still work. Please try a live question later.")
 NOTICES = {
@@ -139,7 +140,7 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
     app = FastAPI(title="SkyQueryChat API", version="0.3", lifespan=lifespan, docs_url="/api/docs",
                   openapi_url="/api/openapi.json", redoc_url=None)
     app.add_middleware(CORSMiddleware, allow_origins=st.allowed_origins, allow_methods=["GET", "POST"],
-                       allow_headers=["Content-Type", "X-Visitor-Id", "X-Request-ID", "X-Demo-Token"],
+                       allow_headers=["Content-Type", "X-Request-ID"],
                        expose_headers=["X-Request-ID", "Retry-After"], allow_credentials=False)
     limiter = RateLimiter(st.rate_per_minute, st.rate_per_day)
     cache = AnswerCache(st.cache_ttl_s, st.cache_max)
@@ -214,6 +215,12 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         return {"cities": R.SUPPORTED_CITIES, "pollutants": ["pm25", "pm10"], "data_windows": {k: str(v) for k, v in R.DATA.items()},
                 "attribution": man.get("attribution"), "default_analysis_rule": man.get("default_analysis_rule"),
                 "demo_questions": [x["question"] for x in demos.values()]}
+
+    @app.get("/api/visitor")
+    async def visitor(request: Request):
+        """Deployment check: which header identified this visitor (the IP itself is not returned)."""
+        ip, how = _client_ip(request)
+        return {"identified_by": how, "visitor_key": _visitor(request), "trusted_headers": st.client_ip_headers}
 
     @app.get("/api/quota")
     async def quota_status():
@@ -298,18 +305,26 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         return json.loads(p.read_text()) if p.exists() else {"sets": {}}
 
     # ------------------------------------------------------------------ chat (SSE)
+    salt = uuid.uuid4().hex                     # per process: hashed IPs are never stored in clear
+
+    def _client_ip(request: Request) -> tuple[str, str]:
+        """(ip, header used). Only platform-set headers are trusted; never X-Forwarded-For or X-Visitor-Id."""
+        for h in st.client_ip_headers:
+            v = request.headers.get(h, "").split(",")[0].strip()
+            if IPV.match(v):
+                return v, h
+        return (request.client.host if request.client else "unknown"), "socket"
+
     def _visitor(request: Request) -> str:
-        v = request.headers.get("X-Visitor-Id", "")
-        if VID.match(v):
-            return "v:" + v
-        fwd = request.headers.get("X-Forwarded-For", "")
-        return "ip:" + (fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "unknown"))
+        ip, _ = _client_ip(request)
+        return "ip:" + hashlib.sha256((salt + ip).encode()).hexdigest()[:20]
 
     def _final_events(final, eid: int) -> list[str]:
         f = json.loads(final.model_dump_json())
         return [sse("answer", {"status": f["status"], "text": f["answer"], "explanation": f["explanation"],
                                "clarifying_question": f["clarifying_question"], "data_types": f["data_types"],
-                               "verification": f["verification"]}, eid),
+                               "resolved_query": f.get("resolved_query"), "required_warnings": f.get("required_warnings", []),
+                               "model": f.get("model"), "verification": f["verification"]}, eid),
                 sse("cards", f["cards"], eid + 1), sse("chart", f["chart"], eid + 2),
                 sse("sources", {"sources": f["sources"], "coverage": f["coverage"]}, eid + 3),
                 sse("warnings", f["warnings"], eid + 4)]
@@ -333,7 +348,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         f = payload["final"]
         yield sse("answer", {"status": f["status"], "text": f["answer"], "explanation": f.get("explanation", ""),
                              "clarifying_question": f.get("clarifying_question"), "data_types": f.get("data_types", []),
-                             "verification": f.get("verification", {}), "cached": True}, eid + 1)
+                             "resolved_query": f.get("resolved_query"), "required_warnings": f.get("required_warnings", []),
+                             "model": f.get("model"), "verification": f.get("verification", {}), "cached": True}, eid + 1)
         yield sse("cards", f.get("cards", []), eid + 2)
         yield sse("chart", f.get("chart"), eid + 3)
         yield sse("sources", {"sources": f.get("sources", []), "coverage": f.get("coverage", {})}, eid + 4)

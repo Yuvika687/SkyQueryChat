@@ -1,0 +1,173 @@
+{
+ "_about": "Re-score saved runs with the 2026-11-06 checks, WITHOUT changing their published first-pass scores.",
+ "summary": {
+  "run": "20261106-1154_main_model_check",
+  "set": "main",
+  "kind": "model_check",
+  "turns": 14,
+  "original_pass": 13,
+  "pass_with_resolved_check": 13,
+  "resolved_checked": 8,
+  "resolved_failures": [],
+  "pass_lenient_wording": 14,
+  "lenient_changes": [
+   "M1.1"
+  ]
+ },
+ "turns": [
+  {
+   "id": "T2",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "C2",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "D1",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "D3",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "U2",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "W4",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "W5",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "F1",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "F1",
+   "turn": 2,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": true,
+   "resolved_why": "",
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "M1",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": false,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": false
+  },
+  {
+   "id": "X1",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "X2",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "X3",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "tool_args",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  },
+  {
+   "id": "X4",
+   "turn": 1,
+   "model": "gemini-3.1-flash-lite",
+   "original_pass": true,
+   "resolved_ok": null,
+   "resolved_why": null,
+   "resolved_from": "from_sources",
+   "pass_lenient": true,
+   "pass_with_resolved_check": true
+  }
+ ]
+}

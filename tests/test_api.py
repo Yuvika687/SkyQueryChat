@@ -197,12 +197,36 @@ def test_demo_answer_served_without_llm(store):
 
 def test_rate_limit_per_visitor(store):
     with TestClient(make(store, rate_per_minute=2)) as c:
-        h = {"X-Visitor-Id": "visitor-abc-123"}
+        h = {"True-Client-IP": "203.0.113.7"}
         assert chat(c, "q one", headers=h)[0].status_code == 200
         assert chat(c, "q two", headers=h)[0].status_code == 200
         r, _ = chat(c, "q three", headers=h)
         assert r.status_code == 429 and r.json()["error"]["code"] == "rate_limited" and int(r.headers["Retry-After"]) > 0
-        assert chat(c, "q one", headers={"X-Visitor-Id": "other-visitor-99"})[0].status_code == 200
+        assert chat(c, "q one", headers={"True-Client-IP": "198.51.100.20"})[0].status_code == 200
+
+
+def test_rate_limit_cannot_be_dodged_with_spoofed_headers(store):
+    """Behind Render (Cloudflare sets True-Client-IP). A client may send its own X-Forwarded-For or
+    X-Visitor-Id; neither changes who it is."""
+    with TestClient(make(store, rate_per_minute=2)) as c:
+        real = {"True-Client-IP": "203.0.113.7"}
+        assert chat(c, "q one", headers=real)[0].status_code == 200
+        assert chat(c, "q two", headers={**real, "X-Forwarded-For": "1.2.3.4"})[0].status_code == 200
+        for fake in ({"X-Forwarded-For": "9.9.9.9, 10.0.0.1"}, {"X-Visitor-Id": "brand-new-visitor-1"}):
+            r, _ = chat(c, "q three", headers={**real, **fake})
+            assert r.status_code == 429
+        v = c.get("/api/visitor", headers={**real, "X-Forwarded-For": "9.9.9.9"}).json()
+        assert v["identified_by"] == "true-client-ip" and "203.0.113.7" not in json.dumps(v)
+
+
+def test_cf_connecting_ip_fallback_and_socket_for_local(store):
+    with TestClient(make(store)) as c:
+        assert c.get("/api/visitor", headers={"CF-Connecting-IP": "198.51.100.9"}).json()["identified_by"] == "cf-connecting-ip"
+        assert c.get("/api/visitor", headers={"True-Client-IP": "not an ip <script>"}).json()["identified_by"] == "socket"
+        assert c.get("/api/visitor").json()["identified_by"] == "socket"
+        a = c.get("/api/visitor", headers={"True-Client-IP": "203.0.113.7"}).json()["visitor_key"]
+        b = c.get("/api/visitor", headers={"True-Client-IP": "203.0.113.8"}).json()["visitor_key"]
+        assert a != b
 
 
 def test_exhausted_shared_quota_shows_ai_limit_and_keeps_cache(store):
@@ -301,9 +325,9 @@ def test_quota_is_shared_across_visitors(store):
     lim = {"test:primary": ProviderLimit("test:primary", rpm=100, tpm=10**7, rpd=7, daily_token_budget=10**9)}
     qm = _quota(lim, safety_margin=1.0, demo_reserve=0.0, question_requests=4)
     with TestClient(make(store, quota=qm)) as c:
-        assert "answer" in names(chat(c, "Delhi PM2.5 in November 2025?", headers={"X-Visitor-Id": "visitor-aaaa-1"})[1])
-        assert "answer" in names(chat(c, "Delhi PM2.5 in October 2025?", headers={"X-Visitor-Id": "visitor-bbbb-2"})[1])
-        _, ev = chat(c, "Delhi PM2.5 in May 2025?", headers={"X-Visitor-Id": "visitor-cccc-3"})
+        assert "answer" in names(chat(c, "Delhi PM2.5 in November 2025?", headers={"True-Client-IP": "203.0.113.1"})[1])
+        assert "answer" in names(chat(c, "Delhi PM2.5 in October 2025?", headers={"True-Client-IP": "203.0.113.2"})[1])
+        _, ev = chat(c, "Delhi PM2.5 in May 2025?", headers={"True-Client-IP": "203.0.113.3"})
         assert dict(ev)["error"]["code"] == "ai_limit"           # a new visitor sees the shared limit
         assert qm.get("test:primary").status()["used_today"]["requests"] == 4
 

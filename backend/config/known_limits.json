@@ -70,6 +70,11 @@
    "id": "ai_quota_estimates",
    "title": "Token counts before a request are estimates",
    "detail": "Before each request the limiter estimates its tokens from the message size (measured at about 1.3x the real count on 2026-11-06), then records the provider's real usage. Hidden SDK retries after a 429 or 5xx are not counted."
+  },
+  {
+   "id": "render_client_ip",
+   "title": "Visitor identification on Render is checked by simulation only",
+   "detail": "Rate limits use the client IP from True-Client-IP, then CF-Connecting-IP (set by Cloudflare in front of Render), never X-Forwarded-For or X-Visitor-Id, which clients can fake. Render does not document these headers officially; confirm after deploying with GET /api/visitor (it should say identified_by: true-client-ip). Visitors behind one shared IP (office, campus) share one limit."
   }
  ]
 }

@@ -239,8 +239,8 @@ def test_estimate_is_an_upper_bound_of_small_prompts():
 
 def test_chain_order_and_gemini_limits_from_ai_studio(monkeypatch):
     monkeypatch.delenv("SKYQ_MODEL_CHAIN", raising=False)
-    assert [e.label for e in M.model_chain()] == ["groq:openai/gpt-oss-120b", "google:gemini-3.5-flash-lite",
-                                                  "google:gemini-3.1-flash-lite", "google:gemini-3.8-flash"]
+    assert [e.label for e in M.model_chain()] == ["google:gemini-3.5-flash-lite", "google:gemini-3.1-flash-lite",
+                                                  "groq:openai/gpt-oss-120b", "google:gemini-3.8-flash"]
     qm = QuotaManager.from_config(M.load_config())
     for key, lim in {"google:gemini-3.1-flash-lite": (15, 250_000, 500),
                      "google:gemini-3.8-flash": (5, 250_000, 20)}.items():

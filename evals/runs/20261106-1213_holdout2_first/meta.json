@@ -1,0 +1,15 @@
+{
+ "set": "holdout2",
+ "kind": "first",
+ "started": "2026-11-06 12:13",
+ "model_chain": [
+  "google:gemini-3.5-flash-lite",
+  "google:gemini-3.1-flash-lite",
+  "groq:openai/gpt-oss-120b",
+  "google:gemini-3.8-flash"
+ ],
+ "commit": "1d7a155",
+ "ids": "all",
+ "complete": true,
+ "stopped": null
+}
