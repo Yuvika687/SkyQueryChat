@@ -407,6 +407,124 @@
        "trend_natural_range": "0/1"
       }
      }
+    },
+    {
+     "run": "20261106-1223_groq_first",
+     "started": "2026-11-06 12:23",
+     "model_chain": [
+      "groq:openai/gpt-oss-120b"
+     ],
+     "kind": "first",
+     "complete": false,
+     "commit": "1d7a155",
+     "summary": {
+      "overall": {
+       "turns": 3,
+       "pass": 1,
+       "pass_pct": 33.3,
+       "tool_choice_pct": 100.0,
+       "tool_choice_n": 3,
+       "numbers_traceable_pct": 100.0,
+       "answered": 1,
+       "reference_checks_pct": 33.3,
+       "reference_checks_n": 3,
+       "reference_failures": [
+        "mumbai_pm10_nov2025",
+        "winter2025_top_city"
+       ],
+       "refusals_correct_pct": null,
+       "refusals_n": 0,
+       "resolved_checks_pct": 33.3,
+       "resolved_checks_n": 3,
+       "resolved_failures": [
+        "G01.1: no resolved_query",
+        "G03.1: no resolved_query"
+       ],
+       "pass_lenient_wording_SEPARATE": 1,
+       "errors": [
+        "G01.1",
+        "G03.1"
+       ],
+       "failed": [
+        "G01.1",
+        "G03.1"
+       ],
+       "verifier_retries": 0,
+       "tokens_median": 4524,
+       "tokens_mean": 4524,
+       "tokens_max": 4524,
+       "tokens_total": 4524
+      },
+      "by_model": {
+       "no answer (model error)": {
+        "turns": 2,
+        "pass": 0,
+        "pass_pct": 0.0,
+        "tool_choice_pct": 100.0,
+        "tool_choice_n": 2,
+        "numbers_traceable_pct": null,
+        "answered": 0,
+        "reference_checks_pct": 0.0,
+        "reference_checks_n": 2,
+        "reference_failures": [
+         "mumbai_pm10_nov2025",
+         "winter2025_top_city"
+        ],
+        "refusals_correct_pct": null,
+        "refusals_n": 0,
+        "resolved_checks_pct": 0.0,
+        "resolved_checks_n": 2,
+        "resolved_failures": [
+         "G01.1: no resolved_query",
+         "G03.1: no resolved_query"
+        ],
+        "pass_lenient_wording_SEPARATE": 0,
+        "errors": [
+         "G01.1",
+         "G03.1"
+        ],
+        "failed": [
+         "G01.1",
+         "G03.1"
+        ],
+        "verifier_retries": 0,
+        "tokens_median": null,
+        "tokens_mean": null,
+        "tokens_max": null,
+        "tokens_total": 0
+       },
+       "openai/gpt-oss-120b": {
+        "turns": 1,
+        "pass": 1,
+        "pass_pct": 100.0,
+        "tool_choice_pct": 100.0,
+        "tool_choice_n": 1,
+        "numbers_traceable_pct": 100.0,
+        "answered": 1,
+        "reference_checks_pct": 100.0,
+        "reference_checks_n": 1,
+        "reference_failures": [],
+        "refusals_correct_pct": null,
+        "refusals_n": 0,
+        "resolved_checks_pct": 100.0,
+        "resolved_checks_n": 1,
+        "resolved_failures": [],
+        "pass_lenient_wording_SEPARATE": 1,
+        "errors": [],
+        "failed": [],
+        "verifier_retries": 0,
+        "tokens_median": 4524,
+        "tokens_mean": 4524,
+        "tokens_max": 4524,
+        "tokens_total": 4524
+       }
+      },
+      "by_category": {
+       "comparison": "0/1",
+       "trend": "0/1",
+       "trend_natural_range": "1/1"
+      }
+     }
     }
    ],
    "invalid_runs": [

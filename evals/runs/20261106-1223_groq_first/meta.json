@@ -1,0 +1,12 @@
+{
+ "set": "groq",
+ "kind": "first",
+ "started": "2026-11-06 12:23",
+ "model_chain": [
+  "groq:openai/gpt-oss-120b"
+ ],
+ "commit": "1d7a155",
+ "ids": "all",
+ "complete": false,
+ "stopped": "24-hour ledger at 179293 tokens; next question could pass the daily limit"
+}
