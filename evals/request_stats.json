@@ -75,6 +75,21 @@
    "tokens_per_question_mean": 4724,
    "tokens_per_question_max": 7666,
    "tokens_per_request_mean": 1792
+  },
+  "20261106-1154_main_model_check": {
+   "questions": 14,
+   "requests_mean": 2,
+   "requests_median": 2.0,
+   "requests_p90": 2,
+   "requests_max": 3,
+   "distribution": {
+    "1": 1,
+    "2": 12,
+    "3": 1
+   },
+   "tokens_per_question_mean": 3363,
+   "tokens_per_question_max": 5462,
+   "tokens_per_request_mean": 1681
   }
  },
  "current_code": {
@@ -127,6 +142,16 @@
    },
    "questions_per_day_est": 5,
    "questions_per_minute_est": 1.6
+  },
+  "google:gemini-3.1-flash-lite": {
+   "public_caps": {
+    "rpm": 12,
+    "tpm": 200000,
+    "rpd": 340,
+    "tokens_day": 680000
+   },
+   "questions_per_day_est": 139,
+   "questions_per_minute_est": 4.9
   }
  }
 }

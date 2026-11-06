@@ -175,7 +175,82 @@
      }
     }
    ],
-   "incomplete_first_pass": []
+   "incomplete_first_pass": [],
+   "model_checks": [
+    {
+     "run": "20261106-1154_main_model_check",
+     "started": "2026-11-06 11:54",
+     "model_chain": [
+      "google:gemini-3.1-flash-lite"
+     ],
+     "kind": "model_check",
+     "complete": true,
+     "commit": "23f1a30",
+     "summary": {
+      "overall": {
+       "turns": 14,
+       "pass": 13,
+       "pass_pct": 92.9,
+       "tool_choice_pct": 100.0,
+       "tool_choice_n": 10,
+       "numbers_traceable_pct": 100.0,
+       "answered": 10,
+       "reference_checks_pct": 100.0,
+       "reference_checks_n": 7,
+       "reference_failures": [],
+       "refusals_correct_pct": 83.3,
+       "refusals_n": 6,
+       "errors": [],
+       "failed": [
+        "M1.1"
+       ],
+       "verifier_retries": 1,
+       "tokens_median": 3362,
+       "tokens_mean": 3363,
+       "tokens_max": 5462,
+       "tokens_total": 47080
+      },
+      "by_model": {
+       "gemini-3.1-flash-lite": {
+        "turns": 14,
+        "pass": 13,
+        "pass_pct": 92.9,
+        "tool_choice_pct": 100.0,
+        "tool_choice_n": 10,
+        "numbers_traceable_pct": 100.0,
+        "answered": 10,
+        "reference_checks_pct": 100.0,
+        "reference_checks_n": 7,
+        "reference_failures": [],
+        "refusals_correct_pct": 83.3,
+        "refusals_n": 6,
+        "errors": [],
+        "failed": [
+         "M1.1"
+        ],
+        "verifier_retries": 1,
+        "tokens_median": 3362,
+        "tokens_mean": 3363,
+        "tokens_max": 5462,
+        "tokens_total": 47080
+       }
+      },
+      "by_category": {
+       "comparison": "1/1",
+       "diwali": "2/2",
+       "follow_up": "2/2",
+       "missing_data": "0/1",
+       "trap_causal": "1/1",
+       "trap_injection": "1/1",
+       "trap_pm_percent": "1/1",
+       "trend": "1/1",
+       "unsupported": "2/2",
+       "unusual_days": "1/1",
+       "weather": "1/1"
+      }
+     }
+    }
+   ]
   },
   "groq": {
    "main_first_pass": null,

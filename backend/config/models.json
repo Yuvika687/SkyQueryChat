@@ -1,5 +1,5 @@
 {
- "_note": "Model chain for the agent. First entry is primary; the rest are fallbacks in order. Override with env SKYQ_MODEL_CHAIN='groq:openai/gpt-oss-120b,google:gemini-3.5-flash-lite'. Keys come from .env only. Verified 2026-11-05: Groq key serves gpt-oss-120b/20b, qwen3.8-27b (llama-3.3-70b returns 404); Gemini 2.5 Flash is retired for new users. gpt-oss-120b needs reasoning_effort 'medium': with 'low', Groq rejected 3/3 answers (output_parse_failed); medium answered 3/3.",
+ "_note": "Model chain for the agent. First entry is primary; the rest are fallbacks in order. Override with env SKYQ_MODEL_CHAIN='groq:openai/gpt-oss-120b,google:gemini-3.5-flash-lite'. Keys come from .env only. Verified 2026-11-05: Groq key serves gpt-oss-120b/20b, qwen3.8-27b (llama-3.3-70b returns 404); Gemini 2.5 Flash is retired for new users. gpt-oss-120b needs reasoning_effort 'medium': with 'low', Groq rejected 3/3 answers (output_parse_failed); medium answered 3/3. 2026-11-06: gemini-3.1-flash-lite added before gemini-3.8-flash after a 13-question sample (13/14 turns; the miss was a wording check) and a provider 429 showing its quota is per model (GenerateRequestsPerMinutePerProjectPerModel-FreeTier, model: gemini-3.1-flash-lite) while gemini-3.5-flash-lite kept answering. gemini-3.8-flash stays last resort (20 RPD).",
  "chain": [
   {
    "provider": "groq",
@@ -22,6 +22,15 @@
   },
   {
    "provider": "google",
+   "model": "gemini-3.1-flash-lite",
+   "key_env": "GEMINI_API_KEY",
+   "settings": {
+    "temperature": 0,
+    "max_tokens": 1500
+   }
+  },
+  {
+   "provider": "google",
    "model": "gemini-3.8-flash",
    "key_env": "GEMINI_API_KEY",
    "settings": {
@@ -32,7 +41,7 @@
  ],
  "free_tier_checked_2026_11_05": {
   "groq:openai/gpt-oss-120b": "1000 requests/day, 8000 tokens/minute (live response headers); 200K tokens/day (docs)",
-  "google": "free-tier quotas are shown only in AI Studio (per project); not verifiable from the API"
+  "google": "Per-model free-tier quotas from the owner's AI Studio (2026-11-06; usage there is a 28-day peak). Provider 429 bodies name the quota per project per model."
  },
  "limits": {
   "request_limit": 10,
@@ -66,7 +75,7 @@
     "rpd": 500,
     "daily_token_budget": 800000,
     "day_reset": "midnight_pt",
-    "source": "Google AI Studio, owner's project, 2026-11-06. No provider daily token limit; daily_token_budget is our own cap. RPD resets at midnight Pacific."
+    "source": "Google AI Studio, owner's project, 2026-11-06 (AI Studio usage figures are 28-day peaks, not today's use). No provider daily token limit; daily_token_budget is our own cap. RPD resets at midnight Pacific."
    },
    "google:gemini-3.8-flash": {
     "rpm": 5,
@@ -74,7 +83,15 @@
     "rpd": 20,
     "daily_token_budget": 80000,
     "day_reset": "midnight_pt",
-    "source": "NOT CHECKED: conservative placeholder until the owner reads it in AI Studio."
+    "source": "Google AI Studio, owner's project, 2026-11-06 (AI Studio usage figures are 28-day peaks, not today's use). No provider daily token limit; daily_token_budget is our own cap."
+   },
+   "google:gemini-3.1-flash-lite": {
+    "rpm": 15,
+    "tpm": 250000,
+    "rpd": 500,
+    "daily_token_budget": 800000,
+    "day_reset": "midnight_pt",
+    "source": "Google AI Studio, owner's project, 2026-11-06 (AI Studio usage figures are 28-day peaks, not today's use). No provider daily token limit; daily_token_budget is our own cap."
    }
   },
   "default": {

@@ -235,3 +235,30 @@ def test_estimate_is_an_upper_bound_of_small_prompts():
     msgs = [ModelRequest(parts=[UserPromptPart("What was Delhi PM2.5 in November 2025?")])]
     est = estimate_tokens(msgs, ModelRequestParameters(), {"max_tokens": 1500}, QuotaConfig())
     assert 20 < est < 2_000
+
+
+def test_chain_order_and_gemini_limits_from_ai_studio(monkeypatch):
+    monkeypatch.delenv("SKYQ_MODEL_CHAIN", raising=False)
+    assert [e.label for e in M.model_chain()] == ["groq:openai/gpt-oss-120b", "google:gemini-3.5-flash-lite",
+                                                  "google:gemini-3.1-flash-lite", "google:gemini-3.8-flash"]
+    qm = QuotaManager.from_config(M.load_config())
+    for key, lim in {"google:gemini-3.1-flash-lite": (15, 250_000, 500),
+                     "google:gemini-3.8-flash": (5, 250_000, 20)}.items():
+        L = qm.get(key).limit
+        assert (L.rpm, L.tpm, L.rpd) == lim and "AI Studio" in L.source and "28-day" in L.source
+
+
+def test_gemini_429_text_is_classified_per_minute_or_per_day():
+    from pydantic_ai.exceptions import ModelHTTPError
+    qm = QuotaManager.from_config(M.load_config())
+    qm.set_chain(["google:gemini-3.1-flash-lite"])
+    minute = ("Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, "
+              "limit: 15, model: gemini-3.1-flash-lite, description: Generate content requests per minute limit "
+              "exceeded on Free Tier.")
+    M._record_fallback(ModelHTTPError(429, "gemini-3.1-flash-lite", minute), qm)
+    assert M.FALLBACK_LOG[-1]["rate_limited"] and not M.FALLBACK_LOG[-1]["per_day"]
+    pq = qm.get("google:gemini-3.1-flash-lite")
+    assert pq.paused_until > 0 and pq.can_start_question() is None
+    M._record_fallback(ModelHTTPError(429, "gemini-3.1-flash-lite", minute.replace("per minute", "per day")), qm)
+    assert M.FALLBACK_LOG[-1]["per_day"] and pq.can_start_question() == "provider daily limit reached"
+    assert qm.get("google:gemini-3.5-flash-lite").can_start_question() is None      # other model unaffected

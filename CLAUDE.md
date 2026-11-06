@@ -211,6 +211,10 @@ Rules:
   (measured max; mean 2.43 over 61 questions, `scripts/measure_requests.py`). Separate daily token budget
   per model; the old single 150K budget is gone. SSE `notice` event for low quota, backup model, or a
   saved answer; `ai_limit`/`ai_busy` errors when nothing has room.
+- Chain (2026-11-06): Groq gpt-oss-120b → gemini-3.5-flash-lite → gemini-3.1-flash-lite → gemini-3.8-flash
+  (last resort). AI Studio limits: 3.1 Flash Lite 15 RPM / 250K TPM / 500 RPD; 3.8 Flash 5 / 250K / 20.
+  AI Studio "usage" figures are 28-day peaks, not today's use. Google 429s name the quota per project
+  per model (`...PerProjectPerModel-FreeTier`, `model` dimension), so Gemini models do not share quota.
 
 ## 6. UI requirements
 

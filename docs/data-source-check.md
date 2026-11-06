@@ -1067,3 +1067,23 @@ bottleneck); Gemini Flash-Lite about 139/day (RPD) and 4.9/minute (RPM).
 **Live check (3 questions, 2026-11-06):** the limiter worked with the real Groq and Gemini models.
 First estimate (JSON chars / 4) was about 2× the real tokens and made Groq skip to Gemini on the 4th
 request; recalibrated to chars / 7, now 1.33× real, and Groq answered a 3-request question alone.
+
+## Part 9b — Gemini 3.1 Flash Lite added as a fallback (2026-11-06)
+
+Limits updated from AI Studio (its usage numbers are 28-day peaks, not today's use): Gemini 3.8 Flash
+5 RPM / 250K TPM / 20 RPD; Gemini 3.1 Flash Lite 15 RPM / 250K TPM / 500 RPD (`gemini-3.1-flash-lite`,
+the stable ID; a `-preview` ID also exists).
+
+**Sample on gemini-3.1-flash-lite alone** (run `20261106-1154_main_model_check`, 13 questions, 14 turns):
+13/14 pass; tool choice 10/10; numbers traceable 100%; reference values 7/7; refusals 5/6; 1 verifier retry
+(D1, fixed on retry); tokens median 3,362, max 5,462. The miss (M1) said "currently unavailable" with
+status `unavailable`; the check wants the words "not available" (same wording miss as 3.5 Flash-Lite).
+
+**Separate quota, from the provider's response:** 20 sequential tiny requests in 51 s were all accepted;
+a parallel burst of 20 got 9 x 200 and 11 x 429. The 429 body: `quotaId
+GenerateRequestsPerMinutePerProjectPerModel-FreeTier`, `quotaDimensions {location: global, model:
+gemini-3.1-flash-lite}`, `quotaValue 15`. A gemini-3.5-flash-lite request one second later returned 200,
+and 3.1 Flash Lite still returned 429. Only the per-minute quota was observed directly; the daily quota
+is assumed to be per model too (same quota family naming, and AI Studio lists it per model).
+
+**Final chain:** Groq gpt-oss-120b → gemini-3.5-flash-lite → gemini-3.1-flash-lite → gemini-3.8-flash.

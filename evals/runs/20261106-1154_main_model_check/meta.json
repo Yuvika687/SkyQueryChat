@@ -1,0 +1,26 @@
+{
+ "set": "main",
+ "kind": "model_check",
+ "started": "2026-11-06 11:54",
+ "model_chain": [
+  "google:gemini-3.1-flash-lite"
+ ],
+ "commit": "23f1a30",
+ "ids": [
+  "C2",
+  "D1",
+  "D3",
+  "F1",
+  "M1",
+  "T2",
+  "U2",
+  "W4",
+  "W5",
+  "X1",
+  "X2",
+  "X3",
+  "X4"
+ ],
+ "complete": true,
+ "stopped": null
+}

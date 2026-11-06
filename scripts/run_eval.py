@@ -5,6 +5,7 @@ the published result, reruns are kept separate.
   python scripts/run_eval.py --set holdout                 # holdout (10 q + your user_questions)
   python scripts/run_eval.py --set groq                    # 15-q Groq test, Groq-only, quota-guarded
   python scripts/run_eval.py --set main --kind rerun --ids W5    # a rerun, reported separately
+  SKYQ_MODEL_CHAIN=google:<model> python scripts/run_eval.py --kind model_check --ids T2 X1   # candidate model sample
   python scripts/run_eval.py --resume evals/runs/<dir>     # continue an interrupted run
   python scripts/run_eval.py --scoreboard                  # rebuild evals/scoreboard.json only
 
@@ -135,6 +136,8 @@ def scoreboard() -> dict:
             s["main_first_pass"] = entry
         elif meta["kind"] == "first":
             s["incomplete_first_pass"].append(entry)
+        elif meta["kind"] == "model_check":          # qualifying a candidate model on a small sample
+            s.setdefault("model_checks", []).append(entry)
         else:
             s["reruns"].append(entry)
     (ROOT / "evals" / "scoreboard.json").write_text(json.dumps(out, indent=1))
@@ -290,7 +293,7 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", choices=list(SETS), default="main")
-    ap.add_argument("--kind", choices=["first", "rerun"], default="first")
+    ap.add_argument("--kind", choices=["first", "rerun", "model_check"], default="first")
     ap.add_argument("--ids", nargs="*")
     ap.add_argument("--resume")
     ap.add_argument("--scoreboard", action="store_true")

@@ -64,12 +64,12 @@
   {
    "id": "ai_quota_in_memory",
    "title": "Shared AI quota counters reset when the server restarts",
-   "detail": "The per-model counters (requests and tokens per minute and per day) live in the API process. A Render restart or a second instance starts from zero, and local scripts (evaluation, terminal) are counted separately. The 80% safety margin and the providers' own 429 handling are the backstop: a real daily 429 blocks that model until its reset."
+   "detail": "The per-model counters (requests and tokens per minute and per day) live in the API process. A Render restart or a second instance starts from zero, and local scripts (evaluation, terminal) are counted separately. The 80% safety margin and the providers' own 429 handling are the backstop: a real daily 429 blocks that model until its reset. Google enforces its per-minute limit loosely: 20 sequential requests in 51 s were accepted before a parallel burst got 429s."
   },
   {
    "id": "ai_quota_estimates",
    "title": "Token counts before a request are estimates",
-   "detail": "Before each request the limiter estimates its tokens from the message size (measured at about 1.3x the real count on 2026-11-06), then records the provider's real usage. Hidden SDK retries after a 429 or 5xx are not counted. gemini-3.8-flash limits are placeholders until checked in AI Studio."
+   "detail": "Before each request the limiter estimates its tokens from the message size (measured at about 1.3x the real count on 2026-11-06), then records the provider's real usage. Hidden SDK retries after a 429 or 5xx are not counted."
   }
  ]
 }
