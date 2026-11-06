@@ -1044,3 +1044,26 @@ Run in batches of 5 with 20–25 s gaps.
 - A burst from one visitor returned 200 ×4 then 429.
 
 **Memory:** peak RSS 312 MB with the data, all endpoints and the agent built (macOS measurement), against Render's 512 MB.
+
+# Part 9 — Shared AI quota across visitors (2026-11-06)
+
+**Provider limits (stored in `backend/config/models.json` → `quota.providers`):**
+
+| Model | RPM | TPM | RPD | Daily tokens | Day resets | Source |
+|---|---|---|---|---|---|---|
+| groq:openai/gpt-oss-120b | 30 | 8,000 | 1,000 | 200,000 (provider) | rolling 24 h | live headers + Groq docs |
+| google:gemini-3.5-flash-lite | 15 | 250,000 | 500 | 800,000 (our budget) | midnight Pacific | owner's AI Studio, 2026-11-06 |
+| google:gemini-3.8-flash | 5 | 250,000 | 20 | 80,000 (our budget) | midnight Pacific | placeholder, not checked |
+
+Effective caps = limit × 0.8. Public visitors may use 85% of the daily caps; 15% is the demo reserve.
+
+**Requests per question** (`scripts/measure_requests.py`, saved runs, no API calls): current code, 61
+questions: mean 2.43, median 2, p90 3–4, max 4 (distribution 1:3, 2:33, 3:21, 4:4). Day-2 code was
+mean 2.70, max 5. A new question therefore reserves room for 4 requests.
+
+**Capacity estimate (public caps, mean question):** Groq about 31 questions/day and 1.5/minute (TPM is the
+bottleneck); Gemini Flash-Lite about 139/day (RPD) and 4.9/minute (RPM).
+
+**Live check (3 questions, 2026-11-06):** the limiter worked with the real Groq and Gemini models.
+First estimate (JSON chars / 4) was about 2× the real tokens and made Groq skip to Gemini on the 4th
+request; recalibrated to chars / 7, now 1.33× real, and Groq answered a 3-request question alone.

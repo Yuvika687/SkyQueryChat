@@ -45,9 +45,18 @@ curl -N -X POST localhost:8000/api/chat -H 'Content-Type: application/json' \
 ```
 Endpoints: `POST /api/chat` (SSE), `GET /api/health`, `/api/meta`, `/api/limits`, `/api/stations`,
 `/api/cities`, `/api/cities/{city}/summary`, `/api/trends`, `/api/coverage`, `/api/diwali/{city}`,
-`/api/accuracy`. Docs at `/api/docs`. Environment: `ALLOWED_ORIGINS`, `RATE_PER_MINUTE`,
-`RATE_PER_DAY`, `DAILY_TOKEN_BUDGET`, `TOKENS_PER_QUESTION`, `QUESTION_TIMEOUT_S` (keys stay in the
-backend `.env`; the frontend never sees them).
+`/api/accuracy`, `/api/quota`. Docs at `/api/docs`. Environment: `ALLOWED_ORIGINS`, `RATE_PER_MINUTE`,
+`RATE_PER_DAY`, `TOKENS_PER_QUESTION`, `QUESTION_TIMEOUT_S`, `DEMO_ACCESS_TOKEN` (optional owner pass
+that may use the reserved daily quota, sent as `X-Demo-Token`), `SKYQ_PROVIDER_LIMITS`,
+`SKYQ_QUOTA_SAFETY_MARGIN`, `SKYQ_DEMO_RESERVE` (keys stay in the backend `.env`; the frontend never
+sees them).
+
+Shared AI quota: every model request from every visitor goes through one limiter per model
+(`backend/agent/quota.py`, limits in `backend/config/models.json` → `quota`). Caps are the provider
+limits × 0.8; public visitors stop at 85% of the daily caps, the rest is kept for the demo. Minute limits
+wait in a shared queue (up to 20 s), daily limits skip to the next model, and when no model has room the
+chat says so and still serves saved answers. `python scripts/measure_requests.py` measures requests per
+question from saved evaluation runs.
 
 ## Local setup
 ```bash

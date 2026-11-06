@@ -1,0 +1,132 @@
+{
+ "runs": {
+  "20261105-1200_main_first_day2": {
+   "questions": 50,
+   "requests_mean": 2.7,
+   "requests_median": 2.0,
+   "requests_p90": 4,
+   "requests_max": 5,
+   "distribution": {
+    "1": 1,
+    "2": 26,
+    "3": 11,
+    "4": 11,
+    "5": 1
+   },
+   "tokens_per_question_mean": 7705,
+   "tokens_per_question_max": 17449,
+   "tokens_per_request_mean": 2854
+  },
+  "20261105-1300_main_rerun_day2": {
+   "questions": 2,
+   "requests_mean": 3,
+   "requests_median": 3.0,
+   "requests_p90": 4,
+   "requests_max": 4,
+   "distribution": {
+    "2": 1,
+    "4": 1
+   },
+   "tokens_per_question_mean": 9434,
+   "tokens_per_question_max": 13490,
+   "tokens_per_request_mean": 3145
+  },
+  "20261105-1348_main_first": {
+   "questions": 50,
+   "requests_mean": 2.38,
+   "requests_median": 2.0,
+   "requests_p90": 3,
+   "requests_max": 4,
+   "distribution": {
+    "1": 2,
+    "2": 29,
+    "3": 17,
+    "4": 2
+   },
+   "tokens_per_question_mean": 4237,
+   "tokens_per_question_max": 7993,
+   "tokens_per_request_mean": 1780
+  },
+  "20261105-1352_groq_first": {
+   "questions": 1,
+   "requests_mean": 2,
+   "requests_median": 2,
+   "requests_p90": 2,
+   "requests_max": 2,
+   "distribution": {
+    "2": 1
+   },
+   "tokens_per_question_mean": 2610,
+   "tokens_per_question_max": 2610,
+   "tokens_per_request_mean": 1305
+  },
+  "20261105-1417_holdout_first": {
+   "questions": 11,
+   "requests_mean": 2.64,
+   "requests_median": 3,
+   "requests_p90": 4,
+   "requests_max": 4,
+   "distribution": {
+    "1": 1,
+    "2": 4,
+    "3": 4,
+    "4": 2
+   },
+   "tokens_per_question_mean": 4724,
+   "tokens_per_question_max": 7666,
+   "tokens_per_request_mean": 1792
+  }
+ },
+ "current_code": {
+  "runs": [
+   "20261105-1348_main_first",
+   "20261105-1417_holdout_first"
+  ],
+  "questions": 61,
+  "requests_mean": 2.43,
+  "requests_median": 2,
+  "requests_p90": 3,
+  "requests_max": 4,
+  "distribution": {
+   "1": 3,
+   "2": 33,
+   "3": 21,
+   "4": 4
+  },
+  "tokens_per_question_mean": 4325,
+  "tokens_per_question_max": 7993,
+  "tokens_per_request_mean": 1783
+ },
+ "capacity_estimate": {
+  "groq:openai/gpt-oss-120b": {
+   "public_caps": {
+    "rpm": 24,
+    "tpm": 6400,
+    "rpd": 680,
+    "tokens_day": 136000
+   },
+   "questions_per_day_est": 31,
+   "questions_per_minute_est": 1.5
+  },
+  "google:gemini-3.5-flash-lite": {
+   "public_caps": {
+    "rpm": 12,
+    "tpm": 200000,
+    "rpd": 340,
+    "tokens_day": 680000
+   },
+   "questions_per_day_est": 139,
+   "questions_per_minute_est": 4.9
+  },
+  "google:gemini-3.8-flash": {
+   "public_caps": {
+    "rpm": 4,
+    "tpm": 200000,
+    "rpd": 13,
+    "tokens_day": 68000
+   },
+   "questions_per_day_est": 5,
+   "questions_per_minute_est": 1.6
+  }
+ }
+}

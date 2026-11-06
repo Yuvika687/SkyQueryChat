@@ -7,6 +7,7 @@ when the AI quota is exhausted. API keys stay in the backend environment and are
 from __future__ import annotations
 
 import asyncio
+import hmac
 import json
 import logging
 import re
@@ -29,7 +30,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from backend.agent import core, models as M, resolver as R
 from backend.analysis import functions as F
 from backend.analysis.store import Store
-from .protect import AnswerCache, RateLimiter, TokenBudget, load_demo, normalise
+from backend.agent.quota import QuotaManager
+from .protect import AnswerCache, RateLimiter, load_demo, normalise
 from .settings import Settings
 from .sse import PING, sse
 
@@ -41,8 +43,15 @@ SID = re.compile(r"^[a-f0-9]{32}$")
 VID = re.compile(r"^[A-Za-z0-9\-_]{8,64}$")
 AI_LIMIT_MSG = ("The live AI limit has been reached for now. Cached answers, demo questions and the data pages "
                 "still work. Please try a live question later.")
+NOTICES = {
+    "low": "Live AI quota is running low today. Some questions may use a backup model, and live answers may "
+           "pause later; demo questions and the data pages always work.",
+    "fallback": "The main AI model is at its shared limit, so this answer uses a backup model.",
+    "cached_fallback": "Live AI is at its limit, so this is a saved answer to the same question.",
+}
 MESSAGES = {
     "ai_limit": AI_LIMIT_MSG,
+    "ai_busy": "The live AI is busy with other visitors right now. Please try again in about a minute.",
     "model_unavailable": "The AI models are unavailable right now. Cached answers and data pages still work.",
     "timeout": "The answer took too long and was stopped. Please try a narrower question.",
     "verification_failed": core.ERROR_TEXT["verification"],
@@ -110,8 +119,10 @@ def _err(code: str, message: str, rid: str, status: int, headers: dict | None = 
 
 
 def create_app(agent_factory: Callable | None = None, store: Store | None = None,
-               settings: Settings | None = None, demo: dict | None = None) -> FastAPI:
+               settings: Settings | None = None, demo: dict | None = None,
+               quota: QuotaManager | None = None) -> FastAPI:
     st = settings or Settings()
+    qm = quota or M.QUOTA
     state: dict = {"started": time.time(), "agent": None, "agent_error": False}
 
     @asynccontextmanager
@@ -128,13 +139,12 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
     app = FastAPI(title="SkyQueryChat API", version="0.3", lifespan=lifespan, docs_url="/api/docs",
                   openapi_url="/api/openapi.json", redoc_url=None)
     app.add_middleware(CORSMiddleware, allow_origins=st.allowed_origins, allow_methods=["GET", "POST"],
-                       allow_headers=["Content-Type", "X-Visitor-Id", "X-Request-ID"],
+                       allow_headers=["Content-Type", "X-Visitor-Id", "X-Request-ID", "X-Demo-Token"],
                        expose_headers=["X-Request-ID", "Retry-After"], allow_credentials=False)
     limiter = RateLimiter(st.rate_per_minute, st.rate_per_day)
-    budget = TokenBudget(st.daily_token_budget)
     cache = AnswerCache(st.cache_ttl_s, st.cache_max)
     demos = demo if demo is not None else load_demo()
-    app.state.protect = {"limiter": limiter, "budget": budget, "cache": cache, "demo": demos, "settings": st}
+    app.state.protect = {"limiter": limiter, "quota": qm, "cache": cache, "demo": demos, "settings": st}
 
     @app.middleware("http")
     async def request_id(request: Request, call_next):
@@ -184,12 +194,18 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
                 state["agent_error"] = True
         return state["agent"]
 
+    def _quota_brief() -> dict:
+        full = qm.status()
+        return {"state": qm.plan()["state"] if qm.chain else "not_started",
+                "models": {k: {"state": v["state"], "remaining_today": v["remaining_today"]}
+                           for k, v in full["models"].items()}}
+
     # ------------------------------------------------------------------ health and metadata
     @app.get("/api/health")
     async def health():
         return {"status": "ok", "uptime_s": round(time.time() - state["started"], 1),
                 "data_loaded": "store" in state, "ai_configured": st.ai_configured,
-                "ai_budget_remaining_today": budget.remaining(),
+                "ai_quota": _quota_brief(),
                 "data_windows": {k: str(v) for k, v in R.DATA.items()}}
 
     @app.get("/api/meta")
@@ -198,6 +214,11 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         return {"cities": R.SUPPORTED_CITIES, "pollutants": ["pm25", "pm10"], "data_windows": {k: str(v) for k, v in R.DATA.items()},
                 "attribution": man.get("attribution"), "default_analysis_rule": man.get("default_analysis_rule"),
                 "demo_questions": [x["question"] for x in demos.values()]}
+
+    @app.get("/api/quota")
+    async def quota_status():
+        """Shared AI quota per model (counts only; no keys)."""
+        return {**qm.status(), "plan": qm.plan()}
 
     @app.get("/api/limits")
     async def limits():
@@ -297,7 +318,9 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         kinds = [e.detail.get("kind") for e in deps.events if e.type == "error"]
         k = kinds[-1] if kinds else "other"
         if k == "model":
-            recent = M.FALLBACK_LOG[-3:]
+            recent = M.FALLBACK_LOG[-len(qm.chain or [1]):]
+            if recent and all(x.get("rate_limited") and not x.get("per_day") for x in recent):
+                return "ai_busy"
             return "ai_limit" if recent and any(x.get("rate_limited") for x in recent) else "model_unavailable"
         return {"verification": "verification_failed", "format": "format", "limit": "too_many_steps"}.get(k, "internal")
 
@@ -318,8 +341,16 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         yield sse("done", {"request_id": rid, "session_id": sid, "status": f["status"], "cached": True,
                            "source": source, "elapsed_ms": round((time.perf_counter() - t0) * 1000)}, eid + 6)
 
+    def _is_demo(request: Request) -> bool:
+        tok = request.headers.get("X-Demo-Token", "")
+        return bool(st.demo_token and tok and hmac.compare_digest(tok, st.demo_token))
+
+    def _notice(code: str, eid: int, **extra) -> str:
+        return sse("notice", {"code": code, "message": NOTICES[code], **extra}, eid)
+
     async def _stream(body: ChatRequest, request: Request):
         rid = request.state.request_id
+        is_demo = _is_demo(request)
         t0 = time.perf_counter()
         sid, sess = state["sessions"].get(body.session_id)
         yield sse("meta", {"request_id": rid, "session_id": sid}, 0)
@@ -333,28 +364,47 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
                 yield chunk
             return
 
-        def fail(code: str, eid: int = 1):
-            return [sse("error", {"code": code, "message": MESSAGES[code], "request_id": rid}, eid),
+        def fail(code: str, eid: int = 1, **extra):
+            msg = MESSAGES[code]
+            if code == "ai_limit" and extra.get("retry_after_s"):
+                h = extra["retry_after_s"] / 3600
+                msg = msg.replace("for now.", f"for now (it resets in about {h:.0f} h)." if h >= 1
+                                  else f"for now (it resets in about {max(1, round(h * 60))} min).")
+            if code in ("ai_limit", "ai_busy"):
+                extra.setdefault("demo_questions", [x["question"] for x in demos.values()][:8])
+            return [sse("error", {"code": code, "message": msg, "request_id": rid, **extra}, eid),
                     sse("done", {"request_id": rid, "session_id": sid, "status": "error", "cached": False,
                                  "elapsed_ms": round((time.perf_counter() - t0) * 1000)}, eid + 1)]
 
-        if budget.remaining() < min(st.tokens_per_question, 6000):
-            for x in fail("ai_limit"):
-                yield x
-            return
         agent = get_agent()
         if agent is None:
             for x in fail("model_unavailable"):
                 yield x
             return
+        plan = qm.plan(is_demo)
+        if plan["state"] == "exhausted":
+            # no model can take a new question: a saved answer to the same words still works on any turn
+            saved = cache.get(body.message) or demos.get(normalise(body.message))
+            if saved is not None:
+                yield _notice("cached_fallback", 1)
+                async for chunk in _replay(saved, rid, sid, "cache", t0):
+                    yield chunk
+                return
+            for x in fail("ai_limit", 1, retry_after_s=plan["retry_after_s"]):
+                yield x
+            return
+        notice_eid = 0
+        if plan["state"] in ("low", "fallback"):
+            yield _notice(plan["state"], 1, model=plan["usable"][0])
+            notice_eid = 1
         queue: asyncio.Queue = asyncio.Queue()
         done_marker = object()
         task = asyncio.create_task(core.ask(agent, sess, body.message, on_event=queue.put_nowait,
-                                            max_tokens=st.tokens_per_question))
+                                            max_tokens=st.tokens_per_question, demo=is_demo))
         task.add_done_callback(lambda _t: queue.put_nowait(done_marker))
         loop = asyncio.get_running_loop()
         deadline = loop.time() + st.question_timeout_s
-        eid, steps = 1, []
+        eid, steps = 1 + notice_eid, []
         try:
             while True:
                 left = deadline - loop.time()
@@ -389,8 +439,6 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         finally:
             if not task.done():
                 task.cancel()
-        used = (final.usage.get("input_tokens") or 0) + (final.usage.get("output_tokens") or 0)
-        budget.add(used or (st.tokens_per_question // 2 if deps.verification_failures else 0))
         if final.status == "error":
             for x in fail(_error_code(deps), eid):
                 yield x

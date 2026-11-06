@@ -39,5 +39,51 @@
   "output_retries": 3,
   "max_history_turns": 2,
   "max_tokens_per_question": 16000
+ },
+ "quota": {
+  "_note": "Shared limits for all visitors (backend/agent/quota.py). Effective cap = provider limit x safety_margin; public visitors stop at (1 - demo_reserve) of the daily caps, demo requests may use the reserve. Override per model with env SKYQ_PROVIDER_LIMITS='{\"google:gemini-3.5-flash-lite\":{\"rpd\":1000}}', or SKYQ_QUOTA_SAFETY_MARGIN / SKYQ_DEMO_RESERVE. question_requests = measured max model requests per question (scripts/measure_requests.py).",
+  "safety_margin": 0.8,
+  "demo_reserve": 0.15,
+  "low_fraction": 0.2,
+  "max_queue_wait_s": 20,
+  "question_requests": 4,
+  "question_tokens": 12000,
+  "est_output_tokens": 600,
+  "chars_per_token": 7.0,
+  "providers": {
+   "groq:openai/gpt-oss-120b": {
+    "rpm": 30,
+    "tpm": 8000,
+    "rpd": 1000,
+    "tpd": 200000,
+    "daily_token_budget": 200000,
+    "day_reset": "rolling_24h",
+    "source": "RPD and TPM from live Groq response headers 2026-11-05; RPM and TPD from Groq docs. TPD behaved as a rolling 24 h window."
+   },
+   "google:gemini-3.5-flash-lite": {
+    "rpm": 15,
+    "tpm": 250000,
+    "rpd": 500,
+    "daily_token_budget": 800000,
+    "day_reset": "midnight_pt",
+    "source": "Google AI Studio, owner's project, 2026-11-06. No provider daily token limit; daily_token_budget is our own cap. RPD resets at midnight Pacific."
+   },
+   "google:gemini-3.8-flash": {
+    "rpm": 5,
+    "tpm": 250000,
+    "rpd": 20,
+    "daily_token_budget": 80000,
+    "day_reset": "midnight_pt",
+    "source": "NOT CHECKED: conservative placeholder until the owner reads it in AI Studio."
+   }
+  },
+  "default": {
+   "rpm": 5,
+   "tpm": 50000,
+   "rpd": 20,
+   "daily_token_budget": 50000,
+   "day_reset": "midnight_pt",
+   "source": "built-in conservative default (model not listed)"
+  }
  }
 }

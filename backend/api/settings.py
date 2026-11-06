@@ -22,7 +22,6 @@ class Settings:
     allowed_origins: list[str] = field(default_factory=_origins)
     rate_per_minute: int = field(default_factory=lambda: _int("RATE_PER_MINUTE", 4))
     rate_per_day: int = field(default_factory=lambda: _int("RATE_PER_DAY", 30))
-    daily_token_budget: int = field(default_factory=lambda: _int("DAILY_TOKEN_BUDGET", 150_000))
     tokens_per_question: int = field(default_factory=lambda: _int("TOKENS_PER_QUESTION", 12_000))
     question_timeout_s: int = field(default_factory=lambda: _int("QUESTION_TIMEOUT_S", 60))
     session_ttl_s: int = field(default_factory=lambda: _int("SESSION_TTL_S", 1800))
@@ -31,6 +30,11 @@ class Settings:
     cache_max: int = field(default_factory=lambda: _int("CACHE_MAX", 200))
     max_question_chars: int = 500
     heartbeat_s: float = 15.0
+
+    @property
+    def demo_token(self) -> str:
+        """Owner's demo pass (env DEMO_ACCESS_TOKEN) that may use the reserved daily quota. Never returned."""
+        return os.environ.get("DEMO_ACCESS_TOKEN", "")
 
     @property
     def ai_configured(self) -> bool:

@@ -1,5 +1,5 @@
-"""Public-demo protection: per-visitor rate limits, a daily LLM token budget, an answer cache and
-cached demo answers. In-memory (Render free instances restart; that resets counters, which only
+"""Public-demo protection: per-visitor rate limits, an answer cache and cached demo answers.
+Shared per-provider AI quotas (RPM, TPM, RPD, daily tokens) live in backend/agent/quota.py. In-memory (Render free instances restart; that resets counters, which only
 makes the limits stricter for one day)."""
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import json
 import re
 import time
 from collections import OrderedDict, deque
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta, timezone
 from pathlib import Path
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -35,26 +35,6 @@ class RateLimiter:
             for k in list(self.hits)[:1000]:
                 self.hits.pop(k, None)
         return None
-
-
-class TokenBudget:
-    """Daily LLM token budget (resets at midnight IST)."""
-
-    def __init__(self, daily: int, today=lambda: datetime.now(IST).date()):
-        self.daily, self.today = daily, today
-        self.day, self.used = today(), 0
-
-    def _roll(self):
-        if self.today() != self.day:
-            self.day, self.used = self.today(), 0
-
-    def remaining(self) -> int:
-        self._roll()
-        return max(0, self.daily - self.used)
-
-    def add(self, tokens: int):
-        self._roll()
-        self.used += max(0, int(tokens or 0))
 
 
 def normalise(q: str) -> str:

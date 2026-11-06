@@ -16,6 +16,7 @@ import json
 import re
 
 from pydantic import ValidationError
+from .quota import current as quota_ctx, question_scope
 from pydantic_ai import Agent, ModelRetry, RunContext, TextOutput, ToolOutput, UsageLimits
 from pydantic_ai.exceptions import (ModelAPIError, ModelRequestRejectedError, UnexpectedModelBehavior,
                                    UsageLimitExceeded)
@@ -229,9 +230,20 @@ def _error(deps: RunDeps, kind: str) -> FinalAnswer:
 
 async def ask(agent: Agent, session: Session, question: str,
               on_event: Callable[[StepEvent], None] | None = None,
-              max_tokens: int | None = None) -> tuple[FinalAnswer, RunDeps]:
+              max_tokens: int | None = None, demo: bool = False) -> tuple[FinalAnswer, RunDeps]:
     deps = RunDeps(session=session, question=question, emit=on_event, user_numbers=user_safe_numbers(question))
     deps.event("run_started", "question received", chars=len(question))
+
+    def queued(model: str, wait: float):
+        deps.event("queued", f"waiting about {wait:.0f} s for shared model capacity", model=model,
+                   wait_s=round(wait, 1))
+
+    with question_scope(demo=demo, on_wait=queued):
+        return await _ask(agent, session, question, deps, max_tokens)
+
+
+async def _ask(agent: Agent, session: Session, question: str, deps: RunDeps,
+               max_tokens: int | None) -> tuple[FinalAnswer, RunDeps]:
     limits = load_config()["limits"]
     primary = PRIMARY_MODEL.get(id(agent))
     try:
@@ -247,13 +259,21 @@ async def ask(agent: Agent, session: Session, question: str,
                         deps.event("plan", "Plan: " + ", ".join(c.tool_name for c in calls),
                                    steps=[{"tool": c.tool_name, "args": c.args_as_dict()} for c in calls])
                     name = node.model_response.model_name
+                    qc = quota_ctx()
+                    if qc is not None and len(qc.skipped) > qc.reported:
+                        for key, why in qc.skipped[qc.reported:]:
+                            deps.event("fallback", f"skipped {key}: shared limit", model=name,
+                                       skipped=key, reason=f"shared limit: {why}")
+                        qc.reported = len(qc.skipped)
+                        primary = name
                     if primary is None:
                         primary = name
                     elif name and primary not in name and name not in primary:
                         from .models import FALLBACK_LOG
                         why = FALLBACK_LOG[-1] if FALLBACK_LOG else {}
-                        deps.event("fallback", f"switched to fallback model {name}", model=name,
-                                   reason=f"{why.get('error')} {why.get('status') or ''}".strip())
+                        reason = (why.get("reason") and f"shared limit: {why['reason']}") or \
+                            f"{why.get('error')} {why.get('status') or ''}".strip()
+                        deps.event("fallback", f"switched to fallback model {name}", model=name, reason=reason)
                         primary = name
         result = run.result
     except UnexpectedModelBehavior:

@@ -57,7 +57,7 @@ class FinalAnswer(BaseModel):
 
 # ----------------------------------------------------------------------------- step events
 EventType = Literal["run_started", "plan", "model_request", "tool_call", "tool_result", "tool_error",
-                    "verification", "retry", "fallback", "answer", "error"]
+                    "verification", "retry", "fallback", "queued", "answer", "error"]
 
 
 class StepEvent(BaseModel):

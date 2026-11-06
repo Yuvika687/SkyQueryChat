@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-EVENTS = ("meta", "step", "answer", "cards", "chart", "sources", "warnings", "error", "done")
+EVENTS = ("meta", "notice", "step", "answer", "cards", "chart", "sources", "warnings", "error", "done")
 
 
 def sse(event: str, data: Any, eid: int | None = None) -> str:

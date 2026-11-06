@@ -201,6 +201,17 @@ Rules:
   daily token budget, answer cache + demo answers (`data/app/demo_answers.json`), clear AI-limit
   message; data endpoints never call an LLM.
 
+### Shared AI quota (2026-11-06)
+
+- Owner's AI Studio limits for `gemini-3.5-flash-lite`: 15 RPM, 250,000 TPM, 500 RPD (resets at midnight
+  Pacific). Stored with Groq's and a placeholder for `gemini-3.8-flash` in `models.json` → `quota.providers`.
+- One limiter per model for all visitors (`backend/agent/quota.py`): caps = limit × 0.8; public stops at 85%
+  of daily caps (15% demo reserve, unlocked by `X-Demo-Token` = env `DEMO_ACCESS_TOKEN`). Minute limits wait
+  in a FIFO queue (≤ 20 s); daily limits skip to the next model. A new question needs room for 4 requests
+  (measured max; mean 2.43 over 61 questions, `scripts/measure_requests.py`). Separate daily token budget
+  per model; the old single 150K budget is gone. SSE `notice` event for low quota, backup model, or a
+  saved answer; `ai_limit`/`ai_busy` errors when nothing has room.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

@@ -15,6 +15,7 @@ from pydantic_ai.models.fallback import FallbackModel
 from pydantic_ai.models.function import FunctionModel
 
 from backend.agent import core, models as M
+from backend.agent.quota import ProviderLimit, QuotaConfig, QuotaManager
 from backend.api.main import LockedStore, create_app
 from backend.api.settings import Settings
 from backend.api.sse import parse
@@ -45,11 +46,20 @@ def trend_model(counter=None):
     return FunctionModel(fn)
 
 
-def make(store, model=None, factory=None, demo=None, **kw):
+def _quota(limits=None, **cfg):
+    """A fresh shared quota per test (never the process-wide one)."""
+    lim = {"test:primary": ProviderLimit("test:primary", rpm=1000, tpm=10_000_000, rpd=100_000, daily_token_budget=10**9),
+           "test:backup": ProviderLimit("test:backup", rpm=1000, tpm=10_000_000, rpd=100_000, daily_token_budget=10**9)}
+    lim.update(limits or {})
+    return QuotaManager(lim, QuotaConfig(**cfg))
+
+
+def make(store, model=None, factory=None, demo=None, quota=None, **kw):
     s = Settings(**{"allowed_origins": ["http://localhost:3000"], "rate_per_minute": 50, "rate_per_day": 500,
-                    "daily_token_budget": 1_000_000, "question_timeout_s": 20, **kw})
-    f = factory or (lambda: core.build_agent(model or trend_model()))
-    return create_app(agent_factory=f, store=store, settings=s, demo=demo or {})
+                    "question_timeout_s": 20, **kw})
+    qm = quota or _quota()
+    f = factory or (lambda: core.build_agent(M.limited_chain([("test:primary", model or trend_model())], qm)))
+    return create_app(agent_factory=f, store=store, settings=s, demo=demo or {}, quota=qm)
 
 
 def chat(client, msg, sid=None, headers=None):
@@ -195,13 +205,107 @@ def test_rate_limit_per_visitor(store):
         assert chat(c, "q one", headers={"X-Visitor-Id": "other-visitor-99"})[0].status_code == 200
 
 
-def test_daily_token_budget_shows_ai_limit_and_keeps_cache(store):
-    with TestClient(make(store, daily_token_budget=0)) as c:
+def test_exhausted_shared_quota_shows_ai_limit_and_keeps_cache(store):
+    counter = {}
+    tiny = {"test:primary": ProviderLimit("test:primary", rpm=100, tpm=10**7, rpd=7, daily_token_budget=10**9)}
+    qm = _quota(tiny, safety_margin=1.0, demo_reserve=0.0, question_requests=4)
+    with TestClient(make(store, model=trend_model(counter), quota=qm)) as c:
+        _, ev = chat(c, "Delhi PM2.5 in November 2025?")          # needs room for 4, uses 2
+        assert dict(ev)["answer"]["status"] == "answered"
+        _, ev = chat(c, "Delhi PM2.5 in October 2025?")           # 2 + 4 <= 7: still room
+        assert "answer" in names(ev)
+        calls = counter["calls"]
+        _, ev = chat(c, "Delhi PM10 in October 2025?")            # 4 used, 4 + 4 > 7: blocked
+        d = dict(ev)
+        assert names(ev) == ["meta", "error", "done"] and d["error"]["code"] == "ai_limit"
+        assert "resets in about" in d["error"]["message"] and d["error"]["retry_after_s"] > 0
+        assert counter["calls"] == calls                           # no model call was made
+        _, ev = chat(c, "delhi pm2.5 in november 2025")            # saved answer still served
+        assert dict(ev)["done"]["cached"] is True
+        assert c.get("/api/trends", params={"city": "Delhi"}).status_code == 200
+        q = c.get("/api/quota").json()
+        assert q["models"]["test:primary"]["state"] == "exhausted" and q["plan"]["state"] == "exhausted"
+        assert c.get("/api/health").json()["ai_quota"]["state"] == "exhausted"
+
+
+def test_cached_answer_served_on_follow_up_turn_when_quota_is_exhausted(store):
+    tiny = {"test:primary": ProviderLimit("test:primary", rpm=100, tpm=10**7, rpd=5, daily_token_budget=10**9)}
+    qm = _quota(tiny, safety_margin=1.0, demo_reserve=0.0, question_requests=4)
+    with TestClient(make(store, quota=qm)) as c:
+        _, ev = chat(c, "Delhi PM2.5 in November 2025?")
+        sid = dict(ev)["meta"]["session_id"]
+        _, ev = chat(c, "Delhi PM2.5 in November 2025?", sid=sid)  # follow-up turn, no room left
+        d = dict(ev)
+        assert names(ev)[:2] == ["meta", "notice"] and d["notice"]["code"] == "cached_fallback"
+        assert d["done"]["cached"] is True and "error" not in d
+
+
+def test_primary_at_limit_uses_backup_with_notice(store):
+    used = {"p": 0, "b": 0}
+
+    def counting(key):
+        inner = trend_model()
+
+        async def fn(messages, info):
+            used[key] += 1
+            return await inner.function(messages, info) if asyncio.iscoroutinefunction(inner.function) \
+                else inner.function(messages, info)
+        return FunctionModel(fn)
+    lim = {"test:primary": ProviderLimit("test:primary", rpm=100, tpm=10**7, rpd=3, daily_token_budget=10**9)}
+    qm = _quota(lim, safety_margin=1.0, demo_reserve=0.0, question_requests=4)
+    f = lambda: core.build_agent(M.limited_chain([("test:primary", counting("p")), ("test:backup", counting("b"))], qm))
+    with TestClient(make(store, factory=f, quota=qm)) as c:
+        c.get("/api/health")
         _, ev = chat(c, "Delhi PM2.5 in November 2025?")
         d = dict(ev)
-        assert d["error"]["code"] == "ai_limit" and "limit" in d["error"]["message"].lower()
-        assert names(ev) == ["meta", "error", "done"]
-        assert c.get("/api/trends", params={"city": "Delhi"}).status_code == 200
+        assert d["notice"]["code"] == "fallback" and d["notice"]["model"] == "test:backup"
+        assert d["answer"]["status"] == "answered" and used == {"p": 0, "b": 2}
+        steps = [x for e, x in ev if e == "step"]
+        assert any(x["type"] == "fallback" and "shared limit" in x["detail"]["reason"] for x in steps)
+
+
+def test_low_quota_notice(store):
+    lim = {"test:primary": ProviderLimit("test:primary", rpm=100, tpm=10**7, rpd=20, daily_token_budget=10**9)}
+    qm = _quota(lim, safety_margin=1.0, demo_reserve=0.0, question_requests=4, low_fraction=0.55)
+    with TestClient(make(store, quota=qm)) as c:
+        chat(c, "Delhi PM2.5 in November 2025?")
+        chat(c, "Delhi PM2.5 in October 2025?")
+        chat(c, "Delhi PM2.5 in September 2025?")                 # 6 used of 20 -> 70% left
+        _, ev = chat(c, "Delhi PM2.5 in August 2025?")              # asked with 6 of 20 used (70% left): ok
+        assert "notice" not in names(ev)
+        chat(c, "Delhi PM2.5 in July 2025?")
+        _, ev = chat(c, "Delhi PM2.5 in June 2025?")                # asked with 10 used (50% < 55%): low
+        d = dict(ev)
+        assert d["notice"]["code"] == "low" and "running low" in d["notice"]["message"]
+        assert d["answer"]["status"] == "answered"
+
+
+def test_demo_token_unlocks_reserved_quota(store, monkeypatch):
+    monkeypatch.setenv("DEMO_ACCESS_TOKEN", "owner-demo-pass-0123456789")
+    lim = {"test:primary": ProviderLimit("test:primary", rpm=100, tpm=10**7, rpd=10, daily_token_budget=10**9)}
+    qm = _quota(lim, safety_margin=1.0, demo_reserve=0.5, question_requests=4)   # public cap = 5 requests
+    with TestClient(make(store, quota=qm)) as c:
+        _, ev = chat(c, "Delhi PM2.5 in November 2025?")            # public cap 5: 0 + 4 fits, uses 2
+        assert "answer" in names(ev)
+        _, ev = chat(c, "Delhi PM2.5 in October 2025?")
+        assert dict(ev)["error"]["code"] == "ai_limit"
+        _, ev = chat(c, "Delhi PM2.5 in October 2025?", headers={"X-Demo-Token": "wrong-pass"})
+        assert dict(ev)["error"]["code"] == "ai_limit"
+        _, ev = chat(c, "Delhi PM2.5 in October 2025?", headers={"X-Demo-Token": "owner-demo-pass-0123456789"})
+        assert dict(ev)["answer"]["status"] == "answered"
+        for path in ("/api/health", "/api/quota"):
+            assert "owner-demo-pass" not in c.get(path).text
+
+
+def test_quota_is_shared_across_visitors(store):
+    lim = {"test:primary": ProviderLimit("test:primary", rpm=100, tpm=10**7, rpd=7, daily_token_budget=10**9)}
+    qm = _quota(lim, safety_margin=1.0, demo_reserve=0.0, question_requests=4)
+    with TestClient(make(store, quota=qm)) as c:
+        assert "answer" in names(chat(c, "Delhi PM2.5 in November 2025?", headers={"X-Visitor-Id": "visitor-aaaa-1"})[1])
+        assert "answer" in names(chat(c, "Delhi PM2.5 in October 2025?", headers={"X-Visitor-Id": "visitor-bbbb-2"})[1])
+        _, ev = chat(c, "Delhi PM2.5 in May 2025?", headers={"X-Visitor-Id": "visitor-cccc-3"})
+        assert dict(ev)["error"]["code"] == "ai_limit"           # a new visitor sees the shared limit
+        assert qm.get("test:primary").status()["used_today"]["requests"] == 4
 
 
 def test_provider_quota_error_maps_to_ai_limit(store):
@@ -213,6 +317,31 @@ def test_provider_quota_error_maps_to_ai_limit(store):
         d = dict(ev)
         assert d["error"]["code"] == "ai_limit" and names(ev)[-1] == "done"
         assert "TPD" not in json.dumps(d)                                  # provider text never leaks
+
+
+def test_provider_daily_429_blocks_model_until_reset(store):
+    calls = {"n": 0}
+
+    def dead(m, info):
+        calls["n"] += 1
+        raise ModelRateLimitError("primary", "Rate limit reached ... tokens per day (TPD)")
+    qm = _quota()
+    f = lambda: core.build_agent(M.limited_chain([("test:primary", FunctionModel(dead, model_name="primary"))], qm))
+    with TestClient(make(store, factory=f, quota=qm)) as c:
+        _, ev = chat(c, "Delhi?")
+        assert dict(ev)["error"]["code"] == "ai_limit" and calls["n"] == 1
+        _, ev = chat(c, "Delhi again?")                               # no second provider call today
+        assert dict(ev)["error"]["code"] == "ai_limit" and calls["n"] == 1
+        assert qm.get("test:primary").status()["state"] == "exhausted"
+
+
+def test_minute_limit_busy_gives_ai_busy(store):
+    lim = {"test:primary": ProviderLimit("test:primary", rpm=1, tpm=10**7, rpd=1000, daily_token_budget=10**9)}
+    qm = _quota(lim, safety_margin=1.0, max_queue_wait_s=0.5)
+    with TestClient(make(store, quota=qm)) as c:
+        _, ev = chat(c, "Delhi PM2.5 in November 2025?")       # 2nd request needs to wait ~60 s > 0.5 s
+        d = dict(ev)
+        assert d["error"]["code"] == "ai_busy" and "busy" in d["error"]["message"]
 
 
 def test_verification_failure_is_a_clean_error(store):
