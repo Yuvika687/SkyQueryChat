@@ -181,7 +181,7 @@
      "colour_scale": "cpcb_aqi",
      "notes": [
       "Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on the bulletin date.",
-      "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF9900', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"
+      "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF6500', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"
      ]
     },
     "sources": [
@@ -6102,7 +6102,7 @@
      "colour_scale": "cpcb_aqi",
      "notes": [
       "Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on the bulletin date.",
-      "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF9900', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"
+      "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF6500', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"
      ]
     },
     "sources": [
@@ -6302,7 +6302,7 @@
      "colour_scale": "cpcb_aqi",
      "notes": [
       "Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on the bulletin date.",
-      "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF9900', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"
+      "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF6500', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"
      ]
     },
     "sources": [

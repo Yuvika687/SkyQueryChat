@@ -1,0 +1,273 @@
+// Backend chart spec -> ECharts option. Pure (testable). Rules from the UI spec:
+// straight segments, gaps stay gaps, AQI and PM never share a chart, bars start at zero, units always shown,
+// modelled data = dashed violet line, six fixed city colours.
+import { CATEGORY_STYLE, CITY_COLOURS, REFERENCE_LINES, aqiCategory, normaliseCategory } from "./categories";
+import type { ChartPoint, ChartSpec, DataType } from "./types";
+
+const C = {
+  text: "#E6EAF5", sub: "#94A0BC", line: "#2A3556", surface: "#121A2E", raised: "#1B2540",
+  accent: "#2DD4BF", modelled: "#A78BFA", warning: "#F5B942",
+};
+const YEAR_COLOURS = ["#94A0BC", "#2DD4BF", "#60A5FA"];
+const SEVERITY: Record<string, { colour: string; label: string }> = {
+  none: { colour: "#2DD4BF", label: "No issues" },
+  minor: { colour: "#5EEAD4", label: "Minor gaps" },
+  moderate: { colour: "#F5B942", label: "Moderate gaps" },
+  severe: { colour: "#F87171", label: "Severe gaps" },
+};
+
+export const isAQI = (spec: ChartSpec) => /index|aqi/i.test(spec.units) || /aqi/i.test(spec.y.field);
+export const pollutantOf = (spec: ChartSpec): "pm25" | "pm10" | null =>
+  /pm2\.?5/i.test(`${spec.title} ${spec.y.label ?? ""}`) ? "pm25" : /pm10/i.test(`${spec.title} ${spec.y.label ?? ""}`) ? "pm10" : null;
+
+const fmt = (v: unknown, d = 1) => (typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(d)) : v == null ? "no data" : String(v));
+
+function base(spec: ChartSpec) {
+  return {
+    backgroundColor: "transparent",
+    animationDuration: 200,
+    textStyle: { fontFamily: "var(--font-inter), Inter, system-ui, sans-serif", color: C.text },
+    grid: { left: 56, right: 24, top: 36, bottom: 56, containLabel: true },
+    tooltip: {
+      trigger: "axis" as const,
+      backgroundColor: C.raised, borderColor: C.line, textStyle: { color: C.text, fontSize: 12 },
+      confine: true,
+    },
+    legend: { show: spec.series.length > 1, top: 0, textStyle: { color: C.sub, fontSize: 12 }, icon: "roundRect" },
+  };
+}
+
+const axisCommon = {
+  axisLine: { lineStyle: { color: C.line } },
+  axisLabel: { color: C.sub, fontSize: 12 },
+  splitLine: { lineStyle: { color: C.line, opacity: 0.5 } },
+  nameTextStyle: { color: C.sub, fontSize: 12 },
+};
+
+function yAxisName(spec: ChartSpec) {
+  return spec.y.label || (isAQI(spec) ? "AQI (index)" : `${spec.y.field} (${spec.units})`);
+}
+
+export function buildOption(spec: ChartSpec, dataType: DataType | null = null): Record<string, unknown> {
+  switch (spec.type) {
+    case "bar":
+      return barOption(spec);
+    case "scatter":
+      return scatterOption(spec);
+    case "calendar_heatmap":
+      return calendarOption(spec);
+    default:
+      return spec.series.some((s) => s.data.some((p) => !Array.isArray(p))) ? eventLineOption(spec) : lineOption(spec, dataType);
+  }
+}
+
+// ------------------------------------------------------------------ gaps
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const MONTH = /^\d{4}-\d{2}$/;
+
+/**
+ * The backend leaves out days (or months) without a valid value. Insert explicit nulls for the missing
+ * calendar steps so the line breaks there instead of joining across the gap. Nothing is estimated.
+ */
+export function withGaps(data: ChartPoint[]): ChartPoint[] {
+  const pts = data.filter(Array.isArray) as [string | number, number | null][];
+  if (pts.length < 2 || pts.length !== data.length) return data;
+  const keys = pts.map((p) => String(p[0]));
+  const daily = keys.every((k) => DAY.test(k));
+  const monthly = !daily && keys.every((k) => MONTH.test(k));
+  if (!daily && !monthly) return data;
+  const have = new Map(keys.map((k, i) => [k, pts[i][1]]));
+  const out: ChartPoint[] = [];
+  const sorted = [...keys].sort();
+  if (daily) {
+    const end = Date.parse(sorted[sorted.length - 1] + "T00:00:00Z");
+    for (let t = Date.parse(sorted[0] + "T00:00:00Z"); t <= end; t += 86_400_000) {
+      const k = new Date(t).toISOString().slice(0, 10);
+      out.push([k, have.has(k) ? have.get(k)! : null]);
+    }
+  } else {
+    let [y, m] = sorted[0].split("-").map(Number);
+    const [ey, em] = sorted[sorted.length - 1].split("-").map(Number);
+    while (y < ey || (y === ey && m <= em)) {
+      const k = `${y}-${String(m).padStart(2, "0")}`;
+      out.push([k, have.has(k) ? have.get(k)! : null]);
+      m += 1;
+      if (m > 12) { m = 1; y += 1; }
+    }
+  }
+  return out;
+}
+
+// ------------------------------------------------------------------ time / category lines
+function lineOption(spec: ChartSpec, dataType: DataType | null) {
+  const time = spec.x.type === "time";
+  const modelled = dataType === "modelled";
+  const pol = pollutantOf(spec);
+  const refs = time && pol && !isAQI(spec) ? REFERENCE_LINES[pol] : [];
+  const series = spec.series.map((s, i) => {
+    if (s.type === "markers") {
+      return {
+        name: s.name, type: "scatter", data: s.data, symbolSize: 9, z: 5,
+        itemStyle: { color: C.warning, borderColor: C.surface, borderWidth: 1 },
+      };
+    }
+    const colour = modelled ? C.modelled : CITY_COLOURS[s.name] ?? (i === 0 ? C.accent : /median|rolling/i.test(s.name) ? C.sub : YEAR_COLOURS[i % 3]);
+    const isRef = /median|rolling/i.test(s.name);
+    return {
+      name: s.name, type: "line", data: withGaps(s.data), smooth: false, connectNulls: false,
+      // small symbols on dense series so a single day between two gaps is still visible
+      showSymbol: true, symbolSize: s.data.length <= 2 ? 10 : s.data.length <= 40 ? 5 : 2,
+      lineStyle: { width: isRef ? 1.5 : 2, color: colour, type: modelled || isRef ? "dashed" : "solid" },
+      itemStyle: { color: colour },
+      ...(i === 0 && refs.length
+        ? {
+            markLine: {
+              silent: true, symbol: "none",
+              lineStyle: { type: "dashed", width: 1, color: C.sub, opacity: 0.8 },
+              label: { color: C.sub, fontSize: 11, formatter: "{b}: {c} µg/m³", position: "insideEndTop" },
+              data: refs.map((r) => ({ name: r.label, yAxis: r.value })),
+            },
+          }
+        : {}),
+    };
+  });
+  return {
+    ...base(spec),
+    xAxis: { type: time ? "time" : "category", name: "", ...axisCommon, splitLine: { show: false } },
+    yAxis: { type: "value", name: yAxisName(spec), nameLocation: "middle", nameGap: 44, min: 0, ...axisCommon },
+    dataZoom: time ? [{ type: "inside" }, { type: "slider", height: 18, bottom: 8, borderColor: C.line, textStyle: { color: C.sub } }] : [],
+    tooltip: { ...base(spec).tooltip, valueFormatter: (v: unknown) => `${fmt(v)} ${spec.units}` },
+    series,
+  };
+}
+
+// ------------------------------------------------------------------ Diwali-style event lines (object points)
+function eventLineOption(spec: ChartSpec) {
+  const bands = dedupeBands(spec.bands ?? []);
+  const aqi = isAQI(spec);
+  const series = spec.series.map((s, i) => {
+    const colour = YEAR_COLOURS[(i + (spec.series.length === 1 ? 1 : 0)) % 3];
+    return {
+      name: s.name, type: "line", smooth: false, connectNulls: false, showSymbol: true, symbolSize: 8,
+      lineStyle: { width: 2, color: colour }, itemStyle: { color: colour },
+      data: s.data.map((p) => {
+        const o = p as Record<string, unknown>;
+        const v = (o[spec.y.field] as number | null) ?? null;
+        const cat = normaliseCategory(o.category) ?? (aqi ? aqiCategory(v) : null);
+        return {
+          value: [o[spec.x.field], v], raw: o,
+          itemStyle: cat ? { color: CATEGORY_STYLE[cat].bg, borderColor: colour, borderWidth: 2 } : undefined,
+        };
+      }),
+      ...(i === 0 && bands.length
+        ? {
+            markArea: {
+              silent: true, itemStyle: { color: "rgba(45, 212, 191, 0.10)" },
+              label: { color: C.sub, fontSize: 11, position: "insideTop" },
+              data: bands.map((b) => [{ name: b.label, xAxis: b.start }, { xAxis: b.end }]),
+            },
+          }
+        : {}),
+    };
+  });
+  return {
+    ...base(spec),
+    grid: { ...base(spec).grid, top: 44 },
+    xAxis: {
+      type: "value", name: "Days from Diwali (bulletin)", nameLocation: "middle", nameGap: 32, ...axisCommon,
+      splitLine: { show: false }, minInterval: 1,
+    },
+    yAxis: { type: "value", name: yAxisName(spec), nameLocation: "middle", nameGap: 44, min: 0, ...axisCommon },
+    tooltip: {
+      ...base(spec).tooltip, trigger: "item",
+      formatter: (p: { seriesName: string; data: { value: [number, number | null]; raw: Record<string, unknown> } }) => {
+        const r = p.data.raw;
+        const lines = [`<b>${p.seriesName}</b>`, `${aqi ? "AQI" : spec.y.label}: <b>${fmt(p.data.value[1], 0)}</b>${r.category ? ` (${r.category})` : ""}`];
+        if (r.bulletin_date) lines.push(`Bulletin date: ${r.bulletin_date}`);
+        if (r.reporting_period) lines.push(`Period: ${r.reporting_period}`);
+        return lines.join("<br/>");
+      },
+    },
+    series,
+  };
+}
+
+function dedupeBands(bands: NonNullable<ChartSpec["bands"]>) {
+  const seen = new Map<string, { label: string; start: number | string; end: number | string }>();
+  for (const b of bands) {
+    const k = `${b.start}|${b.end}`;
+    const prev = seen.get(k);
+    seen.set(k, prev ? { ...prev, label: "Festival bulletins (D+1, D+2)" } : { ...b, label: shortBand(b.label) });
+  }
+  return [...seen.values()];
+}
+const shortBand = (l: string) => l.replace(/\s*\(.*\)$/, "");
+
+// ------------------------------------------------------------------ ranking bars (zero baseline)
+function barOption(spec: ChartSpec) {
+  const data = [...(spec.series[0]?.data ?? [])] as [string, number | null][];
+  data.sort((a, b) => (a[1] ?? -1) - (b[1] ?? -1)); // ECharts draws category 0 at the bottom -> highest on top
+  return {
+    ...base(spec),
+    legend: { show: false },
+    grid: { left: 16, right: 56, top: 16, bottom: 40, containLabel: true },
+    xAxis: { type: "value", min: 0, name: yAxisName(spec), nameLocation: "middle", nameGap: 28, ...axisCommon },
+    yAxis: { type: "category", data: data.map((d) => d[0]), ...axisCommon, splitLine: { show: false } },
+    tooltip: { ...base(spec).tooltip, axisPointer: { type: "shadow" }, valueFormatter: (v: unknown) => `${fmt(v)} ${spec.units}` },
+    series: [
+      {
+        name: spec.series[0]?.name, type: "bar", barMaxWidth: 22,
+        data: data.map(([c, v]) => ({ value: v, itemStyle: { color: CITY_COLOURS[c] ?? C.accent, borderRadius: [0, 4, 4, 0] } })),
+        label: { show: true, position: "right", color: C.text, fontFamily: "var(--font-jetbrains), monospace", fontSize: 12, formatter: (p: { value: number | null }) => (p.value == null ? "no data" : `${fmt(p.value)}`) },
+      },
+    ],
+  };
+}
+
+// ------------------------------------------------------------------ weather scatter
+function scatterOption(spec: ChartSpec) {
+  return {
+    ...base(spec),
+    legend: { show: false },
+    xAxis: { type: "value", name: spec.x.label ?? spec.x.field, nameLocation: "middle", nameGap: 30, ...axisCommon },
+    yAxis: { type: "value", name: yAxisName(spec), nameLocation: "middle", nameGap: 44, min: 0, ...axisCommon },
+    tooltip: {
+      ...base(spec).tooltip, trigger: "item",
+      formatter: (p: { value: [number, number] }) => `${spec.x.label ?? spec.x.field}: ${fmt(p.value[0], 2)}<br/>${yAxisName(spec)}: <b>${fmt(p.value[1])}</b>`,
+    },
+    series: spec.series.map((s) => ({ name: s.name, type: "scatter", data: s.data, symbolSize: 6, itemStyle: { color: C.accent, opacity: 0.65 } })),
+  };
+}
+
+// ------------------------------------------------------------------ calendar heatmap (quality or AQI)
+function calendarOption(spec: ChartSpec) {
+  const data = (spec.series[0]?.data ?? []) as unknown[][];
+  const dates = data.map((d) => String(d[0])).sort();
+  const range = dates.length ? [dates[0], dates[dates.length - 1]] : ["2025-01-01", "2025-12-31"];
+  const aqi = spec.colour_scale === "cpcb_aqi";
+  const cats = aqi ? (["Good", "Satisfactory", "Moderate", "Poor", "Very poor", "Severe"] as const) : null;
+  const sevKeys = Object.keys(SEVERITY);
+  const values = data.map((d) => (aqi ? [d[0], d[1]] : [d[0], sevKeys.indexOf(String(d[1]))]));
+  const pieces = aqi
+    ? [[0, 50], [51, 100], [101, 200], [201, 300], [301, 400], [401, 500]].map(([min, max], i) => ({ min, max, label: CATEGORY_STYLE[cats![i]].label, color: CATEGORY_STYLE[cats![i]].bg }))
+    : sevKeys.map((k, i) => ({ value: i, label: SEVERITY[k].label, color: SEVERITY[k].colour }));
+  return {
+    ...base(spec),
+    legend: { show: false },
+    tooltip: {
+      trigger: "item", backgroundColor: C.raised, borderColor: C.line, textStyle: { color: C.text, fontSize: 12 },
+      formatter: (p: { value: [string, number] }) => `${p.value[0]}: <b>${aqi ? `AQI ${p.value[1]}` : SEVERITY[sevKeys[p.value[1]]]?.label ?? "no data"}</b>`,
+    },
+    visualMap: {
+      type: "piecewise", orient: "horizontal", left: "center", bottom: 0, pieces,
+      textStyle: { color: C.sub, fontSize: 11 }, itemWidth: 12, itemHeight: 12,
+    },
+    calendar: {
+      range, top: 36, left: 40, right: 16, cellSize: ["auto", 14],
+      itemStyle: { color: "#64748B", borderColor: C.surface, borderWidth: 2 }, // grey = missing day
+      splitLine: { lineStyle: { color: C.line } },
+      dayLabel: { color: C.sub, fontSize: 10, firstDay: 1 }, monthLabel: { color: C.sub, fontSize: 11 }, yearLabel: { show: false },
+    },
+    series: [{ type: "heatmap", coordinateSystem: "calendar", data: values }],
+  };
+}

@@ -230,6 +230,26 @@ Rules:
   X-Visitor-Id are not trusted. Check after deploy with `/api/visitor`.
 - The model no longer describes defaults; code reports assumptions.
 
+### Frontend foundation + Ask screen (2026-11-06)
+
+- `frontend/`: Next.js 16.4.5 (needs Node >= 20.9; Node 26 OK), TypeScript, Tailwind 4, shadcn/ui (Base UI),
+  ECharts 6 (tree-shaken), Lucide. Cache Components is on: request data (searchParams, cookies) must sit in Suspense.
+- Browser calls the backend directly (`NEXT_PUBLIC_API_BASE_URL`) so rate limits see each visitor's IP. The only
+  server route is the owner demo proxy (`/api/demo/*`): DEMO_ACCESS_TOKEN stays server-side; the browser gets an
+  httpOnly HMAC cookie.
+- Chat stream: fetch + own SSE parser (`src/lib/sse.ts`), turn state is a pure reducer (`src/lib/chat-state.ts`),
+  backend step events map to the spec's 7 plain-language steps (`src/lib/timeline.ts`).
+- Charts render the backend chart spec (`src/lib/chart-options.ts`): straight lines, missing days inserted as nulls
+  so lines break (backend omits them), AQI never with PM reference lines, bars from zero, modelled = dashed violet.
+- CPCB AQI colours verified from CPCB "About_AQI.pdf" fill colours: Poor is #FF6500 (backend had #FF9900; fixed).
+  UI uses the spec's dark-tuned hexes. India PM10 24-h reference line = 100 ug/m3 (NAAQS; CPCB breakpoint table).
+- Answer sources now include `stations` (count / count_by_city / tier) for the evidence bar.
+- Follow-up suggestions are templates filled only from `resolved_query`.
+- Tests: `npm test` (Vitest, recorded real SSE fixtures), `npm run e2e` (Playwright, backend + frontend,
+  screenshots in `docs/screenshots/ask/`).
+- Known gap: the backend's city comparison chart is a bar of means, not the spec's multi-line; scatter has no
+  trend line (would need a Python-calculated line).
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

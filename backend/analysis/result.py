@@ -9,9 +9,10 @@ from dataclasses import asdict, dataclass, field
 from datetime import date
 from typing import Any
 
-# CPCB AQI category colours (used ONLY for data meaning). Verify against CPCB before UI work.
+# CPCB AQI category colours (used ONLY for data meaning). Verified 2026-11-06 against the fill colours in
+# CPCB "About National Air Quality Index" (cpcb.gov.in, About_AQI.pdf).
 AQI_COLOURS = {"Good": "#00B050", "Satisfactory": "#92D050", "Moderate": "#FFFF00",
-               "Poor": "#FF9900", "Very Poor": "#FF0000", "Severe": "#C00000"}
+               "Poor": "#FF6500", "Very Poor": "#FF0000", "Severe": "#C00000"}
 
 
 @dataclass

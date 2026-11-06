@@ -37,6 +37,7 @@ class SourceRef(BaseModel):
     source: str
     data_type: DataType
     date_range: dict[str, Any]
+    stations: dict[str, Any] = Field(default_factory=dict)   # count / count_by_city / tier, from the tool result
 
 
 class ResolvedQuery(BaseModel):

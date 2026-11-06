@@ -221,7 +221,9 @@ def _compose(deps: RunDeps, out: LLMAnswer, model_name: str | None, usage) -> Fi
         full = s.datasets[d]
         dt = data_type_of(full["data_type"])
         sources.append(SourceRef(dataset_id=d, title=full["title"], source=full["source"], data_type=dt,
-                                 date_range=full["date_range"]))
+                                 date_range=full["date_range"],
+                                 stations={k: v for k, v in (full.get("stations") or {}).items()
+                                           if k in ("count", "count_by_city", "tier", "note")}))
         coverage[d] = full.get("coverage")
         warnings += full["warnings"]
         types += ["measured", "modelled"] if dt == "mixed" else [dt]

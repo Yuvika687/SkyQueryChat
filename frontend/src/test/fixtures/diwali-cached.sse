@@ -1,0 +1,52 @@
+id: 0
+event: meta
+data: {"request_id": "2de09683a19e4dd9bcda304b3d1d085f", "session_id": "74178ac054194200adbdc6e97c5bc0fa"}
+
+id: 1
+event: step
+data: {"seq": 3, "type": "plan", "title": "Plan: diwali_aqi", "detail": {"steps": [{"tool": "diwali_aqi", "args": {"city": "Delhi", "years": [2025]}}]}, "ts": "2026-11-06T06:49:57.303+00:00", "cached": true}
+
+id: 2
+event: step
+data: {"seq": 4, "type": "tool_call", "title": "diwali_aqi", "detail": {"args": {"city": "Delhi", "years": [2025], "percent": false}}, "ts": "2026-11-06T06:49:57.305+00:00", "cached": true}
+
+id: 3
+event: step
+data: {"seq": 5, "type": "tool_result", "title": "diwali_aqi: Diwali air quality in Delhi (official AQI)", "detail": {"dataset_id": "ds1", "data_type": "official_aqi", "fields": 6, "warnings": 6}, "ts": "2026-11-06T06:49:57.321+00:00", "cached": true}
+
+id: 4
+event: step
+data: {"seq": 7, "type": "verification", "title": "failed", "detail": {"checked_numbers": 2, "problems": 1}, "ts": "2026-11-06T06:49:58.618+00:00", "cached": true}
+
+id: 5
+event: step
+data: {"seq": 10, "type": "verification", "title": "passed", "detail": {"checked_numbers": 2, "problems": 0}, "ts": "2026-11-06T06:50:00.196+00:00", "cached": true}
+
+id: 6
+event: step
+data: {"seq": 6, "type": "answer", "title": "served from demo", "detail": {"cached": true}}
+
+id: 7
+event: answer
+data: {"status": "answered", "text": "On Diwali 2025 (bulletin dates 2025-10-21 to 2025-10-22), Delhi's official CPCB AQI was in the Very Poor category with a festival AQI of 352, while pre-Diwali AQI was rising. We use official AQI (an index) for Diwali data.", "explanation": "Official CPCB AQI (index, not a concentration): Diwali air quality in Delhi (official AQI), 2025-10-06 to 2025-10-24. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).", "clarifying_question": null, "data_types": ["official_aqi"], "resolved_query": {"city": "Delhi", "cities": ["Delhi"], "pollutant": "AQI (official CPCB)", "start_date": "2025-10-06", "end_date": "2025-10-24", "assumptions": ["Diwali 2025: festival bulletins D+1 and D+2 (CPCB 4 PM-to-4 PM)"], "items": [{"tool": "diwali_aqi", "cities": ["Delhi"], "pollutant": "AQI (official CPCB)", "start": "2025-10-06", "end": "2025-10-24"}]}, "required_warnings": [{"code": "aqi_not_concentration", "text": "Official AQI is an index of several pollutants, not a PM2.5 or PM10 concentration."}, {"code": "not_causal", "text": "Do not read this as Diwali causing the change: AQI often rises through October and November for seasonal reasons, and other weather and emission changes happen at the same time."}], "model": "gemini-3.5-flash-lite", "verification": {"passed": true, "retries": 1, "numbers_checked": 2}, "cached": true}
+
+id: 8
+event: cards
+data: [{"label": "Delhi official AQI, Diwali 2025 (mean of festival bulletins)", "value": 352.0, "unit": "index (0-500)", "dataset_id": "ds1", "field": "2025_festival_aqi", "data_type": "official_aqi", "source": "CPCB daily AQI bulletin (via UrbanEmissions)", "warnings": ["This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.", "AQI was already rising in the days before Diwali, so the festival level cannot be attributed to Diwali alone."]}]
+
+id: 9
+event: chart
+data: {"type": "line", "title": "Delhi: official CPCB AQI by bulletin date around Diwali", "x": {"field": "x", "label": "Bulletin day relative to Diwali (bulletin D+1 reports Diwali evening; each bulletin = 24 h to 4 PM IST)", "tooltip_fields": ["bulletin_date", "reporting_period", "category"]}, "y": {"field": "aqi", "label": "AQI (index)"}, "series": [{"name": "Diwali 2025", "data": [{"x": -13, "aqi": 73.0, "category": "Satisfactory", "bulletin_date": "2025-10-07", "reporting_period": "2025-10-06 16:00 to 2025-10-07 16:00 IST"}, {"x": -12, "aqi": 81.0, "category": "Satisfactory", "bulletin_date": "2025-10-08", "reporting_period": "2025-10-07 16:00 to 2025-10-08 16:00 IST"}, {"x": -11, "aqi": 100.0, "category": "Satisfactory", "bulletin_date": "2025-10-09", "reporting_period": "2025-10-08 16:00 to 2025-10-09 16:00 IST"}, {"x": -10, "aqi": 170.0, "category": "Moderate", "bulletin_date": "2025-10-10", "reporting_period": "2025-10-09 16:00 to 2025-10-10 16:00 IST"}, {"x": -9, "aqi": 199.0, "category": "Moderate", "bulletin_date": "2025-10-11", "reporting_period": "2025-10-10 16:00 to 2025-10-11 16:00 IST"}, {"x": -8, "aqi": 167.0, "category": "Moderate", "bulletin_date": "2025-10-12", "reporting_period": "2025-10-11 16:00 to 2025-10-12 16:00 IST"}, {"x": -7, "aqi": 189.0, "category": "Moderate", "bulletin_date": "2025-10-13", "reporting_period": "2025-10-12 16:00 to 2025-10-13 16:00 IST"}, {"x": -6, "aqi": 211.0, "category": "Poor", "bulletin_date": "2025-10-14", "reporting_period": "2025-10-13 16:00 to 2025-10-14 16:00 IST"}, {"x": -5, "aqi": 233.0, "category": "Poor", "bulletin_date": "2025-10-15", "reporting_period": "2025-10-14 16:00 to 2025-10-15 16:00 IST"}, {"x": -4, "aqi": 245.0, "category": "Poor", "bulletin_date": "2025-10-16", "reporting_period": "2025-10-15 16:00 to 2025-10-16 16:00 IST"}, {"x": -3, "aqi": 254.0, "category": "Poor", "bulletin_date": "2025-10-17", "reporting_period": "2025-10-16 16:00 to 2025-10-17 16:00 IST"}, {"x": -2, "aqi": 268.0, "category": "Poor", "bulletin_date": "2025-10-18", "reporting_period": "2025-10-17 16:00 to 2025-10-18 16:00 IST"}, {"x": -1, "aqi": 296.0, "category": "Poor", "bulletin_date": "2025-10-19", "reporting_period": "2025-10-18 16:00 to 2025-10-19 16:00 IST"}, {"x": 0, "aqi": 345.0, "category": "Very Poor", "bulletin_date": "2025-10-20", "reporting_period": "2025-10-19 16:00 to 2025-10-20 16:00 IST"}, {"x": 1, "aqi": 351.0, "category": "Very Poor", "bulletin_date": "2025-10-21", "reporting_period": "2025-10-20 16:00 to 2025-10-21 16:00 IST"}, {"x": 2, "aqi": 353.0, "category": "Very Poor", "bulletin_date": "2025-10-22", "reporting_period": "2025-10-21 16:00 to 2025-10-22 16:00 IST"}, {"x": 3, "aqi": 305.0, "category": "Very Poor", "bulletin_date": "2025-10-23", "reporting_period": "2025-10-22 16:00 to 2025-10-23 16:00 IST"}, {"x": 4, "aqi": 275.0, "category": "Poor", "bulletin_date": "2025-10-24", "reporting_period": "2025-10-23 16:00 to 2025-10-24 16:00 IST"}]}], "units": "index (0-500)", "bands": [{"label": "Diwali 2025 festival bulletins (2025-10-21, 2025-10-22)", "start": 1, "end": 2}], "colour_scale": "cpcb_aqi", "notes": ["Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on the bulletin date.", "AQI category colours: {'Good': '#00B050', 'Satisfactory': '#92D050', 'Moderate': '#FFFF00', 'Poor': '#FF6500', 'Very Poor': '#FF0000', 'Severe': '#C00000'}"]}
+
+id: 10
+event: sources
+data: {"sources": [{"dataset_id": "ds1", "title": "Diwali air quality in Delhi (official AQI)", "source": "CPCB daily AQI bulletin (via UrbanEmissions)", "data_type": "official_aqi", "date_range": {"start": "2025-10-06", "end": "2025-10-24"}}], "coverage": {"ds1": {"years_available": [2025]}}}
+
+id: 11
+event: warnings
+data: ["Official AQI is an index of several pollutants, not a PM2.5 or PM10 concentration.", "Do not read this as Diwali causing the change: AQI often rises through October and November for seasonal reasons, and other weather and emission changes happen at the same time.", "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.", "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated D+1 reports Diwali evening.", "City AQI is CPCB's average over whichever stations reported; the station mix changes daily.", "Percentage changes are withheld: they vary strongly with the baseline window (see baseline_candidates).", "AQI was already rising in the days before Diwali, so the festival level cannot be attributed to Diwali alone."]
+
+id: 12
+event: done
+data: {"request_id": "2de09683a19e4dd9bcda304b3d1d085f", "session_id": "74178ac054194200adbdc6e97c5bc0fa", "status": "answered", "cached": true, "source": "demo", "elapsed_ms": 13}
+
