@@ -59,6 +59,7 @@ class RequiredWarning(BaseModel):
 class FinalAnswer(BaseModel):
     status: Literal["answered", "clarify", "refused", "unavailable", "error"]
     answer: str
+    headline: str | None = None          # code-written lead sentence from tool results (backend/agent/lead.py)
     explanation: str = ""
     cards: list[Card] = Field(default_factory=list)
     chart: dict[str, Any] | None = None

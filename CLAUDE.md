@@ -268,6 +268,29 @@ Rules:
   only locally; when `RENDER` is set or `SKYQ_ENV=production`, values above the defaults are ignored. `/api/health`
   shows the active `rate_limits`.
 
+### Phase 2: Ask screen polish (2026-11-08)
+
+- **Headline:** `backend/agent/lead.py` writes the answer's lead sentence in analyst wording from what the final
+  answer already holds (cards, chart points, coverage, resolved period). It must pass `check_numbers` and the causal
+  check, or it is dropped and the model's text leads. Sent as `answer.headline` (live, cached and saved demo answers).
+  The model's `answer` text is unchanged (evaluation still scores it); the UI shows it only as support for
+  multi-dataset answers. Small counts are written as words ("six cities") so no unverified number appears.
+- AQI is written as bulletin values (whole numbers) in headlines; key numbers round AQI half-up for display; the data
+  table and CSV keep exact values.
+- `city_trend` chart frequency now defaults by period length (daily <= 92 days, weekly <= 1 year, else monthly); the
+  summary values are the same. check_request's "relative to the latest data" note is carried into resolved_query
+  when the model passes the resolved dates on (so the UI can say "latest 30 days available").
+- Ask layout: insight first; one data-type badge; key-number strip (max 3, no rank cards, short labels); chart with
+  quiet icon actions; one evidence row with expandable details (interpreted query, method, sources, notes); required
+  warnings as a compact always-visible list. The agent panel shows only while the agent runs; afterwards each answer
+  has a compact expandable summary. A corrected number is "Corrected a number before answering" (done, not a warning).
+- Top bar on Ask: no city/pollutant selectors (the question decides them); a read-only context label follows the
+  latest answer's resolved_query. Selectors stay for Explore.
+- Charts: Diwali lines one colour each, Diwali day as a labelled vertical line (label above the plot), festival band
+  unlabelled with a key above the chart; reference-line labels right of the plot; zoom only above 62 points.
+- Figures use Inter tabular digits (`num` utility): JetBrains Mono gave decimals a full-width dot ("43 . 7").
+- Review screenshots: `npx playwright test e2e/review.spec.ts` -> `docs/screenshots/review/after/`.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

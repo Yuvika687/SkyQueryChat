@@ -75,6 +75,8 @@ export interface ChartSpec {
 export interface AnswerEvent {
   status: AnswerStatus;
   text: string;
+  /** Lead sentence written by backend code from tool results (null when the model's text should lead). */
+  headline?: string | null;
   explanation: string;
   clarifying_question: string | null;
   data_types: DataType[];

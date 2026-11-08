@@ -1,16 +1,14 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import {
-  AlertTriangle, CalendarRange, Check, Copy, Database, Download, FileImage, Gauge, Info, MapPin, Sparkles, Table2,
-} from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertTriangle, CalendarRange, Check, ChevronDown, Copy, Download, FileImage, Gauge, Info, MapPin } from "lucide-react";
 import { EChart, type EChartHandle } from "@/components/chart/echart";
-import { CATEGORY_STYLE, DATA_TYPE_LABEL, normaliseCategory, aqiCategory } from "@/lib/categories";
-import { buildOption, isAQI } from "@/lib/chart-options";
+import { CATEGORY_STYLE, DATA_TYPE_LABEL, normaliseCategory } from "@/lib/categories";
+import { buildOption, eventKey, isAQI } from "@/lib/chart-options";
 import { chartTable, download, slug, toCSV } from "@/lib/chart-data";
 import type { Evidence } from "@/lib/evidence";
-import { fmtDate, fmtRange, fmtValue, pollutantLabel } from "@/lib/format";
+import { fmtDate, fmtRange, pollutantLabel } from "@/lib/format";
+import { keyNumbers } from "@/lib/key-numbers";
 import type { Card, ChartSpec, DataType, ResolvedQuery, SourceRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -30,45 +28,28 @@ export function DataTypeBadge({ type, className }: { type: DataType | string; cl
   );
 }
 
-// ------------------------------------------------------------------ metric cards
-function cardPeriod(c: Card, sources: SourceRef[]): string | null {
-  // The label already names its period (dates, a month or a year such as "Diwali 2025"): don't add the
-  // dataset's wider data window, which could be mistaken for the card's own period.
-  if (/\b(19|20)\d{2}\b/.test(c.label)) return null;
-  const s = sources.find((x) => x.dataset_id === c.dataset_id);
-  return s ? fmtRange(s.date_range.start, s.date_range.end) : null;
-}
-
-function prettyLabel(label: string): string {
-  return label.replace(/(\d{4}-\d{2}-\d{2})/g, (m) => fmtDate(m));
-}
-
-export function MetricCards({ cards, sources }: { cards: Card[]; sources: SourceRef[] }) {
-  if (!cards.length) return null;
+// ------------------------------------------------------------------ key numbers (compact strip, no boxes)
+export function KeyNumbers({ cards, answerType }: { cards: Card[]; answerType: DataType | null }) {
+  const items = keyNumbers(cards);
+  if (!items.length) return null;
+  const mixedTypes = new Set(items.map((k) => k.dataType)).size > 1;
   return (
-    <ul className={cn("grid gap-3", cards.length === 1 ? "grid-cols-1 sm:grid-cols-2" : cards.length === 3 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2")}>
-      {cards.map((c) => {
-        const aqi = c.data_type === "official_aqi" && /index/i.test(c.unit);
-        const cat = aqi ? aqiCategory(c.value) : null;
-        const period = cardPeriod(c, sources);
-        return (
-          <li key={`${c.dataset_id}.${c.field}`} className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-xs leading-4 font-medium text-subtle">{prettyLabel(c.label)}</p>
-              <DataTypeBadge type={c.data_type} className="h-5 shrink-0 px-1.5 text-[11px]" />
-            </div>
-            <p className="flex items-baseline gap-1.5">
-              <span className="font-mono text-[28px] leading-[34px] font-medium tabular-nums">{fmtValue(c.value)}</span>
-              {c.unit && <span className="text-sm text-subtle">{aqi ? "AQI" : c.unit}</span>}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              {cat && <CategoryChip category={cat} prefix="AQI category" />}
-              {period && <span className="text-xs leading-4 text-subtle">{period}</span>}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+    <dl aria-label="Key numbers" className="flex flex-wrap gap-x-8 gap-y-3">
+      {items.map((k) => (
+        <div key={k.key} className="flex min-w-0 flex-col gap-0.5">
+          <dt className="flex items-center gap-1.5 text-xs leading-4 font-medium text-subtle">
+            {k.label}
+            {mixedTypes && k.dataType !== answerType && <DataTypeBadge type={k.dataType} className="h-4 px-1 text-[10px]" />}
+          </dt>
+          <dd className="flex items-baseline gap-1.5">
+            <span className="num text-[26px] leading-8 font-medium" title={k.value !== String(k.exact) ? `Exact: ${k.exact}` : undefined}>{k.value}</span>
+            {k.unit && <span className="text-sm text-subtle">{k.unit}</span>}
+            {k.category && <CategoryChip category={k.category} prefix="AQI category" />}
+          </dd>
+          {k.sub && <dd className="text-xs leading-4 text-subtle/80">{k.sub}</dd>}
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -90,10 +71,11 @@ export function ChartPanel({ spec, dataType, answerText }: { spec: ChartSpec; da
   const chartRef = useRef<EChartHandle>(null);
   const option = useMemo(() => buildOption(spec, dataType), [spec, dataType]);
   const table = useMemo(() => chartTable(spec), [spec]);
-  const height = spec.type === "calendar_heatmap" ? 230 : spec.type === "bar" ? Math.max(200, (spec.series[0]?.data.length ?? 4) * 40 + 60) : 300;
+  const height = spec.type === "calendar_heatmap" ? 230 : spec.type === "bar" ? Math.max(160, (spec.series[0]?.data.length ?? 4) * 36 + 56) : 280;
   const name = slug(spec.title);
   const aqi = isAQI(spec);
-  const notes = (spec.notes ?? []).filter((n) => !/colours?:/i.test(n));
+  const key = eventKey(spec);
+  const notes = (spec.notes ?? []).filter((n) => !/colours?:/i.test(n) && !/^Each point is one CPCB bulletin/i.test(n));
 
   const csv = () => download(`${name}.csv`, URL.createObjectURL(new Blob([toCSV(table)], { type: "text/csv;charset=utf-8" })));
   const png = () => {
@@ -112,42 +94,42 @@ export function ChartPanel({ spec, dataType, answerText }: { spec: ChartSpec; da
   };
 
   return (
-    <section aria-label="Chart" className="rounded-xl border border-line bg-surface">
-      <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
-        <h3 className="min-w-0 flex-1 text-sm font-semibold">
+    <section aria-label="Chart" className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <h3 className="w-full min-w-0 text-sm font-medium sm:w-auto sm:flex-1">
           {spec.title}
           <span className="ml-2 font-normal text-subtle">{aqi ? "AQI (index)" : spec.units}</span>
         </h3>
-        <div role="tablist" aria-label="Chart or table" className="flex rounded-lg border border-line p-0.5">
-          {(["chart", "table"] as const).map((v) => (
-            <button
-              key={v}
-              role="tab"
-              type="button"
-              aria-selected={view === v}
-              onClick={() => setView(v)}
-              className={cn("h-7 rounded-md px-2.5 text-xs font-medium", view === v ? "bg-raised text-teal" : "text-subtle hover:text-foreground")}
-            >
-              {v === "chart" ? "Chart" : "Data table"}
-            </button>
-          ))}
+        <div className="ml-auto flex items-center gap-0.5">
+          <div role="tablist" aria-label="Chart or table" className="mr-1 flex rounded-lg bg-surface p-0.5">
+            {(["chart", "table"] as const).map((v) => (
+              <button
+                key={v}
+                role="tab"
+                type="button"
+                aria-selected={view === v}
+                onClick={() => setView(v)}
+                className={cn("h-7 rounded-md px-2.5 text-xs font-medium", view === v ? "bg-raised text-teal" : "text-subtle hover:text-foreground")}
+              >
+                {v === "chart" ? "Chart" : "Data table"}
+              </button>
+            ))}
+          </div>
+          <IconAction icon={Download} label="Download CSV" onClick={csv} />
+          <IconAction icon={FileImage} label="Download PNG" onClick={png} />
+          <IconAction icon={copied ? Check : Copy} label={copied ? "Copied" : "Copy answer"} onClick={copy} />
         </div>
       </div>
-      <div className={cn("px-2 pt-2", view !== "chart" && "hidden")}>
+      {key && view === "chart" && <p className="text-xs leading-4 text-subtle">{key}</p>}
+      <div className={cn("-mx-1", view !== "chart" && "hidden")}>
         <EChart ref={chartRef} option={option} height={height} ariaLabel={`${spec.title}. Open the data table for the values.`} />
       </div>
       {view === "table" && <DataTable columns={table.columns} rows={table.rows} caption={spec.title} />}
       {notes.length > 0 && (
-        <ul className="space-y-1 px-4 pt-1 text-xs leading-4 text-subtle">
+        <ul className="space-y-1 text-xs leading-4 text-subtle">
           {notes.map((n) => <li key={n}>{n}</li>)}
         </ul>
       )}
-      <div className="flex flex-wrap gap-1.5 px-3 py-3">
-        <ActionButton icon={Table2} label={view === "table" ? "View chart" : "View data table"} onClick={() => setView(view === "table" ? "chart" : "table")} />
-        <ActionButton icon={Download} label="Download CSV" onClick={csv} />
-        <ActionButton icon={FileImage} label="Download PNG" onClick={png} />
-        <ActionButton icon={copied ? Check : Copy} label={copied ? "Copied" : "Copy answer"} onClick={copy} />
-      </div>
     </section>
   );
 }
@@ -155,9 +137,10 @@ export function ChartPanel({ spec, dataType, answerText }: { spec: ChartSpec; da
 export function CopyOnly({ answerText }: { answerText: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <ActionButton
+    <IconAction
       icon={copied ? Check : Copy}
       label={copied ? "Copied" : "Copy answer"}
+      withText
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(answerText);
@@ -171,22 +154,28 @@ export function CopyOnly({ answerText }: { answerText: string }) {
   );
 }
 
-function ActionButton({ icon: Icon, label, onClick }: { icon: React.ComponentType<{ className?: string }>; label: string; onClick: () => void }) {
+/** Quiet secondary action: icon button with an accessible name and a hover title. */
+function IconAction({ icon: Icon, label, onClick, withText }: { icon: React.ComponentType<{ className?: string }>; label: string; onClick: () => void; withText?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-2.5 text-xs font-medium text-subtle hover:border-teal hover:text-teal"
+      aria-label={label}
+      title={label}
+      className={cn(
+        "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg text-xs font-medium text-subtle hover:bg-surface hover:text-teal",
+        withText ? "px-2" : "w-8",
+      )}
     >
       <Icon className="size-4" aria-hidden />
-      {label}
+      {withText && label}
     </button>
   );
 }
 
 export function DataTable({ columns, rows, caption }: { columns: string[]; rows: (string | number | null)[][]; caption: string }) {
   return (
-    <div className="max-h-80 overflow-auto px-4 pt-3" tabIndex={0} aria-label={`Data table: ${caption}`}>
+    <div className="max-h-80 overflow-auto rounded-lg border border-line" tabIndex={0} aria-label={`Data table: ${caption}`}>
       <table className="w-full border-collapse text-xs">
         <caption className="sr-only">{caption}</caption>
         <thead className="sticky top-0 bg-surface">
@@ -198,9 +187,9 @@ export function DataTable({ columns, rows, caption }: { columns: string[]; rows:
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="odd:bg-raised/40">
+            <tr key={i} className="odd:bg-surface/50">
               {r.map((v, j) => (
-                <td key={j} className={cn("px-2 py-1 whitespace-nowrap", typeof v === "number" && "text-right font-mono tabular-nums")}>
+                <td key={j} className={cn("px-2 py-1 whitespace-nowrap", typeof v === "number" && "num text-right")}>
                   {v == null ? <span className="text-subtle">no data</span> : String(v)}
                 </td>
               ))}
@@ -212,13 +201,100 @@ export function DataTable({ columns, rows, caption }: { columns: string[]; rows:
   );
 }
 
-// ------------------------------------------------------------------ interpreted query
+// ------------------------------------------------------------------ evidence: one compact row + expandable details
+export function EvidenceArea({ ev, rq, explanation, notes }: { ev: Evidence; rq: ResolvedQuery | null; explanation: string; notes: string[] }) {
+  const [open, setOpen] = useState(false);
+  const items: { key: string; label: string; tone?: string }[] = [];
+  if (ev.dataType) items.push({ key: "type", label: ev.dataType, tone: TYPE_TEXT[ev.dataTypeKey ?? ""] });
+  if (ev.period) items.push({ key: "period", label: ev.period });
+  if (ev.stations) items.push({ key: "stations", label: ev.stations });
+  if (ev.coverageText) {
+    items.push({
+      key: "coverage",
+      label: ev.lowCoverage && /%/.test(ev.coverageText) ? `Low coverage: ${ev.coverageText.replace(" coverage", "")}` : ev.coverageText,
+      tone: ev.lowCoverage ? "text-warn" : undefined,
+    });
+  }
+  if (ev.source) items.push({ key: "source", label: shortSource(ev.source) });
+  if (!items.length) return null;
+  const id = "evidence-details";
+  return (
+    <section aria-label="Evidence" className="border-t border-line pt-3 text-xs leading-5">
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-subtle">
+        {items.map((it, i) => (
+          <span key={it.key} className={cn("inline-flex min-w-0 items-center gap-1.5", it.tone)}>
+            {i > 0 && <span aria-hidden className="text-line">•</span>}
+            {it.key === "coverage" && ev.lowCoverage && <AlertTriangle className="size-3.5" aria-hidden />}
+            <span className="truncate">{it.label}</span>
+          </span>
+        ))}
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen((o) => !o)}
+          className="ml-1 inline-flex h-7 items-center gap-1 rounded-md px-1.5 font-medium text-foreground hover:text-teal"
+        >
+          {open ? "Hide details" : "Details"}
+          <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} aria-hidden />
+        </button>
+      </div>
+      {ev.lowCoverage && ev.coverage !== 0 && (
+        <p className="mt-1 text-warn">Fewer than 70% of days have enough valid data, so treat this result with care.</p>
+      )}
+      {open && (
+        <div id={id} className="mt-3 grid gap-3 text-subtle sm:grid-cols-[120px_1fr]">
+          {rq && (
+            <>
+              <p className="font-medium text-foreground">Interpreted as</p>
+              <InterpretedQuery rq={rq} />
+            </>
+          )}
+          {ev.dataTypeKey && TYPE_DETAIL[ev.dataTypeKey] && (
+            <>
+              <p className="font-medium text-foreground">Data type</p>
+              <p>{TYPE_DETAIL[ev.dataTypeKey]}</p>
+            </>
+          )}
+          {ev.stationsDetail && (
+            <>
+              <p className="font-medium text-foreground">Stations</p>
+              <p>{ev.stationsDetail}</p>
+            </>
+          )}
+          {ev.coverageDetail && (
+            <>
+              <p className="font-medium text-foreground">Coverage</p>
+              <p>{ev.coverageDetail}</p>
+            </>
+          )}
+          {explanation && (
+            <>
+              <p className="font-medium text-foreground">Method</p>
+              <p>{explanation.replace(/(\d{4}-\d{2}-\d{2})/g, (m) => fmtDate(m))}</p>
+            </>
+          )}
+          <p className="font-medium text-foreground">Sources</p>
+          <SourceList sources={ev.sources} />
+          {notes.length > 0 && (
+            <>
+              <p className="font-medium text-foreground">Notes</p>
+              <ul className="list-disc space-y-1 pl-4">
+                {notes.map((w) => <li key={w}>{w}</li>)}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function InterpretedQuery({ rq }: { rq: ResolvedQuery }) {
   const cities = rq.cities?.length ? rq.cities.join(", ") : rq.city;
   return (
-    <section aria-label="How the question was read" className="rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm">
-      <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-xs font-medium text-subtle">Interpreted as</span>
+    <section aria-label="How the question was read">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-foreground">
         {cities && <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-subtle" aria-hidden />{cities}</span>}
         {rq.pollutant && <span className="inline-flex items-center gap-1"><Gauge className="size-3.5 text-subtle" aria-hidden />{pollutantLabel(rq.pollutant)}</span>}
         {rq.start_date && (
@@ -226,7 +302,7 @@ export function InterpretedQuery({ rq }: { rq: ResolvedQuery }) {
         )}
       </p>
       {rq.assumptions?.length > 0 && (
-        <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-xs leading-4 text-subtle">
+        <ul className="mt-1 list-disc space-y-0.5 pl-4">
           {rq.assumptions.map((a) => <li key={a}>{a.replace(/(\d{4}-\d{2}-\d{2})/g, (m) => fmtDate(m))}</li>)}
         </ul>
       )}
@@ -234,55 +310,12 @@ export function InterpretedQuery({ rq }: { rq: ResolvedQuery }) {
   );
 }
 
-// ------------------------------------------------------------------ evidence bar
-export function EvidenceBar({ ev }: { ev: Evidence }) {
-  const chips: { key: string; icon: React.ComponentType<{ className?: string }>; label: string; detail: React.ReactNode; warn?: boolean; tone?: string }[] = [];
-  if (ev.dataType) {
-    chips.push({
-      key: "type", icon: Sparkles, label: ev.dataType, tone: TYPE_STYLE[ev.dataTypeKey ?? ""],
-      detail: TYPE_DETAIL[ev.dataTypeKey ?? ""] ?? ev.dataType,
-    });
-  }
-  if (ev.period) chips.push({ key: "period", icon: CalendarRange, label: ev.period, detail: "The dates the calculation used (Indian Standard Time calendar days)." });
-  if (ev.stations) chips.push({ key: "stations", icon: MapPin, label: ev.stations, detail: ev.stationsDetail });
-  if (ev.coverageText) {
-    chips.push({
-      key: "coverage", icon: ev.lowCoverage ? AlertTriangle : Gauge, label: ev.lowCoverage && /%/.test(ev.coverageText) ? `Low coverage: ${ev.coverageText.replace(" coverage", "")}` : ev.coverageText,
-      warn: ev.lowCoverage,
-      detail: (
-        <>
-          {ev.coverageDetail}
-          {ev.lowCoverage && ev.coverage !== 0 && <span className="mt-1 block text-warn">Fewer than 70% of days have enough valid data, so treat this result with care.</span>}
-        </>
-      ),
-    });
-  }
-  if (ev.source) chips.push({ key: "source", icon: Database, label: shortSource(ev.source), detail: <SourceList sources={ev.sources} /> });
-  if (!chips.length) return null;
-  return (
-    <section aria-label="Evidence" className="flex flex-wrap gap-1.5">
-      {chips.map((c) => (
-        <Popover key={c.key}>
-          <PopoverTrigger
-            render={
-              <button
-                type="button"
-                className={cn(
-                  "inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border bg-surface px-2.5 text-xs font-medium hover:bg-raised",
-                  c.warn ? "border-warn/50 text-warn" : c.tone ?? "border-line text-foreground",
-                )}
-              />
-            }
-          >
-            <c.icon className="size-3.5 shrink-0" aria-hidden />
-            <span className="truncate">{c.label}</span>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 border-line bg-raised text-xs leading-5">{c.detail}</PopoverContent>
-        </Popover>
-      ))}
-    </section>
-  );
-}
+const TYPE_TEXT: Record<string, string> = {
+  measured: "text-teal",
+  modelled: "text-modelled",
+  official_aqi: "text-[#93C5FD]",
+  mixed: "text-modelled",
+};
 
 const TYPE_DETAIL: Record<string, string> = {
   measured: "Measured: averages of readings from CPCB reference monitors (via OpenAQ), calculated in Python.",
@@ -297,14 +330,22 @@ function shortSource(s: string) {
 
 function SourceList({ sources }: { sources: SourceRef[] }) {
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-1.5">
       {sources.map((s) => (
         <li key={s.dataset_id}>
-          <p className="font-medium text-foreground">{s.title}</p>
-          <p className="text-subtle">{s.source}</p>
-          <p className="text-subtle">{DATA_TYPE_LABEL[s.data_type]} · {fmtRange(s.date_range.start, s.date_range.end)}</p>
+          <span className="text-foreground">{s.title}</span> · {s.source} · {DATA_TYPE_LABEL[s.data_type]} · {fmtRange(s.date_range.start, s.date_range.end)}
         </li>
       ))}
+    </ul>
+  );
+}
+
+// ------------------------------------------------------------------ required notes (always shown, no box)
+export function RequiredNotes({ notes }: { notes: { code: string; text: string }[] }) {
+  if (!notes.length) return null;
+  return (
+    <ul aria-label="Important notes" className="flex flex-col gap-1 border-l-2 border-warn/60 pl-3 text-[13px] leading-5 text-subtle">
+      {notes.map((w) => <li key={`${w.code}:${w.text}`}>{w.text}</li>)}
     </ul>
   );
 }

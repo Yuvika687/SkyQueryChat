@@ -11,9 +11,8 @@ import { fmtDate } from "@/lib/format";
 import { buildTimeline } from "@/lib/timeline";
 import type { Health } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import {
-  Callout, ChartPanel, CopyOnly, DataTypeBadge, EvidenceBar, InterpretedQuery, MetricCards,
-} from "./answer-parts";
+import { AgentSummary } from "./agent-timeline";
+import { Callout, ChartPanel, CopyOnly, DataTypeBadge, EvidenceArea, KeyNumbers, RequiredNotes } from "./answer-parts";
 
 interface Props {
   turn: Turn;
@@ -28,7 +27,7 @@ interface Props {
 
 export function TurnView({ turn, health, isLatest, busy, onAsk, onRetry, onShowSteps, showStepsButton }: Props) {
   return (
-    <article className="flex flex-col gap-4" aria-label={`Question: ${turn.question}`}>
+    <article data-turn={turn.id} className="flex flex-col gap-4" aria-label={`Question: ${turn.question}`}>
       <div className="flex justify-end">
         <p className="max-w-[85%] rounded-2xl rounded-br-md bg-raised px-4 py-2.5 text-sm">{turn.question}</p>
       </div>
@@ -38,16 +37,19 @@ export function TurnView({ turn, health, isLatest, busy, onAsk, onRetry, onShowS
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <Body turn={turn} health={health} isLatest={isLatest} busy={busy} onAsk={onAsk} onRetry={onRetry} />
-          {showStepsButton && (turn.steps.length > 0 || turn.phase === "streaming") && (
+          {/* While running: the side panel shows the steps on wide screens; smaller screens get a live
+              button that opens them in a drawer. After the answer: one compact, expandable summary. */}
+          {showStepsButton && (turn.phase === "streaming" || turn.phase === "waking") && (
             <button
               type="button"
               onClick={() => onShowSteps(turn)}
-              className="inline-flex h-9 w-fit items-center gap-1.5 rounded-lg border border-line px-2.5 text-xs font-medium text-subtle hover:border-teal hover:text-teal"
+              className="inline-flex h-9 w-fit items-center gap-1.5 rounded-lg border border-line px-2.5 text-xs font-medium text-subtle hover:border-teal hover:text-teal xl:hidden"
             >
               <ListTree className="size-4" aria-hidden />
-              {turn.phase === "streaming" ? `Agent steps: ${currentStepLabel(turn)}` : "View agent steps"}
+              {`Agent steps: ${currentStepLabel(turn)}`}
             </button>
           )}
+          {turn.phase !== "streaming" && turn.phase !== "waking" && <AgentSummary turn={turn} />}
         </div>
       </div>
     </article>
@@ -246,8 +248,13 @@ function AnswerView({ turn, health, onAsk, busy }: { turn: Turn; health: Health 
   const modelledOnly = a.data_types.length === 1 && a.data_types[0] === "modelled";
   const dataType = (a.data_types.length > 1 ? "mixed" : a.data_types[0]) ?? null;
   const fups = followUps(turn);
+  // The lead is the code-written headline when there is one; the model's sentence is kept as support only
+  // when the answer drew on more than one dataset (it may mention the second one).
+  const lead = a.headline || a.text;
+  const support = a.headline && (turn.sources?.sources.length ?? 0) > 1 && a.text !== a.headline ? a.text : null;
   const copyText = [
-    a.text,
+    lead,
+    support ?? "",
     ...turn.cards.map((c) => `${c.label}: ${c.value} ${c.unit}`.trim()),
     ev.period ? `Period: ${ev.period}` : "",
     ev.source ? `Source: ${ev.source}` : "",
@@ -255,36 +262,37 @@ function AnswerView({ turn, health, onAsk, busy }: { turn: Turn; health: Health 
   const windows = health?.data_windows;
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* labels */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {a.data_types.map((d) => <DataTypeBadge key={d} type={d} />)}
-        {cached && (
-          <span className="inline-flex h-6 items-center gap-1 rounded-full border border-line px-2 text-xs font-medium text-subtle">
-            <Clock className="size-3" aria-hidden />
-            {cached === "demo" ? "Saved demo answer" : "Saved answer"}
-          </span>
-        )}
-        {backup && (
-          <span className="inline-flex h-6 items-center gap-1 rounded-full border border-warn/40 px-2 text-xs font-medium text-warn">
-            <Zap className="size-3" aria-hidden />
-            Backup model: {backup}
-          </span>
-        )}
-        {turn.phase === "streaming" && <span className="text-xs text-subtle">Finishing…</span>}
-      </div>
-
-      {/* 1. direct answer */}
-      {a.status === "unavailable" && (
-        <Callout tone="warn" title={unavailableTitle(turn)}>
-          {windows ? (
-            <>Measured station data covers {fmtDate(windows.measured_start)} to {fmtDate(windows.measured_end)}; official AQI bulletins run to {fmtDate(windows.aqi_end)}. Try a period inside those dates.</>
-          ) : (
-            <>Try a different period or city.</>
+    <div className="flex flex-col gap-5">
+      {/* the main insight comes first */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {dataType && <DataTypeBadge type={dataType} />}
+          {cached && (
+            <span className="inline-flex h-6 items-center gap-1 rounded-full px-1.5 text-xs font-medium text-subtle">
+              <Clock className="size-3" aria-hidden />
+              {cached === "demo" ? "Saved demo answer" : "Saved answer"}
+            </span>
           )}
-        </Callout>
-      )}
-      <p className="text-[15px] leading-6">{a.text}</p>
+          {backup && (
+            <span className="inline-flex h-6 items-center gap-1 rounded-full border border-warn/40 px-2 text-xs font-medium text-warn">
+              <Zap className="size-3" aria-hidden />
+              Backup model: {backup}
+            </span>
+          )}
+          {turn.phase === "streaming" && <span className="text-xs text-subtle">Finishing…</span>}
+        </div>
+        {a.status === "unavailable" && (
+          <Callout tone="warn" title={unavailableTitle(turn)}>
+            {windows ? (
+              <>Measured station data covers {fmtDate(windows.measured_start)} to {fmtDate(windows.measured_end)}; official AQI bulletins run to {fmtDate(windows.aqi_end)}. Try a period inside those dates.</>
+            ) : (
+              <>Try a different period or city.</>
+            )}
+          </Callout>
+        )}
+        <p className={cn(a.status === "answered" ? "text-base leading-7 font-medium sm:text-[17px]" : "text-[15px] leading-6")}>{lead}</p>
+        {support && <p className="text-sm leading-6 text-subtle">{support}</p>}
+      </div>
       {a.status === "clarify" && a.clarifying_question && (
         <Callout tone="info" title="One question first">{a.clarifying_question}</Callout>
       )}
@@ -311,50 +319,19 @@ function AnswerView({ turn, health, onAsk, busy }: { turn: Turn; health: Health 
       )}
 
       {/* required warnings come from code and are always shown */}
-      {required.length > 0 && (
-        <Callout tone="warn" title={required.length === 1 ? "Important" : "Important notes"}>
-          <ul className={cn(required.length > 1 && "list-disc space-y-1 pl-4")}>
-            {required.map((w) => <li key={`${w.code}:${w.text}`}>{w.text}</li>)}
-          </ul>
-        </Callout>
-      )}
+      <RequiredNotes notes={required} />
       {modelledOnly && <Callout tone="modelled" title="Modelled data">These values come from a model, not monitors, and can underestimate severe pollution.</Callout>}
 
-      {/* 2. metric cards */}
-      <MetricCards cards={turn.cards} sources={turn.sources?.sources ?? []} />
+      <KeyNumbers cards={turn.cards} answerType={dataType} />
 
-      {/* 3. chart */}
       {turn.chart && turn.chart.series?.some((s) => s.data.length > 0) ? (
         <ChartPanel spec={turn.chart} dataType={dataType} answerText={copyText} />
       ) : null}
 
-      {/* interpreted dates and assumptions */}
-      {a.resolved_query && <InterpretedQuery rq={a.resolved_query} />}
+      <EvidenceArea ev={ev} rq={a.resolved_query} explanation={a.explanation} notes={other} />
 
-      {/* 4. explanation + other caveats */}
-      {(a.explanation || other.length > 0) && (
-        <div className="space-y-2 text-sm text-subtle">
-          {a.explanation && <p>{a.explanation.replace(/(\d{4}-\d{2}-\d{2})/g, (m) => fmtDate(m))}</p>}
-          {other.length > 0 && (
-            <details className="group rounded-lg">
-              <summary className="cursor-pointer text-xs font-medium text-subtle hover:text-foreground">
-                {other.length} more note{other.length === 1 ? "" : "s"} on this data
-              </summary>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5">
-                {other.map((w) => <li key={w}>{w}</li>)}
-              </ul>
-            </details>
-          )}
-        </div>
-      )}
-
-      {/* 5. evidence */}
-      <EvidenceBar ev={ev} />
-
-      {/* 6. actions (chart actions live on the chart panel) */}
       {!turn.chart && <div><CopyOnly answerText={copyText} /></div>}
 
-      {/* 7. follow-ups */}
       {fups.length > 0 && turn.phase === "done" && (
         <div>
           <p className="mb-2 text-xs font-medium text-subtle">Ask next</p>

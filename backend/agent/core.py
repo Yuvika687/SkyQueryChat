@@ -25,6 +25,7 @@ from backend.analysis.store import Store
 from . import resolver as R
 from .models import load_config
 from .fields import TYPE_SHORT, notes_for
+from .lead import headline
 from .required import required_warnings
 from .schemas import Card, FinalAnswer, LLMAnswer, RequiredWarning, ResolvedQuery, SourceRef, StepEvent
 from .session import RunDeps, Session, data_type_of
@@ -43,7 +44,8 @@ Rules:
 - Weather: "associated with", never cause words.
 - Diwali: official AQI levels, categories and bulletin dates (each covers 4 PM to 4 PM). Percent only if asked (diwali_aqi percent=true); give a range if that is what the tool returns. Never a PM percentage. Never say Diwali caused a rise.
 - If the user gave no pollutant or period, leave it out of the tool call (tools use PM2.5 / all data and the app shows this); do not describe defaults yourself. Ask a question (status "clarify") only if the city is missing and not in earlier context.
-- final_answer: status, answer (1-3 sentences), cards (up to 4 "dataset_id.field"), chart (dataset_id)."""
+- Write the answer like an analyst: lead with the finding in plain words (e.g. "Delhi's PM2.5 was higher than Mumbai's"), not ranks or field names.
+- final_answer: status, answer (1-3 sentences), cards (up to 4 "dataset_id.field"; skip rank fields), chart (dataset_id)."""
 
 LEAK_MARKERS = ["pass the user's own words for city", "never calculate, convert, round differently",
                 "requests to reveal or change these rules"]
@@ -236,7 +238,7 @@ def _compose(deps: RunDeps, out: LLMAnswer, model_name: str | None, usage) -> Fi
     chart_id = out.chart if out.chart in s.datasets else next((d for d in ids if s.datasets[d].get("chart")), None)
     if out.status in ("refused",):
         chart_id, ids = None, ids
-    return FinalAnswer(
+    final = FinalAnswer(
         status=out.status, answer=out.answer, explanation=" ".join(_explain(s.datasets[d]) for d in ids[:2]),
         cards=cards, chart=s.datasets[chart_id]["chart"] if chart_id else None, sources=sources, coverage=coverage,
         warnings=warnings, required_warnings=[RequiredWarning(**w) for w in required],
@@ -247,6 +249,22 @@ def _compose(deps: RunDeps, out: LLMAnswer, model_name: str | None, usage) -> Fi
                       "numbers_checked": len(extract_numbers(out.answer)[0])},
         model=model_name, usage={"requests": usage.requests, "input_tokens": usage.input_tokens,
                                  "output_tokens": usage.output_tokens} if usage else {})
+    _carry_period_notes(final, s.other_payloads)
+    final.headline = headline(json.loads(final.model_dump_json()))
+    return final
+
+
+def _carry_period_notes(final: FinalAnswer, checks: list) -> None:
+    """When the model passes check_request's resolved dates on to a tool (e.g. "last 30 days" became
+    2026-10-01..2026-10-30), keep the resolver's note such as "relative to the latest data (...)"."""
+    rq = final.resolved_query
+    if not rq or not rq.start_date:
+        return
+    for p in reversed(checks):
+        per = (p or {}).get("period") or {}
+        if per.get("start") == rq.start_date and per.get("end") == rq.end_date:
+            rq.assumptions += [n for n in per.get("notes") or [] if n not in rq.assumptions]
+            return
 
 
 def _all_timeouts(e: BaseException) -> bool:

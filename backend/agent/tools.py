@@ -109,6 +109,14 @@ def _rq(cities: list[str], pollutant: str, start=None, end=None, assume=None) ->
     return out
 
 
+def auto_freq(start, end) -> str:
+    """Chart granularity only (the summary uses daily values either way): a 30-day question gets a daily line."""
+    if start is None or end is None:
+        return "M"
+    days = (end - start).days + 1
+    return "D" if days <= 92 else "W" if days <= 366 else "M"
+
+
 def _noted(res, notes: list[str]):
     res.warnings = notes + res.warnings
     return res
@@ -133,14 +141,16 @@ def check_request(ctx: RunContext[RunDeps], cities: list[str] | None = None, pol
 
 
 def city_trend(ctx: RunContext[RunDeps], city: str, pollutant: str | None = None, period: str | None = None,
-               freq: Literal["M", "W", "D"] = "M") -> dict:
+               freq: Literal["M", "W", "D"] | None = None) -> dict:
     """Measured PM trend for one city: mean, median, highest/lowest day, coverage, period means.
-    pollutant defaults to PM2.5; period defaults to all data."""
+    pollutant defaults to PM2.5; period defaults to all data; freq defaults to daily for up to 92 days,
+    weekly up to a year, else monthly."""
     def go():
         a = []
         s, e, n = _period(period, a)
         c, p = _city(city, a), _pol(pollutant, a)
-        return _noted(F.city_trend(ctx.deps.session.store, c, p, s, e, freq), n), \
+        f = freq or auto_freq(s, e)
+        return _noted(F.city_trend(ctx.deps.session.store, c, p, s, e, f), n), \
             {"city": c, "resolved": _rq([c], POL_NAME[p], s, e, a)}
     return _call(ctx, "city_trend", dict(city=city, pollutant=pollutant, period=period, freq=freq), go)
 

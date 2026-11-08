@@ -63,12 +63,12 @@ export const CITIES = Object.keys(CITY_COLOURS);
 /** Reference lines (24-hour). India PM10 24-h standard is 100 µg/m³ (NAAQS 2009; CPCB AQI breakpoint table). */
 export const REFERENCE_LINES = {
   pm25: [
-    { label: "WHO 24-h guideline", value: 15 },
-    { label: "India 24-h standard", value: 60 },
+    { label: "WHO 24-h guideline", short: "WHO", value: 15 },
+    { label: "India 24-h standard", short: "India", value: 60 },
   ],
   pm10: [
-    { label: "WHO 24-h guideline", value: 45 },
-    { label: "India 24-h standard", value: 100 },
+    { label: "WHO 24-h guideline", short: "WHO", value: 45 },
+    { label: "India 24-h standard", short: "India", value: 100 },
   ],
 };
 

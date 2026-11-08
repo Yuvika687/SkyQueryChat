@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  AlertTriangle, BarChart3, CircleCheck, Clock, History, Loader2, Map as MapIcon, MessageSquare, Plus, Trash2, Wind,
+  AlertTriangle, BarChart3, CircleCheck, Clock, History, Loader2, Map as MapIcon, MapPin, MessageSquare, Plus, Trash2, Wind,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -176,7 +176,10 @@ function RecentChats({ onPick }: { onPick?: () => void }) {
 }
 
 function TopBar({ title }: { title: string }) {
-  const { city, setCity, pollutant, setPollutant } = useApp();
+  const path = usePathname();
+  // On Ask the question sets the city and pollutant, so selectors there would not change the answer.
+  // Ask shows the conversation's context from the latest answer instead (read-only).
+  const onAsk = !path || path.startsWith("/ask") || path.startsWith("/demo");
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line bg-background px-4 sm:gap-3">
       <div className="md:hidden" aria-hidden>
@@ -184,6 +187,31 @@ function TopBar({ title }: { title: string }) {
       </div>
       <h1 className="text-[18px] leading-[26px] font-semibold sm:text-[24px] sm:leading-8">{title}</h1>
       <div className="ml-auto flex min-w-0 items-center gap-2">
+        {onAsk ? <AskContextLabel /> : <Selectors />}
+        <FreshnessPill />
+      </div>
+    </header>
+  );
+}
+
+function AskContextLabel() {
+  const { askContext } = useApp();
+  if (!askContext || !askContext.cities.length) return null;
+  const cities = askContext.cities.length === 6 ? "All six cities" : askContext.cities.join(", ");
+  return (
+    <p className="hidden min-w-0 items-center gap-1.5 truncate text-sm text-subtle sm:flex" aria-label="Current conversation">
+      <MapPin className="size-3.5 shrink-0" aria-hidden />
+      <span className="truncate text-foreground">{cities}</span>
+      {askContext.pollutant && <span className="shrink-0">· {askContext.pollutant}</span>}
+      {askContext.period && <span className="hidden truncate lg:inline">· {askContext.period}</span>}
+    </p>
+  );
+}
+
+function Selectors() {
+  const { city, setCity, pollutant, setPollutant } = useApp();
+  return (
+    <>
         <label className="sr-only" htmlFor="city-select">City</label>
         <select
           id="city-select"
@@ -211,9 +239,7 @@ function TopBar({ title }: { title: string }) {
             </button>
           ))}
         </div>
-        <FreshnessPill />
-      </div>
-    </header>
+    </>
   );
 }
 

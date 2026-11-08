@@ -122,3 +122,10 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Figures: Inter with tabular digits. (JetBrains Mono gave the decimal point a full character cell,
+   so "43.7" read as "43 . 7".) */
+@utility num {
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}

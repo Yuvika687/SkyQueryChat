@@ -9,6 +9,7 @@ const C = {
   accent: "#2DD4BF", modelled: "#A78BFA", warning: "#F5B942",
 };
 const YEAR_COLOURS = ["#94A0BC", "#2DD4BF", "#60A5FA"];
+const EVENT_COLOURS = ["#94A0BC", "#2DD4BF", "#60A5FA"]; // older year muted, latest year accent
 const SEVERITY: Record<string, { colour: string; label: string }> = {
   none: { colour: "#2DD4BF", label: "No issues" },
   minor: { colour: "#5EEAD4", label: "Minor gaps" },
@@ -20,7 +21,11 @@ export const isAQI = (spec: ChartSpec) => /index|aqi/i.test(spec.units) || /aqi/
 export const pollutantOf = (spec: ChartSpec): "pm25" | "pm10" | null =>
   /pm2\.?5/i.test(`${spec.title} ${spec.y.label ?? ""}`) ? "pm25" : /pm10/i.test(`${spec.title} ${spec.y.label ?? ""}`) ? "pm10" : null;
 
-const fmt = (v: unknown, d = 1) => (typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(d)) : v == null ? "no data" : String(v));
+const NUM_FONT = "var(--font-inter), Inter, system-ui, sans-serif";
+/** Show the zoom slider only when there are enough points to need it (about two months of days). */
+export const ZOOM_MIN_POINTS = 62;
+// Figures keep their calculated precision (PM to one decimal, so 73 shows as 73.0); AQI uses d = 0.
+const fmt = (v: unknown, d = 1) => (typeof v === "number" ? v.toFixed(d) : v == null ? "no data" : String(v));
 
 function base(spec: ChartSpec) {
   return {
@@ -124,19 +129,23 @@ function lineOption(spec: ChartSpec, dataType: DataType | null) {
             markLine: {
               silent: true, symbol: "none",
               lineStyle: { type: "dashed", width: 1, color: C.sub, opacity: 0.8 },
-              label: { color: C.sub, fontSize: 11, formatter: "{b}: {c} µg/m³", position: "insideEndTop" },
-              data: refs.map((r) => ({ name: r.label, yAxis: r.value })),
+              // labels sit to the right of the plot area, never on top of the data
+              label: { color: C.sub, fontSize: 11, formatter: "{b} {c}", position: "end", distance: 6 },
+              data: refs.map((r) => ({ name: r.short, yAxis: r.value })),
             },
           }
         : {}),
     };
   });
+  const points = Math.max(0, ...spec.series.map((s) => withGaps(s.data).length));
+  const zoom = time && points > ZOOM_MIN_POINTS;
   return {
     ...base(spec),
+    grid: { ...base(spec).grid, right: refs.length ? 72 : 24, bottom: zoom ? 56 : 24 },
     xAxis: { type: time ? "time" : "category", name: "", ...axisCommon, splitLine: { show: false } },
     yAxis: { type: "value", name: yAxisName(spec), nameLocation: "middle", nameGap: 44, min: 0, ...axisCommon },
-    dataZoom: time ? [{ type: "inside" }, { type: "slider", height: 18, bottom: 8, borderColor: C.line, textStyle: { color: C.sub } }] : [],
-    tooltip: { ...base(spec).tooltip, valueFormatter: (v: unknown) => `${fmt(v)} ${spec.units}` },
+    dataZoom: zoom ? [{ type: "inside" }, { type: "slider", height: 18, bottom: 8, borderColor: C.line, textStyle: { color: C.sub } }] : [],
+    tooltip: { ...base(spec).tooltip, valueFormatter: (v: unknown) => `${fmt(v, isAQI(spec) ? 0 : 1)} ${spec.units}` },
     series,
   };
 }
@@ -145,26 +154,29 @@ function lineOption(spec: ChartSpec, dataType: DataType | null) {
 function eventLineOption(spec: ChartSpec) {
   const bands = dedupeBands(spec.bands ?? []);
   const aqi = isAQI(spec);
+  // One plain colour per line: the AQI category is in the tooltip and table, not in coloured dots.
   const series = spec.series.map((s, i) => {
-    const colour = YEAR_COLOURS[(i + (spec.series.length === 1 ? 1 : 0)) % 3];
+    const colour = spec.series.length === 1 ? C.accent : EVENT_COLOURS[i % EVENT_COLOURS.length];
     return {
-      name: s.name, type: "line", smooth: false, connectNulls: false, showSymbol: true, symbolSize: 8,
+      name: s.name, type: "line", smooth: false, connectNulls: false, showSymbol: true, symbol: "circle", symbolSize: 5,
       lineStyle: { width: 2, color: colour }, itemStyle: { color: colour },
       data: s.data.map((p) => {
         const o = p as Record<string, unknown>;
         const v = (o[spec.y.field] as number | null) ?? null;
-        const cat = normaliseCategory(o.category) ?? (aqi ? aqiCategory(v) : null);
-        return {
-          value: [o[spec.x.field], v], raw: o,
-          itemStyle: cat ? { color: CATEGORY_STYLE[cat].bg, borderColor: colour, borderWidth: 2 } : undefined,
-        };
+        return { value: [o[spec.x.field], v], raw: o };
       }),
-      ...(i === 0 && bands.length
+      ...(i === 0
         ? {
-            markArea: {
-              silent: true, itemStyle: { color: "rgba(45, 212, 191, 0.10)" },
-              label: { color: C.sub, fontSize: 11, position: "insideTop" },
-              data: bands.map((b) => [{ name: b.label, xAxis: b.start }, { xAxis: b.end }]),
+            markArea: bands.length
+              ? { silent: true, itemStyle: { color: "rgba(45, 212, 191, 0.12)" }, label: { show: false },
+                  data: bands.map((b) => [{ xAxis: b.start }, { xAxis: b.end }]) }
+              : undefined,
+            // Diwali day: a clear vertical line, labelled above the plot area (outside the data)
+            markLine: {
+              silent: true, symbol: "none",
+              lineStyle: { type: "solid", width: 1.5, color: C.text, opacity: 0.7 },
+              label: { show: true, position: "end", color: C.text, fontSize: 11, fontWeight: 600, formatter: "Diwali", distance: 4 },
+              data: [{ xAxis: 0 }],
             },
           }
         : {}),
@@ -172,9 +184,12 @@ function eventLineOption(spec: ChartSpec) {
   });
   return {
     ...base(spec),
-    grid: { ...base(spec).grid, top: 44 },
+    legend: { ...base(spec).legend, top: 0, right: 8, left: "auto" },
+    grid: { ...base(spec).grid, top: 40, bottom: 40 },
     xAxis: {
-      type: "value", name: "Days from Diwali (bulletin)", nameLocation: "middle", nameGap: 32, ...axisCommon,
+      type: "value", name: "Bulletin day (D = Diwali)", nameLocation: "middle", nameGap: 30, ...axisCommon,
+      min: "dataMin", max: "dataMax",
+      axisLabel: { ...axisCommon.axisLabel, formatter: (v: number) => (v === 0 ? "D" : v > 0 ? `D+${v}` : `D−${-v}`) },
       splitLine: { show: false }, minInterval: 1,
     },
     yAxis: { type: "value", name: yAxisName(spec), nameLocation: "middle", nameGap: 44, min: 0, ...axisCommon },
@@ -182,7 +197,9 @@ function eventLineOption(spec: ChartSpec) {
       ...base(spec).tooltip, trigger: "item",
       formatter: (p: { seriesName: string; data: { value: [number, number | null]; raw: Record<string, unknown> } }) => {
         const r = p.data.raw;
-        const lines = [`<b>${p.seriesName}</b>`, `${aqi ? "AQI" : spec.y.label}: <b>${fmt(p.data.value[1], 0)}</b>${r.category ? ` (${r.category})` : ""}`];
+        const v = p.data.value[1];
+        const cat = normaliseCategory(r.category) ?? (aqi ? aqiCategory(v) : null);
+        const lines = [`<b>${p.seriesName}</b>`, `${aqi ? "AQI" : spec.y.label}: <b>${aqi && typeof v === "number" ? Math.round(v) : fmt(v, 0)}</b>${cat ? ` (${CATEGORY_STYLE[cat].label})` : ""}`];
         if (r.bulletin_date) lines.push(`Bulletin date: ${r.bulletin_date}`);
         if (r.reporting_period) lines.push(`Period: ${r.reporting_period}`);
         return lines.join("<br/>");
@@ -213,12 +230,12 @@ function barOption(spec: ChartSpec) {
     grid: { left: 16, right: 56, top: 16, bottom: 40, containLabel: true },
     xAxis: { type: "value", min: 0, name: yAxisName(spec), nameLocation: "middle", nameGap: 28, ...axisCommon },
     yAxis: { type: "category", data: data.map((d) => d[0]), ...axisCommon, splitLine: { show: false } },
-    tooltip: { ...base(spec).tooltip, axisPointer: { type: "shadow" }, valueFormatter: (v: unknown) => `${fmt(v)} ${spec.units}` },
+    tooltip: { ...base(spec).tooltip, axisPointer: { type: "shadow" }, valueFormatter: (v: unknown) => `${fmt(v, isAQI(spec) ? 0 : 1)} ${spec.units}` },
     series: [
       {
         name: spec.series[0]?.name, type: "bar", barMaxWidth: 22,
         data: data.map(([c, v]) => ({ value: v, itemStyle: { color: CITY_COLOURS[c] ?? C.accent, borderRadius: [0, 4, 4, 0] } })),
-        label: { show: true, position: "right", color: C.text, fontFamily: "var(--font-jetbrains), monospace", fontSize: 12, formatter: (p: { value: number | null }) => (p.value == null ? "no data" : `${fmt(p.value)}`) },
+        label: { show: true, position: "right", color: C.text, fontFamily: NUM_FONT, fontSize: 12, formatter: (p: { value: number | null }) => (p.value == null ? "no data" : `${fmt(p.value)}`) },
       },
     ],
   };
@@ -270,4 +287,12 @@ function calendarOption(spec: ChartSpec) {
     },
     series: [{ type: "heatmap", coordinateSystem: "calendar", data: values }],
   };
+}
+
+/** Plain-language key for event charts, shown above the chart (outside the data area). */
+export function eventKey(spec: ChartSpec): string | null {
+  if (!spec.series.some((s) => s.data.some((p) => !Array.isArray(p)))) return null;
+  const bands = spec.bands ?? [];
+  const base = "Vertical line: Diwali (D).";
+  return bands.length ? `${base} Shaded: festival bulletins D+1 and D+2, which report Diwali night.` : base;
 }

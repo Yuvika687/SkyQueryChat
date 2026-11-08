@@ -25,6 +25,7 @@ const LABELS: Record<StepKey, string> = {
   verify: "Checking every number",
   prepare: "Preparing the answer",
 };
+export const CORRECTED = "Corrected a number before answering";
 const ORDER: StepKey[] = ["understand", "resolve", "load", "calc", "weather", "verify", "prepare"];
 
 const TOOL_NAMES: Record<string, string> = {
@@ -60,6 +61,7 @@ export function buildTimeline(events: StepEvent[], phase: Phase): TimelineStep[]
     ORDER.map((k) => [k, { key: k, label: LABELS[k], status: "waiting" as StepStatus }]),
   ) as never;
   let weatherUsed = false;
+  let corrected = false;
   let prevTs: string | undefined;
 
   const start = (k: StepKey, ts?: string) => {
@@ -145,19 +147,21 @@ export function buildTimeline(events: StepEvent[], phase: Phase): TimelineStep[]
         start("verify", ts);
         const n = d.checked_numbers as number | undefined;
         if (e.title === "passed") {
-          finish("verify", ts, s.verify.status === "warning" ? "warning" : "done");
+          // A corrected number is the check working as designed: done, with a calm note (not a warning).
+          finish("verify", ts, "done");
           s.verify.result = `${n ?? 0} number${n === 1 ? "" : "s"} matched the calculations`;
+          if (corrected) s.verify.note = CORRECTED;
           start("prepare", ts);
         } else {
-          s.verify.status = "warning";
-          s.verify.note = "A number didn't match the calculations, so the agent corrected the answer.";
+          corrected = true;
+          s.verify.note = "Correcting a number that didn't match the calculations.";
         }
         break;
       }
       case "retry":
         start("verify", ts);
-        s.verify.status = "warning";
-        s.verify.note = "A number didn't match the calculations, so the agent corrected the answer.";
+        corrected = true;
+        s.verify.note = "Correcting a number that didn't match the calculations.";
         break;
       case "fallback": {
         const running = ORDER.find((k) => s[k].status === "running") ?? "understand";
@@ -199,4 +203,23 @@ export function buildTimeline(events: StepEvent[], phase: Phase): TimelineStep[]
     const { t0, t1, ...rest } = s[k];
     return { ...rest, durationMs: rest.status === "done" || rest.status === "warning" || rest.status === "failed" ? ms(t0, t1) : undefined };
   });
+}
+
+/** Durations under a second are noise for most readers: hidden in the row, kept in the step details. */
+export const SMALL_MS = 1000;
+
+export interface TimelineSummary {
+  steps: number; // steps that ran (not skipped)
+  failed: boolean;
+  corrected: boolean;
+  warning: boolean;
+  note: string | null;
+}
+
+export function summarise(steps: TimelineStep[]): TimelineSummary {
+  const ran = steps.filter((s) => s.status !== "skipped" && s.status !== "waiting");
+  const failed = steps.some((s) => s.status === "failed");
+  const corrected = steps.some((s) => s.note === CORRECTED);
+  const warn = steps.find((s) => s.status === "warning");
+  return { steps: ran.length, failed, corrected, warning: !!warn, note: failed ? null : warn?.note ?? (corrected ? CORRECTED : null) };
 }

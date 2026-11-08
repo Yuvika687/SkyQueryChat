@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 // Screenshots for visual review land in docs/screenshots/ask/<project>-<name>.png
@@ -7,7 +7,9 @@ const SHOTS = join(__dirname, "..", "..", "docs", "screenshots", "ask");
 mkdirSync(SHOTS, { recursive: true });
 
 const SAVED_Q = "How bad was Delhi's air on Diwali 2025?"; // a cached demo answer: real backend, no AI quota
-const LIVE_Q = "Show PM2.5 levels in Kolkata for the last 30 days"; // a suggested question: live agent run
+const LIVE_Q = "Show PM2.5 levels in Kolkata for the last 30 days"; // a suggested question
+// Recorded answer to LIVE_Q (live run 2026-11-08 replayed through the current backend; no AI quota in e2e).
+const KOLKATA = readFileSync(join(__dirname, "..", "src", "test", "fixtures", "kolkata-replay.sse"), "utf8");
 const SID = "d".repeat(32);
 
 // ------------------------------------------------------------------ helpers
@@ -92,9 +94,11 @@ test.describe("Ask screen", () => {
     await page.goto("/ask");
     await askVia(page, SAVED_Q);
     await expect(page.getByText("Saved demo answer")).toBeVisible();
-    await expect(page.getByText(/official CPCB AQI was in the Very Poor category/)).toBeVisible();
+    await expect(page.getByText(/Delhi's air was Very Poor over Diwali 2025/)).toBeVisible();
     await expect(page.getByText("Official AQI is an index of several pollutants, not a PM2.5 or PM10 concentration.")).toBeVisible();
-    await expect(page.getByRole("region", { name: "How the question was read" })).toContainText("6 Oct 2025 – 24 Oct 2025");
+    const nums = page.getByLabel("Key numbers");
+    await expect(nums).toContainText("352");
+    await expect(nums).toContainText("Very poor");
     const evidence = page.getByRole("region", { name: "Evidence" });
     await expect(evidence).toContainText("Official AQI");
     await expect(evidence).toContainText("CPCB city bulletin");
@@ -102,10 +106,11 @@ test.describe("Ask screen", () => {
     await expectNoOverflow(page);
     await shot(page, info, "02-answer-saved");
 
-    // evidence chip detail
-    await evidence.getByRole("button", { name: /CPCB city bulletin/ }).click();
-    await expect(page.getByRole("dialog").filter({ hasText: /Stations chosen by CPCB/ })).toBeVisible();
-    await page.keyboard.press("Escape");
+    // evidence details: interpreted dates, stations, method and sources
+    await evidence.getByRole("button", { name: "Details" }).click();
+    await expect(page.getByRole("region", { name: "How the question was read" })).toContainText("6 Oct 2025 – 24 Oct 2025");
+    await expect(evidence).toContainText(/Stations chosen by CPCB/);
+    await expectNoOverflow(page);
 
     // data table + CSV
     await page.getByRole("tab", { name: "Data table" }).click();
@@ -116,29 +121,29 @@ test.describe("Ask screen", () => {
     await page.getByRole("button", { name: "Download CSV" }).click();
     expect((await dl).suggestedFilename()).toMatch(/\.csv$/);
 
-    // agent timeline: side panel on desktop, drawer otherwise
-    if (isDesktop(info)) {
-      const panel = page.getByRole("complementary", { name: "Agent steps" });
-      await expect(panel).toContainText("Checking every number");
-      await expect(panel).toContainText("Done with a warning");
-    } else {
-      await page.getByRole("button", { name: "View agent steps" }).click();
-      const drawer = page.getByRole("dialog");
-      await expect(drawer).toContainText("Checking every number");
-      await shot(page, info, "04-agent-steps-drawer");
-      await page.keyboard.press("Escape");
-    }
+    // after the answer the steps panel is gone; a compact summary expands to the steps
+    await expect(page.getByRole("complementary", { name: "Agent steps" })).toHaveCount(0);
+    const summary = page.getByRole("button", { name: /Agent steps: .*Corrected a number before answering/ });
+    await summary.click();
+    await expect(page.getByText("Checking every number")).toBeVisible();
+    await expect(page.getByText("Done with a warning")).toHaveCount(0); // a fixed number is not a warning
+    await summary.scrollIntoViewIfNeeded();
+    await expectNoOverflow(page);
+    await shot(page, info, "04-agent-steps");
     expect(problems).toEqual([]);
   });
 
-  test("live answer streams from the real agent", async ({ page }, info) => {
+  test("recorded live answer: Kolkata trend", async ({ page }, info) => {
     const problems = watchConsole(page);
+    await mockChat(page, (route) => route.fulfill({ status: 200, headers: { "Content-Type": "text/event-stream" }, body: KOLKATA }));
     await page.goto("/ask");
     await page.getByRole("button", { name: new RegExp(LIVE_Q) }).click();
-    // either a fresh run or (on later projects) the backend's cached copy of it
-    await expect(page.getByRole("region", { name: "How the question was read" })).toContainText("Kolkata", { timeout: 90_000 });
-    await expect(page.getByRole("region", { name: "Evidence" })).toContainText("Measured");
-    await expect(page.getByRole("region", { name: "Evidence" })).toContainText(/% coverage/);
+    await expect(page.getByText(/Kolkata's PM2\.5 averaged 45\.3 µg\/m³ over the latest 30 days available/)).toBeVisible();
+    const evidence = page.getByRole("region", { name: "Evidence" });
+    await expect(evidence).toContainText("Measured");
+    await expect(evidence).toContainText(/% coverage/);
+    await expect(evidence).toContainText("Latest 30 days available");
+    if (info.project.name !== "mobile") await expect(page.getByLabel("Current conversation")).toContainText("Kolkata");
     await expect(page.getByRole("img", { name: /Kolkata PM2\.5/ })).toBeVisible();
     await page.locator("article").first().evaluate((e) => e.scrollIntoView());
     await expectNoOverflow(page);

@@ -6,7 +6,9 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useApp } from "@/components/shell/app-context";
 import { useChat } from "@/hooks/use-chat";
 import type { Turn } from "@/lib/chat-state";
-import { AgentTimeline } from "./agent-timeline";
+import { periodLabel } from "@/lib/evidence";
+import { pollutantLabel } from "@/lib/format";
+import { AgentTimeline, announcement } from "./agent-timeline";
 import { Callout } from "./answer-parts";
 import { Composer, type ComposerHandle } from "./composer";
 import { EmptyState } from "./empty-state";
@@ -51,14 +53,30 @@ export function AskScreen() {
 
   const latest = chat.turns[chat.turns.length - 1] ?? null;
   const timelineTurn = chat.turns.find((t) => t.id === selected) ?? latest;
+  const running = !!latest && (latest.phase === "streaming" || latest.phase === "waking");
 
-  // Keep the newest content in view while streaming.
+  // The top bar follows what the conversation is about (from the latest answer's resolved_query).
+  const { setAskContext } = app;
+  const rq = [...chat.turns].reverse().find((t) => t.answer?.resolved_query)?.answer?.resolved_query ?? null;
+  const ctxKey = rq ? `${rq.cities.join(",")}|${rq.pollutant}|${rq.start_date}|${rq.end_date}` : "";
+  useEffect(() => {
+    setAskContext(rq ? { cities: rq.cities.length ? rq.cities : rq.city ? [rq.city] : [], pollutant: rq.pollutant ? pollutantLabel(rq.pollutant) : null,
+      period: rq.start_date ? periodLabel(rq.start_date, rq.end_date, rq.assumptions) : null } : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctxKey, setAskContext]);
+  useEffect(() => () => setAskContext(null), [setAskContext]);
+
+  // While the agent works, keep the newest step in view. When the answer arrives, bring the start of that
+  // turn (question and main insight) to the top instead of jumping to the bottom of the chart.
   const lastKey = latest ? `${latest.id}:${latest.steps.length}:${latest.answer ? 1 : 0}:${latest.phase}` : "";
   useEffect(() => {
     const el = scroller.current;
     if (!el || !latest) return;
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    el.scrollTo({ top: el.scrollHeight, behavior: reduce ? "auto" : "smooth" });
+    const behavior = reduce ? "auto" : "smooth";
+    const art = el.querySelector<HTMLElement>(`[data-turn="${latest.id}"]`);
+    if (latest.answer && art) el.scrollTo({ top: Math.max(0, art.offsetTop - 16), behavior });
+    else el.scrollTo({ top: el.scrollHeight, behavior });
   }, [lastKey, latest]);
 
   const ask = (q: string) => {
@@ -73,12 +91,12 @@ export function AskScreen() {
     setSelected(t.id);
     setDrawer(true);
   };
-  const placeholder = `Ask about ${app.city} ${app.pollutant === "pm25" ? "PM2.5" : "PM10"}…`;
+  const placeholder = "Ask about air quality in the six cities";
 
   return (
     <div className="flex min-h-0 flex-1">
       <div className="flex min-w-0 flex-1 flex-col">
-        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
+        <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto">
           <BackendBanner />
           {chat.turns.length === 0 ? (
             <EmptyState onAsk={ask} disabled={chat.busy} />
@@ -101,11 +119,17 @@ export function AskScreen() {
           )}
           <Attribution />
         </div>
+        {/* Screen readers hear each new step as it starts or ends, and when the answer is ready. */}
+        <p className="sr-only" aria-live="polite">{announcement(latest)}</p>
         <Composer ref={composer} busy={chat.busy} onSend={ask} onStop={chat.stop} placeholder={placeholder} />
       </div>
-      <aside aria-label="Agent steps" className="hidden w-80 shrink-0 overflow-y-auto border-l border-line bg-surface xl:block">
-        <AgentTimeline turn={timelineTurn} />
-      </aside>
+      {/* The steps panel is there while the agent works; once the answer is ready it gives the space back
+          and each answer carries a compact, expandable summary instead. */}
+      {running && (
+        <aside aria-label="Agent steps" className="hidden w-80 shrink-0 overflow-y-auto border-l border-line bg-surface xl:block">
+          <AgentTimeline turn={latest} />
+        </aside>
+      )}
       <Sheet open={drawer} onOpenChange={setDrawer}>
         <SheetContent side="right" className="w-[min(360px,100vw)] overflow-y-auto border-line bg-surface p-0 xl:hidden">
           <SheetTitle className="sr-only">Agent steps</SheetTitle>

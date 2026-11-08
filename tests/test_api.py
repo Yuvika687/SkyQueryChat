@@ -492,3 +492,20 @@ def test_health_reports_active_rate_limits(store):
         h = c.get("/api/health").json()
         assert h["rate_limits"] == {"per_minute": 50, "per_day": 500, "production": False}
         assert not any("groq" in k for k in h["ai_quota"]["models"])
+
+
+def test_answer_event_carries_a_code_written_headline(store):
+    with TestClient(make(store)) as c:
+        _, ev = chat(c, "Delhi PM2.5 in November 2025?")
+        a = dict(ev)["answer"]
+        assert a["headline"].startswith("Delhi's PM2.5 averaged ") and "in November 2025" in a["headline"]
+        assert a["text"]                                            # the model's own sentence is still sent
+
+
+def test_saved_demo_answer_gets_a_headline_on_replay(store):
+    demo = {a["question"].lower().strip(" ?.!"): a for a in json.loads((APP / "demo_answers.json").read_text())["answers"]}
+    from backend.api.protect import normalise
+    demo = {normalise(a["question"]): a for a in demo.values()}
+    with TestClient(make(store, demo=demo)) as c:
+        _, ev = chat(c, "How bad was Delhi's air on Diwali 2025?")
+        assert dict(ev)["answer"]["headline"].startswith("Delhi's air was Very Poor over Diwali 2025")

@@ -32,7 +32,7 @@ export function evidenceFor(t: Turn): Evidence {
   return {
     dataType: typeKey ? DATA_TYPE_LABEL[typeKey] ?? typeKey : null,
     dataTypeKey: typeKey,
-    period: rq?.start_date ? fmtRange(rq.start_date, rq.end_date) : main ? fmtRange(main.date_range.start, main.date_range.end) : null,
+    period: rq?.start_date ? periodLabel(rq.start_date, rq.end_date, rq.assumptions) : main ? fmtRange(main.date_range.start, main.date_range.end) : null,
     stations: st.short,
     stationsDetail: st.detail,
     coverage: share,
@@ -91,3 +91,12 @@ function coverageOf(cov: Record<string, unknown> | null, pollutant: string | nul
 }
 
 const pct = (s: number) => `${Math.round(s * 100)}% coverage`;
+
+/** "Latest 30 days available · 1 Oct 2026 – 30 Oct 2026" when a relative period was anchored to the data's
+ * last day (the data ends before today); otherwise just the dates. */
+export function periodLabel(start: string, end: string | null, assumptions: string[] = []): string {
+  const range = fmtRange(start, end);
+  if (!end || !assumptions.some((a) => /relative to the latest data/i.test(a))) return range;
+  const n = Math.round((Date.parse(end + "T00:00:00Z") - Date.parse(start + "T00:00:00Z")) / 86_400_000) + 1;
+  return `Latest ${n} days available · ${range}`;
+}

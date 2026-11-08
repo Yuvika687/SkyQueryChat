@@ -28,7 +28,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from backend.agent import core, models as M, resolver as R
+from backend.agent import core, lead, models as M, resolver as R
 from backend.analysis import functions as F
 from backend.analysis.store import Store
 from backend.agent.quota import QuotaManager
@@ -324,7 +324,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
 
     def _final_events(final, eid: int) -> list[str]:
         f = json.loads(final.model_dump_json())
-        return [sse("answer", {"status": f["status"], "text": f["answer"], "explanation": f["explanation"],
+        return [sse("answer", {"status": f["status"], "text": f["answer"], "headline": f.get("headline"),
+                               "explanation": f["explanation"],
                                "clarifying_question": f["clarifying_question"], "data_types": f["data_types"],
                                "resolved_query": f.get("resolved_query"), "required_warnings": f.get("required_warnings", []),
                                "model": f.get("model"), "verification": f["verification"]}, eid),
@@ -350,7 +351,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
             eid += 1
         yield sse("step", {"seq": eid, "type": "answer", "title": f"served from {source}", "detail": {"cached": True}}, eid)
         f = payload["final"]
-        yield sse("answer", {"status": f["status"], "text": f["answer"], "explanation": f.get("explanation", ""),
+        yield sse("answer", {"status": f["status"], "text": f["answer"], "headline": f.get("headline") or lead.headline(f),
+                             "explanation": f.get("explanation", ""),
                              "clarifying_question": f.get("clarifying_question"), "data_types": f.get("data_types", []),
                              "resolved_query": f.get("resolved_query"), "required_warnings": f.get("required_warnings", []),
                              "model": f.get("model"), "verification": f.get("verification", {}), "cached": True}, eid + 1)

@@ -76,25 +76,32 @@ describe("Ask screen", () => {
     renderAsk();
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: /Compare Delhi and Mumbai over the last 30 days/ }));
-    expect(await screen.findByText(/Delhi ranked 1 with a mean of 73/)).toBeInTheDocument();
+    // the code-written headline leads; the model's "ranked 1" sentence is not shown
+    expect(await screen.findByText(/Delhi's PM2.5 was higher than Mumbai's over the latest 30 days available/)).toBeInTheDocument();
+    expect(screen.queryByText(/ranked 1/)).not.toBeInTheDocument();
     expect(vi.mocked(api.streamChat).mock.calls[0][0]).toBe("Compare Delhi and Mumbai over the last 30 days");
 
-    // labels
-    expect(screen.getAllByText("Measured").length).toBeGreaterThan(0);
+    // one data-type badge, no rank cards, short key-number labels
+    expect(screen.getAllByText("Measured")).toHaveLength(2); // badge + evidence row
     expect(screen.queryByText(/Saved answer/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Backup model/)).not.toBeInTheDocument();
-    // interpreted dates
-    const interp = screen.getByRole("region", { name: "How the question was read" });
-    expect(within(interp).getByText("Delhi, Mumbai")).toBeInTheDocument();
-    expect(within(interp).getByText("1 Oct 2026 – 30 Oct 2026")).toBeInTheDocument();
-    // evidence bar
+    const nums = screen.getByLabelText("Key numbers");
+    expect(within(nums).getByText("73.0")).toBeInTheDocument();
+    expect(within(nums).queryByText(/rank/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Your question")).toHaveAttribute("placeholder", "Ask about air quality in the six cities");
+    // evidence row, details on demand (interpreted dates live there)
     const evidence = screen.getByRole("region", { name: "Evidence" });
     expect(within(evidence).getByText(/% coverage/)).toBeInTheDocument();
     expect(within(evidence).getByText(/stations/)).toBeInTheDocument();
-    // agent timeline (desktop panel)
-    const steps = screen.getByRole("complementary", { name: "Agent steps" });
-    expect(within(steps).getByText("Checking every number")).toBeInTheDocument();
-    expect(within(steps).getAllByText("Done").length).toBeGreaterThanOrEqual(5);
+    expect(within(evidence).getByText(/Latest 30 days available/)).toBeInTheDocument();
+    await user.click(within(evidence).getByRole("button", { name: "Details" }));
+    const interp = screen.getByRole("region", { name: "How the question was read" });
+    expect(within(interp).getByText("Delhi, Mumbai")).toBeInTheDocument();
+    expect(within(interp).getByText("1 Oct 2026 – 30 Oct 2026")).toBeInTheDocument();
+    // after the answer the steps panel gives its space back; a compact summary expands to the steps
+    expect(screen.queryByRole("complementary", { name: "Agent steps" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Agent steps: 6 done/ }));
+    expect(screen.getByText("Checking every number")).toBeInTheDocument();
     // data table view
     await user.click(screen.getByRole("tab", { name: "Data table" }));
     const table = screen.getByRole("table");
@@ -144,7 +151,7 @@ describe("Ask screen", () => {
     const user = await ask("Compare Delhi and Mumbai over the last 30 days");
     expect(await screen.findByText("The AI service is busy. Try again in a moment.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByText(/Delhi ranked 1/)).toBeInTheDocument();
+    expect(await screen.findByText(/Delhi's PM2.5 was higher/)).toBeInTheDocument();
     expect(screen.queryByText("The AI service is busy. Try again in a moment.")).not.toBeInTheDocument();
   });
 
@@ -233,7 +240,7 @@ describe("Ask screen", () => {
     vi.mocked(api.streamChat).mockImplementation(streamOf(fixtureEvents("compare-live.sse")));
     renderAsk();
     await ask("Compare Delhi and Mumbai over the last 30 days");
-    await screen.findByText(/Delhi ranked 1/);
+    await screen.findByText(/Delhi's PM2.5 was higher/);
     const live = document.querySelector('[aria-live="polite"]');
     expect(live?.textContent).toBe("Answer ready.");
   });

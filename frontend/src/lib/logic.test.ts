@@ -5,7 +5,8 @@ import { buildOption, withGaps } from "./chart-options";
 import { applyEvent, newTurn } from "./chat-state";
 import { evidenceFor } from "./evidence";
 import { followUps } from "./followups";
-import { buildTimeline } from "./timeline";
+import { keyNumbers } from "./key-numbers";
+import { buildTimeline, summarise } from "./timeline";
 import { fixtureEvents } from "@/test/fixtures";
 import type { ChartSpec, StepEvent } from "./types";
 
@@ -39,9 +40,24 @@ describe("timeline", () => {
     expect(steps.find((s) => s.key === "load")?.input).toMatch(/Delhi, Mumbai/);
   });
 
-  it("shows a verification retry as a warning", () => {
+  it("shows a successful correction as done with a calm note, not a warning", () => {
     const t = turnFrom("diwali-cached.sse");
-    expect(buildTimeline(t.steps, "done").find((s) => s.key === "verify")?.status).toBe("warning");
+    const steps = buildTimeline(t.steps, "done");
+    const v = steps.find((s) => s.key === "verify")!;
+    expect(v.status).toBe("done");
+    expect(v.note).toBe("Corrected a number before answering");
+    expect(summarise(steps)).toMatchObject({ corrected: true, failed: false, warning: false });
+  });
+
+  it("keeps a real verification failure visible", () => {
+    const ev: StepEvent[] = [
+      { seq: 1, type: "run_started", title: "question received", detail: {}, ts: "2026-11-06T10:00:00.000Z" },
+      { seq: 2, type: "verification", title: "failed", detail: { problems: 1 }, ts: "2026-11-06T10:00:01.000Z" },
+      { seq: 3, type: "error", title: "verification", detail: {}, ts: "2026-11-06T10:00:02.000Z" },
+    ];
+    const steps = buildTimeline(ev, "error");
+    expect(steps.find((s) => s.key === "verify")?.status).toBe("failed");
+    expect(summarise(steps).failed).toBe(true);
   });
 
   it("shows the next step as running while streaming, and failure on error", () => {
@@ -96,8 +112,30 @@ describe("charts", () => {
     const t = turnFrom("diwali-cached.sse");
     const o = buildOption(t.chart!) as { yAxis: { name: string }; series: { markLine?: unknown; markArea?: unknown }[] };
     expect(o.yAxis.name).toMatch(/AQI/);
-    expect(o.series.some((s) => s.markLine)).toBe(false);
+    // the only line marker is Diwali day (x = 0); no PM reference lines on an AQI chart
+    const ml = o.series[0].markLine as { data: { xAxis?: number; yAxis?: number }[]; label: { position: string } };
+    expect(ml.data).toEqual([{ xAxis: 0 }]);
+    expect(ml.label.position).toBe("end"); // label above the plot, outside the data
+    expect(o.series.slice(1).some((s) => s.markLine)).toBe(false);
     expect(o.series[0].markArea).toBeTruthy(); // festival band
+  });
+
+  it("draws Diwali lines in one plain colour per line (no category-coloured dots)", () => {
+    const t = turnFrom("diwali-cached.sse");
+    const o = buildOption(t.chart!) as { series: { itemStyle: { color: string }; data: { itemStyle?: unknown }[] }[] };
+    expect(o.series[0].data.every((p) => p.itemStyle === undefined)).toBe(true);
+    expect(o.series[0].itemStyle.color).toBe("#2DD4BF");
+  });
+
+  it("puts reference-line labels outside the plot and zooms only long ranges", () => {
+    const days = Array.from({ length: 30 }, (_, i) => [`2026-10-${String(i + 1).padStart(2, "0")}`, 40 + i] as [string, number]);
+    const spec: ChartSpec = { type: "line", title: "Kolkata PM2.5 (daily mean)", x: { field: "date", type: "time" }, y: { field: "mean", label: "PM2.5 (µg/m³)" }, series: [{ name: "Kolkata", data: days }], units: "µg/m³" };
+    const o = buildOption(spec) as { dataZoom: unknown[]; grid: { right: number }; series: { markLine: { label: { position: string } } }[] };
+    expect(o.series[0].markLine.label.position).toBe("end");
+    expect(o.grid.right).toBeGreaterThanOrEqual(64);
+    expect(o.dataZoom).toEqual([]);
+    const long = { ...spec, series: [{ name: "Kolkata", data: Array.from({ length: 120 }, (_, i) => [new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10), 50] as [string, number]) }] };
+    expect((buildOption(long) as { dataZoom: unknown[] }).dataZoom.length).toBe(2);
   });
 
   it("offers every chart as a table and CSV", () => {
@@ -113,7 +151,7 @@ describe("evidence and follow-ups", () => {
   it("summarises data type, period, stations, coverage and source", () => {
     const ev = evidenceFor(turnFrom("compare-live.sse"));
     expect(ev.dataType).toBe("Measured");
-    expect(ev.period).toBe("1 Oct 2026 – 30 Oct 2026");
+    expect(ev.period).toBe("Latest 30 days available · 1 Oct 2026 – 30 Oct 2026"); // data ends before today
     expect(ev.stations).toMatch(/stations/);
     expect(ev.coverageText).toMatch(/% coverage/);
     expect(ev.source).toMatch(/OpenAQ/);
@@ -130,5 +168,24 @@ describe("evidence and follow-ups", () => {
     const f = followUps(turnFrom("compare-live.sse", "Compare Delhi and Mumbai over the last 30 days"));
     expect(f.length).toBeLessThanOrEqual(3);
     expect(f.join(" ")).toMatch(/Delhi/);
+  });
+});
+
+describe("key numbers", () => {
+  it("drops rank cards and uses short labels", () => {
+    const t = turnFrom("compare-live.sse");
+    const k = keyNumbers(t.cards);
+    expect(k.map((x) => x.label)).toEqual(["Delhi", "Mumbai"]);
+    expect(k.map((x) => x.value)).toEqual(["73.0", "43.7"]);
+    expect(k.every((x) => x.unit === "µg/m³")).toBe(true);
+  });
+
+  it("shows AQI as a whole number with its category, keeping the exact value", () => {
+    const t = turnFrom("diwali-cached.sse");
+    const [d] = keyNumbers(t.cards);
+    expect(d).toMatchObject({ label: "Diwali 2025", value: "352", unit: "AQI", category: "Very poor", exact: 352 });
+    const half = keyNumbers([{ ...t.cards[0], value: 188.5 }])[0];
+    expect(half.value).toBe("189");
+    expect(half.exact).toBe(188.5);
   });
 });

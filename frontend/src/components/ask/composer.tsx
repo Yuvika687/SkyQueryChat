@@ -69,13 +69,14 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ bu
           ) : (
             <button
               type="submit"
+              aria-label="Send"
               disabled={!text.trim()}
               className={cn(
                 "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-teal px-3 text-sm font-medium text-background hover:bg-teal-hover disabled:bg-raised disabled:text-subtle",
               )}
             >
               <ArrowUp className="size-4" aria-hidden />
-              Send
+              <span className="hidden sm:inline">Send</span>
             </button>
           )}
         </div>

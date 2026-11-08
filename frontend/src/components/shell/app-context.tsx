@@ -9,6 +9,13 @@ import type { Health } from "@/lib/types";
 export type BackendState = "checking" | "ready" | "waking" | "down";
 export type Pollutant = "pm25" | "pm10";
 
+/** What the current Ask conversation is about, from the latest answer's resolved_query (read-only). */
+export interface AskContext {
+  cities: string[];
+  pollutant: string | null;
+  period: string | null;
+}
+
 interface AppState {
   city: string;
   setCity: (c: string) => void;
@@ -23,6 +30,8 @@ interface AppState {
   storeChat: (c: SavedChat) => void;
   removeChat: (id: string) => void;
   newChatKey: number;
+  askContext: AskContext | null;
+  setAskContext: (c: AskContext | null) => void;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -41,6 +50,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [chats, setChats] = useState<SavedChat[]>([]);
   const [activeChatId, setActive] = useState<string | null>(null);
   const [newChatKey, setNewChatKey] = useState(0);
+  const [askContext, setAskContext] = useState<AskContext | null>(null);
 
   useEffect(() => {
     // Browser-only state is read after mount so server and client render the same first frame.
@@ -101,8 +111,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       },
       newChatKey,
+      askContext,
+      setAskContext,
     }),
-    [city, pollutant, backend, health, recheckBackend, chats, activeChatId, newChatKey],
+    [city, pollutant, backend, health, recheckBackend, chats, activeChatId, newChatKey, askContext],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
