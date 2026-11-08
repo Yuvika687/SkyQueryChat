@@ -1,4 +1,4 @@
-# Data Source Check — OpenAQ (Day 1, part 2)
+# Data Source Check — OpenAQ
 
 **Date:** 2026-11-03
 **Session window:** 07:17:39 – 07:25:31 UTC (12:47:39 – 12:55:31 IST)
@@ -579,7 +579,7 @@ Festival values are lower bounds. 2025-10-20/21 are low quality in OpenCity beca
 
 ---
 
-# Part 6: Day-2 data checks, weather and analysis functions (2026-11-04)
+# Part 6: Data checks, weather and analysis functions (2026-11-04)
 
 No full re-download was needed. All checks used `data/processed/`, the cached raw files and 6 new weather requests.
 
@@ -792,7 +792,7 @@ Sample real results (2025-03-01 → 2026-10-30):
 
 ---
 
-# Part 7 — Day 2 decisions, rule checks and the agent (2026-11-05)
+# Part 7 — Analysis decisions, rule checks and the agent (2026-11-05)
 
 ## 7.1 Decisions applied (user, 2026-11-04)
 - Diwali main result = official AQI **levels, categories and exact bulletin dates**. No percentage in the default answer.
@@ -959,7 +959,7 @@ Run in batches of 5 with 20–25 s gaps.
 - **Smaller model surface:** the answer schema is shorter (status, answer, card field names, chart id), instructions are about 45% shorter, and there are 8 tools instead of 10 (percentage is now an option on `diwali_aqi`; `dataset_details` dropped).
 - **Memory:** the last 2 turns only. Tool results from older turns shrink to their id and field names, and thinking parts are dropped.
 
-| Measure | Before (Day 2) | After |
+| Measure | Before (first agent version) | After |
 |---|---:|---:|
 | Fixed prompt per model request (instructions + tool and answer schemas) | ≈ 2,230 tokens | ≈ 1,340 tokens |
 | Typical tool result | 1,170–3,200 chars | 460–870 chars |
@@ -989,7 +989,7 @@ Run in batches of 5 with 20–25 s gaps.
 | | model error (both Gemini models unavailable) | 0/1 (T5) | | | | | |
 | **Holdout, 10 q / 11 turns** (`20261105-1417_holdout_first`) | gemini-3.5-flash-lite | 11/11 | 100% | 100% | — | 4/4 | 5,116 |
 | **Groq, 15 q** (`20261105-1352`, `-1354`) | gpt-oss-120b | incomplete: 0/1 then stopped after 3 | | | | | |
-| Day 2 main (archived, older code) | gemini 47/48, gpt-oss 2/2 | 49/51 | | | | | 5,959 |
+| First agent version, main set (archived, older code) | gemini 47/48, gpt-oss 2/2 | 49/51 | | | | | 5,959 |
 
 **Main first-pass failures:**
 - T4: answered "Bangalore" where the check requires "Bengaluru".
@@ -1006,7 +1006,7 @@ Run in batches of 5 with 20–25 s gaps.
 **Groq test:** not completed.
 - The first run's G01 asked for clarification on a period format; the resolver now handles 2025-11, 11/2025 and Nov-2025.
 - That run then crashed on a network error in the quota probe.
-- The fresh run stopped at Groq's daily limit. Groq counts a rolling 24 h window, and Day 2 work had used 199,449 of 200,000 tokens.
+- The fresh run stopped at Groq's daily limit. Groq counts a rolling 24 h window, and earlier development runs had used 199,449 of 200,000 tokens.
 - The guard now requires about 6K tokens of headroom before starting. Run `python scripts/run_eval.py --set groq` when quota frees (it stops on its own before any limit).
 
 ## 8.5 FastAPI (`backend/api/`)
@@ -1066,7 +1066,7 @@ Run in batches of 5 with 20–25 s gaps.
 Effective caps = limit × 0.8. Public visitors may use 85% of the daily caps; 15% is the demo reserve.
 
 **Requests per question** (`scripts/measure_requests.py`, saved runs, no API calls): current code, 61
-questions: mean 2.43, median 2, p90 3–4, max 4 (distribution 1:3, 2:33, 3:21, 4:4). Day-2 code was
+questions: mean 2.43, median 2, p90 3–4, max 4 (distribution 1:3, 2:33, 3:21, 4:4). The first agent version was
 mean 2.70, max 5. A new question therefore reserves room for 4 requests.
 
 **Capacity estimate (public caps, mean question):** Groq about 31 questions/day and 1.5/minute (TPM is the
@@ -1123,7 +1123,7 @@ and gemini-3.1-flash-lite (2 turns, after the shared per-minute limit on 3.5 Fla
 of 2025. Fixed generally (accept "a..b"); a separate rerun of N07 passed (51 µg/m³ = reference). The
 first-pass score stays 10/11.
 
-# Part 11 — Phase 1 clean-up (2026-11-08)
+# Part 11 — Gemini-only chain, timeouts and limits (2026-11-08)
 
 No data rules, analysis results or evaluation scores changed.
 
@@ -1136,7 +1136,7 @@ No data rules, analysis results or evaluation scores changed.
 
 **Why 12,000 tokens:** it equals what the shared quota reserves for a new question, so a question can't use more than
 it reserved. The largest question on current code used 9,825 tokens (holdout2 first pass; main 7,993, holdout 7,666),
-leaving about 20% headroom. 16,000 was only reached by Day-2 code (17,449 max) before the token reduction.
+leaving about 20% headroom. 16,000 was only reached by the first agent version (17,449 max) before the token reduction.
 
 **Why 20 s per request:** a question makes 2–4 model requests (mean 2.43) inside a 60 s question limit, so a stuck
 request must fail early enough for a backup model to answer. Saved runs record time per question, not per request;

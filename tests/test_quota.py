@@ -264,7 +264,7 @@ def test_gemini_429_text_is_classified_per_minute_or_per_day():
     assert qm.get("google:gemini-3.5-flash-lite").can_start_question() is None      # other model unaffected
 
 
-# ---------------------------------------------------------------- Phase 1 clean-up (2026-11-08)
+# ---------------------------------------------------------------- Gemini-only chain, timeouts and token cap (2026-11-08)
 def test_disabled_groq_is_never_listed_as_a_fallback(monkeypatch):
     monkeypatch.delenv("SKYQ_MODEL_CHAIN", raising=False)
     qm = QuotaManager.from_config(M.load_config(), configured=M.live_labels())
@@ -290,7 +290,7 @@ def test_one_token_cap_for_run_limit_and_reservation(monkeypatch):
 
 def test_measured_questions_fit_under_the_token_cap():
     stats = json.load(open(M.CONFIG.parents[2] / "evals" / "request_stats.json"))["runs"]
-    current = {k: v for k, v in stats.items() if "day2" not in k}   # Day-2 runs used older code
+    current = {k: v for k, v in stats.items() if "day2" not in k}   # legacy runs (IDs end in day2) used older code
     assert current and max(v["tokens_per_question_max"] for v in current.values()) < M.load_config()["limits"]["max_tokens_per_question"]
 
 

@@ -1,6 +1,6 @@
 """Select CANDIDATE stations for the six cities from saved OpenAQ probe outputs.
 
-Inputs (from the Day-1 probe, in gitignored data/raw/probe/):
+Inputs (from the first OpenAQ probe, in gitignored data/raw/probe/):
   india_locations.json  - all OpenAQ locations with countries_id=9
   sensor_survey.json    - per-location PM sensors with their OWN first/last dates
 

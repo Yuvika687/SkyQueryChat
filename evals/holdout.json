@@ -1,5 +1,5 @@
 {
- "_about": "RETIRED 2026-11-06 (used once: run 20261105-1417_holdout_first; H02 exposed the year-first season gap, which was then fixed, so this set is no longer a clean holdout). Replaced by evals/holdout2.json. Holdout set: 10 fresh questions written after Day 2 tuning and NEVER used to change prompts, tools or rules. Run once per release with --set holdout --kind first; report first-pass only. Add your own questions under user_questions (same format; leave expect as shown if unsure — status/tools are optional).",
+ "_about": "RETIRED 2026-11-06 (used once: run 20261105-1417_holdout_first; H02 exposed the year-first season gap, which was then fixed, so this set is no longer a clean holdout). Replaced by evals/holdout2.json. Holdout set: 10 fresh questions written after the agent was tuned and NEVER used to change prompts, tools or rules. Run once per release with --set holdout --kind first; report first-pass only. Add your own questions under user_questions (same format; leave expect as shown if unsure — status/tools are optional).",
  "questions": [
   {
    "id": "H01",

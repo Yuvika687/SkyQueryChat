@@ -100,7 +100,7 @@ def test_blank_rate_definition_uses_interval_start_and_night_window():
     assert Dv.blank_rates(raw, {1}, "pm25", [date(2025, 10, 20)]) == pytest.approx(12 / 48)
 
 
-# ----------------------------------------------------------------------------- Day 2 rule changes
+# ----------------------------------------------------------------------------- rule changes (2026-11-04)
 def _multi(values_by_sensor: dict[str, list[float]], start="2025-06-15 00:00", spike=None):
     rows = []
     for k, vals in values_by_sensor.items():

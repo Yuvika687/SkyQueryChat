@@ -1,4 +1,4 @@
-"""Ask SkyQueryChat questions in the terminal (Day 2: terminal only).
+"""Ask SkyQueryChat questions in the terminal.
 
   python scripts/ask.py                       # interactive; follow-ups keep context; 'exit' to quit
   python scripts/ask.py "Delhi PM2.5 in November 2025?"   # one question

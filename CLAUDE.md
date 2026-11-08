@@ -171,12 +171,12 @@ Rules:
 - Keep token use low. Check live free-tier limits; handle rate limits with retries,
   fallback and caching.
 
-### Agent implementation (Day 2, 2026-11-05)
+### Agent implementation (2026-11-05)
 
 - Code: `backend/agent/` (models, resolver, tools, session, verify, schemas, core); terminal:
   `scripts/ask.py`; evaluation: `evals/questions.json` + `scripts/run_eval.py`.
-- Model names live in `backend/config/models.json` (override: env `SKYQ_MODEL_CHAIN`). *(Replaced: on Day 2
-  Groq was primary. Current live chain: see "Phase 1 clean-up (2026-11-08)" below.)* Groq `openai/gpt-oss-120b`
+- Model names live in `backend/config/models.json` (override: env `SKYQ_MODEL_CHAIN`). *(Replaced: Groq was
+  primary until 2026-11-06. Current live chain: see "Gemini-only chain, timeouts and limits" below.)* Groq `openai/gpt-oss-120b`
   needs `groq_reasoning_effort: medium` (low made Groq reject outputs). Groq free tier for this key:
   1K requests/day, 8K tokens/min, ~200K tokens/day. Gemini free quotas are only visible in AI Studio.
 - Final answer is accepted from the `final_answer` output tool OR as JSON text (gpt-oss alternates).
@@ -185,7 +185,7 @@ Rules:
   match their own dataset. Causal wording and prompt quotes are rejected. Up to 2 retries, then a
   clear error. Tests use FunctionModel/TestModel only (no quota).
 
-### Day 3 part 1 decisions (2026-11-05)
+### Answer building, evaluation and API decisions (2026-11-05)
 
 - Tools return `{id, type, units, period, fields, notes}`; the model writes the answer text and picks
   cards as "dataset_id.field" and a chart dataset. CODE builds card value/label/unit/source/warnings,
@@ -213,7 +213,7 @@ Rules:
   per model; the old single 150K budget is gone. SSE `notice` event for low quota, backup model, or a
   saved answer; `ai_limit`/`ai_busy` errors when nothing has room.
 - Chain (owner's order, 2026-11-06): gemini-3.5-flash-lite → gemini-3.1-flash-lite → Groq gpt-oss-120b →
-  gemini-3.8-flash (last resort). *(Replaced 2026-11-08: Groq disabled; see Phase 1 clean-up.)* AI Studio limits: 3.1 Flash Lite 15 RPM / 250K TPM / 500 RPD; 3.8 Flash 5 / 250K / 20.
+  gemini-3.8-flash (last resort). *(Replaced 2026-11-08: Groq disabled; see "Gemini-only chain, timeouts and limits".)* AI Studio limits: 3.1 Flash Lite 15 RPM / 250K TPM / 500 RPD; 3.8 Flash 5 / 250K / 20.
   AI Studio "usage" figures are 28-day peaks, not today's use. Google 429s name the quota per project
   per model (`...PerProjectPerModel-FreeTier`, `model` dimension), so Gemini models do not share quota.
 
@@ -251,7 +251,7 @@ Rules:
 - Known gap: the backend's city comparison chart is a bar of means, not the spec's multi-line; scatter has no
   trend line (would need a Python-calculated line).
 
-### Phase 1 clean-up (2026-11-08)
+### Gemini-only chain, timeouts and limits (2026-11-08)
 
 - **Live chain:** gemini-3.5-flash-lite → gemini-3.1-flash-lite → gemini-3.8-flash. Groq gpt-oss-120b stays in
   `models.json` with `"enabled": false` (and its quota limits) for later testing; it is never built into the live
@@ -268,7 +268,7 @@ Rules:
   only locally; when `RENDER` is set or `SKYQ_ENV=production`, values above the defaults are ignored. `/api/health`
   shows the active `rate_limits`.
 
-### Phase 2: Ask screen polish (2026-11-08)
+### Ask screen layout, answer wording and charts (2026-11-08)
 
 - **Headline:** `backend/agent/lead.py` writes the answer's lead sentence in analyst wording from what the final
   answer already holds (cards, chart points, coverage, resolved period). It must pass `check_numbers` and the causal
@@ -306,10 +306,10 @@ Use official Indian AQI category colours **only** for data meaning.
 
 ## 7. Roadmap
 
-- **Day 1:** Setup, API checks, station selection, data pipeline, Parquet dataset
-- **Day 2:** Analysis functions, typed tools, agent loop, number verification
-- **Day 3:** FastAPI streaming, chat interface, charts, execution timeline
-- **Day 4:** Testing, UI polish, deployment, README, demo
+- **Data:** setup, API checks, station selection, data pipeline, Parquet dataset
+- **Analysis and agent:** analysis functions, typed tools, agent loop, number verification
+- **API and interface:** FastAPI streaming, chat interface, charts, execution timeline
+- **Release:** testing, UI polish, deployment, README, demo
 
 Testing must include:
 - Unit tests for every analysis function
@@ -334,12 +334,15 @@ Deployment notes:
 - Never print, hardcode or commit secrets.
 - No Claude co-author / attribution lines in commits or PRs.
 - At the end of each step: say what changed, how it was tested, and what comes next.
+- Never use phase or day labels ("Phase 1", "Day 2", "Sprint 3" and similar) in commit messages, documentation,
+  code, comments, test names or the UI. Describe the change itself instead (e.g. "Improve Ask screen layout").
+  Existing evaluation run IDs that contain "day2" are stored identifiers and stay as they are.
 
 ## 9. Environment notes (discovered during setup, 2026-11-02)
 
 - Python 3.13.15 in `.venv` (run tools via `.venv/bin/python`). Node v26.7.0, npm 11.19.0.
 - **Node 26 became LTS on 28 October 2026.** Still confirm the chosen Next.js version
-  officially supports Node 26 before starting the frontend (Day 3).
+  officially supports Node 26 before starting the frontend.
 - **DuckDB 2.0:** relations no longer have `fetchone()`. Use
   `con = duckdb.connect(); con.execute(sql).fetchone()` (or `.fetchall()` / `.df()`).
 - **Sophos SSL inspection** is active on this machine. pip showed an untrusted-certificate

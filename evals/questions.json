@@ -1,5 +1,5 @@
 {
- "_about": "Main evaluation set (47 questions, 51 turns). Used during Day 2 tuning, so it is NOT a holdout. expect.status: allowed statuses; tools_any: one must be called; forbid_tools; must_include/_any; must_not (regex); refs: independent reference values from evals/references.py (pandas, not backend.analysis). 'resolved' = what the tools must use (cities, pollutant, start, end); a wrong period fails (added 2026-11-06, applies to runs from then on).",
+ "_about": "Main evaluation set (47 questions, 51 turns). Used while tuning the agent, so it is NOT a holdout. expect.status: allowed statuses; tools_any: one must be called; forbid_tools; must_include/_any; must_not (regex); refs: independent reference values from evals/references.py (pandas, not backend.analysis). 'resolved' = what the tools must use (cities, pollutant, start, end); a wrong period fails (added 2026-11-06, applies to runs from then on).",
  "questions": [
   {
    "id": "T1",
