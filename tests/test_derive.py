@@ -194,3 +194,13 @@ def test_peer_outliers_are_flag_only_not_excluded():
             for i, v in enumerate([288.0, 30.0, 35.0, 28.0, 40.0])]
     d = _daily(rows)
     assert Dv.peer_outlier_days(d).iat[0] and d["is_valid_day"].all()       # flag does not touch validity
+
+
+def test_manifest_records_diwali_percent_as_approved_on_request_range():
+    import json
+    from pathlib import Path
+    from backend.pipeline import derive as D
+    m = json.loads((Path(__file__).resolve().parents[1] / "data" / "app" / "manifest.json").read_text())
+    assert m["diwali_percent_status"] == D.MANIFEST_PERCENT_STATUS == "approved_on_request_range"
+    assert m["diwali_percent_note"] == D.MANIFEST_PERCENT_NOTE and "range" in m["diwali_percent_note"]
+    assert D.PERCENT_STATUS == "pending_user_approval"          # per-window baselines unchanged

@@ -29,7 +29,8 @@ multilingual support, or arbitrary Python execution.
 
 - **Frontend:** Next.js, TypeScript, Tailwind CSS, shadcn/ui, Apache ECharts
 - **Backend:** Python, FastAPI, Server-Sent Events
-- **Agent:** Pydantic AI — Gemini 3.5 Flash-Lite primary; Gemini 3.1 Flash Lite, Groq gpt-oss-120b and Gemini 3.8 Flash as fallbacks (order set 2026-11-06)
+- **Agent:** Pydantic AI — Gemini 3.5 Flash-Lite primary; Gemini 3.1 Flash Lite and Gemini 3.8 Flash as fallbacks
+  (live order 2026-11-08). Groq gpt-oss-120b is configured but disabled (kept for testing).
 - **Data:** OpenAQ, Open-Meteo Air Quality, Open-Meteo Weather, DuckDB, Parquet, pandas
 - **Hosting:** Vercel (frontend), Render (backend)
 
@@ -174,9 +175,9 @@ Rules:
 
 - Code: `backend/agent/` (models, resolver, tools, session, verify, schemas, core); terminal:
   `scripts/ask.py`; evaluation: `evals/questions.json` + `scripts/run_eval.py`.
-- Model names live in `backend/config/models.json` (override: env `SKYQ_MODEL_CHAIN`). Primary
-  Groq `openai/gpt-oss-120b` with `groq_reasoning_effort: medium` (low made Groq reject outputs);
-  fallbacks Gemini `gemini-3.5-flash-lite`, then `gemini-3.8-flash`. Groq free tier for this key:
+- Model names live in `backend/config/models.json` (override: env `SKYQ_MODEL_CHAIN`). *(Replaced: on Day 2
+  Groq was primary. Current live chain: see "Phase 1 clean-up (2026-11-08)" below.)* Groq `openai/gpt-oss-120b`
+  needs `groq_reasoning_effort: medium` (low made Groq reject outputs). Groq free tier for this key:
   1K requests/day, 8K tokens/min, ~200K tokens/day. Gemini free quotas are only visible in AI Studio.
 - Final answer is accepted from the `final_answer` output tool OR as JSON text (gpt-oss alternates).
   Groq rejects JSON mode combined with tools.
@@ -212,7 +213,7 @@ Rules:
   per model; the old single 150K budget is gone. SSE `notice` event for low quota, backup model, or a
   saved answer; `ai_limit`/`ai_busy` errors when nothing has room.
 - Chain (owner's order, 2026-11-06): gemini-3.5-flash-lite → gemini-3.1-flash-lite → Groq gpt-oss-120b →
-  gemini-3.8-flash (last resort). Change only if the full Groq test gives strong evidence. AI Studio limits: 3.1 Flash Lite 15 RPM / 250K TPM / 500 RPD; 3.8 Flash 5 / 250K / 20.
+  gemini-3.8-flash (last resort). *(Replaced 2026-11-08: Groq disabled; see Phase 1 clean-up.)* AI Studio limits: 3.1 Flash Lite 15 RPM / 250K TPM / 500 RPD; 3.8 Flash 5 / 250K / 20.
   AI Studio "usage" figures are 28-day peaks, not today's use. Google 429s name the quota per project
   per model (`...PerProjectPerModel-FreeTier`, `model` dimension), so Gemini models do not share quota.
 
@@ -249,6 +250,23 @@ Rules:
   screenshots in `docs/screenshots/ask/`).
 - Known gap: the backend's city comparison chart is a bar of means, not the spec's multi-line; scatter has no
   trend line (would need a Python-calculated line).
+
+### Phase 1 clean-up (2026-11-08)
+
+- **Live chain:** gemini-3.5-flash-lite → gemini-3.1-flash-lite → gemini-3.8-flash. Groq gpt-oss-120b stays in
+  `models.json` with `"enabled": false` (and its quota limits) for later testing; it is never built into the live
+  chain or listed in `/api/health` / `/api/quota`. `scripts/run_eval.py --set groq` still runs it explicitly.
+  `ai_configured` now means GEMINI_API_KEY is set.
+- **Per-request timeout:** `limits.model_request_timeout_s` = 20 s per model request (provider call incl. SDK
+  retries, not the quota queue). A timeout moves to the next model; if every model times out the chat returns
+  error `model_timeout` ("The AI models took too long to respond…"). The whole question still stops at
+  `QUESTION_TIMEOUT_S` (60 s).
+- **One token cap:** `limits.max_tokens_per_question` = 12,000 is the run's hard cap AND the quota reservation per
+  new question (`quota.question_tokens` removed). Measured max on current code 9,825 (holdout2). Env
+  `TOKENS_PER_QUESTION` may only lower it.
+- **Rate limits:** production defaults 4/min, 30/day per visitor. Raised values (Playwright: 60/min, 1000/day) work
+  only locally; when `RENDER` is set or `SKYQ_ENV=production`, values above the defaults are ignored. `/api/health`
+  shows the active `rate_limits`.
 
 ## 6. UI requirements
 

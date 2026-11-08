@@ -9,7 +9,8 @@
   "OpenAQ archive (CPCB/AirNow/AirGradient) | excluded": 1062,
   "OpenAQ archive (CPCB/AirNow/AirGradient) | festival_night": 2
  },
- "diwali_percent_status": "pending_user_approval",
+ "diwali_percent_status": "approved_on_request_range",
+ "diwali_percent_note": "Approved 2026-11-04: Diwali AQI percentages are never in the default answer (levels, categories and bulletin dates are the main result). Only when a user asks, diwali_aqi_percent gives baseline D-7..D-1 as a single figure if the D-14..D-8, D-7..D-1 and D-3..D-1 baselines agree within 25 points, otherwise a range. No single fixed baseline is approved, so the per-window percent_status in diwali_aqi_baselines stays pending_user_approval. Never a PM percentage.",
  "attribution": {
   "openaq": "OpenAQ (openaq.org), CPCB data",
   "opencity": "CPCB data via OpenCity (data.opencity.in), public domain",

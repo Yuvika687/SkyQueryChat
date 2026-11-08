@@ -49,6 +49,15 @@ class QuotaExceeded(ModelAPIError):
         self.reason, self.scope = reason, scope
 
 
+class ModelTimeout(ModelAPIError):
+    """One model request took longer than limits.model_request_timeout_s. FallbackModel moves to the next
+    model; if every model times out the user sees a clear timeout message."""
+
+    def __init__(self, model_name: str, timeout_s: float):
+        super().__init__(model_name, f"model request timed out after {timeout_s:g} s")
+        self.timeout_s = timeout_s
+
+
 @dataclass
 class ProviderLimit:
     key: str                                   # "google:gemini-3.5-flash-lite"
@@ -68,7 +77,7 @@ class QuotaConfig:
     low_fraction: float = 0.2                  # "low" when public headroom < 20% of the public cap
     max_queue_wait_s: float = 20.0
     question_requests: int = 4                 # room needed to start a question (measured max = 4)
-    question_tokens: int = 12_000
+    question_tokens: int = 12_000              # = limits.max_tokens_per_question (one cap; set in from_config)
     est_output_tokens: int = 600
     chars_per_token: float = 7.0               # calibrated live 2026-11-06: JSON chars/4 overestimated ~2x
 
@@ -256,11 +265,14 @@ class ProviderQuota:
 
 class QuotaManager:
     def __init__(self, limits: dict[str, ProviderLimit], cfg: QuotaConfig, default: ProviderLimit | None = None,
-                 clock=time.time, sleep=asyncio.sleep):
+                 clock=time.time, sleep=asyncio.sleep, configured: list[str] | None = None):
         self.cfg, self.clock, self.sleep = cfg, clock, sleep
         self.default = default
         self.models: dict[str, ProviderQuota] = {k: ProviderQuota(v, cfg, clock, sleep) for k, v in limits.items()}
         self.chain: list[str] = []
+        # Live (enabled) models in order, shown before the chain is built. Disabled models keep their limits
+        # in self.models for testing but are never listed.
+        self.configured: list[str] = list(configured) if configured is not None else list(limits)
 
     @classmethod
     def from_config(cls, cfg: dict, **kw) -> "QuotaManager":
@@ -271,6 +283,9 @@ class QuotaManager:
             for k, v in json.loads(env).items():
                 provs.setdefault(k, {}).update(v)
         qc = QuotaConfig(**{k: q[k] for k in QuotaConfig.__dataclass_fields__ if k in q})
+        cap = cfg.get("limits", {}).get("max_tokens_per_question")
+        if cap and "question_tokens" not in q:     # one per-question token cap for the run limit and the reservation
+            qc.question_tokens = int(cap)
         for name, attr in (("SKYQ_QUOTA_SAFETY_MARGIN", "safety_margin"), ("SKYQ_DEMO_RESERVE", "demo_reserve")):
             if os.environ.get(name):
                 setattr(qc, attr, float(os.environ[name]))
@@ -322,7 +337,7 @@ class QuotaManager:
 
     def status(self) -> dict:
         return {"chain": self.chain, "safety_margin": self.cfg.safety_margin, "demo_reserve": self.cfg.demo_reserve,
-                "models": {k: self.get(k).status() for k in (self.chain or list(self.models))}}
+                "models": {k: self.get(k).status() for k in (self.chain or self.configured)}}
 
 
 # ---------------------------------------------------------------------- model wrapper
@@ -348,9 +363,9 @@ def _wrapper_base():
 class LimitedModel(_wrapper_base()):
     """Asks the shared quota for a slot before every provider request."""
 
-    def __init__(self, wrapped, quota_key: str, quota: QuotaManager):
+    def __init__(self, wrapped, quota_key: str, quota: QuotaManager, timeout_s: float | None = None):
         super().__init__(wrapped)
-        self.quota_key, self.quota = quota_key, quota
+        self.quota_key, self.quota, self.timeout_s = quota_key, quota, timeout_s
 
     async def request(self, messages, model_settings, model_request_parameters):
         ctx = _CTX.get()
@@ -366,7 +381,13 @@ class LimitedModel(_wrapper_base()):
             raise
         if ctx is not None:
             ctx.started.add(self.quota_key)
-        resp = await self.wrapped.request(messages, model_settings, model_request_parameters)
+        # The timeout covers only the provider call (not the queue wait above). The slot stays counted at
+        # its estimate, because a timed-out request may still have used provider quota.
+        try:
+            resp = await asyncio.wait_for(self.wrapped.request(messages, model_settings, model_request_parameters),
+                                          timeout=self.timeout_s)
+        except asyncio.TimeoutError:
+            raise ModelTimeout(self.quota_key.split(":", 1)[-1], self.timeout_s) from None
         u = getattr(resp, "usage", None)
         pq.settle(ev, (getattr(u, "input_tokens", 0) or 0) + (getattr(u, "output_tokens", 0) or 0) if u else None)
         return resp

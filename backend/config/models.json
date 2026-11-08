@@ -1,5 +1,5 @@
 {
- "_note": "Model chain for the agent. Order set by the owner 2026-11-06: gemini-3.5-flash-lite, gemini-3.1-flash-lite, Groq gpt-oss-120b, gemini-3.8-flash; change only if the full Groq test gives strong evidence. First entry is primary; the rest are fallbacks in order. Override with env SKYQ_MODEL_CHAIN='groq:openai/gpt-oss-120b,google:gemini-3.5-flash-lite'. Keys come from .env only. Verified 2026-11-05: Groq key serves gpt-oss-120b/20b, qwen3.8-27b (llama-3.3-70b returns 404); Gemini 2.5 Flash is retired for new users. gpt-oss-120b needs reasoning_effort 'medium': with 'low', Groq rejected 3/3 answers (output_parse_failed); medium answered 3/3. 2026-11-06: gemini-3.1-flash-lite added before gemini-3.8-flash after a 13-question sample (13/14 turns; the miss was a wording check) and a provider 429 showing its quota is per model (GenerateRequestsPerMinutePerProjectPerModel-FreeTier, model: gemini-3.1-flash-lite) while gemini-3.5-flash-lite kept answering. gemini-3.8-flash stays last resort (20 RPD).",
+ "_note": "Model chain for the agent. Live order (owner, 2026-11-08): gemini-3.5-flash-lite, gemini-3.1-flash-lite, gemini-3.8-flash. First enabled entry is primary; the other enabled entries are fallbacks in order. Entries with \"enabled\": false are kept for testing but are never built into the live chain, listed as fallbacks or shown in /api/health and /api/quota. Groq gpt-oss-120b is disabled (2026-11-08) until the full 15-question Groq test is done; run it with scripts/run_eval.py --set groq, which builds a Groq-only chain explicitly. Env SKYQ_MODEL_CHAIN (e.g. 'google:gemini-3.5-flash-lite,google:gemini-3.1-flash-lite') replaces the chain for local tests. Keys come from .env only. Verified 2026-11-05: Groq key serves gpt-oss-120b/20b, qwen3.8-27b (llama-3.3-70b returns 404); Gemini 2.5 Flash is retired for new users. gpt-oss-120b needs reasoning_effort 'medium': with 'low', Groq rejected 3/3 answers (output_parse_failed); medium answered 3/3. 2026-11-06: gemini-3.1-flash-lite added after a 13-question sample (13/14 turns; the miss was a wording check) and a provider 429 showing its quota is per model. gemini-3.8-flash stays last resort (20 RPD).",
  "chain": [
   {
    "provider": "google",
@@ -20,22 +20,24 @@
    }
   },
   {
-   "provider": "groq",
-   "model": "openai/gpt-oss-120b",
-   "key_env": "GROQ_API_KEY",
-   "settings": {
-    "temperature": 0,
-    "max_tokens": 2500,
-    "groq_reasoning_effort": "medium"
-   }
-  },
-  {
    "provider": "google",
    "model": "gemini-3.8-flash",
    "key_env": "GEMINI_API_KEY",
    "settings": {
     "temperature": 0,
     "max_tokens": 1500
+   }
+  },
+  {
+   "provider": "groq",
+   "model": "openai/gpt-oss-120b",
+   "key_env": "GROQ_API_KEY",
+   "enabled": false,
+   "disabled_reason": "Disabled 2026-11-08 (owner): kept for later testing; not live until the full Groq test passes.",
+   "settings": {
+    "temperature": 0,
+    "max_tokens": 2500,
+    "groq_reasoning_effort": "medium"
    }
   }
  ],
@@ -44,19 +46,20 @@
   "google": "Per-model free-tier quotas from the owner's AI Studio (2026-11-06; usage there is a 28-day peak). Provider 429 bodies name the quota per project per model."
  },
  "limits": {
+  "_note": "max_tokens_per_question is the one per-question token cap (12,000, set 2026-11-08). The API uses it as the hard cap and the shared quota reserves the same amount for each new question, so a question can never use more than it reserved. Measured max on current code: 9,825 tokens (holdout2 first pass); mean about 4,200-5,500. Env TOKENS_PER_QUESTION may only lower it. model_request_timeout_s: each single model request (including the SDK's own retries) is stopped after this many seconds and the chain moves to the next model; the whole question still stops at QUESTION_TIMEOUT_S (60 s).",
   "request_limit": 10,
   "output_retries": 3,
   "max_history_turns": 2,
-  "max_tokens_per_question": 16000
+  "max_tokens_per_question": 12000,
+  "model_request_timeout_s": 20
  },
  "quota": {
-  "_note": "Shared limits for all visitors (backend/agent/quota.py). Effective cap = provider limit x safety_margin; public visitors stop at (1 - demo_reserve) of the daily caps, demo requests may use the reserve. Override per model with env SKYQ_PROVIDER_LIMITS='{\"google:gemini-3.5-flash-lite\":{\"rpd\":1000}}', or SKYQ_QUOTA_SAFETY_MARGIN / SKYQ_DEMO_RESERVE. question_requests = measured max model requests per question (scripts/measure_requests.py).",
+  "_note": "Shared limits for all visitors (backend/agent/quota.py). Effective cap = provider limit x safety_margin; public visitors stop at (1 - demo_reserve) of the daily caps, demo requests may use the reserve. Override per model with env SKYQ_PROVIDER_LIMITS='{\"google:gemini-3.5-flash-lite\":{\"rpd\":1000}}', or SKYQ_QUOTA_SAFETY_MARGIN / SKYQ_DEMO_RESERVE. question_requests = measured max model requests per question (scripts/measure_requests.py). The per-question token reservation equals limits.max_tokens_per_question.",
   "safety_margin": 0.8,
   "demo_reserve": 0.15,
   "low_fraction": 0.2,
   "max_queue_wait_s": 20,
   "question_requests": 4,
-  "question_tokens": 12000,
   "est_output_tokens": 600,
   "chars_per_token": 7.0,
   "providers": {

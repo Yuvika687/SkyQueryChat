@@ -210,7 +210,14 @@ BASELINE_WINDOWS = {   # local-day offsets from Diwali (D); bulletin = local day
     "W3_d3_d1": (-3, -1, "3 local days immediately before (D-3..D-1)"),
     "W4_after_d7_d13": (7, 13, "7 local days after (D+7..D+13); seasonal control only"),
 }
-PERCENT_STATUS = "pending_user_approval"   # app must not show % until the baseline is approved
+PERCENT_STATUS = "pending_user_approval"   # per baseline window: no single fixed baseline is approved
+# App-level status (approved 2026-11-04): % only on request, as a single figure only if baselines agree, else a range.
+MANIFEST_PERCENT_STATUS = "approved_on_request_range"
+MANIFEST_PERCENT_NOTE = ("Approved 2026-11-04: Diwali AQI percentages are never in the default answer (levels, categories "
+                         "and bulletin dates are the main result). Only when a user asks, diwali_aqi_percent gives baseline "
+                         "D-7..D-1 as a single figure if the D-14..D-8, D-7..D-1 and D-3..D-1 baselines agree within 25 "
+                         "points, otherwise a range. No single fixed baseline is approved, so the per-window percent_status "
+                         "in diwali_aqi_baselines stays pending_user_approval. Never a PM percentage.")
 
 
 def diwali_aqi_table(aqi: pd.DataFrame, years=(2024, 2025, 2026)) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -417,7 +424,8 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
                                  "median); exclude station-days where matched-hour PM2.5 > PM10 + max(20% x PM10, "
                                  "20 ug/m3) (impossible); peer-outlier station-days are flagged, not excluded",
         "spike_hours": {f"{k[0]} | {k[1]}": int(v) for k, v in spike_summary.items()},
-        "diwali_percent_status": PERCENT_STATUS,
+        "diwali_percent_status": MANIFEST_PERCENT_STATUS,
+        "diwali_percent_note": MANIFEST_PERCENT_NOTE,
         "attribution": {"openaq": "OpenAQ (openaq.org), CPCB data",
                         "opencity": "CPCB data via OpenCity (data.opencity.in), public domain",
                         "bulletins": "CPCB daily AQI bulletins, parsed by UrbanEmissions.info (GODL)",

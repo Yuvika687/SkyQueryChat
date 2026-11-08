@@ -240,7 +240,7 @@ def test_estimate_is_an_upper_bound_of_small_prompts():
 def test_chain_order_and_gemini_limits_from_ai_studio(monkeypatch):
     monkeypatch.delenv("SKYQ_MODEL_CHAIN", raising=False)
     assert [e.label for e in M.model_chain()] == ["google:gemini-3.5-flash-lite", "google:gemini-3.1-flash-lite",
-                                                  "groq:openai/gpt-oss-120b", "google:gemini-3.8-flash"]
+                                                  "google:gemini-3.8-flash"]       # Groq disabled 2026-11-08
     qm = QuotaManager.from_config(M.load_config())
     for key, lim in {"google:gemini-3.1-flash-lite": (15, 250_000, 500),
                      "google:gemini-3.8-flash": (5, 250_000, 20)}.items():
@@ -262,3 +262,87 @@ def test_gemini_429_text_is_classified_per_minute_or_per_day():
     M._record_fallback(ModelHTTPError(429, "gemini-3.1-flash-lite", minute.replace("per minute", "per day")), qm)
     assert M.FALLBACK_LOG[-1]["per_day"] and pq.can_start_question() == "provider daily limit reached"
     assert qm.get("google:gemini-3.5-flash-lite").can_start_question() is None      # other model unaffected
+
+
+# ---------------------------------------------------------------- Phase 1 clean-up (2026-11-08)
+def test_disabled_groq_is_never_listed_as_a_fallback(monkeypatch):
+    monkeypatch.delenv("SKYQ_MODEL_CHAIN", raising=False)
+    qm = QuotaManager.from_config(M.load_config(), configured=M.live_labels())
+    shown = list(qm.status()["models"])                              # before the agent is built
+    assert shown == ["google:gemini-3.5-flash-lite", "google:gemini-3.1-flash-lite", "google:gemini-3.8-flash"]
+    assert qm.get("groq:openai/gpt-oss-120b").limit.rpm == 30       # its limits stay configured for testing
+    assert not any("groq" in k for k in M.QUOTA.status()["models"])
+
+
+def test_one_token_cap_for_run_limit_and_reservation(monkeypatch):
+    from backend.api.settings import Settings, question_token_cap
+    cfg = M.load_config()
+    cap = cfg["limits"]["max_tokens_per_question"]
+    assert cap == 12_000 and "question_tokens" not in cfg["quota"]
+    assert QuotaManager.from_config(cfg).cfg.question_tokens == cap == question_token_cap()
+    monkeypatch.delenv("TOKENS_PER_QUESTION", raising=False)
+    assert Settings().tokens_per_question == cap
+    monkeypatch.setenv("TOKENS_PER_QUESTION", "8000")                # env may lower the cap
+    assert Settings().tokens_per_question == 8000
+    monkeypatch.setenv("TOKENS_PER_QUESTION", "16000")               # but never raise it above the reservation
+    assert Settings().tokens_per_question == cap
+
+
+def test_measured_questions_fit_under_the_token_cap():
+    stats = json.load(open(M.CONFIG.parents[2] / "evals" / "request_stats.json"))["runs"]
+    current = {k: v for k, v in stats.items() if "day2" not in k}   # Day-2 runs used older code
+    assert current and max(v["tokens_per_question_max"] for v in current.values()) < M.load_config()["limits"]["max_tokens_per_question"]
+
+
+def _slow_then_fast(calls, delay):
+    async def slow(messages, info):
+        calls.append("slow")
+        await asyncio.sleep(delay)
+        return ModelResponse(parts=[TextPart("late")])
+
+    def fast(messages, info):
+        calls.append("fast")
+        return ModelResponse(parts=[TextPart("ok")])
+    return FunctionModel(slow, model_name="slow"), FunctionModel(fast, model_name="fast")
+
+
+def test_slow_model_request_times_out_and_falls_back():
+    from pydantic_ai.models import ModelRequestParameters
+    qm = QuotaManager({"s": ProviderLimit("s", rpd=100), "f": ProviderLimit("f", rpd=100)},
+                      QuotaConfig(safety_margin=1.0, demo_reserve=0.0))
+    calls = []
+    slow, fast = _slow_then_fast(calls, delay=5)
+    model = M.limited_chain([("s", slow), ("f", fast)], qm, timeout_s=0.2)
+    msgs = [ModelRequest(parts=[UserPromptPart("hi")])]
+
+    async def go():
+        with question_scope():
+            return await model.request(msgs, None, ModelRequestParameters())
+    resp = run(go())
+    assert calls == ["slow", "fast"] and resp.parts[0].content == "ok"
+    assert M.FALLBACK_LOG[-1]["timeout"] and not M.FALLBACK_LOG[-1]["rate_limited"]
+
+
+def test_live_chain_uses_configured_request_timeout():
+    model = M.limited_chain([("x", FunctionModel(lambda m, i: ModelResponse(parts=[TextPart("ok")])))],
+                            QuotaManager({}, QuotaConfig()))
+    assert model.models[0].timeout_s == M.load_config()["limits"]["model_request_timeout_s"] == 20
+
+
+def test_production_ignores_raised_rate_limits(monkeypatch):
+    from backend.api.settings import PROD_RATE_PER_DAY, PROD_RATE_PER_MINUTE, Settings
+    for k in ("RENDER", "SKYQ_ENV"):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.delenv("RATE_PER_MINUTE", raising=False)
+    monkeypatch.delenv("RATE_PER_DAY", raising=False)
+    assert (Settings().rate_per_minute, Settings().rate_per_day) == (PROD_RATE_PER_MINUTE, PROD_RATE_PER_DAY) == (4, 30)
+    monkeypatch.setenv("RATE_PER_MINUTE", "60")                      # the Playwright test values
+    monkeypatch.setenv("RATE_PER_DAY", "1000")
+    assert (Settings().rate_per_minute, Settings().rate_per_day) == (60, 1000)     # allowed locally
+    monkeypatch.setenv("RENDER", "true")                             # Render sets this on every service
+    assert (Settings().rate_per_minute, Settings().rate_per_day) == (4, 30)
+    monkeypatch.delenv("RENDER")
+    monkeypatch.setenv("SKYQ_ENV", "production")
+    assert (Settings(rate_per_minute=60).rate_per_minute) == 4
+    monkeypatch.setenv("RATE_PER_MINUTE", "2")                       # lowering stays possible
+    assert Settings().rate_per_minute == 2

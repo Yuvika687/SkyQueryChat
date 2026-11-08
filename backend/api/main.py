@@ -33,7 +33,7 @@ from backend.analysis import functions as F
 from backend.analysis.store import Store
 from backend.agent.quota import QuotaManager
 from .protect import AnswerCache, RateLimiter, load_demo, normalise
-from .settings import Settings
+from .settings import Settings, is_production
 from .sse import PING, sse
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -55,6 +55,7 @@ MESSAGES = {
     "ai_busy": "The live AI is busy with other visitors right now. Please try again in about a minute.",
     "model_unavailable": "The AI models are unavailable right now. Cached answers and data pages still work.",
     "timeout": "The answer took too long and was stopped. Please try a narrower question.",
+    "model_timeout": core.ERROR_TEXT["timeout"],
     "verification_failed": core.ERROR_TEXT["verification"],
     "format": core.ERROR_TEXT["format"],
     "too_many_steps": core.ERROR_TEXT["limit"],
@@ -207,6 +208,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         return {"status": "ok", "uptime_s": round(time.time() - state["started"], 1),
                 "data_loaded": "store" in state, "ai_configured": st.ai_configured,
                 "ai_quota": _quota_brief(),
+                "rate_limits": {"per_minute": st.rate_per_minute, "per_day": st.rate_per_day,
+                                "production": is_production()},
                 "data_windows": {k: str(v) for k, v in R.DATA.items()}}
 
     @app.get("/api/meta")
@@ -337,7 +340,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
             if recent and all(x.get("rate_limited") and not x.get("per_day") for x in recent):
                 return "ai_busy"
             return "ai_limit" if recent and any(x.get("rate_limited") for x in recent) else "model_unavailable"
-        return {"verification": "verification_failed", "format": "format", "limit": "too_many_steps"}.get(k, "internal")
+        return {"verification": "verification_failed", "format": "format", "limit": "too_many_steps",
+                "timeout": "model_timeout"}.get(k, "internal")
 
     async def _replay(payload: dict, rid: str, sid: str, source: str, t0: float):
         eid = 1

@@ -470,3 +470,25 @@ def test_memory_fits_render_free_tier():
     mb = json.loads(out.stdout.strip().splitlines()[-1])["max_rss_mb"]
     print(f"peak RSS {mb} MB")
     assert mb < 400, mb          # Render free tier: 512 MB
+
+
+def test_every_model_timing_out_gives_a_clear_error(store):
+    async def slow(m, info):
+        await asyncio.sleep(5)
+        return ModelResponse(parts=[TextPart("late")])
+    qm = _quota()
+    f = lambda: core.build_agent(M.limited_chain([("test:primary", FunctionModel(slow, model_name="primary")),
+                                                  ("test:backup", FunctionModel(slow, model_name="backup"))],
+                                                 qm, timeout_s=0.2))
+    with TestClient(make(store, factory=f, quota=qm)) as c:
+        _, ev = chat(c, "Delhi PM2.5 in November 2025?")
+        d = dict(ev)
+        assert d["error"]["code"] == "model_timeout" and "took too long" in d["error"]["message"]
+        assert names(ev)[-1] == "done"
+
+
+def test_health_reports_active_rate_limits(store):
+    with TestClient(make(store)) as c:
+        h = c.get("/api/health").json()
+        assert h["rate_limits"] == {"per_minute": 50, "per_day": 500, "production": False}
+        assert not any("groq" in k for k in h["ai_quota"]["models"])

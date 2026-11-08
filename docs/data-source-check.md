@@ -1011,6 +1011,12 @@ Run in batches of 5 with 20–25 s gaps.
 
 ## 8.5 FastAPI (`backend/api/`)
 
+> **Partly replaced.** Visitor identification by `X-Visitor-Id` was replaced on 2026-11-06 (Part 10: hashed IP from
+> True-Client-IP / CF-Connecting-IP; X-Visitor-Id and X-Forwarded-For are not trusted). The single 150,000 daily
+> token budget was replaced on 2026-11-06 by per-model daily budgets (Part 9). The token cap and request timeout
+> are now set as in Part 11. `GET /api/visitor` and `GET /api/quota` were added later. The endpoint list below is
+> otherwise current.
+
 | Endpoint | Purpose |
 |---|---|
 | `POST /api/chat` | SSE stream: `meta → step* → answer → cards → chart → sources → warnings → done`, or `… → error → done`. Body `{message (1–500 chars), session_id?}` |
@@ -1032,7 +1038,9 @@ Run in batches of 5 with 20–25 s gaps.
 
 **Demo protection:**
 - Per-visitor rate limits (`X-Visitor-Id`, else client IP): 4/min and 30/day by default, with a 429 and `Retry-After`.
-- A per-question token cap (12,000) and a daily token budget (150,000).
+  *(Replaced: visitor = trusted client-IP header, Part 10; production limits can't be raised, Part 11.)*
+- A per-question token cap (12,000) and a daily token budget (150,000). *(Replaced: per-model daily budgets, Part 9;
+  one 12,000 cap for the run limit and the quota reservation, Part 11.)*
 - An answer cache for repeated first-turn questions (6 h) and 8 pre-built demo answers (`data/app/demo_answers.json`), both served without an LLM.
 - The `ai_limit` message is shown when the budget or a provider quota runs out.
 - Data endpoints never call an LLM.
@@ -1070,6 +1078,11 @@ request; recalibrated to chars / 7, now 1.33× real, and Groq answered a 3-reque
 
 ## Part 9b — Gemini 3.1 Flash Lite added as a fallback (2026-11-06)
 
+> **Chain replaced.** The "Final chain" at the end of this part (Groq first) was replaced the same day by the owner's
+> order in Part 10, and on 2026-11-08 Groq was disabled (Part 11). Current live chain: gemini-3.5-flash-lite →
+> gemini-3.1-flash-lite → gemini-3.8-flash (`backend/config/models.json`). The limits and the per-model quota
+> finding below are still current.
+
 Limits updated from AI Studio (its usage numbers are 28-day peaks, not today's use): Gemini 3.8 Flash
 5 RPM / 250K TPM / 20 RPD; Gemini 3.1 Flash Lite 15 RPM / 250K TPM / 500 RPD (`gemini-3.1-flash-lite`,
 the stable ID; a `-preview` ID also exists).
@@ -1087,11 +1100,12 @@ and 3.1 Flash Lite still returned 429. Only the per-minute quota was observed di
 is assumed to be per model too (same quota family naming, and AI Studio lists it per model).
 
 **Final chain:** Groq gpt-oss-120b → gemini-3.5-flash-lite → gemini-3.1-flash-lite → gemini-3.8-flash.
+*(Replaced: see Part 10 and Part 11.)*
 
 # Part 10 — Pre-frontend fixes and fresh holdout (2026-11-06)
 
 **Model order (owner's decision):** gemini-3.5-flash-lite → gemini-3.1-flash-lite → Groq gpt-oss-120b →
-gemini-3.8-flash. Change only if the full Groq test gives strong evidence.
+gemini-3.8-flash. Change only if the full Groq test gives strong evidence. *(Replaced 2026-11-08: Groq disabled, Part 11.)*
 
 **Rescoring of earlier runs (separate; headline first-pass scores unchanged):**
 
@@ -1108,3 +1122,25 @@ and gemini-3.1-flash-lite (2 turns, after the shared per-minute limit on 3.5 Fla
 "2025-08-01..2025-10-31" (our own payload format), the resolver rejected it, and the model fell back to all
 of 2025. Fixed generally (accept "a..b"); a separate rerun of N07 passed (51 µg/m³ = reference). The
 first-pass score stays 10/11.
+
+# Part 11 — Phase 1 clean-up (2026-11-08)
+
+No data rules, analysis results or evaluation scores changed.
+
+| Setting | Before | Now |
+|---|---|---|
+| Live model chain | 3.5 Flash-Lite → 3.1 Flash Lite → Groq gpt-oss-120b → 3.8 Flash | 3.5 Flash-Lite → 3.1 Flash Lite → 3.8 Flash. Groq kept in `models.json` with `"enabled": false`, not listed in `/api/health` or `/api/quota`; `run_eval.py --set groq` still tests it |
+| Per-request timeout | none (only the 60 s question timeout) | 20 s per model request (`limits.model_request_timeout_s`); a timeout moves to the next model; all timed out → error `model_timeout` |
+| Token cap per question | API 12,000 (`TOKENS_PER_QUESTION`), terminal/eval 16,000 (`models.json`), quota reservation 12,000 | one value, 12,000 (`limits.max_tokens_per_question`), used for the run limit and the reservation; env may only lower it |
+| Rate limits | env could set any value | production (`RENDER` set or `SKYQ_ENV=production`) ignores values above 4/min and 30/day; `/api/health` shows the active limits |
+
+**Why 12,000 tokens:** it equals what the shared quota reserves for a new question, so a question can't use more than
+it reserved. The largest question on current code used 9,825 tokens (holdout2 first pass; main 7,993, holdout 7,666),
+leaving about 20% headroom. 16,000 was only reached by Day-2 code (17,449 max) before the token reduction.
+
+**Why 20 s per request:** a question makes 2–4 model requests (mean 2.43) inside a 60 s question limit, so a stuck
+request must fail early enough for a backup model to answer. Saved runs record time per question, not per request;
+the 20 s choice is a judgement, to check in the first live runs.
+
+Diwali percentage status in `data/app/manifest.json`: `approved_on_request_range` (approved 2026-11-04, see 7.1).
+The per-window `percent_status` in `diwali_aqi_baselines` stays `pending_user_approval` (no single fixed baseline).

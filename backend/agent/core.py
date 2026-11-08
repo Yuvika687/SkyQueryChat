@@ -16,7 +16,7 @@ import json
 import re
 
 from pydantic import ValidationError
-from .quota import current as quota_ctx, question_scope
+from .quota import ModelTimeout, current as quota_ctx, question_scope
 from pydantic_ai import Agent, ModelRetry, RunContext, TextOutput, ToolOutput, UsageLimits
 from pydantic_ai.exceptions import (ModelAPIError, ModelRequestRejectedError, UnexpectedModelBehavior,
                                    UsageLimitExceeded)
@@ -53,6 +53,7 @@ ERROR_TEXT = {
     "format": "The model did not return a valid answer. Please try again.",
     "limit": "This question needed too many steps. Please ask about one city, pollutant or period at a time.",
     "model": "The language models are unavailable or over their free quota right now. Please try again shortly.",
+    "timeout": "The AI models took too long to respond, so the answer was stopped. Please try again in a moment.",
     "other": "Something went wrong while answering. Please try again.",
 }
 
@@ -248,6 +249,13 @@ def _compose(deps: RunDeps, out: LLMAnswer, model_name: str | None, usage) -> Fi
                                  "output_tokens": usage.output_tokens} if usage else {})
 
 
+def _all_timeouts(e: BaseException) -> bool:
+    """True when every model in the chain failed by timing out (limits.model_request_timeout_s)."""
+    if isinstance(e, BaseExceptionGroup):
+        return bool(e.exceptions) and all(_all_timeouts(x) for x in e.exceptions)
+    return isinstance(e, ModelTimeout)
+
+
 def _error(deps: RunDeps, kind: str) -> FinalAnswer:
     deps.event("error", ERROR_TEXT[kind], kind=kind)
     reasons = [p for f in deps.verification_failures for p in f["problems"]][-3:]
@@ -313,7 +321,7 @@ async def _ask(agent: Agent, session: Session, question: str, deps: RunDeps,
         return _error(deps, "format"), deps
     except (ModelAPIError, ExceptionGroup) as e:
         log.warning("model error: %s", type(e).__name__)
-        return _error(deps, "model"), deps
+        return _error(deps, "timeout" if _all_timeouts(e) else "model"), deps
     except Exception as e:        # never show stack traces
         log.warning("agent error: %s", type(e).__name__)
         return _error(deps, "other"), deps

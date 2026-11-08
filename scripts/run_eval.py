@@ -275,7 +275,7 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
     if ids:
         qs = [q for q in qs if q["id"] in ids]
     if set_name == "groq":
-        groq_model = next(e.model for e in M.model_chain() if e.provider == "groq")
+        groq_model = next(e.model for e in M.model_chain(include_disabled=True) if e.provider == "groq")
         os.environ["SKYQ_MODEL_CHAIN"] = f"groq:{groq_model}"
         first = groq_probe(groq_model, size_chars=22_000)     # ~6K tokens: room for at least one full question
         if first["status"] == 429:

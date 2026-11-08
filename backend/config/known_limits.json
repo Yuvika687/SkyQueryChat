@@ -59,7 +59,7 @@
   {
    "id": "llm_quota",
    "title": "Free-tier AI limits",
-   "detail": "Live answers depend on Groq and Gemini free tiers; when they are exhausted the app serves cached answers and data pages only."
+   "detail": "Live answers depend on Gemini free tiers (Groq is configured but disabled); when they are exhausted the app serves cached answers and data pages only."
   },
   {
    "id": "ai_quota_in_memory",

@@ -99,7 +99,7 @@ export interface NoticeEvent {
 }
 
 export type ErrorCode =
-  | "ai_limit" | "ai_busy" | "model_unavailable" | "timeout" | "verification_failed" | "format"
+  | "ai_limit" | "ai_busy" | "model_unavailable" | "timeout" | "model_timeout" | "verification_failed" | "format"
   | "too_many_steps" | "internal" | "rate_limited" | "invalid_input" | "network" | "backend_waking";
 
 export interface ErrorEvent {

@@ -334,8 +334,11 @@ def test_per_question_token_limit(session_factory):
 
 def test_model_chain_from_config_and_env(monkeypatch):
     from backend.agent import models as M
+    monkeypatch.delenv("SKYQ_MODEL_CHAIN", raising=False)
     chain = M.model_chain()
-    assert chain[0].label == "google:gemini-3.5-flash-lite" and any(e.provider == "groq" for e in chain[1:])
+    assert chain[0].label == "google:gemini-3.5-flash-lite" and not any(e.provider == "groq" for e in chain)
+    groq = [e for e in M.model_chain(include_disabled=True) if e.provider == "groq"]
+    assert len(groq) == 1 and not groq[0].enabled                 # kept for testing, never live
     monkeypatch.setenv("SKYQ_MODEL_CHAIN", "google:gemini-x,groq:some-model")
     assert [e.label for e in M.model_chain()] == ["google:gemini-x", "groq:some-model"]
     monkeypatch.setenv("SKYQ_MODEL_CHAIN", "openai:gpt")

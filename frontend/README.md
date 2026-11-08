@@ -30,5 +30,6 @@ npm run e2e         # Playwright: starts backend + frontend, desktop/tablet/mobi
 npm run lint && npm run typecheck
 ```
 
-The e2e run raises the backend's per-visitor rate limit through env (`RATE_PER_MINUTE=60`) for testing only.
+The e2e run raises the backend's per-visitor rate limit through env (`RATE_PER_MINUTE=60`) for testing only;
+in production (`RENDER` set or `SKYQ_ENV=production`) the backend ignores values above 4/min and 30/day.
 One e2e test asks a live question (about 2–3 AI requests); later runs reuse the backend's answer cache.

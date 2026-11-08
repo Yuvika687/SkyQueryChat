@@ -11,14 +11,17 @@ real data (OpenAQ measurements, Open-Meteo models) and shows its source, data ty
 ## Stack
 - **Frontend:** Next.js, TypeScript, Tailwind CSS, shadcn/ui, Apache ECharts (Vercel)
 - **Backend:** Python, FastAPI, Server-Sent Events (Render)
-- **Agent:** Pydantic AI — Gemini 3.5 Flash-Lite primary; Gemini 3.1 Flash Lite, Groq gpt-oss-120b and Gemini 3.8 Flash as fallbacks (order set 2026-11-06)
+- **Agent:** Pydantic AI — Gemini 3.5 Flash-Lite primary; Gemini 3.1 Flash Lite and Gemini 3.8 Flash as fallbacks.
+  Groq gpt-oss-120b is configured but disabled (kept for testing).
 - **Data:** OpenAQ, Open-Meteo, pandas, Parquet, DuckDB
 
 ## Status
-Day 1 complete: data pipeline and processed dataset (`data/processed/`, Parquet).
-Day 2: weather, app tables (`data/app/`), analysis functions (`backend/analysis/`) and the
-terminal agent (`backend/agent/`). Day 3 (part 1): FastAPI with SSE streaming (`backend/api/`).
-Frontend not built yet. Evidence and rules: `docs/data-source-check.md`.
+- Done: data pipeline and processed dataset (`data/processed/`), weather, app tables (`data/app/`),
+  analysis functions (`backend/analysis/`), the agent (`backend/agent/`) and FastAPI with SSE streaming
+  (`backend/api/`).
+- Frontend (`frontend/`): app shell and the **Ask** screen are built (chat, agent timeline, cards, charts,
+  evidence bar). **Explore** and **Accuracy** are not built yet.
+- Not deployed yet. Evidence and rules: `docs/data-source-check.md`; UI spec: `docs/ui-design-spec.md`.
 
 ## Rebuild the dataset
 ```bash
@@ -43,10 +46,11 @@ uvicorn backend.api.main:app --port 8000
 curl -N -X POST localhost:8000/api/chat -H 'Content-Type: application/json' \
      -d '{"message":"How bad was Delhi'"'"'s air on Diwali 2025?"}'      # Server-Sent Events
 ```
-Endpoints: `POST /api/chat` (SSE), `GET /api/health`, `/api/meta`, `/api/limits`, `/api/stations`,
-`/api/cities`, `/api/cities/{city}/summary`, `/api/trends`, `/api/coverage`, `/api/diwali/{city}`,
-`/api/accuracy`, `/api/quota`. Docs at `/api/docs`. Environment: `ALLOWED_ORIGINS`, `RATE_PER_MINUTE`,
-`RATE_PER_DAY`, `TOKENS_PER_QUESTION`, `QUESTION_TIMEOUT_S`, `DEMO_ACCESS_TOKEN` (optional owner pass
+Endpoints: `POST /api/chat` (SSE), `GET /api/health`, `/api/meta`, `/api/visitor`, `/api/quota`,
+`/api/limits`, `/api/stations`, `/api/cities`, `/api/cities/{city}/summary`, `/api/trends`, `/api/coverage`,
+`/api/diwali/{city}`, `/api/accuracy`. Docs at `/api/docs`. Environment: `ALLOWED_ORIGINS`, `RATE_PER_MINUTE`,
+`RATE_PER_DAY` (production ignores values above 4/min and 30/day), `TOKENS_PER_QUESTION` (may only lower the
+12,000 cap in `models.json`), `QUESTION_TIMEOUT_S`, `CLIENT_IP_HEADERS`, `DEMO_ACCESS_TOKEN` (optional owner pass
 that may use the reserved daily quota, sent as `X-Demo-Token`), `SKYQ_PROVIDER_LIMITS`,
 `SKYQ_QUOTA_SAFETY_MARGIN`, `SKYQ_DEMO_RESERVE` (keys stay in the backend `.env`; the frontend never
 sees them).
@@ -57,6 +61,18 @@ limits × 0.8; public visitors stop at 85% of the daily caps, the rest is kept f
 wait in a shared queue (up to 20 s), daily limits skip to the next model, and when no model has room the
 chat says so and still serves saved answers. `python scripts/measure_requests.py` measures requests per
 question from saved evaluation runs.
+
+Each model request times out after 20 s (`limits.model_request_timeout_s`) and the next model is tried.
+
+## Run the frontend
+```bash
+cd frontend
+cp .env.example .env.local      # NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+npm install
+npm run dev                     # http://localhost:3000/ask
+npm test                        # Vitest (recorded SSE fixtures, no AI quota)
+npm run e2e                     # Playwright: starts backend + frontend, screenshots in docs/screenshots/ask/
+```
 
 ## Local setup
 ```bash
