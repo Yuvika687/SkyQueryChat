@@ -1144,3 +1144,45 @@ the 20 s choice is a judgement, to check in the first live runs.
 
 Diwali percentage status in `data/app/manifest.json`: `approved_on_request_range` (approved 2026-11-04, see 7.1).
 The per-window `percent_status` in `diwali_aqi_baselines` stays `pending_user_approval` (no single fixed baseline).
+
+# Part 12 — LLM-written answers (2026-11-12)
+
+No data rules, analysis results or evaluation scores changed. Published evaluation runs were not re-run or re-scored.
+
+**What changed:** the model now writes the headline (`answer`), a 1-3 sentence `explanation` and 2-3 `follow_ups`
+in its one final response. The number check, causal-wording check and prompt-quote check cover the headline and the
+explanation; a failure is sent back to the model to correct. The code-written lead (`backend/agent/lead.py`) is used
+only if every correction fails, and is then recorded as `verification.answer_source = "code_fallback"`. Follow-ups
+with unsupported numbers or causal wording are dropped instead of retried. The model also writes a one-sentence plan
+before its first tool call, shown in the timeline after the same checks (otherwise code describes its tool calls).
+
+**Fixed prompt size** (instructions + tool and answer schemas, measured with a scripted model, no quota): 9,225 →
+9,884 characters per model request (+659, about 165 tokens).
+
+**Saved demo answers, same questions, before and after** (gemini-3.5-flash-lite; "corr." = corrections after a failed
+check; the same three questions needed one correction before and after):
+
+| Question | Before | After | Change | Time | Written by |
+|---|---|---|---|---|---|
+| How bad was Delhi's air on Diwali 2025? | 5,675 (3 req, 1 corr.) | 6,780 (3 req, 1 corr.) | +1,105 | 29.0 s | llm |
+| Which of the six cities had the highest PM2.5 in winter 2025? | 3,669 (2 req) | 4,413 (2 req) | +744 | 23.7 s | llm |
+| Is rain associated with lower PM10 in Mumbai? | 3,582 (2 req) | 4,232 (2 req) | +650 | 14.5 s | llm |
+| Were there any unusual PM2.5 days in Delhi in 2025? | 3,840 (2 req) | 4,472 (2 req) | +632 | 18.1 s | llm |
+| What was Delhi's average PM2.5 in November 2025? | 3,489 (2 req) | 4,215 (2 req) | +726 | 21.9 s | llm |
+| Compare Mumbai's Diwali AQI in 2024 and 2025. | 6,134 (3 req, 1 corr.) | 7,254 (3 req, 1 corr.) | +1,120 | 14.2 s | llm |
+| What was Delhi's AQI on Diwali 2026? | 7,587 (4 req, 1 corr.) | 8,575 (4 req, 1 corr.) | +988 | 28.3 s | llm |
+| How complete is the data for Chennai in 2025? | 3,605 (2 req) | 4,301 (2 req) | +696 | 13.4 s | llm |
+| **Total** | **37,581** | **44,242** | **+6,661 (+17.7%)** | | |
+
+Largest question 8,575 tokens: within the 12,000 per-question cap (about 29% headroom). Requests per question did
+not change, so the shared quota's 4-requests-per-question reservation still holds.
+
+**Live checks through the API (SSE, 2026-11-12, before the cause-word and date wording was added to the
+instructions):** compare Delhi/Mumbai last 30 days 6,569 tokens, 3 requests, 25.3 s, one correction (the explanation
+said "due to" data gaps; the cause-word rule now covers all text, not only weather); Kolkata last 30 days 4,591, 2
+requests, 11.8 s; Hyderabad wind 4,354, 2 requests, 31.3 s. All three: written by the model, verified, plan written by
+the model, 3 model follow-ups. The first stream is kept as `frontend/src/test/fixtures/compare-llm.sse`.
+
+**Corrections:** in the first demo rebuild 5 of 8 questions needed one correction; re-running the two that had
+none before (unusual days, Chennai coverage) passed first time, so those were intermittent. Each answer now records
+`verification.corrections` (why earlier attempts were rejected) so the rate can be tracked from evaluation runs.

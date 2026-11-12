@@ -12,7 +12,9 @@ DataType = Literal["measured", "modelled", "official_aqi", "mixed"]
 # ----------------------------------------------------------------------------- what the LLM returns
 class LLMAnswer(BaseModel):
     status: Literal["answered", "clarify", "refused", "unavailable"]
-    answer: str = Field(description="1-3 sentences; numbers exactly as in tool fields")
+    answer: str = Field(description="headline: 1-2 sentences, finding first; numbers exactly as in tool fields")
+    explanation: str = Field(default="", description="1-3 sentences: what it means, pattern, caveats")
+    follow_ups: list[str] = Field(default_factory=list, description="2-3 short next questions")
     cards: list[str] = Field(default_factory=list, description="up to 4 'dataset_id.field' for metric cards")
     chart: str | None = Field(default=None, description="dataset_id to chart")
     question: str | None = Field(default=None, description="clarifying question (status clarify)")
@@ -58,9 +60,11 @@ class RequiredWarning(BaseModel):
 
 class FinalAnswer(BaseModel):
     status: Literal["answered", "clarify", "refused", "unavailable", "error"]
-    answer: str
-    headline: str | None = None          # code-written lead sentence from tool results (backend/agent/lead.py)
-    explanation: str = ""
+    answer: str                          # LLM-written (number-checked); code-written only as a last-resort fallback
+    headline: str | None = None          # the lead sentence shown first: the same text as `answer`
+    explanation: str = ""                # LLM-written explanation (number-checked)
+    method: str = ""                     # code-written data type, stations, coverage and method
+    follow_ups: list[str] = Field(default_factory=list)   # LLM-written; empty -> the UI uses templates
     cards: list[Card] = Field(default_factory=list)
     chart: dict[str, Any] | None = None
     sources: list[SourceRef] = Field(default_factory=list)

@@ -188,8 +188,8 @@ Rules:
 ### Answer building, evaluation and API decisions (2026-11-05)
 
 - Tools return `{id, type, units, period, fields, notes}`; the model writes the answer text and picks
-  cards as "dataset_id.field" and a chart dataset. CODE builds card value/label/unit/source/warnings,
-  the explanation and the chart. The written answer still passes the number check.
+  cards as "dataset_id.field" and a chart dataset. CODE builds card value/label/unit/source/warnings
+  and the chart. The written answer still passes the number check. *(Explanation: see "LLM-written answers".)*
 - Chennai and other non-Delhi Diwali answers use official AQI only; measured PM status is a warning.
 - Warn when a flag-only peer-outlier station moves a city value by > 25% (`peer_outlier_major`).
 - PM-only AQI estimates stay internal; known limits (incl. Delhi 481 vs 351) in
@@ -245,7 +245,8 @@ Rules:
 - CPCB AQI colours verified from CPCB "About_AQI.pdf" fill colours: Poor is #FF6500 (backend had #FF9900; fixed).
   UI uses the spec's dark-tuned hexes. India PM10 24-h reference line = 100 ug/m3 (NAAQS; CPCB breakpoint table).
 - Answer sources now include `stations` (count / count_by_city / tier) for the evidence bar.
-- Follow-up suggestions are templates filled only from `resolved_query`.
+- Follow-up suggestions: the model's own (see "LLM-written answers"); templates filled from `resolved_query` only
+  when it gives none.
 - Tests: `npm test` (Vitest, recorded real SSE fixtures), `npm run e2e` (Playwright, backend + frontend,
   screenshots in `docs/screenshots/ask/`).
 - Known gap: the backend's city comparison chart is a bar of means, not the spec's multi-line; scatter has no
@@ -270,11 +271,10 @@ Rules:
 
 ### Ask screen layout, answer wording and charts (2026-11-08)
 
-- **Headline:** `backend/agent/lead.py` writes the answer's lead sentence in analyst wording from what the final
-  answer already holds (cards, chart points, coverage, resolved period). It must pass `check_numbers` and the causal
-  check, or it is dropped and the model's text leads. Sent as `answer.headline` (live, cached and saved demo answers).
-  The model's `answer` text is unchanged (evaluation still scores it); the UI shows it only as support for
-  multi-dataset answers. Small counts are written as words ("six cities") so no unverified number appears.
+- **Headline:** *(Replaced 2026-11-12: the model writes the headline; `backend/agent/lead.py` is now only the
+  last-resort fallback. See "LLM-written answers".)* lead.py writes a lead sentence in analyst wording from what the
+  final answer holds (cards, chart points, coverage, resolved period) and must pass `check_numbers` and the causal
+  check. Small counts are written as words ("six cities") so no unverified number appears.
 - AQI is written as bulletin values (whole numbers) in headlines; key numbers round AQI half-up for display; the data
   table and CSV keep exact values.
 - `city_trend` chart frequency now defaults by period length (daily <= 92 days, weekly <= 1 year, else monthly); the
@@ -290,6 +290,29 @@ Rules:
   unlabelled with a key above the chart; reference-line labels right of the plot; zoom only above 62 points.
 - Figures use Inter tabular digits (`num` utility): JetBrains Mono gave decimals a full-width dot ("43 . 7").
 - Review screenshots: `npx playwright test e2e/review.spec.ts` -> `docs/screenshots/review/after/`.
+
+### LLM-written answers (2026-11-12)
+
+- **Answers are LLM-written and number-verified.** The model's `final_answer` holds `answer` (the headline, 1-2
+  sentences), `explanation` (1-3 sentences) and `follow_ups` (2-3 questions), in the same final response (no extra
+  request). Python still does every calculation; the model only copies numbers from tool fields.
+- `check_numbers`, the causal-wording check and the prompt-quote check run on `answer` AND `explanation`. A failure
+  goes back to the model to correct (`output_retries`). **Only if every correction fails** (or the token cap is hit
+  after a failed check) does code write the answer from tool results (`lead.py`); then
+  `verification.answer_source = "code_fallback"` and the timeline shows a warning. Otherwise `answer_source = "llm"`.
+  `verification.corrections` records why earlier attempts were rejected (one short line each).
+- Follow-ups are suggestions, not claims: one with an unsupported number, causal wording or a prompt quote is
+  DROPPED (no retry). Years in the data range and counts up to 31 are allowed. None left ->
+  `follow_ups_source = "template"` and the UI uses its templates.
+- `FinalAnswer.headline` = `answer`. `FinalAnswer.method` = the code-written data type / stations / coverage / method
+  text (shown under Evidence details). Saved answers without `method` are older: their `explanation` was that code text.
+- **Plan step:** the model writes one short sentence before its first tool call; it is shown as the plan if it has
+  no numbers beyond the user's own, no causal wording and no prompt text (`backend/agent/plan.py`). Otherwise code
+  describes the model's tool calls in plain words. Raw prompts and tool schemas are never shown.
+- Token cost: fixed prompt +659 characters per model request (about 165 tokens). Saved demo answers: +690 tokens per
+  question without a correction, max 8,575 (cap 12,000). Details in docs/data-source-check.md Part 12.
+- `scripts/build_demo_answers.py --only 2,5` rebuilds chosen demo answers and prints model, tokens, time and
+  verification per question.
 
 ## 6. UI requirements
 

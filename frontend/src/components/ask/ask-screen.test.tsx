@@ -71,6 +71,17 @@ describe("Ask screen", () => {
     expect(screen.getByText("Answers use the data available and may contain gaps.")).toBeInTheDocument();
   });
 
+  it("shows the model's own headline, explanation and follow-ups from a recorded live answer", async () => {
+    vi.mocked(api.streamChat).mockImplementation(streamOf(fixtureEvents("compare-llm.sse")));
+    renderAsk();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: /Compare Delhi and Mumbai over the last 30 days/ }));
+    expect(await screen.findByText(/^Delhi had a higher measured PM2.5 mean than Mumbai/)).toBeInTheDocument();
+    expect(screen.getByText(/the comparison covers 24 common days out of 30/)).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "How does Bengaluru compare to Hyderabad over the last 30 days?" })).toBeInTheDocument();
+    expect(screen.queryByText(/Is rain associated with lower/)).not.toBeInTheDocument();      // no template follow-ups
+  });
+
   it("streams a live answer: timeline, answer, cards, chart, interpreted dates and evidence", async () => {
     vi.mocked(api.streamChat).mockImplementation(streamOf(fixtureEvents("compare-live.sse")));
     renderAsk();

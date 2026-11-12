@@ -42,6 +42,8 @@ def trend_model(counter=None):
             return ModelResponse(parts=[ToolCallPart("city_trend", {"city": "Delhi", "period": "November 2025"})])
         p = rets[-1].content
         return ModelResponse(parts=[TextPart(json.dumps({"status": "answered", "answer": f"Delhi averaged {p['fields']['mean']} µg/m³.",
+                                                         "explanation": f"The highest day reached {p['fields']['highest_value']} µg/m³.",
+                                                         "follow_ups": ["Compare Delhi and Mumbai in November 2025?"],
                                                          "cards": [f"{p['id']}.mean"], "chart": p["id"]}))])
     return FunctionModel(fn)
 
@@ -494,18 +496,22 @@ def test_health_reports_active_rate_limits(store):
         assert not any("groq" in k for k in h["ai_quota"]["models"])
 
 
-def test_answer_event_carries_a_code_written_headline(store):
+def test_answer_event_carries_llm_headline_explanation_follow_ups_and_code_method(store):
     with TestClient(make(store)) as c:
         _, ev = chat(c, "Delhi PM2.5 in November 2025?")
         a = dict(ev)["answer"]
-        assert a["headline"].startswith("Delhi's PM2.5 averaged ") and "in November 2025" in a["headline"]
-        assert a["text"]                                            # the model's own sentence is still sent
+        assert a["headline"] == a["text"] and a["text"].startswith("Delhi averaged ")       # written by the model
+        assert a["explanation"].startswith("The highest day reached ")                    # written by the model
+        assert a["follow_ups"] == ["Compare Delhi and Mumbai in November 2025?"]
+        assert a["method"].startswith("Measured PM") and a["verification"]["answer_source"] == "llm"
 
 
-def test_saved_demo_answer_gets_a_headline_on_replay(store):
-    demo = {a["question"].lower().strip(" ?.!"): a for a in json.loads((APP / "demo_answers.json").read_text())["answers"]}
+def test_saved_demo_answer_replays_its_llm_text(store):
     from backend.api.protect import normalise
-    demo = {normalise(a["question"]): a for a in demo.values()}
+    demo = {normalise(a["question"]): a for a in json.loads((APP / "demo_answers.json").read_text())["answers"]}
+    saved = demo[normalise("How bad was Delhi's air on Diwali 2025?")]["final"]
     with TestClient(make(store, demo=demo)) as c:
         _, ev = chat(c, "How bad was Delhi's air on Diwali 2025?")
-        assert dict(ev)["answer"]["headline"].startswith("Delhi's air was Very Poor over Diwali 2025")
+        a = dict(ev)["answer"]
+        assert a["text"] == saved["answer"] and a["headline"] == (saved.get("headline") or saved["answer"])
+        assert a["method"] and a["cached"]

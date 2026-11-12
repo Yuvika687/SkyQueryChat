@@ -97,6 +97,8 @@ export function buildTimeline(events: StepEvent[], phase: Phase): TimelineStep[]
         break;
       case "plan": {
         finish("understand", ts);
+        // The agent's plan in plain language (its own sentence, or code's description of its tool choices)
+        if (typeof d.summary === "string" && d.summary) s.understand.result = d.summary;
         const steps = (d.steps as { tool: string; args: Record<string, unknown> }[] | undefined) ?? [];
         s.resolve.input = steps.map((x) => summariseArgs(x.args)).filter(Boolean).join("; ") || undefined;
         start("resolve", ts);
@@ -146,7 +148,13 @@ export function buildTimeline(events: StepEvent[], phase: Phase): TimelineStep[]
         finishBefore("verify", ts);
         start("verify", ts);
         const n = d.checked_numbers as number | undefined;
-        if (e.title === "passed") {
+        if (e.title === "passed" && d.answer_source === "code_fallback") {
+          // last resort: the model's corrections kept failing, so the summary was written from the results
+          finish("verify", ts, "warning");
+          s.verify.result = "Summary written directly from the verified results";
+          s.verify.note = "The AI's wording didn't pass the number check, so a plain summary is shown.";
+          start("prepare", ts);
+        } else if (e.title === "passed") {
           // A corrected number is the check working as designed: done, with a calm note (not a warning).
           finish("verify", ts, "done");
           s.verify.result = `${n ?? 0} number${n === 1 ? "" : "s"} matched the calculations`;

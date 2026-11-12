@@ -34,14 +34,20 @@ def _numbers_ok(final: dict, text: str) -> bool:
 
 
 @pytest.mark.skipif(not DEMO.exists(), reason="demo answers not built")
-def test_every_saved_answer_headline_uses_only_tool_numbers():
+def test_code_lead_from_saved_answers_uses_only_tool_numbers():
+    # The code-written lead is now only the last-resort fallback; whenever it can be built it must be verified.
+    built = 0
     for q, f in _demo().items():
         h = headline(f)
         if f["status"] != "answered":
             assert h is None, q
             continue
-        assert h and _numbers_ok(f, h), q
+        if h is None:
+            continue
+        built += 1
+        assert _numbers_ok(f, h), q
         assert "ranked" not in h and "mean of" not in h and "rank" not in h.lower()
+    assert built >= 5
 
 
 def test_comparison_reads_like_an_analyst():

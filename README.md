@@ -6,7 +6,8 @@ An agentic, conversational air-quality analytics app for six Indian cities
 Ask questions in plain English: trends, city comparisons, Diwali impact, unusual
 pollution days and weather associations. Every answer is computed in Python from
 real data (OpenAQ measurements, Open-Meteo models) and shows its source, data type
-(measured vs modelled) and coverage.
+(measured vs modelled) and coverage. The AI model writes the answer, explanation and follow-up questions; every
+number it writes is checked against the calculated results before the answer is shown.
 
 ## Stack
 - **Frontend:** Next.js, TypeScript, Tailwind CSS, shadcn/ui, Apache ECharts (Vercel)

@@ -75,15 +75,26 @@ export interface ChartSpec {
 export interface AnswerEvent {
   status: AnswerStatus;
   text: string;
-  /** Lead sentence written by backend code from tool results (null when the model's text should lead). */
+  /** Lead sentence: the model's number-checked answer (code-written only as a last-resort fallback). */
   headline?: string | null;
+  /** The model's number-checked explanation (older saved answers: the code-written method text). */
   explanation: string;
+  /** Code-written data type, stations, coverage and method (absent in older saved answers). */
+  method?: string;
+  /** Up to three follow-up questions written by the model; empty means the UI uses its templates. */
+  follow_ups?: string[];
   clarifying_question: string | null;
   data_types: DataType[];
   resolved_query: ResolvedQuery | null;
   required_warnings: RequiredWarning[];
   model: string | null;
-  verification: { passed?: boolean; retries?: number; numbers_checked?: number };
+  verification: {
+    passed?: boolean;
+    retries?: number;
+    numbers_checked?: number;
+    answer_source?: "llm" | "code_fallback";
+    follow_ups_source?: "llm" | "template";
+  };
   cached?: boolean;
 }
 

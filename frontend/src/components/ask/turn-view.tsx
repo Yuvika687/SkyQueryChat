@@ -248,13 +248,17 @@ function AnswerView({ turn, health, onAsk, busy }: { turn: Turn; health: Health 
   const modelledOnly = a.data_types.length === 1 && a.data_types[0] === "modelled";
   const dataType = (a.data_types.length > 1 ? "mixed" : a.data_types[0]) ?? null;
   const fups = followUps(turn);
-  // The lead is the code-written headline when there is one; the model's sentence is kept as support only
-  // when the answer drew on more than one dataset (it may mention the second one).
+  // The lead is the model's number-checked headline. Older saved answers carried a code-written headline next
+  // to the model's sentence; that sentence is kept as support when the answer drew on more than one dataset.
   const lead = a.headline || a.text;
   const support = a.headline && (turn.sources?.sources.length ?? 0) > 1 && a.text !== a.headline ? a.text : null;
+  // Newer answers send the code-written method separately; in older ones `explanation` was that method text.
+  const method = a.method ?? a.explanation;
+  const explanation = a.method !== undefined ? a.explanation : "";
   const copyText = [
     lead,
     support ?? "",
+    explanation,
     ...turn.cards.map((c) => `${c.label}: ${c.value} ${c.unit}`.trim()),
     ev.period ? `Period: ${ev.period}` : "",
     ev.source ? `Source: ${ev.source}` : "",
@@ -328,7 +332,9 @@ function AnswerView({ turn, health, onAsk, busy }: { turn: Turn; health: Health 
         <ChartPanel spec={turn.chart} dataType={dataType} answerText={copyText} />
       ) : null}
 
-      <EvidenceArea ev={ev} rq={a.resolved_query} explanation={a.explanation} notes={other} />
+      {explanation && <p className="text-sm leading-6 text-subtle">{explanation}</p>}
+
+      <EvidenceArea ev={ev} rq={a.resolved_query} explanation={method} notes={other} />
 
       {!turn.chart && <div><CopyOnly answerText={copyText} /></div>}
 

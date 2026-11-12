@@ -76,6 +76,7 @@ class RunDeps:
     run_datasets: list[str] = field(default_factory=list)
     tools_called: list[str] = field(default_factory=list)
     verification_failures: list[dict] = field(default_factory=list)
+    last_answer: Any = None                  # the model's latest final_answer attempt (for the code fallback)
     events: list[StepEvent] = field(default_factory=list)
 
     def event(self, type_: str, title: str, **detail) -> None:

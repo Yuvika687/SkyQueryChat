@@ -139,6 +139,10 @@ def test_trend_answer_cards_built_by_code_and_events_stream(session_factory):
         p = last_payload(m, "city_trend")
         mean = p["fields"]["mean"]
         return final(info, status="answered", answer=f"Delhi's measured PM2.5 averaged {mean} µg/m³ in November 2025.",
+                     explanation=f"The worst day reached {p['fields']['highest_value']} µg/m³.",
+                     follow_ups=["Were there any unusual PM2.5 days in Delhi in 2025?",
+                                 "Did rain cause lower PM2.5 in Delhi?",                     # causal: dropped
+                                 "Was Delhi above 987.6 µg/m³ in November 2025?"],          # invented number: dropped
                      cards=[f"{p['id']}.mean", f"{p['id']}.highest_value"], chart=p["id"])
     ev = []
     out, deps = run(core.build_agent(scripted([step1, step2])[0]), session_factory(), "Delhi PM2.5 Nov 2025?", ev)
@@ -148,7 +152,12 @@ def test_trend_answer_cards_built_by_code_and_events_stream(session_factory):
     assert c.value == full["values"]["summary"]["mean_of_daily_values"]          # value from the tool result
     assert c.unit == "µg/m³" and "Delhi" in c.label and c.data_type == "measured" and c.source.startswith("OpenAQ")
     assert "2025-11" in out.cards[1].label                                        # highest-day label carries the date
-    assert out.chart["type"] == "line" and out.explanation.startswith("Measured PM")
+    assert out.chart["type"] == "line" and out.method.startswith("Measured PM")
+    assert out.headline == out.answer and out.explanation.startswith("The worst day reached ")   # LLM-written
+    assert out.follow_ups == ["Were there any unusual PM2.5 days in Delhi in 2025?"]
+    assert out.verification["answer_source"] == "llm" and out.verification["follow_ups_dropped"] == 2
+    plan = next(e for e in ev if e.type == "plan")
+    assert plan.detail["source"] == "code" and plan.title == "Plan: look at PM2.5 in Delhi for November 2025."
     types = [e.type for e in ev]
     assert types[0] == "run_started" and "plan" in types and types[-1] == "answer"
     assert json.dumps([e.model_dump() for e in ev])
@@ -181,9 +190,65 @@ def test_card_must_be_a_numeric_tool_field(session_factory):
     def bad(m, info):
         p = last_payload(m, "city_trend")
         return final(info, status="answered", answer="See cards.", cards=[f"{p['id']}.made_up", f"{p['id']}.highest_date"])
-    out, deps = run(core.build_agent(scripted([t, bad])[0]), session_factory(), "Delhi?")
-    assert out.status == "error" and "not a 'dataset_id.field'" in deps.verification_failures[0]["problems"][0]
+    ev = []
+    out, deps = run(core.build_agent(scripted([t, bad])[0]), session_factory(), "Delhi?", ev)
+    assert "not a 'dataset_id.field'" in deps.verification_failures[0]["problems"][0]
     assert "not a numeric field" in " ".join(deps.verification_failures[0]["problems"])
+    # every correction failed, so the last-resort code-written lead is used and recorded
+    assert out.status == "answered" and out.verification["answer_source"] == "code_fallback"
+    assert out.answer == out.headline and out.answer.startswith("Delhi's PM2.5 averaged ")
+    assert [c.field for c in out.cards] == ["mean"] and out.follow_ups == [] and out.explanation == ""
+    assert out.verification["corrections"] and len(deps.verification_failures) == 4
+    assert any(e.detail.get("answer_source") == "code_fallback" for e in ev if e.type == "verification")
+
+
+@real
+def test_code_fallback_adds_the_cards_its_lead_needs(session_factory):
+    def t(m, info):
+        return [ToolCallPart("data_coverage", {"city": "Chennai", "period": "2025"})]
+
+    def bad(m, info):          # valid cards, but the text keeps an invented number
+        p = last_payload(m, "data_coverage")
+        return final(info, status="answered", answer="Chennai's data was 99.9% complete.",
+                     cards=[f"{p['id']}.pm25_share_pct", f"{p['id']}.pm10_share_pct"])
+    out, deps = run(core.build_agent(scripted([t, bad])[0]), session_factory(), "How complete is Chennai 2025?")
+    assert out.verification["answer_source"] == "code_fallback"
+    assert out.answer.startswith("Chennai had a valid city value for PM2.5 on ")
+    assert [c.field for c in out.cards] == ["days_in_period", "pm25_share_pct", "pm10_share_pct"]
+
+
+@real
+def test_invented_number_in_explanation_is_rejected_then_fixed(session_factory):
+    def tool(m, info):
+        return [TextPart("I'll look at Delhi's PM2.5 for November 2025."),
+                ToolCallPart("city_trend", {"city": "Delhi", "period": "November 2025"})]
+
+    def bad(m, info):
+        p = last_payload(m, "city_trend")
+        return final(info, status="answered", answer=f"Delhi averaged {p['fields']['mean']} µg/m³.",
+                     explanation="That is 15 times the WHO guideline.", cards=[f"{p['id']}.mean"])
+
+    def good(m, info):
+        p = last_payload(m, "city_trend")
+        return final(info, status="answered", answer=f"Delhi averaged {p['fields']['mean']} µg/m³.",
+                     explanation=f"The worst day reached {p['fields']['highest_value']} µg/m³.", cards=[f"{p['id']}.mean"])
+    ev = []
+    out, deps = run(core.build_agent(scripted([tool, bad, good])[0]), session_factory(), "Delhi PM2.5 November 2025?", ev)
+    assert out.status == "answered" and out.verification["retries"] == 1
+    assert out.verification["answer_source"] == "llm" and "15" in deps.verification_failures[0]["problems"][0]
+    plan = next(e for e in ev if e.type == "plan")
+    assert plan.title == "I'll look at Delhi's PM2.5 for November 2025." and plan.detail["source"] == "llm"
+
+
+def test_plan_sentence_with_unasked_numbers_or_prompt_text_falls_back_to_code():
+    from backend.agent.plan import plan_summary
+    steps = [{"tool": "compare_cities", "args": {"cities": ["Delhi", "Mumbai"], "period": "last 30 days"}}]
+    assert plan_summary("I'll compare Delhi and Mumbai over the last 30 days.", steps,
+                        "Compare Delhi and Mumbai over the last 30 days")[1] == "llm"
+    for said in ("Delhi is probably near 250 µg/m³, so I'll compare.", "Per my instructions I call final_answer.",
+                 "", "{\"status\": \"answered\"}"):
+        text, src = plan_summary(said, steps, "Compare Delhi and Mumbai over the last 30 days")
+        assert src == "code" and text == "Plan: compare PM across Delhi and Mumbai for last 30 days."
 
 
 @real

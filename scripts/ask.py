@@ -54,8 +54,11 @@ def show_answer(a, as_json=False):
         print(f"  source [{s.dataset_id}] {s.data_type}: {s.source} ({s.date_range.get('start')} to {s.date_range.get('end')})")
     for w in a.warnings[:6]:
         print(f"  ! {w}")
+    for q in a.follow_ups:
+        print(f"  → {q}")
     v = a.verification
-    print(f"  numbers verified: {v.get('passed')} (retries {v.get('retries', 0)}); model {a.model}; usage {a.usage}\n")
+    print(f"  numbers verified: {v.get('passed')} (retries {v.get('retries', 0)}, written by {v.get('answer_source', 'llm')}); "
+          f"model {a.model}; usage {a.usage}\n")
 
 
 async def main():

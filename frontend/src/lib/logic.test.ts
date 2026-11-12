@@ -49,6 +49,22 @@ describe("timeline", () => {
     expect(summarise(steps)).toMatchObject({ corrected: true, failed: false, warning: false });
   });
 
+  it("shows the agent's plan in plain language and flags a last-resort code summary", () => {
+    const ts = (n: number) => `2026-11-12T10:00:0${n}.000Z`;
+    const ev: StepEvent[] = [
+      { seq: 1, type: "run_started", title: "question received", detail: {}, ts: ts(0) },
+      { seq: 2, type: "plan", title: "I'll compare Delhi and Mumbai over the last 30 days.", detail: { summary: "I'll compare Delhi and Mumbai over the last 30 days.", source: "llm", steps: [] }, ts: ts(1) },
+      { seq: 3, type: "verification", title: "failed", detail: { problems: 1 }, ts: ts(2) },
+      { seq: 4, type: "verification", title: "passed", detail: { answer_source: "code_fallback" }, ts: ts(3) },
+      { seq: 5, type: "answer", title: "answered", detail: {}, ts: ts(4) },
+    ];
+    const steps = buildTimeline(ev, "done");
+    expect(steps.find((s) => s.key === "understand")?.result).toBe("I'll compare Delhi and Mumbai over the last 30 days.");
+    const v = steps.find((s) => s.key === "verify")!;
+    expect(v.status).toBe("warning");
+    expect(v.result).toMatch(/written directly from the verified results/);
+  });
+
   it("keeps a real verification failure visible", () => {
     const ev: StepEvent[] = [
       { seq: 1, type: "run_started", title: "question received", detail: {}, ts: "2026-11-06T10:00:00.000Z" },
@@ -168,6 +184,14 @@ describe("evidence and follow-ups", () => {
     const f = followUps(turnFrom("compare-live.sse", "Compare Delhi and Mumbai over the last 30 days"));
     expect(f.length).toBeLessThanOrEqual(3);
     expect(f.join(" ")).toMatch(/Delhi/);
+  });
+
+  it("prefers the model's own follow-ups and uses templates only when it gives none", () => {
+    const t = turnFrom("compare-live.sse", "Compare Delhi and Mumbai over the last 30 days");
+    const own = { ...t, answer: { ...t.answer!, follow_ups: ["Which days were worst in Delhi?", "compare delhi and mumbai over the last 30 days", "Is wind linked to PM2.5 in Mumbai?"] } };
+    expect(followUps(own)).toEqual(["Which days were worst in Delhi?", "Is wind linked to PM2.5 in Mumbai?"]);
+    const none = { ...t, answer: { ...t.answer!, follow_ups: [] } };
+    expect(followUps(none)).toEqual(followUps(t));
   });
 });
 

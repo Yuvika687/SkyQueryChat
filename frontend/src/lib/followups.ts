@@ -1,9 +1,18 @@
-// Up to three follow-up suggestions. These are question templates, not data: they are filled only with the
+// Up to three follow-up suggestions. The model writes them in its final answer (the backend drops any with
+// unsupported numbers or causal wording). Only when it gives none do we fall back to templates filled with the
 // city, pollutant and year the backend reported in resolved_query.
 import type { Turn } from "./chat-state";
 import { fmtDate } from "./format";
 
+const norm = (q: string) => q.toLowerCase().replace(/[^a-z0-9]/g, "");
+
 export function followUps(t: Turn): string[] {
+  const own = (t.answer?.follow_ups ?? []).filter((q) => q.trim() && norm(q) !== norm(t.question));
+  if (own.length && t.answer?.status !== "error") return own.slice(0, 3);
+  return templateFollowUps(t);
+}
+
+export function templateFollowUps(t: Turn): string[] {
   const rq = t.answer?.resolved_query;
   if (!rq || t.answer?.status !== "answered") return [];
   const cities = rq.cities?.length ? rq.cities : rq.city ? [rq.city] : [];
@@ -32,6 +41,6 @@ export function followUps(t: Turn): string[] {
           `Were there any unusual ${pol} days in ${city} in ${year}?`,
           `Is rain associated with lower ${pol} in ${city}?`,
         ];
-  const asked = t.question.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return out.filter((q) => q.toLowerCase().replace(/[^a-z0-9]/g, "") !== asked).slice(0, 3);
+  const asked = norm(t.question);
+  return out.filter((q) => norm(q) !== asked).slice(0, 3);
 }

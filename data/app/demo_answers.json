@@ -4,8 +4,15 @@
    "question": "How bad was Delhi's air on Diwali 2025?",
    "final": {
     "status": "answered",
-    "answer": "On Diwali 2025 (bulletin dates 2025-10-21 to 2025-10-22), Delhi's official CPCB AQI was in the Very Poor category with a festival AQI of 352, while pre-Diwali AQI was rising. We use official AQI (an index) for Diwali data.",
-    "explanation": "Official CPCB AQI (index, not a concentration): Diwali air quality in Delhi (official AQI), 2025-10-06 to 2025-10-24. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
+    "answer": "On Diwali 2025, Delhi recorded an official CPCB AQI of 352 in the Very Poor category, with bulletin readings of 351 and 353.",
+    "headline": "On Diwali 2025, Delhi recorded an official CPCB AQI of 352 in the Very Poor category, with bulletin readings of 351 and 353.",
+    "explanation": "This uses official CPCB AQI (an index, not a concentration). In the week before the festival, the pre-week average AQI was 264.6, and the pre-trend was rising.",
+    "method": "Official CPCB AQI (index, not a concentration): Diwali air quality in Delhi (official AQI), 2025-10-06 to 2025-10-24. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
+    "follow_ups": [
+     "What was Delhi's measured PM2.5 around Diwali 2025?",
+     "How did Mumbai's Diwali 2025 AQI compare?",
+     "What was the weather association during Diwali 2025 in Delhi?"
+    ],
     "cards": [
      {
       "label": "Delhi official AQI, Diwali 2025 (mean of festival bulletins)",
@@ -13,6 +20,19 @@
       "unit": "index (0-500)",
       "dataset_id": "ds1",
       "field": "2025_festival_aqi",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "AQI was already rising in the days before Diwali, so the festival level cannot be attributed to Diwali alone."
+      ]
+     },
+     {
+      "label": "Delhi official AQI, week before Diwali 2025",
+      "value": 264.6,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2025_pre_week_aqi",
       "data_type": "official_aqi",
       "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
       "warnings": [
@@ -193,6 +213,9 @@
       "date_range": {
        "start": "2025-10-06",
        "end": "2025-10-24"
+      },
+      "stations": {
+       "note": "stations chosen by CPCB for the city bulletin"
       }
      }
     ],
@@ -252,34 +275,38 @@
     "verification": {
      "passed": true,
      "retries": 1,
-     "numbers_checked": 2
+     "numbers_checked": 5,
+     "answer_source": "llm",
+     "follow_ups_source": "llm"
     },
     "model": "gemini-3.5-flash-lite",
     "usage": {
      "requests": 3,
-     "input_tokens": 5382,
-     "output_tokens": 293
+     "input_tokens": 6293,
+     "output_tokens": 487
     }
    },
    "steps": [
     {
      "seq": 3,
      "type": "plan",
-     "title": "Plan: diwali_aqi",
+     "title": "I will check the official CPCB AQI levels and bulletin dates for Delhi on Diwali 2025.",
      "detail": {
+      "summary": "I will check the official CPCB AQI levels and bulletin dates for Delhi on Diwali 2025.",
+      "source": "llm",
       "steps": [
        {
         "tool": "diwali_aqi",
         "args": {
-         "city": "Delhi",
          "years": [
           2025
-         ]
+         ],
+         "city": "Delhi"
         }
        }
       ]
      },
-     "ts": "2026-11-06T06:49:57.303+00:00"
+     "ts": "2026-11-12T06:15:52.885+00:00"
     },
     {
      "seq": 4,
@@ -294,7 +321,7 @@
        "percent": false
       }
      },
-     "ts": "2026-11-06T06:49:57.305+00:00"
+     "ts": "2026-11-12T06:15:52.886+00:00"
     },
     {
      "seq": 5,
@@ -306,27 +333,27 @@
       "fields": 6,
       "warnings": 6
      },
-     "ts": "2026-11-06T06:49:57.321+00:00"
+     "ts": "2026-11-12T06:15:52.899+00:00"
     },
     {
      "seq": 7,
      "type": "verification",
      "title": "failed",
      "detail": {
-      "checked_numbers": 2,
+      "checked_numbers": 8,
       "problems": 1
      },
-     "ts": "2026-11-06T06:49:58.618+00:00"
+     "ts": "2026-11-12T06:16:06.354+00:00"
     },
     {
      "seq": 10,
      "type": "verification",
      "title": "passed",
      "detail": {
-      "checked_numbers": 2,
+      "checked_numbers": 5,
       "problems": 0
      },
-     "ts": "2026-11-06T06:50:00.196+00:00"
+     "ts": "2026-11-12T06:16:19.451+00:00"
     }
    ],
    "context": {
@@ -335,15 +362,23 @@
      2025
     ]
    },
-   "built": "2026-11-06 12:20",
-   "model": "gemini-3.5-flash-lite"
+   "built": "2026-11-12 11:46",
+   "model": "gemini-3.5-flash-lite",
+   "elapsed_s": 29.0
   },
   {
    "question": "Which of the six cities had the highest PM2.5 in winter 2025?",
    "final": {
     "status": "answered",
-    "answer": "Using measured PM data in winter 2025, Delhi had the highest PM2.5 with a mean of 164.4 µg/m³.",
-    "explanation": "Measured PM: PM2.5 across Delhi, Mumbai, Kolkata, Chennai, Bengaluru, Hyderabad, 2025-12-01 to 2026-02-28. Stations: Delhi 37, Mumbai 22, Kolkata 7, Chennai 6, Bengaluru 6, Hyderabad 9. 67 days have data for every city. Method: Ranking uses only days on which every city has a valid city value, so cities are compared over the same dates.",
+    "answer": "Delhi had the highest PM2.5 among the six cities in winter 2025, with a mean of 164.4 µg/m³.",
+    "headline": "Delhi had the highest PM2.5 among the six cities in winter 2025, with a mean of 164.4 µg/m³.",
+    "explanation": "Using measured PM data in winter 2025 (2025-12-01..2026-02-28), Delhi recorded the highest mean PM2.5 level (164.4 µg/m³), followed by Kolkata at 85.9 µg/m³. Comparisons are based on 67 common days across all stations, with data coverage notes indicating 20 days with network-wide data gaps.",
+    "method": "Measured PM: PM2.5 across Delhi, Mumbai, Kolkata, Chennai, Bengaluru, Hyderabad, 2025-12-01 to 2026-02-28. Stations: Delhi 37, Mumbai 22, Kolkata 7, Chennai 6, Bengaluru 6, Hyderabad 9. 67 days have data for every city. Method: Ranking uses only days on which every city has a valid city value, so cities are compared over the same dates.",
+    "follow_ups": [
+     "What was Mumbai's PM2.5 trend in winter 2025?",
+     "How did Bengaluru and Hyderabad compare in winter 2025?",
+     "What was the weather association for Delhi in winter 2025?"
+    ],
     "cards": [
      {
       "label": "Delhi mean PM2.5 (common days), 2025-12-01 to 2026-02-28",
@@ -359,11 +394,37 @@
       ]
      },
      {
-      "label": "Delhi rank (1 = highest PM2.5)",
-      "value": 1.0,
-      "unit": "",
+      "label": "Kolkata mean PM2.5 (common days), 2025-12-01 to 2026-02-28",
+      "value": 85.9,
+      "unit": "µg/m³",
       "dataset_id": "ds1",
-      "field": "Delhi_rank",
+      "field": "Kolkata_mean",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "20 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable.",
+       "Mumbai: On 1 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2025-12-27 (+41%)); treat those days with caution."
+      ]
+     },
+     {
+      "label": "Chennai mean PM2.5 (common days), 2025-12-01 to 2026-02-28",
+      "value": 55.5,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "Chennai_mean",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "20 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable.",
+       "Mumbai: On 1 day(s) one station flagged as a peer outlier moves the city value by more than 25% (e.g. 2025-12-27 (+41%)); treat those days with caution."
+      ]
+     },
+     {
+      "label": "Mumbai mean PM2.5 (common days), 2025-12-01 to 2026-02-28",
+      "value": 51.3,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "Mumbai_mean",
       "data_type": "measured",
       "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
       "warnings": [
@@ -428,6 +489,17 @@
       "date_range": {
        "start": "2025-12-01",
        "end": "2026-02-28"
+      },
+      "stations": {
+       "count_by_city": {
+        "Delhi": 37,
+        "Mumbai": 22,
+        "Kolkata": 7,
+        "Chennai": 6,
+        "Bengaluru": 6,
+        "Hyderabad": 9
+       },
+       "tier": "primary reference"
       }
      }
     ],
@@ -501,27 +573,29 @@
     "verification": {
      "passed": true,
      "retries": 0,
-     "numbers_checked": 2
+     "numbers_checked": 7,
+     "answer_source": "llm",
+     "follow_ups_source": "llm"
     },
     "model": "gemini-3.5-flash-lite",
     "usage": {
      "requests": 2,
-     "input_tokens": 3526,
-     "output_tokens": 143
+     "input_tokens": 4061,
+     "output_tokens": 352
     }
    },
    "steps": [
     {
      "seq": 3,
      "type": "plan",
-     "title": "Plan: compare_cities",
+     "title": "I will check the PM2.5 levels across the six cities for winter 2025 using measured PM data.",
      "detail": {
+      "summary": "I will check the PM2.5 levels across the six cities for winter 2025 using measured PM data.",
+      "source": "llm",
       "steps": [
        {
         "tool": "compare_cities",
         "args": {
-         "pollutant": "PM2.5",
-         "period": "winter 2025",
          "cities": [
           "Delhi",
           "Mumbai",
@@ -529,12 +603,14 @@
           "Chennai",
           "Bengaluru",
           "Hyderabad"
-         ]
+         ],
+         "pollutant": "PM2.5",
+         "period": "winter 2025"
         }
        }
       ]
      },
-     "ts": "2026-11-06T06:50:17.239+00:00"
+     "ts": "2026-11-12T06:16:47.225+00:00"
     },
     {
      "seq": 4,
@@ -554,7 +630,7 @@
        "period": "winter 2025"
       }
      },
-     "ts": "2026-11-06T06:50:17.240+00:00"
+     "ts": "2026-11-12T06:16:47.227+00:00"
     },
     {
      "seq": 5,
@@ -566,17 +642,17 @@
       "fields": 19,
       "warnings": 4
      },
-     "ts": "2026-11-06T06:50:17.303+00:00"
+     "ts": "2026-11-12T06:16:47.291+00:00"
     },
     {
      "seq": 7,
      "type": "verification",
      "title": "passed",
      "detail": {
-      "checked_numbers": 2,
+      "checked_numbers": 7,
       "problems": 0
      },
-     "ts": "2026-11-06T06:50:18.675+00:00"
+     "ts": "2026-11-12T06:16:58.200+00:00"
     }
    ],
    "context": {
@@ -591,15 +667,22 @@
     "pollutant": "PM2.5",
     "period": "winter 2025"
    },
-   "built": "2026-11-06 12:20",
-   "model": "gemini-3.5-flash-lite"
+   "built": "2026-11-12 11:46",
+   "model": "gemini-3.5-flash-lite",
+   "elapsed_s": 23.7
   },
   {
    "question": "Is rain associated with lower PM10 in Mumbai?",
    "final": {
     "status": "answered",
-    "answer": "In Mumbai, days with more rainfall tended to have lower PM10 (strong association, Spearman rho = -0.73, 526 days), using measured PM (µg/m³) and modelled weather. This is an association, not a cause.",
-    "explanation": "Measured PM + modelled weather: PM10 and rainfall in Mumbai, 2025-02-18 to 2026-10-30. 22 primary stations (primary). 526 matched days. Method: Spearman rank correlation between daily city PM and the daily weather value; days grouped into quartiles (or dry/rain) to show average PM per group.",
+    "answer": "In Mumbai, days with rain had a lower measured PM10 mean of 51.8 µg/m³ compared to 100.9 µg/m³ on dry days, showing a strong negative association (Spearman rho = -0.728, 526 days).",
+    "headline": "In Mumbai, days with rain had a lower measured PM10 mean of 51.8 µg/m³ compared to 100.9 µg/m³ on dry days, showing a strong negative association (Spearman rho = -0.728, 526 days).",
+    "explanation": "This uses measured PM10 (µg/m³) and modelled weather data from 18 Feb 2025 to 30 Oct 2026. This is an association and not a cause. Note that 49 days have severe network-wide data gaps.",
+    "method": "Measured PM + modelled weather: PM10 and rainfall in Mumbai, 2025-02-18 to 2026-10-30. 22 primary stations (primary). 526 matched days. Method: Spearman rank correlation between daily city PM and the daily weather value; days grouped into quartiles (or dry/rain) to show average PM per group.",
+    "follow_ups": [
+     "Is temperature associated with PM2.5 in Mumbai?",
+     "What was the highest PM10 day in Mumbai?"
+    ],
     "cards": [
      {
       "label": "Mumbai mean PM10, rain (>= 1 mm)",
@@ -2777,6 +2860,9 @@
       "date_range": {
        "start": "2025-02-18",
        "end": "2026-10-30"
+      },
+      "stations": {
+       "count": 22
       }
      }
     ],
@@ -2840,21 +2926,25 @@
     "verification": {
      "passed": true,
      "retries": 0,
-     "numbers_checked": 2
+     "numbers_checked": 9,
+     "answer_source": "llm",
+     "follow_ups_source": "llm"
     },
     "model": "gemini-3.5-flash-lite",
     "usage": {
      "requests": 2,
-     "input_tokens": 3441,
-     "output_tokens": 141
+     "input_tokens": 3967,
+     "output_tokens": 265
     }
    },
    "steps": [
     {
      "seq": 3,
      "type": "plan",
-     "title": "Plan: weather_association",
+     "title": "I will check the association between rain and measured PM10 levels in Mumbai.",
      "detail": {
+      "summary": "I will check the association between rain and measured PM10 levels in Mumbai.",
+      "source": "llm",
       "steps": [
        {
         "tool": "weather_association",
@@ -2866,7 +2956,7 @@
        }
       ]
      },
-     "ts": "2026-11-06T06:50:35.264+00:00"
+     "ts": "2026-11-12T06:17:19.388+00:00"
     },
     {
      "seq": 4,
@@ -2880,7 +2970,7 @@
        "period": null
       }
      },
-     "ts": "2026-11-06T06:50:35.267+00:00"
+     "ts": "2026-11-12T06:17:19.390+00:00"
     },
     {
      "seq": 5,
@@ -2892,17 +2982,17 @@
       "fields": 8,
       "warnings": 4
      },
-     "ts": "2026-11-06T06:50:35.308+00:00"
+     "ts": "2026-11-12T06:17:19.422+00:00"
     },
     {
      "seq": 7,
      "type": "verification",
      "title": "passed",
      "detail": {
-      "checked_numbers": 2,
+      "checked_numbers": 9,
       "problems": 0
      },
-     "ts": "2026-11-06T06:50:37.128+00:00"
+     "ts": "2026-11-12T06:17:27.786+00:00"
     }
    ],
    "context": {
@@ -2910,15 +3000,23 @@
     "pollutant": "PM10",
     "weather": "rain"
    },
-   "built": "2026-11-06 12:20",
-   "model": "gemini-3.5-flash-lite"
+   "built": "2026-11-12 11:47",
+   "model": "gemini-3.5-flash-lite",
+   "elapsed_s": 14.5
   },
   {
    "question": "Were there any unusual PM2.5 days in Delhi in 2025?",
    "final": {
     "status": "answered",
-    "answer": "Using measured PM (µg/m³), there were 27 unusual PM2.5 days in Delhi in 2025, including 20 unusually high days and 7 unusually low days. The highest unusual day was 2025-12-14 with 384.5 µg/m³ (median 202.3 µg/m³), and the lowest unusual day was 2025-11-05 with 104.4 µg/m³ (median 212.8 µg/m³).",
-    "explanation": "Measured PM: Unusual PM2.5 days in Delhi, 2025-01-01 to 2025-12-31. 37 primary stations (primary reference). 296 of 365 days have a city value. Method: Each day's city value is compared with the median of the 15 surrounding days (the day itself excluded).",
+    "answer": "Delhi recorded 27 unusual PM2.5 days in 2025 using measured PM data, including a high of 384.5 µg/m³ on 14 Dec 2025 and a low of 104.4 µg/m³ on 5 Nov 2025.",
+    "headline": "Delhi recorded 27 unusual PM2.5 days in 2025 using measured PM data, including a high of 384.5 µg/m³ on 14 Dec 2025 and a low of 104.4 µg/m³ on 5 Nov 2025.",
+    "explanation": "Out of 296 days tested, there were 20 high unusual days and 7 low unusual days identified via a 15-day rolling median method. Note that measured OpenAQ data starts from 18 Feb 2025 and 15 dates had severe network-wide data gaps.",
+    "method": "Measured PM: Unusual PM2.5 days in Delhi, 2025-01-01 to 2025-12-31. 37 primary stations (primary reference). 296 of 365 days have a city value. Method: Each day's city value is compared with the median of the 15 surrounding days (the day itself excluded).",
+    "follow_ups": [
+     "What were the weather conditions associated with unusual PM2.5 days in Delhi in 2025?",
+     "How do Delhi's PM2.5 levels compare with Mumbai in 2025?",
+     "What was Delhi's Diwali AQI in 2025?"
+    ],
     "cards": [
      {
       "label": "Delhi PM2.5 on 2025-12-14 (unusually high)",
@@ -5479,6 +5577,10 @@
       "date_range": {
        "start": "2025-01-01",
        "end": "2025-12-31"
+      },
+      "stations": {
+       "count": 37,
+       "tier": "primary reference"
       }
      }
     ],
@@ -5526,21 +5628,25 @@
     "verification": {
      "passed": true,
      "retries": 0,
-     "numbers_checked": 8
+     "numbers_checked": 15,
+     "answer_source": "llm",
+     "follow_ups_source": "llm"
     },
     "model": "gemini-3.5-flash-lite",
     "usage": {
      "requests": 2,
-     "input_tokens": 3615,
-     "output_tokens": 225
+     "input_tokens": 4148,
+     "output_tokens": 324
     }
    },
    "steps": [
     {
      "seq": 3,
      "type": "plan",
-     "title": "Plan: unusual_days",
+     "title": "I will check for unusual PM2.5 days in Delhi in 2025 using measured PM data.",
      "detail": {
+      "summary": "I will check for unusual PM2.5 days in Delhi in 2025 using measured PM data.",
+      "source": "llm",
       "steps": [
        {
         "tool": "unusual_days",
@@ -5552,7 +5658,7 @@
        }
       ]
      },
-     "ts": "2026-11-06T06:50:53.798+00:00"
+     "ts": "2026-11-12T06:21:24.501+00:00"
     },
     {
      "seq": 4,
@@ -5565,7 +5671,7 @@
        "period": "2025"
       }
      },
-     "ts": "2026-11-06T06:50:53.801+00:00"
+     "ts": "2026-11-12T06:21:24.502+00:00"
     },
     {
      "seq": 5,
@@ -5577,17 +5683,17 @@
       "fields": 18,
       "warnings": 3
      },
-     "ts": "2026-11-06T06:50:53.893+00:00"
+     "ts": "2026-11-12T06:21:24.586+00:00"
     },
     {
      "seq": 7,
      "type": "verification",
      "title": "passed",
      "detail": {
-      "checked_numbers": 8,
+      "checked_numbers": 15,
       "problems": 0
      },
-     "ts": "2026-11-06T06:50:55.430+00:00"
+     "ts": "2026-11-12T06:21:27.049+00:00"
     }
    ],
    "context": {
@@ -5595,15 +5701,23 @@
     "pollutant": "PM2.5",
     "period": "2025"
    },
-   "built": "2026-11-06 12:20",
-   "model": "gemini-3.5-flash-lite"
+   "built": "2026-11-12 11:51",
+   "model": "gemini-3.5-flash-lite",
+   "elapsed_s": 18.1
   },
   {
    "question": "What was Delhi's average PM2.5 in November 2025?",
    "final": {
     "status": "answered",
-    "answer": "In November 2025, Delhi's measured PM2.5 mean was 224.1 µg/m³ based on measured PM data.",
-    "explanation": "Measured PM: PM2.5 trend in Delhi, 2025-11-01 to 2025-11-30. 37 primary stations (primary reference). 26 of 30 days have a city value. Method: City value per day = equal-weight mean of valid primary station-days (>= 16 valid IST hours; >= max(3, 50%) stations).",
+    "answer": "Delhi's measured PM2.5 mean was 224.1 µg/m³ in November 2025, with a median of 220.9 µg/m³.",
+    "headline": "Delhi's measured PM2.5 mean was 224.1 µg/m³ in November 2025, with a median of 220.9 µg/m³.",
+    "explanation": "Values are based on measured PM across 26 days with data out of 30 days in the period (86.7% coverage) from 37 stations. Daily levels ranged from a low of 104.4 µg/m³ on 5 Nov 2025 to a high of 325.5 µg/m³ on 12 Nov 2025.",
+    "method": "Measured PM: PM2.5 trend in Delhi, 2025-11-01 to 2025-11-30. 37 primary stations (primary reference). 26 of 30 days have a city value. Method: City value per day = equal-weight mean of valid primary station-days (>= 16 valid IST hours; >= max(3, 50%) stations).",
+    "follow_ups": [
+     "What was Mumbai's average PM2.5 in November 2025?",
+     "How did Delhi's PM2.5 compare to weather in November 2025?",
+     "What was Delhi's Diwali AQI in 2025?"
+    ],
     "cards": [
      {
       "label": "Delhi mean PM2.5, 2025-11-01 to 2025-11-30",
@@ -5616,14 +5730,50 @@
       "warnings": [
        "2 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
       ]
+     },
+     {
+      "label": "Delhi median daily PM2.5, 2025-11-01 to 2025-11-30",
+      "value": 220.9,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "median",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "2 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     },
+     {
+      "label": "Delhi highest daily PM2.5 (2025-11-12)",
+      "value": 325.5,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "highest_value",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "2 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     },
+     {
+      "label": "Delhi lowest daily PM2.5 (2025-11-05)",
+      "value": 104.4,
+      "unit": "µg/m³",
+      "dataset_id": "ds1",
+      "field": "lowest_value",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "2 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
      }
     ],
     "chart": {
      "type": "line",
-     "title": "Delhi PM2.5 (monthly mean)",
+     "title": "Delhi PM2.5 (daily mean)",
      "x": {
       "field": "period",
-      "type": "category"
+      "type": "time"
      },
      "y": {
       "field": "mean",
@@ -5634,8 +5784,108 @@
        "name": "Delhi",
        "data": [
         [
-         "2025-11",
-         224.1
+         "2025-11-01",
+         231.3
+        ],
+        [
+         "2025-11-02",
+         183.1
+        ],
+        [
+         "2025-11-05",
+         104.4
+        ],
+        [
+         "2025-11-06",
+         197.4
+        ],
+        [
+         "2025-11-07",
+         219.1
+        ],
+        [
+         "2025-11-08",
+         254.1
+        ],
+        [
+         "2025-11-09",
+         212.8
+        ],
+        [
+         "2025-11-11",
+         304.3
+        ],
+        [
+         "2025-11-12",
+         325.5
+        ],
+        [
+         "2025-11-13",
+         287.1
+        ],
+        [
+         "2025-11-14",
+         222.6
+        ],
+        [
+         "2025-11-15",
+         244.0
+        ],
+        [
+         "2025-11-16",
+         240.3
+        ],
+        [
+         "2025-11-17",
+         201.4
+        ],
+        [
+         "2025-11-19",
+         281.2
+        ],
+        [
+         "2025-11-20",
+         237.9
+        ],
+        [
+         "2025-11-21",
+         213.7
+        ],
+        [
+         "2025-11-22",
+         236.8
+        ],
+        [
+         "2025-11-23",
+         276.2
+        ],
+        [
+         "2025-11-24",
+         218.1
+        ],
+        [
+         "2025-11-25",
+         192.3
+        ],
+        [
+         "2025-11-26",
+         198.0
+        ],
+        [
+         "2025-11-27",
+         251.8
+        ],
+        [
+         "2025-11-28",
+         214.5
+        ],
+        [
+         "2025-11-29",
+         137.8
+        ],
+        [
+         "2025-11-30",
+         140.9
         ]
        ]
       }
@@ -5654,6 +5904,10 @@
       "date_range": {
        "start": "2025-11-01",
        "end": "2025-11-30"
+      },
+      "stations": {
+       "count": 37,
+       "tier": "primary reference"
       }
      }
     ],
@@ -5699,33 +5953,37 @@
     "verification": {
      "passed": true,
      "retries": 0,
-     "numbers_checked": 2
+     "numbers_checked": 13,
+     "answer_source": "llm",
+     "follow_ups_source": "llm"
     },
     "model": "gemini-3.5-flash-lite",
     "usage": {
      "requests": 2,
-     "input_tokens": 3380,
-     "output_tokens": 109
+     "input_tokens": 3893,
+     "output_tokens": 322
     }
    },
    "steps": [
     {
      "seq": 3,
      "type": "plan",
-     "title": "Plan: city_trend",
+     "title": "I will check Delhi's average PM2.5 for November 2025.",
      "detail": {
+      "summary": "I will check Delhi's average PM2.5 for November 2025.",
+      "source": "llm",
       "steps": [
        {
         "tool": "city_trend",
         "args": {
+         "period": "November 2025",
          "city": "Delhi",
-         "pollutant": "PM2.5",
-         "period": "November 2025"
+         "pollutant": "PM2.5"
         }
        }
       ]
      },
-     "ts": "2026-11-06T06:51:12.077+00:00"
+     "ts": "2026-11-12T06:18:30.936+00:00"
     },
     {
      "seq": 4,
@@ -5736,10 +5994,10 @@
        "city": "Delhi",
        "pollutant": "PM2.5",
        "period": "November 2025",
-       "freq": "M"
+       "freq": null
       }
      },
-     "ts": "2026-11-06T06:51:12.078+00:00"
+     "ts": "2026-11-12T06:18:30.937+00:00"
     },
     {
      "seq": 5,
@@ -5748,20 +6006,20 @@
      "detail": {
       "dataset_id": "ds1",
       "data_type": "measured",
-      "fields": 11,
+      "fields": 10,
       "warnings": 1
      },
-     "ts": "2026-11-06T06:51:12.106+00:00"
+     "ts": "2026-11-12T06:18:30.965+00:00"
     },
     {
      "seq": 7,
      "type": "verification",
      "title": "passed",
      "detail": {
-      "checked_numbers": 2,
+      "checked_numbers": 13,
       "problems": 0
      },
-     "ts": "2026-11-06T06:51:13.382+00:00"
+     "ts": "2026-11-12T06:18:47.398+00:00"
     }
    ],
    "context": {
@@ -5769,15 +6027,23 @@
     "pollutant": "PM2.5",
     "period": "November 2025"
    },
-   "built": "2026-11-06 12:21",
-   "model": "gemini-3.5-flash-lite"
+   "built": "2026-11-12 11:48",
+   "model": "gemini-3.5-flash-lite",
+   "elapsed_s": 21.9
   },
   {
    "question": "Compare Mumbai's Diwali AQI in 2024 and 2025.",
    "final": {
     "status": "answered",
-    "answer": "In Mumbai, the official CPCB AQI (an index) for Diwali was 188.5 in 2024 (category Moderate, with bulletin dates 2024-11-01 and 2024-11-02) and 160.5 in 2025 (category Moderate, with bulletin dates 2025-10-21 and 2025-10-22).",
-    "explanation": "Official CPCB AQI (index, not a concentration): Diwali air quality in Mumbai (official AQI), 2024-10-17 to 2025-10-24. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
+    "answer": "Mumbai's official CPCB AQI for Diwali was 188.5 (Moderate) in 2024 and 160.5 (Moderate) in 2025.",
+    "headline": "Mumbai's official CPCB AQI for Diwali was 188.5 (Moderate) in 2024 and 160.5 (Moderate) in 2025.",
+    "explanation": "In 2024, the official AQI bulletin dates recorded 169 for 2024-11-01 and 208 for 2024-11-02. In 2025, the bulletin dates recorded 211 for 2025-10-21 and 110 for 2025-10-22. Official AQI is an index of several pollutants rather than a direct pollutant concentration.",
+    "method": "Official CPCB AQI (index, not a concentration): Diwali air quality in Mumbai (official AQI), 2024-10-17 to 2025-10-24. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
+    "follow_ups": [
+     "How did Mumbai's pre-festival AQI compare between 2024 and 2025?",
+     "What was Delhi's Diwali AQI in 2025?",
+     "Can you show Mumbai's measured PM trend for October 2025?"
+    ],
     "cards": [
      {
       "label": "Mumbai official AQI, Diwali 2024 (mean of festival bulletins)",
@@ -6114,6 +6380,9 @@
       "date_range": {
        "start": "2024-10-17",
        "end": "2025-10-24"
+      },
+      "stations": {
+       "note": "stations chosen by CPCB for the city bulletin"
       }
      }
     ],
@@ -6184,35 +6453,39 @@
     "verification": {
      "passed": true,
      "retries": 1,
-     "numbers_checked": 4
+     "numbers_checked": 10,
+     "answer_source": "llm",
+     "follow_ups_source": "llm"
     },
     "model": "gemini-3.5-flash-lite",
     "usage": {
      "requests": 3,
-     "input_tokens": 5754,
-     "output_tokens": 380
+     "input_tokens": 6651,
+     "output_tokens": 603
     }
    },
    "steps": [
     {
      "seq": 3,
      "type": "plan",
-     "title": "Plan: diwali_aqi",
+     "title": "I will check Mumbai's official CPCB AQI levels and bulletin dates for Diwali in 2024 and 2025.",
      "detail": {
+      "summary": "I will check Mumbai's official CPCB AQI levels and bulletin dates for Diwali in 2024 and 2025.",
+      "source": "llm",
       "steps": [
        {
         "tool": "diwali_aqi",
         "args": {
-         "city": "Mumbai",
          "years": [
           2024,
           2025
-         ]
+         ],
+         "city": "Mumbai"
         }
        }
       ]
      },
-     "ts": "2026-11-06T06:51:29.765+00:00"
+     "ts": "2026-11-12T06:19:08.310+00:00"
     },
     {
      "seq": 4,
@@ -6228,7 +6501,7 @@
        "percent": false
       }
      },
-     "ts": "2026-11-06T06:51:29.766+00:00"
+     "ts": "2026-11-12T06:19:08.312+00:00"
     },
     {
      "seq": 5,
@@ -6240,27 +6513,27 @@
       "fields": 14,
       "warnings": 8
      },
-     "ts": "2026-11-06T06:51:29.793+00:00"
+     "ts": "2026-11-12T06:19:08.335+00:00"
     },
     {
      "seq": 7,
      "type": "verification",
      "title": "failed",
      "detail": {
-      "checked_numbers": 4,
-      "problems": 2
+      "checked_numbers": 14,
+      "problems": 1
      },
-     "ts": "2026-11-06T06:51:31.194+00:00"
+     "ts": "2026-11-12T06:19:10.611+00:00"
     },
     {
      "seq": 10,
      "type": "verification",
      "title": "passed",
      "detail": {
-      "checked_numbers": 4,
+      "checked_numbers": 10,
       "problems": 0
      },
-     "ts": "2026-11-06T06:51:32.810+00:00"
+     "ts": "2026-11-12T06:19:16.630+00:00"
     }
    ],
    "context": {
@@ -6270,15 +6543,23 @@
      2025
     ]
    },
-   "built": "2026-11-06 12:21",
-   "model": "gemini-3.5-flash-lite"
+   "built": "2026-11-12 11:49",
+   "model": "gemini-3.5-flash-lite",
+   "elapsed_s": 14.2
   },
   {
    "question": "What was Delhi's AQI on Diwali 2026?",
    "final": {
     "status": "unavailable",
-    "answer": "Official AQI for Delhi on Diwali 2026 is unavailable because official AQI data is missing for that period.",
-    "explanation": "Official CPCB AQI (index, not a concentration): Diwali air quality in Delhi (official AQI), 2026-10-25 to 2026-11-12. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
+    "answer": "Official CPCB AQI data for Diwali 2026 in Delhi is unavailable because the date is beyond the current record range up to 25 October 2026.",
+    "headline": "Official CPCB AQI data for Diwali 2026 in Delhi is unavailable because the date is beyond the current record range up to 25 October 2026.",
+    "explanation": "Official AQI is an index covering several pollutants across a bulletin window from 4 PM to 4 PM, but records do not yet extend to Diwali 2026.",
+    "method": "Official CPCB AQI (index, not a concentration): Diwali air quality in Delhi (official AQI), 2026-10-25 to 2026-11-12. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
+    "follow_ups": [
+     "What was Delhi's official AQI on Diwali 2024?",
+     "What was Delhi's official AQI on Diwali 2025?",
+     "What was measured PM2.5 in Delhi around Diwali 2025?"
+    ],
     "cards": [],
     "chart": {
      "type": "line",
@@ -6314,6 +6595,9 @@
       "date_range": {
        "start": "2026-10-25",
        "end": "2026-11-12"
+      },
+      "stations": {
+       "note": "stations chosen by CPCB for the city bulletin"
       }
      }
     ],
@@ -6370,63 +6654,41 @@
     "verification": {
      "passed": true,
      "retries": 1,
-     "numbers_checked": 1
+     "numbers_checked": 4,
+     "answer_source": "llm",
+     "follow_ups_source": "llm"
     },
     "model": "gemini-3.5-flash-lite",
     "usage": {
      "requests": 4,
-     "input_tokens": 7423,
-     "output_tokens": 164
+     "input_tokens": 8201,
+     "output_tokens": 374
     }
    },
    "steps": [
     {
      "seq": 3,
      "type": "plan",
-     "title": "Plan: check_request",
+     "title": "Plan: look up official CPCB AQI bulletins for Delhi around Diwali 2026.",
      "detail": {
+      "summary": "Plan: look up official CPCB AQI bulletins for Delhi around Diwali 2026.",
+      "source": "code",
       "steps": [
        {
-        "tool": "check_request",
+        "tool": "diwali_aqi",
         "args": {
-         "pollutant": null,
-         "event": "Diwali 2026",
-         "cities": [
-          "Delhi"
+         "city": "Delhi",
+         "years": [
+          2026
          ]
         }
        }
       ]
      },
-     "ts": "2026-11-06T06:51:49.511+00:00"
+     "ts": "2026-11-12T06:19:41.715+00:00"
     },
     {
      "seq": 4,
-     "type": "tool_call",
-     "title": "check_request",
-     "detail": {
-      "args": {
-       "cities": [
-        "Delhi"
-       ],
-       "pollutant": null,
-       "period": null,
-       "event": "Diwali 2026"
-      }
-     },
-     "ts": "2026-11-06T06:51:49.513+00:00"
-    },
-    {
-     "seq": 5,
-     "type": "tool_result",
-     "title": "check_request",
-     "detail": {
-      "unsupported": []
-     },
-     "ts": "2026-11-06T06:51:49.513+00:00"
-    },
-    {
-     "seq": 7,
      "type": "tool_call",
      "title": "diwali_aqi",
      "detail": {
@@ -6438,10 +6700,10 @@
        "percent": false
       }
      },
-     "ts": "2026-11-06T06:51:50.710+00:00"
+     "ts": "2026-11-12T06:19:41.716+00:00"
     },
     {
-     "seq": 8,
+     "seq": 5,
      "type": "tool_result",
      "title": "diwali_aqi: Diwali air quality in Delhi (official AQI)",
      "detail": {
@@ -6450,27 +6712,52 @@
       "fields": 1,
       "warnings": 5
      },
-     "ts": "2026-11-06T06:51:50.723+00:00"
+     "ts": "2026-11-12T06:19:41.727+00:00"
+    },
+    {
+     "seq": 7,
+     "type": "tool_call",
+     "title": "check_request",
+     "detail": {
+      "args": {
+       "cities": [
+        "Delhi"
+       ],
+       "pollutant": null,
+       "period": null,
+       "event": null
+      }
+     },
+     "ts": "2026-11-12T06:19:49.070+00:00"
+    },
+    {
+     "seq": 8,
+     "type": "tool_result",
+     "title": "check_request",
+     "detail": {
+      "unsupported": []
+     },
+     "ts": "2026-11-12T06:19:49.071+00:00"
     },
     {
      "seq": 10,
      "type": "verification",
      "title": "failed",
      "detail": {
-      "checked_numbers": 1,
+      "checked_numbers": 5,
       "problems": 1
      },
-     "ts": "2026-11-06T06:51:52.384+00:00"
+     "ts": "2026-11-12T06:19:54.491+00:00"
     },
     {
      "seq": 13,
      "type": "verification",
      "title": "passed",
      "detail": {
-      "checked_numbers": 1,
+      "checked_numbers": 4,
       "problems": 0
      },
-     "ts": "2026-11-06T06:51:53.494+00:00"
+     "ts": "2026-11-12T06:19:59.969+00:00"
     }
    ],
    "context": {
@@ -6479,15 +6766,23 @@
      2026
     ]
    },
-   "built": "2026-11-06 12:21",
-   "model": "gemini-3.5-flash-lite"
+   "built": "2026-11-12 11:49",
+   "model": "gemini-3.5-flash-lite",
+   "elapsed_s": 28.3
   },
   {
    "question": "How complete is the data for Chennai in 2025?",
    "final": {
     "status": "answered",
-    "answer": "For Chennai in 2025, using measured PM (µg/m³), the PM2.5 share of data coverage was 78.4% across 6 primary stations, with 286 days with value out of 365 days in period.",
-    "explanation": "Measured PM: Data coverage and quality for Chennai, 2025-01-01 to 2025-12-31. Method: Valid station-day: >= 16 valid IST hours after excluding flagged hours.",
+    "answer": "Chennai had a data coverage share of 78.4% for PM2.5 and 79.5% for PM10 across 365 days in 2025 using measured PM data.",
+    "headline": "Chennai had a data coverage share of 78.4% for PM2.5 and 79.5% for PM10 across 365 days in 2025 using measured PM data.",
+    "explanation": "Out of 365 days in 2025, Chennai recorded PM2.5 values on 286 days and PM10 values on 290 days across 6 primary stations, with data starting from 18 Feb 2025. There were 19 severe days noted with network-wide data gaps, along with exclusions for flagged hours, impossible days, and peer outliers.",
+    "method": "Measured PM: Data coverage and quality for Chennai, 2025-01-01 to 2025-12-31. Method: Valid station-day: >= 16 valid IST hours after excluding flagged hours.",
+    "follow_ups": [
+     "What were the PM2.5 trends for Chennai in 2025?",
+     "How does Chennai's PM2.5 compare to Bengaluru in 2025?",
+     "What was the weather association for Chennai in 2025?"
+    ],
     "cards": [
      {
       "label": "Chennai PM2.5 share of days",
@@ -6495,6 +6790,19 @@
       "unit": "%",
       "dataset_id": "ds1",
       "field": "pm25_share_pct",
+      "data_type": "measured",
+      "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
+      "warnings": [
+       "No measured OpenAQ data before 2025-02-18 in this dataset (CPCB data gap Nov 2022 - Feb 2025); results start at 2025-02-18.",
+       "19 date(s) in this period have severe network-wide data gaps; values on those dates are less reliable."
+      ]
+     },
+     {
+      "label": "Chennai PM10 share of days",
+      "value": 79.5,
+      "unit": "%",
+      "dataset_id": "ds1",
+      "field": "pm10_share_pct",
       "data_type": "measured",
       "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
       "warnings": [
@@ -6516,11 +6824,11 @@
       ]
      },
      {
-      "label": "days in period",
-      "value": 365.0,
+      "label": "Chennai PM10 days with a city value",
+      "value": 290.0,
       "unit": "days",
       "dataset_id": "ds1",
-      "field": "days_in_period",
+      "field": "pm10_days_with_value",
       "data_type": "measured",
       "source": "OpenAQ archive (CPCB/AirNow/AirGradient)",
       "warnings": [
@@ -7829,7 +8137,8 @@
       "date_range": {
        "start": "2025-01-01",
        "end": "2025-12-31"
-      }
+      },
+      "stations": {}
      }
     ],
     "coverage": {
@@ -7893,32 +8202,36 @@
     "verification": {
      "passed": true,
      "retries": 0,
-     "numbers_checked": 5
+     "numbers_checked": 12,
+     "answer_source": "llm",
+     "follow_ups_source": "llm"
     },
     "model": "gemini-3.5-flash-lite",
     "usage": {
      "requests": 2,
-     "input_tokens": 3452,
-     "output_tokens": 153
+     "input_tokens": 3979,
+     "output_tokens": 322
     }
    },
    "steps": [
     {
      "seq": 3,
      "type": "plan",
-     "title": "Plan: data_coverage",
+     "title": "I will check the data coverage and completeness for Chennai in 2025.",
      "detail": {
+      "summary": "I will check the data coverage and completeness for Chennai in 2025.",
+      "source": "llm",
       "steps": [
        {
         "tool": "data_coverage",
         "args": {
-         "city": "Chennai",
-         "period": "2025"
+         "period": "2025",
+         "city": "Chennai"
         }
        }
       ]
      },
-     "ts": "2026-11-06T06:52:10.028+00:00"
+     "ts": "2026-11-12T06:21:52.639+00:00"
     },
     {
      "seq": 4,
@@ -7930,7 +8243,7 @@
        "period": "2025"
       }
      },
-     "ts": "2026-11-06T06:52:10.029+00:00"
+     "ts": "2026-11-12T06:21:52.641+00:00"
     },
     {
      "seq": 5,
@@ -7942,25 +8255,26 @@
       "fields": 13,
       "warnings": 3
      },
-     "ts": "2026-11-06T06:52:10.098+00:00"
+     "ts": "2026-11-12T06:21:52.701+00:00"
     },
     {
      "seq": 7,
      "type": "verification",
      "title": "passed",
      "detail": {
-      "checked_numbers": 5,
+      "checked_numbers": 12,
       "problems": 0
      },
-     "ts": "2026-11-06T06:52:11.524+00:00"
+     "ts": "2026-11-12T06:21:55.513+00:00"
     }
    ],
    "context": {
     "city": "Chennai",
     "period": "2025"
    },
-   "built": "2026-11-06 12:22",
-   "model": "gemini-3.5-flash-lite"
+   "built": "2026-11-12 11:51",
+   "model": "gemini-3.5-flash-lite",
+   "elapsed_s": 13.4
   }
  ]
 }
