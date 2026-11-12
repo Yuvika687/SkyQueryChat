@@ -72,7 +72,7 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry }: Omit<Props, "onS
     return (
       <>
         <Callout tone="info" icon={Clock} title="Starting the analysis service">
-          This can take up to a minute.
+          This can take a minute or two.
         </Callout>
         <AnswerSkeleton />
       </>

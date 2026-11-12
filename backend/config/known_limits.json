@@ -95,6 +95,15 @@
    "id": "openaq_outage_oct_2026",
    "title": "OpenAQ outage 25-27 Oct 2026",
    "detail": "OpenAQ has no readings for any city on 25-26 Oct 2026 and a partial gap on 27 Oct. These days are the Diwali 2026 baseline (D-14..D-8), so no Delhi station meets the measured-PM baseline rule and no Diwali 2026 PM baseline is given."
+  },
+  {
+   "id": "delhi_estimate_above_official_2026",
+   "title": "Delhi: our PM-only AQI check runs above official AQI in Oct-Nov 2026",
+   "detail": "On the 13 new Delhi bulletins (28 Oct-11 Nov 2026) where PM was the prominent pollutant, our internal PM-only AQI estimate from OpenAQ station data averages 28.6 points above CPCB's official AQI (all within 20%). Over all days since 20 Feb 2025 the average gap is +6.5 points (correlation 0.988, 97.5% within 20%), so the larger recent gap is a known limit, not a change of method. It does not affect answers: the app shows official AQI for Diwali and never shows PM-only estimates.",
+   "show_on": [
+    "accuracy"
+   ],
+   "evidence": "docs/crosscheck_bulletins.json (new_bulletins_after_2026-10-25.Delhi, by_city.Delhi)"
   }
  ]
 }

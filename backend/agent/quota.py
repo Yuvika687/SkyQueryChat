@@ -32,6 +32,8 @@ from typing import Callable
 
 from pydantic_ai.exceptions import ModelAPIError
 
+from backend.runtime import override
+
 try:
     from zoneinfo import ZoneInfo
     PT = ZoneInfo("America/Los_Angeles")
@@ -278,7 +280,7 @@ class QuotaManager:
     def from_config(cls, cfg: dict, **kw) -> "QuotaManager":
         q = dict(cfg.get("quota", {}))
         provs = {k: dict(v) for k, v in q.get("providers", {}).items()}
-        env = os.environ.get("SKYQ_PROVIDER_LIMITS", "").strip()
+        env = override("SKYQ_PROVIDER_LIMITS")      # testing only; ignored in production
         if env:
             for k, v in json.loads(env).items():
                 provs.setdefault(k, {}).update(v)
@@ -287,8 +289,8 @@ class QuotaManager:
         if cap and "question_tokens" not in q:     # one per-question token cap for the run limit and the reservation
             qc.question_tokens = int(cap)
         for name, attr in (("SKYQ_QUOTA_SAFETY_MARGIN", "safety_margin"), ("SKYQ_DEMO_RESERVE", "demo_reserve")):
-            if os.environ.get(name):
-                setattr(qc, attr, float(os.environ[name]))
+            if override(name):
+                setattr(qc, attr, float(override(name)))
         fields = ProviderLimit.__dataclass_fields__
         limits = {k: ProviderLimit(key=k, **{a: b for a, b in v.items() if a in fields and a != "key"}) for k, v in provs.items()}
         d = q.get("default")

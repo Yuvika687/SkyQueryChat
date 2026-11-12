@@ -1279,8 +1279,85 @@ Published scores are unchanged (the scoreboard reads stored run results; nothing
   **T4** "last 30 days" and holdout **H01** "2026 month by month" now cover newer days (no reference values).
   Unchanged at two decimals: the wind, rain and temperature correlations.
 - New set `evals/diwali2026.json` (8 questions, 9 turns) with independent pandas references (`diwali2026_refs`).
-  Not run yet.
+  First pass: 9/9 turns (Part 14.3).
 
 ## 13.9 Requests used
 OpenAQ API: about 220 (204 for the top-up, plus probes and a first attempt stopped for being slow). OpenAQ archive: only days not already cached. CPCB: 24 PDF
 requests. UrbanEmissions: 1 file. Open-Meteo: 6. Gemini: 2 live questions (demo answer rebuild and one API check).
+
+# Part 14 — Diwali review follow-ups and deployment checks (2026-11-12)
+
+## 14.1 Bengaluru and Hyderabad week-before baseline (64.6 in both)
+Re-read from the CPCB PDFs for bulletins 2-8 Nov 2026 (local days 1-7 Nov):
+
+| Bulletin | Bengaluru | Hyderabad |
+|---|---:|---:|
+| 2 Nov | 75 | 59 |
+| 3 Nov | 61 | 57 |
+| 4 Nov | 69 | 61 |
+| 5 Nov | 62 | 55 |
+| 6 Nov | 56 | 60 |
+| 7 Nov | 59 | 76 |
+| 8 Nov | 70 | 84 |
+| Sum / mean | 452 / 64.57 | 452 / 64.57 |
+
+A real coincidence, not a bug: different daily values with the same sum. Their other baselines differ (D-14..D-8:
+94.0 vs 65.7; D-3..D-1: 61.7 vs 73.3). `tests/test_refresh.py` now checks every stored baseline against the mean of
+that city's own bulletin rows.
+
+## 14.2 Delhi measured PM only when asked
+Default Diwali answers use official AQI only. The Delhi PM tool is offered to the model only when the question mentions
+PM (PM2.5, PM10, "PM", particulate), for every year; the tool also refuses otherwise. Follow-up suggestions that pair
+2026 PM with 2024 or 2025 are dropped. When asked, the 2026 answer carries the not-comparable warning (once), the
+missing-baseline warning and the Diwali-night gap warning.
+
+## 14.3 Diwali 2026 evaluation, first pass
+Run `20261112-1507_diwali2026_first` (Gemini 3.5 Flash Lite for every turn): 9/9 turns passed; reference checks 8/8;
+resolved-query checks 9/9; numbers traceable 100%; 3 verifier retries; tokens median 6,272, max 9,013, total 53,901.
+Recorded as its own scoreboard set; the main, holdout, holdout2 and Groq results are unchanged (checked against the
+previous `evals/scoreboard.json`). The run used the first version of the PM rule (2026 only): in E01 the model asked
+for Delhi PM and the tool refused, so no PM reached the answer. The rule now hides the tool before the model sees it.
+
+## 14.4 Live checks after the warning fix
+- "How did Delhi's air on Diwali 2026 compare with Diwali 2025?" First rerun (2026-only rule): the model fetched 2025
+  PM, was refused 2026 PM, and hit the per-question limit (error, no answer). After hiding the tool: answered in 12 s,
+  3 requests, 7,022 tokens, one verifier retry; official AQI 321.5 (2026) vs 352 (2025), both Very Poor; required
+  warnings `aqi_not_concentration` and `not_causal`; no PM values and no 999 warning.
+- "What did Delhi's measured PM2.5 look like around Diwali 2026?" Answered (2 requests, 4,317 tokens): 248.1 µg/m³ on
+  the festival days 8 and 9 Nov; warnings: not comparable with 2024/2025 (shown once), no baseline, Diwali-night gap
+  (underestimate), OpenAQ gap days.
+
+## 14.5 Known limit: Delhi estimate above official AQI
+On the 13 new Delhi bulletins (28 Oct-11 Nov 2026) with PM prominent, our PM-only estimate averages +28.6 above
+official AQI (all within 20%); over all days since 20 Feb 2025 it is +6.5 (r = 0.988). Recorded as
+`delhi_estimate_above_official_2026` in `backend/config/known_limits.json` for the Accuracy page.
+
+## 14.6 Hosting documentation checked (2026-11-12)
+- **Render free web service:** 0.1 CPU and 512 MB (Blueprint spec); spins down after 15 minutes without inbound
+  traffic; spin-up "about one minute"; 750 free instance hours per workspace per month; no persistent disk; may be
+  restarted at any time. Health check: `healthCheckPath`, 2xx/3xx within 5 s; a new deploy that is not healthy within
+  15 minutes is cancelled. These match what we assumed.
+- **Changed since we planned:** Render's default Python is now 3.14.10 for new services (we pin 3.13.15 with
+  `.python-version`; a `PYTHON_VERSION` variable would override it). `render.yaml` uses `runtime` (not `env`) and
+  `autoDeployTrigger` (not `autoDeploy`).
+- **Vercel Hobby:** free, non-commercial personal use only; 100 GB fast data transfer, 1,000,000 function invocations
+  and 4 active CPU-hours a month, function maximum 300 s, 100 deployments a day, 1 hour of runtime logs. Node 26.x is
+  the default (24.x, 22.x available; Node 20 deprecated 1 Oct 2026); we pin `engines.node` 26.x. `NEXT_PUBLIC_*`
+  variables are built into the page, so changing one needs a redeploy.
+
+## 14.7 Production settings and memory
+- Production is detected from `RENDER` (set by Render) or `SKYQ_ENV=production`. It caps visitors at 4/min and 30/day,
+  runs the Gemini chain only, ignores `SKYQ_MODEL_CHAIN`, `SKYQ_PROVIDER_LIMITS`, `SKYQ_QUOTA_SAFETY_MARGIN` and
+  `SKYQ_DEMO_RESERVE`, and takes allowed origins only from `ALLOWED_ORIGINS` (https only, no `*`, no localhost).
+- `requirements.txt` holds production packages only; pytest, the Groq SDK, pdfplumber and truststore are in
+  `requirements-dev.txt`.
+- Memory, measured in a Linux container with only the deployable files (no `data/processed`, no `data/raw`, no
+  `.env`), 512 MB and 0.1 CPU, amd64 like Render: first build 378 MiB idle and 408 MiB peak; a second Python process
+  in the same container then went over 512 MB. Breakdown: libraries 167 MB, pydantic-ai and google-genai +50 MB, Parquet
+  loading +227 MB peak for tables that hold 56 MB. After single-threaded Parquet reads, the system allocator for Arrow,
+  one DuckDB thread and loading the store once: **258 MiB idle, 283 MiB peak** after every data endpoint for all six
+  cities, with no out-of-memory events. Not measured on Linux: a live AI answer (no key is put in the container); one
+  agent run adds sessions and an HTTP client, small next to the 229 MiB of headroom.
+- Startup to a healthy `/api/health` at 0.1 CPU: 25 s on a native arm64 build, 72 s under amd64 emulation. On top of
+  Render's own wake-up, a cold visitor may wait well over a minute, so the frontend now waits up to 150 s and says
+  "Starting the analysis service. This can take a minute or two."

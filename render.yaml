@@ -1,0 +1,32 @@
+# Render Blueprint for the SkyQueryChat API (free web service). The frontend is deployed separately on Vercel.
+# Secrets use sync: false, so Render asks for them in the dashboard; they are never stored in this file.
+services:
+  - type: web
+    name: skyquerychat-api
+    runtime: python
+    plan: free                      # 0.1 CPU, 512 MB; sleeps after 15 min idle, about 1 min to wake
+    region: singapore               # closest Render region to the six Indian cities; cannot be changed later
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+    # One worker keeps memory inside 512 MB. Render provides $PORT.
+    startCommand: uvicorn backend.api.main:app --host 0.0.0.0 --port $PORT --workers 1 --no-access-log
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    buildFilter:                    # frontend, docs and evaluation runs never trigger a backend deploy
+      paths:
+        - backend/**
+        - data/app/**
+        - evals/scoreboard.json
+        - requirements.txt
+        - .python-version
+        - render.yaml
+    envVars:
+      - key: SKYQ_ENV
+        value: production           # strict visitor limits; testing overrides ignored (Render also sets RENDER)
+      - key: ARROW_DEFAULT_MEMORY_POOL
+        value: system               # returns Parquet read memory to the system (measured: about 120 MB lower peak)
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS        # the Vercel address, e.g. https://<project>.vercel.app (no trailing slash)
+        sync: false
+      - key: DEMO_ACCESS_TOKEN      # optional owner demo pass; must match the same variable on Vercel
+        sync: false

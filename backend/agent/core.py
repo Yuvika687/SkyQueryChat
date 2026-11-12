@@ -43,7 +43,7 @@ Rules:
 - Missing data (e.g. before 2025-02-18 or after the data ends): status "unavailable"; say what is missing.
 - Say which data type you use: measured PM (µg/m³), official AQI (an index), modelled weather.
 - Never use cause words (due to, because of, caused, led to); for weather say "associated with".
-- Diwali: official AQI levels, categories and bulletin dates (each covers 4 PM to 4 PM). Percent only if asked (diwali_aqi percent=true); give a range if that is what the tool returns. Never a PM percentage. Never say Diwali caused a rise.
+- Diwali: official AQI levels, categories and bulletin dates (each covers 4 PM to 4 PM). Percent only if asked (diwali_aqi percent=true); give a range if that is what the tool returns. Never a PM percentage. Call delhi_pm_diwali only if the user asks about PM. Never say Diwali caused a rise.
 - If the user gave no pollutant or period, leave it out of the tool call (tools use PM2.5 / all data and the app shows this); do not describe defaults yourself. Ask a question (status "clarify") only if the city is missing and not in earlier context.
 - final_answer fields:
   answer: the headline, 1-2 sentences an analyst would write: the finding first in plain words with its key numbers and units (e.g. "Delhi's PM2.5 was higher than Mumbai's: X against Y µg/m³"), never ranks or field names. Write dates like 6 Oct 2026.
@@ -214,10 +214,16 @@ def resolved_query(items) -> ResolvedQuery | None:
                          items=[{k: x.get(k) for k in ("tool", "cities", "pollutant", "start", "end")} for x in items])
 
 
+def compares_pm_across_sources(q: str) -> bool:
+    """A Diwali PM question that pairs 2026 (OpenAQ) with 2024 or 2025 (OpenCity, lower bounds): not comparable."""
+    s = q.lower()
+    return bool(re.search(r"\bpm\s*(2\.?5|10)?\b|particulate", s)) and "2026" in s and bool(re.search(r"202[45]", s))
+
+
 def clean_follow_ups(items: list[str], deps: RunDeps) -> tuple[list[str], int]:
     """Keep up to 3 of the model's follow-up questions. They are suggestions, not claims, so a bad one is
     dropped (no retry, no extra model request): unsupported numbers, causal wording, prompt quotes, too long,
-    or the same as the question. Years inside the data's range and small counts ("last 30 days") are fine."""
+    the same as the question, or a PM comparison of 2026 with earlier years (different sources). Years inside the data's range and small counts ("last 30 days") are fine."""
     allowed = deps.session.allowed() | deps.user_numbers | set(map(float, range(0, 32))) | \
         set(map(float, range(R.DATA["measured_start"].year - 1, R.DATA["measured_end"].year + 1)))
     asked = re.sub(r"[^a-z0-9]", "", deps.question.lower())
@@ -226,7 +232,7 @@ def clean_follow_ups(items: list[str], deps: RunDeps) -> tuple[list[str], int]:
         q = re.sub(r"\s+", " ", str(q)).strip().strip("-•* ").strip()
         key = re.sub(r"[^a-z0-9]", "", q.lower())
         if not (8 <= len(q) <= 140) or key in seen or check_numbers([q], allowed) or causal_phrases(q) \
-                or any(k in q.lower() for k in LEAK_MARKERS):
+                or any(k in q.lower() for k in LEAK_MARKERS) or compares_pm_across_sources(q):
             continue
         seen.add(key)
         out.append(q)

@@ -3,10 +3,12 @@ returns {id, type, period, fields, notes} — named values only, never raw table
 Cities, pollutants and periods may be passed in the user's own words; the resolver handles them."""
 from __future__ import annotations
 
+import re
 from datetime import date
 from typing import Literal
 
-from pydantic_ai import RunContext
+from pydantic_ai import RunContext, Tool
+from pydantic_ai.tools import ToolDefinition
 
 from backend.analysis import functions as F
 from . import resolver as R
@@ -188,10 +190,23 @@ def diwali_aqi(ctx: RunContext[RunDeps], city: str, years: list[int], percent: b
     return _call(ctx, "diwali_aqi", dict(city=city, years=years, percent=percent), go)
 
 
+PM_ASKED = re.compile(r"\bpm\s*(2\.?5|10)?\b|particulate", re.I)
+PM_HIDDEN = ("Delhi's measured PM around Diwali is shown only when the user asks about PM. "
+             "Answer from the official AQI (diwali_aqi).")
+
+
+async def only_if_pm_asked(ctx: RunContext[RunDeps], tool_def: ToolDefinition) -> ToolDefinition | None:
+    """Default Diwali answers use the official AQI only: the Delhi PM tool is offered to the model only when
+    this question mentions PM (e.g. "PM2.5", "pm10", "particulate")."""
+    return tool_def if PM_ASKED.search(ctx.deps.question) else None
+
+
 def delhi_pm_diwali(ctx: RunContext[RunDeps], year: int) -> dict:
-    """Supporting context only: Delhi measured PM around Diwali 2024/2025 (OpenCity, lower bounds) or 2026 (OpenAQ;
-    not comparable with earlier years). Never a %."""
+    """Only when the user asks about PM: Delhi measured PM around Diwali 2024/2025 (OpenCity, lower bounds) or
+    2026 (OpenAQ; not comparable with earlier years). Never a %."""
     def go():
+        if not PM_ASKED.search(ctx.deps.question):
+            raise ValueError(PM_HIDDEN)            # backstop; the tool is normally not offered (only_if_pm_asked)
         res = F.delhi_pm_context(ctx.deps.session.store, int(year))
         return res, {"city": "Delhi", "resolved": _rq(["Delhi"], "PM2.5 and PM10", res.date_range.get("start"),
                                                        res.date_range.get("end"),
@@ -233,5 +248,5 @@ def data_coverage(ctx: RunContext[RunDeps], city: str, period: str | None = None
     return _call(ctx, "data_coverage", dict(city=city, period=period), go)
 
 
-TOOLS = [check_request, city_trend, compare_cities, diwali_aqi, delhi_pm_diwali, unusual_days,
-         weather_association, data_coverage]
+TOOLS = [check_request, city_trend, compare_cities, diwali_aqi, Tool(delhi_pm_diwali, prepare=only_if_pm_asked),
+         unusual_days, weather_association, data_coverage]

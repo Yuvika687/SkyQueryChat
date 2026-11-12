@@ -225,7 +225,7 @@ test.describe("Ask screen", () => {
       /* never answer: like a sleeping Render service */
     });
     await page.goto("/ask");
-    await expect(page.getByText("Starting the analysis service. This can take up to a minute.")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Starting the analysis service. This can take a minute or two.")).toBeVisible({ timeout: 15_000 });
     await expectNoOverflow(page);
     await shot(page, info, "11-backend-waking");
   });

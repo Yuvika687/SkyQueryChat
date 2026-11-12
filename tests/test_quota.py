@@ -346,3 +346,31 @@ def test_production_ignores_raised_rate_limits(monkeypatch):
     assert (Settings(rate_per_minute=60).rate_per_minute) == 4
     monkeypatch.setenv("RATE_PER_MINUTE", "2")                       # lowering stays possible
     assert Settings().rate_per_minute == 2
+
+
+def test_production_ignores_testing_overrides_and_uses_the_gemini_chain(monkeypatch):
+    for k in ("RENDER", "SKYQ_ENV"):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("SKYQ_MODEL_CHAIN", "groq:openai/gpt-oss-120b")
+    monkeypatch.setenv("SKYQ_PROVIDER_LIMITS", '{"google:gemini-3.5-flash-lite": {"rpd": 99999}}')
+    monkeypatch.setenv("SKYQ_DEMO_RESERVE", "0")
+    assert [e.label for e in M.model_chain()] == ["groq:openai/gpt-oss-120b"]          # applied locally
+    assert QuotaManager.from_config(M.load_config()).cfg.demo_reserve == 0
+    cfg = M.load_config()
+    cfg["chain"][-1]["enabled"] = True                                                  # even if Groq were re-enabled
+    monkeypatch.setenv("RENDER", "true")
+    assert [e.label for e in M.model_chain(cfg)] == [
+        "google:gemini-3.5-flash-lite", "google:gemini-3.1-flash-lite", "google:gemini-3.8-flash"]
+    q = QuotaManager.from_config(M.load_config())
+    assert q.cfg.demo_reserve == 0.15 and q.models["google:gemini-3.5-flash-lite"].limit.rpd == 500
+
+
+def test_production_allowed_origins_come_only_from_the_environment(monkeypatch):
+    from backend.api.settings import Settings
+    for k in ("RENDER", "SKYQ_ENV", "ALLOWED_ORIGINS"):
+        monkeypatch.delenv(k, raising=False)
+    assert Settings().allowed_origins == ["http://localhost:3000"]                       # local default
+    monkeypatch.setenv("RENDER", "true")
+    assert Settings().allowed_origins == []                                             # no localhost in production
+    monkeypatch.setenv("ALLOWED_ORIGINS", "https://skyquerychat.vercel.app/, *, http://localhost:3000")
+    assert Settings().allowed_origins == ["https://skyquerychat.vercel.app"]

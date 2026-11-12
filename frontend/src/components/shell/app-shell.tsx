@@ -254,7 +254,7 @@ export function FreshnessPill() {
     icon = <Clock className="size-3.5" aria-hidden />;
     text = "Service starting";
     tone = "text-warn border-warn/40";
-    tip = "Starting the analysis service. This can take up to a minute.";
+    tip = "Starting the analysis service. This can take a minute or two.";
   } else if (backend === "down") {
     icon = <AlertTriangle className="size-3.5" aria-hidden />;
     text = "Service unavailable";

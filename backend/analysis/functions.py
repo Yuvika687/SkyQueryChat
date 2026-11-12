@@ -414,6 +414,8 @@ def delhi_pm_context(s: Store, year: int) -> AnalysisResult:
 NOT_COMPARABLE = ("Do not compare these 2026 values with Diwali 2024 or 2025: those came from OpenCity, which blanks "
                   "every reading above 999 µg/m³ (so they are lower bounds), from a different station panel. OpenAQ "
                   "keeps readings above 999 µg/m³.")
+NOT_COMPARABLE_FULL = NOT_COMPARABLE + (" Supporting context only; the main Diwali result is official AQI. "
+                                        "No percentage change is given.")
 
 
 def _delhi_pm_openaq(t: pd.DataFrame, year: int) -> AnalysisResult:
@@ -427,8 +429,7 @@ def _delhi_pm_openaq(t: pd.DataFrame, year: int) -> AnalysisResult:
              "percent_change": None} for x in t.itertuples()]
     lq = sorted({d for x in t["low_quality_dates"].fillna("") for d in x.split(",") if d})
     thin = sorted({h for x in t["festival_night_hours_under_half_stations"].fillna("") for h in x.split(",") if h})
-    warns = [NOT_COMPARABLE,
-             "Supporting context only: the main Diwali comparison is official AQI. No percentage change is given."]
+    warns = [NOT_COMPARABLE_FULL]                    # same text as the required warning, so it shows once
     if (t["status"] == "baseline_incomplete").any():
         warns.append("No baseline is given: OpenAQ had a network-wide outage on baseline days, so no Delhi station "
                      "has at least 5 of 7 valid baseline days. Festival-day values use stations valid on both "
@@ -452,7 +453,8 @@ def _delhi_pm_openaq(t: pd.DataFrame, year: int) -> AnalysisResult:
                "baseline is withheld and festival-day values use stations valid on both festival days. Baseline = "
                "D-14..D-8; festival = D, D+1 (local IST dates). Values are station-day means averaged over those stations.",
         warnings=warns, values={"year": year, "source": "OpenAQ", "values_are_lower_bounds": False,
-                                "comparable_with_2024_2025": False, "pollutants": vals})
+                                "comparable_with_2024_2025": False, "pollutants": vals,
+                                "festival_days": f"{D}..{D + timedelta(days=1)}"})
 
 
 # ----------------------------------------------------------------------------- 5. unusual days

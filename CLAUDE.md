@@ -336,7 +336,35 @@ Rules:
   reporting 23:00-03:00 IST), so festival-day PM is an underestimate.
 - **Evaluation:** questions whose correct answer changed with new data carry `data_changed` (with `expect_before`);
   published scores are unchanged. All-data references follow `DATA_END` from `data/app/manifest.json`. New set
-  `evals/diwali2026.json` (8 questions, references in `diwali2026_refs`), not yet run.
+  `evals/diwali2026.json` (8 questions, references in `diwali2026_refs`); first pass 9/9 turns (separate scoreboard set).
+
+### Diwali review follow-ups (2026-11-12)
+
+- Bengaluru and Hyderabad share a 2026 week-before baseline of 64.6: a real coincidence (different daily values, both
+  sum to 452 over bulletins 2-8 Nov). A test checks every baseline against that city's own bulletin rows.
+- **Delhi measured PM around Diwali (any year) is offered to the model only when the question mentions PM**
+  (`PM_ASKED` in `backend/agent/tools.py`; the tool is hidden by `only_if_pm_asked` and refuses as a backstop). Default
+  Diwali answers use official AQI only. Follow-up suggestions that pair 2026 PM with 2024/2025 are dropped.
+- The OpenAQ not-comparable warning is one text (`NOT_COMPARABLE_FULL`), so it is shown once; the PM result gives the
+  festival days (8 and 9 Nov 2026) as a field.
+- Known limit `delhi_estimate_above_official_2026` (for the Accuracy page): our PM-only estimate averages +28.6 above
+  official Delhi AQI on the new bulletins (+6.5 over all days).
+
+### Deployment settings (2026-11-12)
+
+- Backend: `render.yaml` (free web service, Singapore, one uvicorn worker, health check `/api/health`, build filter so
+  frontend/docs changes do not redeploy). Python pinned by `.python-version` (3.13.15); Render's default is now 3.14.
+  Frontend: Vercel Hobby, root directory `frontend`, Node pinned by `engines` (26.x).
+- **Production** (`RENDER` set, or `SKYQ_ENV=production`; `backend/runtime.py`): visitor limits capped at 4/min and
+  30/day; Gemini-only chain even if a Groq entry is enabled; `SKYQ_MODEL_CHAIN`, `SKYQ_PROVIDER_LIMITS`,
+  `SKYQ_QUOTA_SAFETY_MARGIN` and `SKYQ_DEMO_RESERVE` are ignored; `ALLOWED_ORIGINS` has no localhost default and drops
+  `*` and non-https entries.
+- `requirements.txt` is production only (no pytest, no Groq SDK, no pdfplumber, no truststore); local tools are in
+  `requirements-dev.txt`. The API reads only code, `backend/config/`, `data/app/` and `evals/scoreboard.json`.
+- **Memory** (Linux amd64 container, 512 MB, 0.1 CPU): peak 283 MiB after loading data and serving all data endpoints
+  (was 408 MiB before: single-threaded Parquet reads, `ARROW_DEFAULT_MEMORY_POOL=system`, one DuckDB thread, the store
+  loaded once). Startup to healthy: 25 s native, 72 s under emulation, so a cold visitor waits about a minute plus
+  that; the frontend waits up to 150 s and shows "Starting the analysis service".
 
 ## 6. UI requirements
 
@@ -366,7 +394,8 @@ Testing must include:
 - A sample comparison against official CPCB data where available
 
 Deployment notes:
-- Render free service sleeps, restarts with temporary local storage, and has limited memory.
+- Render free service (0.1 CPU, 512 MB) sleeps after 15 minutes idle, takes about a minute to wake, restarts with
+  temporary local storage; 750 free instance hours per workspace per month.
 - Ship the processed Parquet data with the app.
 - Cache several demo answers so the demo still works if an LLM quota runs out.
 
@@ -389,6 +418,8 @@ Deployment notes:
 
 - Python 3.13.15 in `.venv` (run tools via `.venv/bin/python`). Node v26.7.0, npm 11.19.0.
 - `pdfplumber` 0.11.4 (requirements-dev.txt) reads CPCB bulletin PDFs during data builds; never deployed.
+- Local development installs `requirements-dev.txt` (production deps plus pytest, groq, pdfplumber, truststore).
+- Docker Desktop is installed (start with `open -a Docker`); used to measure memory in a Linux container.
 - **Node 26 became LTS on 28 October 2026.** Still confirm the chosen Next.js version
   officially supports Node 26 before starting the frontend.
 - **DuckDB 2.0:** relations no longer have `fetchone()`. Use

@@ -7,6 +7,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from backend.runtime import is_production
+
 log = logging.getLogger("skyquery.api")
 MODELS_JSON = Path(__file__).resolve().parents[1] / "config" / "models.json"
 
@@ -16,8 +18,6 @@ PROD_RATE_PER_MINUTE = 4
 PROD_RATE_PER_DAY = 30
 
 
-def is_production() -> bool:
-    return bool(os.environ.get("RENDER")) or os.environ.get("SKYQ_ENV", "").strip().lower() == "production"
 
 
 def question_token_cap() -> int:
@@ -42,8 +42,19 @@ def _int(name: str, default: int) -> int:
 
 
 def _origins() -> list[str]:
-    raw = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000")
-    return [o.strip() for o in raw.split(",") if o.strip()]
+    """Comma-separated exact origins (e.g. https://skyquerychat.vercel.app). In production there is no localhost
+    default and "*" or non-https origins are dropped, so only the deployed frontend can call the API from a browser."""
+    prod = is_production()
+    raw = os.environ.get("ALLOWED_ORIGINS", "" if prod else "http://localhost:3000")
+    out = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
+    if prod:
+        bad = [o for o in out if o == "*" or not o.startswith("https://")]
+        if bad:
+            log.warning("ALLOWED_ORIGINS entries ignored in production: %s", bad)
+        out = [o for o in out if o not in bad]
+        if not out:
+            log.warning("ALLOWED_ORIGINS is empty: browsers on other sites cannot call this API")
+    return out
 
 
 @dataclass

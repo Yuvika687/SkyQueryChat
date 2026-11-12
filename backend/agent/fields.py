@@ -80,6 +80,8 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
                 f[f"{yr}_pct_high"] = Field(pv["percent_range"][1], f"{city} AQI change, highest of 3 baselines, Diwali {yr}", "%")
             f[f"{yr}_pct_baseline_aqi"] = Field(pv["baseline_aqi"], f"{city} AQI, week before Diwali {yr}", u)
     elif k == "delhi_pm_context" and v.get("source") == "OpenAQ":
+        a, b = v["festival_days"].split("..")
+        f["festival_days"] = Field(f"{a} and {b} (Diwali night and the day after)", "Delhi PM festival days")
         for p in v.get("pollutants", []):
             n = PN[p["pollutant"]]
             f[f"{p['pollutant']}_festival_mean"] = Field(p["festival_mean"], f"Delhi {n} festival days (OpenAQ)", "µg/m³")

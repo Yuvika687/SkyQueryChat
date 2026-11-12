@@ -145,7 +145,7 @@ function BackendBanner() {
   if (backend === "waking") {
     return (
       <div className="mx-auto w-full max-w-[760px] px-4 pt-4" role="status">
-        <Callout tone="info" icon={Loader2} title="Starting the analysis service. This can take up to a minute.">
+        <Callout tone="info" icon={Loader2} title="Starting the analysis service. This can take a minute or two.">
           You can type your question now; it will be sent when the service is ready.
         </Callout>
       </div>

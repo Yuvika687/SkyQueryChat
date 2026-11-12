@@ -70,3 +70,21 @@ def test_weather_append_keeps_existing_rows_and_skips_unfilled_days(monkeypatch)
     out, new = W.append(old, date(2026, 11, 3), date(2026, 11, 5), date(2026, 11, 12))
     assert (out[out.local_date == date(2026, 11, 3)]["temperature_mean_c"] == 20.0).all()   # not overwritten
     assert set(new["local_date"]) == {date(2026, 11, 4)}                                    # empty 5 Nov skipped
+
+
+APP = C.ROOT / "data" / "app"
+
+
+def test_each_diwali_baseline_is_the_mean_of_that_citys_own_bulletins():
+    """Bengaluru and Hyderabad both give 64.6 for the 2026 week before: a real coincidence (both sum to 452 from
+    different daily values). This guards against any baseline being copied across cities."""
+    aqi = pd.read_parquet(APP / "city_daily_aqi.parquet")
+    aqi["bulletin_date"] = pd.to_datetime(aqi["bulletin_date"]).dt.date
+    b = pd.read_parquet(APP / "diwali_aqi_baselines.parquet").dropna(subset=["baseline_aqi"])
+    assert len(b) > 30
+    for r in b.itertuples():
+        s, e = (date.fromisoformat(x) for x in r.bulletin_dates.split(".."))
+        rows = aqi[(aqi.city == r.city) & (aqi.bulletin_date >= s) & (aqi.bulletin_date <= e)]
+        assert len(rows) == r.n_days and rows.aqi.mean() == pytest.approx(r.baseline_aqi), (r.city, r.year, r.window)
+    w = b[(b.year == 2026) & (b.window == "W2_d7_d1")].set_index("city").baseline_aqi
+    assert w["Bengaluru"] == pytest.approx(w["Hyderabad"]) and w["Bengaluru"] == pytest.approx(452 / 7)

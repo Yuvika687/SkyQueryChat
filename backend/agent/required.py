@@ -2,12 +2,12 @@
 result's type and flags, so the answer never depends on the model remembering them."""
 from __future__ import annotations
 
-from backend.analysis.functions import CAUSAL_WARNING, NOT_COMPARABLE
+from backend.analysis.functions import CAUSAL_WARNING, NOT_COMPARABLE_FULL
 
 TEXT = {
     "source_limit_999": "Values above 999 µg/m³ are blank in this source (CPCB via OpenCity), so these PM "
                         "values are lower bounds. Supporting context only; the main Diwali result is official AQI.",
-    "not_comparable_years": NOT_COMPARABLE + " Supporting context only; the main Diwali result is official AQI.",
+    "not_comparable_years": NOT_COMPARABLE_FULL,
     "aqi_not_concentration": "Official AQI is an index of several pollutants, not a PM2.5 or PM10 concentration.",
     "not_causal": CAUSAL_WARNING,
     "modelled_weather": "Weather values are modelled (Open-Meteo reanalysis), not measured.",

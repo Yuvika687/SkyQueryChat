@@ -30,7 +30,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.agent import core, models as M, resolver as R
 from backend.analysis import functions as F
-from backend.analysis.store import Store
+from backend.analysis.store import Store, read_tables
 from backend.agent.quota import QuotaManager
 from .protect import AnswerCache, RateLimiter, load_demo, normalise
 from .settings import Settings, is_production
@@ -130,8 +130,7 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         if store is None:
-            tables = Store.from_dir().tables
-            state["store"] = LockedStore(tables)
+            state["store"] = LockedStore(read_tables())       # one load, one DuckDB connection
         else:
             state["store"] = store
         core._set_windows(state["store"])

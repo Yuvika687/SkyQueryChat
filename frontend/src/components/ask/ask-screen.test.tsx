@@ -194,7 +194,7 @@ describe("Ask screen", () => {
       return new Promise(() => {});
     });
     renderAsk();
-    expect(await screen.findByText("Starting the analysis service. This can take up to a minute.")).toBeInTheDocument();
+    expect(await screen.findByText("Starting the analysis service. This can take a minute or two.")).toBeInTheDocument();
   });
 
   it("missing data: says measured data isn't available and gives the real data window", async () => {

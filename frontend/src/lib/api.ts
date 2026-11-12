@@ -37,8 +37,9 @@ export const getHealth = (timeoutMs = 5000, signal?: AbortSignal) => getJSON<Hea
 export const getMeta = () => getJSON<Meta>("/api/meta");
 
 /**
- * Wait until the backend answers /api/health. Render's free service sleeps; the first request can take
- * up to about a minute. `onWaking` fires once if the first check is slow or fails.
+ * Wait until the backend answers /api/health. Render's free service sleeps after 15 minutes idle; waking takes
+ * about a minute, plus about 25-40 s for the API to load its data at 0.1 CPU (measured in a Linux container).
+ * `onWaking` fires once if the first check is slow or fails.
  */
 export async function waitForBackend(opts: {
   onWaking?: () => void;
@@ -46,7 +47,7 @@ export async function waitForBackend(opts: {
   signal?: AbortSignal;
   probeMs?: number;
 } = {}): Promise<Health> {
-  const { onWaking, maxWaitMs = 90_000, signal, probeMs = 4000 } = opts;
+  const { onWaking, maxWaitMs = 150_000, signal, probeMs = 4000 } = opts;
   const start = Date.now();
   let warned = false;
   while (true) {

@@ -5,3 +5,7 @@
 truststore==0.10.5
 # Reads CPCB daily AQI bulletin PDFs during data refreshes (backend/pipeline/cpcb_bulletins.py).
 pdfplumber==0.11.4
+# Tests.
+pytest==9.2.0
+# Groq SDK: only for the local Groq test set (the public app is Gemini only).
+groq==1.7.0

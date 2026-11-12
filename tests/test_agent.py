@@ -422,7 +422,7 @@ def test_model_chain_from_config_and_env(monkeypatch):
 
 def test_no_code_execution_tool():
     from backend.agent.tools import TOOLS
-    names = {t.__name__ for t in TOOLS}
+    names = {getattr(t, "name", None) or t.__name__ for t in TOOLS}
     assert not names & {"run_python", "execute", "eval", "sql", "query"}
 
 
@@ -614,6 +614,22 @@ def test_delhi_2026_pm_warns_not_comparable_instead_of_the_999_lower_bound(sessi
     assert any("No baseline is given" in w.text for w in out.required_warnings)
 
 
+def test_delhi_pm_tool_is_offered_only_when_the_user_asks_about_pm(session_factory):
+    seen = {}
+
+    def step(m, info):
+        seen.setdefault("tools", {t.name for t in info.function_tools})
+        return final(info, status="answered", answer="Delhi's official AQI is the main Diwali 2026 result.")
+    run(core.build_agent(scripted([step])[0]), session_factory(), "How did Delhi's air on Diwali 2026 compare with 2025?")
+    assert "diwali_aqi" in seen["tools"] and "delhi_pm_diwali" not in seen["tools"]     # default: official AQI only
+    seen.clear()
+    run(core.build_agent(scripted([step])[0]), session_factory(), "Delhi PM2.5 around Diwali 2026?")
+    assert "delhi_pm_diwali" in seen["tools"]
+    from backend.agent.tools import PM_ASKED
+    assert all(PM_ASKED.search(q) for q in ["Delhi PM2.5 Diwali 2026?", "and pm10?", "particulate levels"])
+    assert not any(PM_ASKED.search(q) for q in ["Compare Delhi's Diwali 2026 and 2025", "AQI on Diwali 2026"])
+
+
 @real
 def test_required_warnings_are_never_truncated(session_factory):
     def step1(m, info):
@@ -653,3 +669,10 @@ def test_period_in_our_own_payload_format_is_accepted():
     """Tool results show periods as 'start..end'; models copy that back (found by holdout2 N07)."""
     r = R.resolve_period("2025-08-01..2025-10-31")
     assert (r["start"], r["end"]) == ("2025-08-01", "2025-10-31")
+
+
+def test_follow_ups_never_suggest_comparing_delhi_pm_across_sources():
+    assert core.compares_pm_across_sources("How did Delhi's PM2.5 compare on Diwali 2025 and 2026?")
+    assert core.compares_pm_across_sources("Compare PM10 for Diwali 2024 and 2026")
+    assert not core.compares_pm_across_sources("What was Delhi's PM2.5 around Diwali 2026?")
+    assert not core.compares_pm_across_sources("Compare Delhi's Diwali AQI in 2025 and 2026")

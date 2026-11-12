@@ -1,5 +1,5 @@
 {
- "_about": "Diwali 2026 set (added 2026-11-12, after the bulletins for 9 and 10 Nov 2026 were refreshed from CPCB's own PDFs). Separate from the main set so published main scores keep the same question list. Reference values are computed independently in evals/references.py (diwali2026_refs: plain pandas over data/app, not backend.analysis). Not yet run; no scores published.",
+ "_about": "Diwali 2026 set (added 2026-11-12, after the bulletins for 9 and 10 Nov 2026 were refreshed from CPCB's own PDFs). Separate from the main set so published main scores keep the same question list. Reference values are computed independently in evals/references.py (diwali2026_refs: plain pandas over data/app, not backend.analysis). First pass 20261112-1507_diwali2026_first: 9/9 turns, recorded as its own scoreboard set (docs/data-source-check.md Part 14.3).",
  "questions": [
   {"id": "E01", "category": "diwali", "turns": ["How bad was Delhi's air on Diwali 2026?"],
    "expect": [{"status": ["answered"], "tools_any": ["diwali_aqi"], "refs": ["delhi_diwali2026_level"], "must_not": ["\\d%"],

@@ -13,6 +13,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from backend.runtime import is_production, override
+
 from .quota import LimitedModel, ModelTimeout, QuotaExceeded, QuotaManager
 
 CONFIG = Path(__file__).resolve().parents[1] / "config" / "models.json"
@@ -40,7 +42,7 @@ def model_chain(cfg: dict | None = None, include_disabled: bool = False) -> list
     """The live chain: enabled entries in order (env SKYQ_MODEL_CHAIN replaces it for local tests).
     include_disabled=True also returns disabled entries, for tests such as the Groq set."""
     cfg = cfg or load_config()
-    env = os.environ.get("SKYQ_MODEL_CHAIN", "").strip()
+    env = override("SKYQ_MODEL_CHAIN")             # ignored in production
     if env:
         out = []
         for item in env.split(","):
@@ -52,6 +54,8 @@ def model_chain(cfg: dict | None = None, include_disabled: bool = False) -> list
         return out
     entries = [ModelEntry(c["provider"], c["model"], c["key_env"], c.get("settings", {}), c.get("enabled", True))
                for c in cfg["chain"]]
+    if is_production():                              # the public app is Gemini only, whatever the config says
+        return [e for e in entries if e.enabled and e.provider == "google"]
     return entries if include_disabled else [e for e in entries if e.enabled]
 
 
