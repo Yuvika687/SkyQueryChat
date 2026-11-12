@@ -90,7 +90,7 @@ def delhi_diwali(h: pd.DataFrame, aqi: pd.DataFrame, bdate=date(2025, 10, 21)) -
 
     add("A_default_4pm_window", win, note="16:00 -> 16:00 window, default rule, mean of station AQIs")
     cal = d[d.hour.dt.date == bdate - timedelta(days=1)].assign(bulletin_date=bdate)
-    add("B_calendar_day_20_oct", cal, note="midnight-to-midnight 20 Oct instead of the bulletin window")
+    add("B_calendar_day_before", cal, note=f"midnight-to-midnight {bdate - timedelta(days=1)} instead of the bulletin window")
     add("C_drop_hours_over_999", win[win.value <= 999], note="as if the >999 hours were blank (OpenCity-style)")
     add("D_cap_hours_at_999", win.assign(value=win.value.clip(upper=999)), note="hourly values capped at 999")
     add("E_aqi_of_city_mean", win, how="aqi_of_city_mean", note="sub-index of the city-mean PM (not station mean)")
@@ -118,11 +118,35 @@ def delhi_diwali(h: pd.DataFrame, aqi: pd.DataFrame, bdate=date(2025, 10, 21)) -
     return res
 
 
+def new_bulletins(est: pd.DataFrame, aqi: pd.DataFrame, after: date) -> dict:
+    """Per city, bulletin by bulletin, for the dates refreshed from CPCB's own PDFs (after `after`)."""
+    a = aqi[aqi["bulletin_date"] > after]
+    j = a[["city", "bulletin_date", "aqi", "prominent_pollutant", "source"]].merge(
+        est, on=["city", "bulletin_date"], how="left")
+    out = {}
+    for city, g in j.groupby("city"):
+        pm = g[g["prominent_pollutant"].fillna("").str.contains("PM") & g["est"].notna()]
+        d = pm["est"] - pm["aqi"]
+        out[city] = {"bulletins": int(len(g)), "compared (PM prominent, estimate available)": int(len(pm)),
+                     "mean_difference_ours_minus_official": round(float(d.mean()), 1) if len(pm) else None,
+                     "mean_absolute_difference": round(float(d.abs().mean()), 1) if len(pm) else None,
+                     "within_20pct": round(float((d.abs() <= 0.2 * pm["aqi"]).mean() * 100), 1) if len(pm) else None,
+                     "rows": [{"bulletin_date": str(r.bulletin_date), "official": int(r.aqi),
+                               "estimate": None if pd.isna(r.est) else round(float(r.est), 1),
+                               "stations_in_estimate": None if pd.isna(r.n) else int(r.n),
+                               "source": r.source} for r in g.itertuples()]}
+    return out
+
+
 def main():
     h, aqi = load()
     est = estimate(h)
+    ue_end = aqi.loc[aqi["source"].str.contains("UrbanEmissions"), "bulletin_date"].max()
     out = {"what": "PM-only AQI estimate vs official CPCB bulletin AQI (NOT official AQI)",
-           "by_city": compare(est, aqi), "delhi_diwali_2025": delhi_diwali(h, aqi)}
+           "by_city": compare(est, aqi), "delhi_diwali_2025": delhi_diwali(h, aqi),
+           "new_bulletins_after_" + str(ue_end): new_bulletins(est, aqi, ue_end),
+           "delhi_diwali_2026": {str(b): delhi_diwali(h, aqi, b) for b in (date(2026, 11, 9), date(2026, 11, 10))
+                                 if ((aqi.city == "Delhi") & (aqi.bulletin_date == b)).any()}}
     (ROOT / "docs" / "crosscheck_bulletins.json").write_text(json.dumps(out, indent=1, default=str))
     print(json.dumps(out, indent=1, default=str))
 

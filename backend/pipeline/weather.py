@@ -28,15 +28,33 @@ PRELIMINARY_DAYS = 7     # most recent days may be revised by later reanalysis
 CACHE = C.RAW / "weather"
 
 
-def fetch_city(city: str, start: date, end: date) -> dict:
+def fetch_city(city: str, start: date, end: date, cache_name: str | None = None) -> dict:
     lat, lon = C.CITY_CENTRES[city]
     r = get(URL, params={"latitude": lat, "longitude": lon, "start_date": str(start), "end_date": str(end),
                          "daily": ",".join(VARIABLES), "timezone": "Asia/Kolkata"})
     r.raise_for_status()
     j = r.json()
     CACHE.mkdir(parents=True, exist_ok=True)
-    (CACHE / f"{city}.json").write_text(json.dumps(j))
+    (CACHE / (cache_name or f"{city}.json")).write_text(json.dumps(j))
     return j
+
+
+def append(existing: pd.DataFrame, start: date, end: date, fetched_on: date) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Add days start..end (one request per city) and keep every existing row exactly as stored, so earlier
+    weather values (and results built on them) do not change. Chunks are cached as <city>_<start>_<end>.json.
+    Days the reanalysis has not filled yet (all variables empty) are not added. Returns (all rows, new rows)."""
+    parts = []
+    for city in C.CITIES:
+        j = fetch_city(city, start, end, cache_name=f"{city}_{start:%Y%m%d}_{end:%Y%m%d}.json")
+        parts.append(parse(city, j, fetched_on))
+    new = pd.concat(parts, ignore_index=True)
+    cols = [c for c, _ in VARIABLES.values()]
+    new = new[new[cols].notna().any(axis=1)]
+    new = new[~new.set_index(["city", "local_date"]).index.isin(existing.set_index(["city", "local_date"]).index)]
+    out = pd.concat([existing, new], ignore_index=True).sort_values(["city", "local_date"]).reset_index(drop=True)
+    if out.duplicated(["city", "local_date"]).any():
+        raise AssertionError("weather_daily has duplicate city-dates")
+    return out, new
 
 
 def parse(city: str, j: dict, fetched_on: date) -> pd.DataFrame:

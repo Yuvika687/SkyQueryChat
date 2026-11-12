@@ -1186,3 +1186,101 @@ the model, 3 model follow-ups. The first stream is kept as `frontend/src/test/fi
 **Corrections:** in the first demo rebuild 5 of 8 questions needed one correction; re-running the two that had
 none before (unusual days, Chennai coverage) passed first time, so those were intermittent. Each answer now records
 `verification.corrections` (why earlier attempts were rejected) so the rate can be tracked from evaluation runs.
+
+# Part 13 — Diwali 2026 data refresh (2026-11-12)
+
+No rules changed and no earlier values changed. Published evaluation scores are unchanged.
+
+## 13.1 Official AQI bulletins
+- **UrbanEmissions `AQI_bulletins`** (re-downloaded 2026-11-12; last repo update 2026-11-03, monthly "UPDATE 2026 October"):
+  still ends **2026-10-25** for all six cities, so it does not cover Diwali 2026.
+- **CPCB's own bulletin PDFs** (`cpcb.gov.in/displaypdf.php?id=<base64 of "Downloads/AQI_Bulletin_YYYYMMDD.pdf">`):
+  downloaded for 2026-10-20 → 2026-11-11 (23 PDFs, about 0.3 MB each); 2026-11-12 was not published yet at the time.
+- **Reliability check:** our PDF reader (`backend/pipeline/cpcb_bulletins.py`, pdfplumber table extraction) against
+  UrbanEmissions for the overlapping bulletins 2026-10-20 → 2026-10-25, **all cities** (not only our six): **1,501
+  city-days, 0 differences** in AQI, category, participating stations and prominent pollutant. (The first pass
+  differed on 151 prominent-pollutant strings because ozone's "3" sits on the next line like PM2.5's "2.5"; fixed
+  before use.) 63 rows matched only after name case ("Bihar sharif" vs "Bihar Sharif"); none of them is one of our cities.
+- **Coverage:** all six cities have all 17 bulletins 2026-10-26 → 2026-11-11, including both festival bulletins.
+- **Source per value:** `city_daily_aqi.source` = "CPCB daily AQI bulletin (via UrbanEmissions)" up to 2026-10-25
+  (24,026 rows) and "CPCB daily AQI bulletin PDF (cpcb.gov.in)" from 2026-10-26 (102 rows). The PDFs also give the
+  total station count (`total_stations`).
+
+## 13.2 Diwali 2026 official AQI (main result)
+Diwali = Sun 8 Nov 2026. Festival bulletins dated 9 and 10 Nov (each 16:00 IST previous day → 16:00 IST). Week
+before = bulletins for the evenings 1-7 Nov. All 2026 values are from CPCB's PDFs.
+
+| City | 9 Nov | 10 Nov | Festival level | Category | Week before | 2025 level | 2024 level | % vs week before (on request) |
+|---|---:|---:|---:|---|---:|---:|---:|---|
+| Delhi | 344 (47/59 st.) | 299 (58/59) | 321.5 | Very Poor | 363.9 | 352.0 | 327.5 | range −14.4% to +78.6% |
+| Mumbai | 172 | 148 | 160.0 | Moderate | 100.3 | 160.5 | 188.5 | range +40.4% to +86.7% |
+| Kolkata | 153 | 129 | 141.0 | Moderate | 123.1 | 160.0 | 198.5 | range −11.3% to +117.9% |
+| Chennai | 199 | 148 | 173.5 | Moderate | 78.1 | 106.5 | 106.5 | range +69.4% to +122.0% |
+| Bengaluru | 133 | 140 | 136.5 | Moderate | 64.6 | 88.0 | 128.5 | range +45.2% to +121.4% |
+| Hyderabad | 119 | 94 | 106.5 | Moderate | 64.6 | 94.5 | 126.0 | +64.9% (baselines agree) |
+
+Percentages follow the approved rule: only on request; single figure only if the D-14..D-8, D-7..D-1 and D-3..D-1
+baselines agree within 25 points, otherwise a range. Note Delhi's 9 Nov bulletin used 47 of 59 stations.
+
+## 13.3 Measured PM (OpenAQ)
+- **Archive** (S3, cached; only new days downloaded): published to **2026-11-08**.
+- **API top-up** for 2026-11-09 → 2026-11-11: `/v3/sensors/{id}/measurements` raw 15-minute readings for the 204
+  selected sensors (204 requests; 288 location-days), written in the archive's file format and cleaned by the same
+  code. On a test day (Mandir Marg PM10, 2026-11-08) the API matched the archive exactly (86/86 timestamps, 0 value
+  differences). A 10-day window per sensor was very slow; the build now asks only for the days the archive lacks.
+- **Sensor dates:** the station snapshot recorded sensors' "last" readings on 2026-11-03, which would have stopped
+  archive requests there. Sensors active at the snapshot are now requested to the build end, and the snapshot's "last"
+  dates are moved forward from the API (same stations, sensors and tiers).
+- **Earlier values unchanged:** every city-day, bulletin, weather row and 2024/2025 Diwali value up to the old data end
+  is identical. 5 station-days changed: low-cost sensors on 2026-10-30 (the old end) gained their 23:00 hour, whose
+  last reading sits in the next day's file. Low-cost sensors are not used in city values.
+- **New data end:** 2026-11-11; no days are "not yet available" up to that date.
+
+## 13.4 Gaps
+- **2026-10-25 and 10-26:** no OpenAQ readings in any city (24 gap hours); **10-27:** 8 gap hours. These are the
+  Diwali 2026 baseline days (D-14..D-8), so the measured-PM status for all five other cities is "incomplete"
+  (OPENAQ_INGESTION_GAP) and no Delhi station meets the baseline rule (>= 5 of 7 valid days).
+- **2026-11-03 13:00 → 11-04 08:00:** 19-hour network-wide gap (all cities).
+- **Diwali night 2026 (Delhi only):** stations with any reading, 18:00 → 05:00 IST: 37, 37, 37, 35, 28, 20, 13, 14,
+  14, 24, 26, 28 (an ordinary night, 5 Nov: 35-37 all night). Fewer than half reported from 23:00 to 03:00. Diwali
+  2025 instead had a one-hour gap at 21:00 with 0 stations. Other cities had no gap on 8-9 Nov.
+- **Midnight hours:** in November 2026 hours 23:00 and 00:00 IST have only 2 of 4 readings at Mandir Marg every night,
+  in both the archive and the API, so they are not valid hours (October: 2.4 and 3.2 per hour on average).
+
+## 13.5 Delhi measured PM for Diwali 2026 (supporting only)
+- Source: OpenAQ, which keeps readings above 999 µg/m³. 2024 and 2025 came from OpenCity, which blanks every reading
+  above 999 µg/m³ (lower bounds), using a fixed panel chosen on those years. **The years are not compared directly**
+  (different source, different blanking, different stations); the required warning `not_comparable_years` says so.
+- Because of the 25-27 Oct outage no baseline is given. Festival-day means use stations valid on both festival days:
+  **PM2.5 248.1 µg/m³ (28 stations), PM10 341.4 µg/m³ (23 stations)**. With the Diwali-night gap they are likely
+  underestimates. No festival-night hour above 999 µg/m³ was recorded, but most peak hours are missing.
+
+## 13.6 Weather
+`fetch_weather.py --append`: 6 requests for 2026-11-04 → 2026-11-11 (48 city-days, all four variables present). The
+3,744 existing rows were kept exactly as stored (not refetched), so earlier weather results cannot change.
+
+## 13.7 Cross-check vs bulletins (PM-only estimate, not official AQI)
+All days to 2026-11-11 (correlation / mean diff / within ±20%): Delhi 0.988 / +6.5 / 97.5%, Kolkata 0.988 / −3.1 /
+90.1%, Mumbai 0.981 / −2.4 / 93.1%, Hyderabad 0.903 / +1.8 / 94.8%, Bengaluru 0.927 / −6.0 / 76.2%, Chennai 0.768 /
+−0.1 / 76.8% (essentially as in Part 7.4).
+
+New bulletins 2026-10-26 → 11-11 (PM prominent, estimate available): within ±20% for 92-100% of bulletins in every
+city; mean difference Delhi +28.6, Kolkata −9.3, Mumbai −5.4, Bengaluru +2.2, Chennai +2.8, Hyderabad +1.2.
+
+Delhi festival bulletins: **9 Nov official 344 vs our estimate 394.9** (27 stations, as few as 10 per hour in the night
+gap; 15% above); **10 Nov official 299 vs 323.1** (36 stations). For Diwali 2025 the gap was 481 vs 351 (37%).
+
+## 13.8 Evaluation
+Published scores are unchanged (the scoreboard reads stored run results; nothing was re-run or re-scored).
+- References for "all data" questions now end at the data end recorded with the app tables (`DATA_END`).
+- Correct answers that changed (marked `data_changed`, with `expect_before`): **T5** Chennai's highest PM2.5 of 2026
+  so far 99.9 → 109.1 µg/m³; **M1** and Groq **G11** (Delhi Diwali 2026: unavailable → answered, 321.5); **M3** (Chennai
+  PM10 November 2026: unavailable → partial month); **M4** (Kolkata Diwali 2025 vs 2026: now both years). Informational:
+  **T4** "last 30 days" and holdout **H01** "2026 month by month" now cover newer days (no reference values).
+  Unchanged at two decimals: the wind, rain and temperature correlations.
+- New set `evals/diwali2026.json` (8 questions, 9 turns) with independent pandas references (`diwali2026_refs`).
+  Not run yet.
+
+## 13.9 Requests used
+OpenAQ API: about 220 (204 for the top-up, plus probes and a first attempt stopped for being slow). OpenAQ archive: only days not already cached. CPCB: 24 PDF
+requests. UrbanEmissions: 1 file. Open-Meteo: 6. Gemini: 2 live questions (demo answer rebuild and one API check).

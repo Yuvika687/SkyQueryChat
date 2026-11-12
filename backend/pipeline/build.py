@@ -30,16 +30,20 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import archive, config as C, quality as Q, transform as T
+from . import archive, config as C, cpcb_bulletins, quality as Q, transform as T
 
 SRC_OPENAQ = "OpenAQ archive (CPCB/AirNow/AirGradient)"
 SRC_OPENCITY = "CPCB via OpenCity"
 SRC_BULLETIN = "CPCB daily AQI bulletin (via UrbanEmissions)"
+SRC_BULLETIN_PDF = cpcb_bulletins.SOURCE
 MONITOR_TYPE = {"primary": "reference", "low_cost": "low_cost",
                 "supporting_single_station": "reference_supporting"}
 SUPPORTING_START = date(2024, 1, 1)
 OPENCITY_WARNING = ("Readings above 999 µg/m³ are blank in this source; "
                     "Diwali-night peaks are under-represented.")
+DELHI_2026_WARNING = ("Delhi PM for Diwali 2026 is from OpenAQ, which keeps readings above 999 µg/m³. Diwali 2024 and "
+                      "2025 PM came from OpenCity, which blanks every reading above 999 µg/m³ (so those values are lower "
+                      "bounds), from a different station panel. The 2026 values must not be compared with them directly.")
 
 REASONS = pd.DataFrame([
     {"reason_code": "OPENAQ_INGESTION_GAP",
@@ -56,6 +60,10 @@ REASONS = pd.DataFrame([
     {"reason_code": "BELOW_PANEL_RULE",
      "detail": "Fewer stations than required pass coverage (both festival days valid and >= 5 of 7 baseline days).",
      "user_message": "Measured PM data is incomplete for Diwali {year}."},
+    {"reason_code": "OPENAQ_NOT_COMPARABLE",
+     "detail": "Delhi PM for Diwali 2026 comes from OpenAQ, which keeps readings above 999 µg/m³; 2024 and 2025 come "
+               "from OpenCity, which blanks them, and the station panels differ. The years are not compared directly.",
+     "user_message": DELHI_2026_WARNING},
     {"reason_code": "OPENCITY_999_LIMIT",
      "detail": "OpenCity blanks every value above 999 µg/m³, so festival-night peaks are missing; "
                "blank rates differ by year. Shown as supporting context only; no % change.",
@@ -111,7 +119,12 @@ def load_stations(candidates: dict, cities: list[str]) -> pd.DataFrame:
 
 # --------------------------------------------------------------------------- OpenAQ
 def location_days(st: pd.DataFrame, start: date, end: date) -> dict[int, list[date]]:
+    """Archive days to request per location. A sensor still reporting when the station snapshot was taken (last
+    reading within 3 days of the newest one) is requested up to `end`: the snapshot's 'last' date is not an end."""
     out = {}
+    snap = st["sensor_last"].max()
+    st = st.assign(sensor_last=st["sensor_last"].where(st["sensor_last"] < snap - pd.Timedelta(days=3),
+                                                       pd.Timestamp(end, tz=C.IST)))
     for lid, g in st.groupby("location_id"):
         tier = g["tier"].iat[0]
         lo = max(min(start, SUPPORTING_START) if tier == "supporting_single_station" else start,
@@ -157,7 +170,16 @@ def download_openaq(st: pd.DataFrame, start: date, end: date, today: date, worke
     if failed:
         raise RuntimeError(f"{len(failed)} archive downloads still failing after retries "
                            f"(e.g. {failed[:3]}); not treating them as missing data")
-    # Publication tail: last date on which >= 50% of PRIMARY locations have a file.
+    last_pub = last_published(st, paths, start, end)
+    if progress:
+        n = sum(map(len, paths.values()))
+        print(f"  archive: {len(jobs)} location-days checked, {n} files present; "
+              f"last published date {last_pub}", flush=True)
+    return paths, last_pub
+
+
+def last_published(st: pd.DataFrame, paths: dict, start: date, end: date) -> date:
+    """Publication tail: last date on which >= 50% of PRIMARY locations have a file."""
     prim = set(st.loc[st["tier"] == "primary", "location_id"].astype(int))
     rng = pd.date_range(start, end).date
     have = pd.Series(0, index=rng)
@@ -166,12 +188,53 @@ def download_openaq(st: pd.DataFrame, start: date, end: date, today: date, worke
             if d in have.index:
                 have[d] += 1
     pres = pd.DataFrame({"local_date": rng, "share": (have / max(1, len(prim))).values})
-    last_pub = Q.publication_tail(pres) or end
-    if progress:
-        n = sum(map(len, paths.values()))
-        print(f"  archive: {len(jobs)} location-days checked, {n} files present; "
-              f"last published date {last_pub}", flush=True)
-    return paths, last_pub
+    return Q.publication_tail(pres) or end
+
+
+def cached_api_files(st: pd.DataFrame, start: date, end: date) -> dict:
+    """API top-up files already in data/raw/openaq_api/ (written by an earlier --api-topup run)."""
+    from .openaq_api import CACHE
+    out: dict[int, list[tuple[date, Path]]] = {}
+    for lid in st["location_id"].astype(int).unique():
+        for p in sorted((CACHE / f"locationid={lid}").glob(f"location-{lid}-*.csv.gz")):
+            d = datetime.strptime(p.name.split("-")[-1][:8], "%Y%m%d").date()
+            if start <= d <= end:
+                out.setdefault(int(lid), []).append((d, p))
+    return out
+
+
+def merge_api(paths: dict, api_files: dict) -> tuple[dict, list[str]]:
+    """Add API files only for location-days the archive has no file for. Returns (paths, API location-days)."""
+    used = []
+    for lid, items in api_files.items():
+        have = {d for d, _ in paths.get(lid, [])}
+        for d, p in items:
+            if d not in have:
+                paths.setdefault(lid, []).append((d, p))
+                used.append(f"{lid}:{d}")
+        paths[lid] = sorted(paths.get(lid, []), key=lambda x: x[0])
+    return paths, used
+
+
+def refresh_sensor_last(st: pd.DataFrame, last_utc: dict, candidates_path: Path) -> pd.DataFrame:
+    """Sensors' 'last seen' dates come from the station snapshot; move them forward where the API shows newer
+    readings (station selection is unchanged) and save them so later builds request the new days too."""
+    st = st.copy()
+    for sid, ts in last_utc.items():
+        m = st["sensor_id"] == sid
+        st.loc[m, "sensor_last"] = st.loc[m, "sensor_last"].where(st.loc[m, "sensor_last"] >= ts, ts)
+    cand = json.loads(candidates_path.read_text())
+    for city in cand["cities"].values():
+        for tier, items in city.items():
+            for s in items if isinstance(items, list) else []:
+                for sen in (s.get("sensors") or {}).values():
+                    ts = last_utc.get(int(sen["id"])) if sen and sen.get("id") else None
+                    if ts is not None and ts.tz_convert("UTC") > pd.Timestamp(sen["last"]):
+                        sen["last"] = ts.tz_convert("UTC").strftime("%Y-%m-%dT%H:%M:%SZ")
+                        if pd.Timestamp(sen["last"]) > pd.Timestamp(s.get("location_last_utc") or sen["last"]):
+                            s["location_last_utc"] = sen["last"]
+    candidates_path.write_text(json.dumps(cand, indent=1, ensure_ascii=False))
+    return st
 
 
 def process_openaq(st: pd.DataFrame, paths: dict, start: date, end: date):
@@ -185,6 +248,8 @@ def process_openaq(st: pd.DataFrame, paths: dict, start: date, end: date):
         if not items:
             continue
         raw = pd.concat([T.read_archive_csv(p) for p in items], ignore_index=True)
+        # a reading on a file boundary can appear in two files (archive day + API day): keep it once
+        raw = raw.drop_duplicates(["sensor_key", "ts"], keep="first")
         other += int((~raw["sensor_key"].isin(keep)).sum())
         raw = raw[raw["sensor_key"].isin(keep)]
         hi_parts.append(raw.loc[raw["value"] > C.OPENCITY_LIMIT, ["location_id", "pollutant", "ts"]])
@@ -339,9 +404,36 @@ def build_diwali(daily: pd.DataFrame, stations: pd.DataFrame, aqi: pd.DataFrame,
                     blank_rate_festival_nights=fr, blank_rate_baseline_nights=br,
                     # proof needs OpenAQ values at the same time: only possible from 2025-02-18
                     blank_proven_share_festival_nights=fp if y >= C.GAP_END.year else np.nan))
-        rows.append(_row(role="supporting", city="Delhi", year=2026, metric="pm25/pm10",
-                         source=SRC_OPENAQ, status="not_available", reason_code="NOT_YET_AVAILABLE",
-                         warning="2025 side would use OpenCity (999 limit): supporting context only, no % change."))
+    # Delhi 2026: OpenAQ (no 999 limit). Supporting context only; never compared with the OpenCity years.
+    if "Delhi" in cities:
+        y = 2026
+        oa_d = daily[(daily["source"] == SRC_OPENAQ) & (daily["city"] == "Delhi") & (daily["tier"] == "primary")]
+        if C.festival_days(y)[-1] > data_end:
+            rows.append(_row(role="supporting", city="Delhi", year=y, metric="pm25/pm10", source=SRC_OPENAQ,
+                             status="not_available", reason_code="NOT_YET_AVAILABLE", warning=DELHI_2026_WARNING))
+        else:
+            st26 = station_event_stats(oa_d, y)
+            lq = low_quality_dates(dq, SRC_OPENAQ, ["all_cities", "Delhi"], C.festival_days(y) + C.baseline_days(y))
+            for pol in C.POLLUTANTS:
+                sp = st26[st26["pollutant"] == pol]
+                passing = sp[sp["passes"]]
+                if len(passing):
+                    s_, base, status = passing, passing["baseline_mean"].mean(), "supporting_only"
+                    group = f"OpenAQ stations passing coverage in 2026 ({len(s_)} stations)"
+                else:
+                    # Panel rule not met (e.g. an OpenAQ outage on baseline days): no baseline value. Festival-day
+                    # values from stations valid on BOTH festival days are kept as supporting context.
+                    s_ = sp[sp["festival_valid_days"] == len(C.festival_days(y))]
+                    base, status = np.nan, "baseline_incomplete"
+                    group = (f"OpenAQ stations valid on both festival days ({len(s_)}); no station has >= 5 of 7 "
+                             f"valid baseline days")
+                panels[f"{pol}_2026_openaq"] = sorted(int(i) for i in s_["location_id"])
+                rows.append(_row(
+                    role="supporting", city="Delhi", year=y, metric=pol, units=C.UNITS, source=SRC_OPENAQ,
+                    data_type="measured (OpenAQ; values above 999 kept)", comparison_group=group,
+                    n_stations=int(len(s_)), baseline_value=base, festival_value=s_["festival_mean"].mean(),
+                    change_pct=np.nan, status=status, reason_code="OPENAQ_NOT_COMPARABLE",
+                    low_quality=bool(lq), low_quality_dates=",".join(lq), warning=DELHI_2026_WARNING))
 
     # 3) Other cities measured PM: STATUS rows only (no values used for comparison, no % change).
     oa = daily[(daily["source"] == SRC_OPENAQ) & (daily["tier"] == "primary")]
@@ -382,29 +474,50 @@ def build_diwali(daily: pd.DataFrame, stations: pd.DataFrame, aqi: pd.DataFrame,
 
 
 # --------------------------------------------------------------------------- bulletins
-def load_bulletins(path: Path, cities: list[str]) -> pd.DataFrame:
+def load_bulletins(path: Path, cities: list[str], pdf_until: date | None = None) -> pd.DataFrame:
+    """UrbanEmissions' parsed bulletins, then CPCB's own PDFs for later dates (up to pdf_until). Every row keeps
+    the source it came from. The PDF parser matched UrbanEmissions exactly on overlapping dates (docs Part 13)."""
     b = pd.read_parquet(path)
     b = b[b["city"].isin(cities)].copy()
     b["date"] = pd.to_datetime(b["date"]).dt.date
-    b = T.align_bulletins(b).rename(columns={"date": "bulletin_date"})
     b["source"] = SRC_BULLETIN
+    b["total_stations"] = np.nan
+    ue_end = b["date"].max()
+    if pdf_until and pdf_until > ue_end:
+        pdf = cpcb_bulletins.load(ue_end + timedelta(days=1), pdf_until, cities)
+        if not pdf.empty:
+            pdf["source"] = SRC_BULLETIN_PDF
+            b = pd.concat([b, pdf[pdf["date"] > ue_end]], ignore_index=True)
+    b = T.align_bulletins(b).rename(columns={"date": "bulletin_date"})
     b["data_type"] = "official measured AQI (city average)"
     b["units"] = "index (0-500)"
     cols = ["city", "bulletin_date", "period_start_ist", "period_end_ist", "evening_of_local_date",
-            "aqi", "aqi_category", "prominent_pollutant", "no_stations", "source", "data_type", "units"]
+            "aqi", "aqi_category", "prominent_pollutant", "no_stations", "total_stations", "source", "data_type",
+            "units"]
     b = b[cols].drop_duplicates(["city", "bulletin_date"]).sort_values(["city", "bulletin_date"])
     return b.reset_index(drop=True)
 
 
 # --------------------------------------------------------------------------- main
 def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
-        candidates_path: Path, opencity_dir: Path, bulletin_path: Path, progress: bool = True) -> dict:
+        candidates_path: Path, opencity_dir: Path, bulletin_path: Path, progress: bool = True,
+        api_topup: bool = False) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     cand = json.loads(candidates_path.read_text())
     st = load_stations(cand, cities)
 
-    paths, last_pub = download_openaq(st, start, end, today, progress=progress)
+    paths, archive_end = download_openaq(st, start, end, today, progress=progress)
+    api = {"files": {}, "last_utc": {}, "requests": 0}
+    if api_topup and archive_end < end:
+        # only the days the archive has not published yet (a short window keeps API requests fast)
+        from . import openaq_api
+        api = openaq_api.top_up(st, archive_end + timedelta(days=1), end, progress=progress)
+        st = refresh_sensor_last(st, api["last_utc"], candidates_path)
+    api_files = api["files"] or cached_api_files(st, archive_end + timedelta(days=1), end)   # rebuilds reuse the cache
+    paths, api_days = merge_api(paths, api_files)
+    last_pub = last_published(st, paths, start, end)
     data_end = min(end, last_pub)
+    api_dates = sorted({d.split(":")[1] for d in api_days if date.fromisoformat(d.split(":")[1]) <= data_end})
     h_oa, log_oa, other, proven_hi = process_openaq(st, paths, start, data_end)
     hourly, logs, blank_hours = [h_oa], [log_oa], None
     if "Delhi" in cities:
@@ -475,7 +588,7 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
     cd["source"], cd["data_type"], cd["units"] = SRC_OPENAQ, "measured", C.UNITS
     _assert_unique(cd, ["city", "pollutant", "local_date"], "city_daily")
 
-    aqi = load_bulletins(bulletin_path, cities)
+    aqi = load_bulletins(bulletin_path, cities, pdf_until=end)
     _assert_unique(aqi, ["city", "bulletin_date"], "city_daily_aqi")
 
     diwali, panels = build_diwali(daily, st, aqi, dq, blank_hours, cities, today, data_end)
@@ -501,6 +614,14 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
         "built_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "cities": cities, "openaq_requested": [str(start), str(end)],
         "openaq_data_end": str(data_end), "not_yet_published": [str(d) for d in pending],
+        "openaq_archive_end": str(archive_end),
+        "openaq_api_topup": {"dates": api_dates, "location_days": len(api_days), "requests": api["requests"],
+                             "note": "API readings are used only for location-days the archive had not published; "
+                                     "a later refresh replaces them with archive files."},
+        "bulletins": {"urbanemissions_end": str(aqi.loc[aqi["source"] == SRC_BULLETIN, "bulletin_date"].max()),
+                      "cpcb_pdf_dates": [str(x) for x in sorted(aqi.loc[aqi["source"] == SRC_BULLETIN_PDF,
+                                                                            "bulletin_date"].unique())],
+                      "end": str(aqi["bulletin_date"].max())},
         "rules": {"valid_hour_fraction": C.MIN_VALID_READING_FRACTION_PER_HOUR,
                   "valid_day_hours": C.MIN_VALID_HOURS_PER_DAY,
                   "city_min_stations": "max(3, ceil(0.5 * primary stations))",

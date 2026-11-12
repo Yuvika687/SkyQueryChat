@@ -1,5 +1,5 @@
 {
- "_about": "15-question Groq test covering every feature. Run only when Groq quota is available: python scripts/run_eval.py --set groq. The runner forces the Groq-only model chain, checks the per-minute headers before each question, keeps a 24-hour token ledger, and stops before the daily (200K) or per-minute (8K) limit, or at the first 'tokens per day' 429. 'resolved' = what the tools must use (cities, pollutant, start, end); a wrong period fails (added 2026-11-06, applies to runs from then on).",
+ "_about": "15-question Groq test covering every feature. Run only when Groq quota is available: python scripts/run_eval.py --set groq. The runner forces the Groq-only model chain, checks the per-minute headers before each question, keeps a 24-hour token ledger, and stops before the daily (200K) or per-minute (8K) limit, or at the first 'tokens per day' 429. 'resolved' = what the tools must use (cities, pollutant, start, end); a wrong period fails (added 2026-11-06, applies to runs from then on). data_changed (added 2026-11-12): questions whose correct answer changed because new data arrived; expect_before keeps the expectation that published runs were scored with.",
  "questions": [
   {
    "id": "G01",
@@ -312,14 +312,16 @@
    "expect": [
     {
      "status": [
-      "unavailable"
+      "answered"
      ],
      "tools_any": [
-      "diwali_aqi",
-      "check_request"
+      "diwali_aqi"
      ],
-     "must_include": [
-      "not available"
+     "refs": [
+      "delhi_diwali2026_level"
+     ],
+     "must_not": [
+      "\\d%"
      ],
      "resolved": {
       "cities": [
@@ -328,7 +330,32 @@
       "pollutant": "AQI"
      }
     }
-   ]
+   ],
+   "data_changed": {
+    "on": "2026-11-12",
+    "reason": "Diwali 2026 official AQI is now available (CPCB bulletins 9 and 10 Nov 2026). Was 'unavailable'.",
+    "published_scores": "unchanged (scored with the expectation at the time)",
+    "expect_before": [
+     {
+      "status": [
+       "unavailable"
+      ],
+      "tools_any": [
+       "diwali_aqi",
+       "check_request"
+      ],
+      "must_include": [
+       "not available"
+      ],
+      "resolved": {
+       "cities": [
+        "Delhi"
+       ],
+       "pollutant": "AQI"
+      }
+     }
+    ]
+   }
   },
   {
    "id": "G12",

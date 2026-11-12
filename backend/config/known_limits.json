@@ -14,12 +14,12 @@
   {
    "id": "midnight_readings",
    "title": "Missing midnight readings (older data)",
-   "detail": "OpenAQ archive files before about 2026-08-17 lack readings ending 00:00-00:30 IST."
+   "detail": "OpenAQ archive files before about 2026-08-17 lack readings ending 00:00-00:30 IST. In November 2026 hours 23:00 and 00:00 IST often have only 2 of 4 readings (archive and API alike), so they are not valid hours."
   },
   {
    "id": "delhi_999",
    "title": "Delhi PM above 999 µg/m³ is blank in OpenCity",
-   "detail": "Delhi Diwali PM is supporting context only, shown as lower bounds; no PM percentage changes."
+   "detail": "Delhi Diwali 2024 and 2025 PM is supporting context only, shown as lower bounds; no PM percentage changes. Diwali 2026 Delhi PM comes from OpenAQ (no 999 limit) and is never compared with them."
   },
   {
    "id": "five_city_diwali_pm",
@@ -44,7 +44,7 @@
   {
    "id": "data_end",
    "title": "Data end dates",
-   "detail": "Measured PM ends 2026-10-30; official AQI bulletins end 2026-10-25 and need a refresh after Diwali 2026 (8 November)."
+   "detail": "Measured PM ends 2026-11-11 (OpenAQ archive to 2026-11-08, then the OpenAQ API for 9-11 Nov); official AQI bulletins end 2026-11-11; weather ends 2026-11-11. Refreshed 2026-11-12."
   },
   {
    "id": "weather_modelled",
@@ -75,6 +75,26 @@
    "id": "render_client_ip",
    "title": "Visitor identification on Render is checked by simulation only",
    "detail": "Rate limits use the client IP from True-Client-IP, then CF-Connecting-IP (set by Cloudflare in front of Render), never X-Forwarded-For or X-Visitor-Id, which clients can fake. Render does not document these headers officially; confirm after deploying with GET /api/visitor (it should say identified_by: true-client-ip). Visitors behind one shared IP (office, campus) share one limit."
+  },
+  {
+   "id": "bulletins_cpcb_pdf",
+   "title": "Recent official AQI read from CPCB's own PDFs",
+   "detail": "UrbanEmissions' bulletin dataset ends 2026-10-25. Bulletins from 2026-10-26 (including Diwali 2026) are read from CPCB's daily bulletin PDFs (cpcb.gov.in). The reader matched UrbanEmissions exactly on 1,501 city-days of overlapping bulletins (AQI, category, stations, prominent pollutant). Each value records its source."
+  },
+  {
+   "id": "openaq_api_topup",
+   "title": "Latest measured days come from the OpenAQ API",
+   "detail": "9-11 Nov 2026 were not yet in the OpenAQ archive, so they come from the OpenAQ API (same raw 15-minute readings; identical to the archive on a test day). They are provisional and are replaced by archive files on the next refresh."
+  },
+  {
+   "id": "diwali_2026_night_gap",
+   "title": "OpenAQ gap on Diwali night 2026 (Delhi)",
+   "detail": "On the night of 8-9 Nov 2026 fewer than half of Delhi's 37 stations reported from about 23:00 to 02:00 IST (as few as 13). Diwali 2025 had a one-hour network-wide gap at 21:00. Measured Diwali-night PM is therefore incomplete; official AQI is the main Diwali result."
+  },
+  {
+   "id": "openaq_outage_oct_2026",
+   "title": "OpenAQ outage 25-27 Oct 2026",
+   "detail": "OpenAQ has no readings for any city on 25-26 Oct 2026 and a partial gap on 27 Oct. These days are the Diwali 2026 baseline (D-14..D-8), so no Delhi station meets the measured-PM baseline rule and no Diwali 2026 PM baseline is given."
   }
  ]
 }

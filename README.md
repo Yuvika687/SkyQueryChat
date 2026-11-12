@@ -22,6 +22,7 @@ number it writes is checked against the calculated results before the answer is 
   (`backend/api/`).
 - Frontend (`frontend/`): app shell and the **Ask** screen are built (chat, agent timeline, cards, charts,
   evidence bar). **Explore** and **Accuracy** are not built yet.
+- Data: measured PM and official AQI to 11 Nov 2026 (includes Diwali 2026); weather to 11 Nov 2026.
 - Not deployed yet. Evidence and rules: `docs/data-source-check.md`; UI spec: `docs/ui-design-spec.md`.
 
 ## Rebuild the dataset
@@ -30,6 +31,9 @@ pip install -r requirements-dev.txt     # dev only: adds truststore for TLS-insp
 python scripts/build_dataset.py         # downloads/caches raw data, rebuilds data/processed
 python scripts/fetch_weather.py         # Open-Meteo daily weather (6 requests)
 python scripts/derive_app_tables.py     # compact app tables in data/app (deploy only these)
+# refresh with new days only (cached archive; API for days the archive has not published; bulletin PDFs after
+# UrbanEmissions' last date; weather appended without changing stored rows):
+python scripts/build_dataset.py --api-topup && python scripts/fetch_weather.py --append && python scripts/derive_app_tables.py
 pytest                                  # pipeline, analysis and real-data tests
 ```
 

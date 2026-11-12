@@ -6550,17 +6550,70 @@
   {
    "question": "What was Delhi's AQI on Diwali 2026?",
    "final": {
-    "status": "unavailable",
-    "answer": "Official CPCB AQI data for Diwali 2026 in Delhi is unavailable because the date is beyond the current record range up to 25 October 2026.",
-    "headline": "Official CPCB AQI data for Diwali 2026 in Delhi is unavailable because the date is beyond the current record range up to 25 October 2026.",
-    "explanation": "Official AQI is an index covering several pollutants across a bulletin window from 4 PM to 4 PM, but records do not yet extend to Diwali 2026.",
+    "status": "answered",
+    "answer": "Delhi recorded an official AQI category of Very Poor around Diwali 2026, with a festival AQI of 321.5 index (0-500).",
+    "headline": "Delhi recorded an official AQI category of Very Poor around Diwali 2026, with a festival AQI of 321.5 index (0-500).",
+    "explanation": "Official AQI is an index of several pollutants covering 16:00 IST on the previous day to 16:00 IST on the bulletin date. During this period, Delhi's daily bulletins were 344 on 2026-11-09 and 299 on 2026-11-10, alongside a pre-week AQI of 363.9.",
     "method": "Official CPCB AQI (index, not a concentration): Diwali air quality in Delhi (official AQI), 2026-10-25 to 2026-11-12. Stations chosen by CPCB for the city bulletin. Method: Festival days are Diwali (D) and D+1 (verified dates in events.json).",
     "follow_ups": [
-     "What was Delhi's official AQI on Diwali 2024?",
-     "What was Delhi's official AQI on Diwali 2025?",
-     "What was measured PM2.5 in Delhi around Diwali 2025?"
+     "How does Delhi's Diwali 2026 AQI compare to Mumbai?",
+     "What was Delhi's measured PM2.5 around Diwali 2026?",
+     "What was the weather association for Delhi around Diwali 2026?"
     ],
-    "cards": [],
+    "cards": [
+     {
+      "label": "Delhi official AQI, Diwali 2026 (mean of festival bulletins)",
+      "value": 321.5,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2026_festival_aqi",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated D+1 reports Diwali evening."
+      ]
+     },
+     {
+      "label": "Delhi official AQI, bulletin 2026-11-09 (2026-11-08 16:00 to 2026-11-09 16:00 IST)",
+      "value": 344.0,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2026_bulletin_2026-11-09",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated D+1 reports Diwali evening."
+      ]
+     },
+     {
+      "label": "Delhi official AQI, bulletin 2026-11-10 (2026-11-09 16:00 to 2026-11-10 16:00 IST)",
+      "value": 299.0,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2026_bulletin_2026-11-10",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated D+1 reports Diwali evening."
+      ]
+     },
+     {
+      "label": "Delhi official AQI, week before Diwali 2026",
+      "value": 363.9,
+      "unit": "index (0-500)",
+      "dataset_id": "ds1",
+      "field": "2026_pre_week_aqi",
+      "data_type": "official_aqi",
+      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)",
+      "warnings": [
+       "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
+       "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated D+1 reports Diwali evening."
+      ]
+     }
+    ],
     "chart": {
      "type": "line",
      "title": "Delhi: official CPCB AQI by bulletin date around Diwali",
@@ -6577,9 +6630,147 @@
       "field": "aqi",
       "label": "AQI (index)"
      },
-     "series": [],
+     "series": [
+      {
+       "name": "Diwali 2026",
+       "data": [
+        {
+         "x": -13,
+         "aqi": 174.0,
+         "category": "Moderate",
+         "bulletin_date": "2026-10-26",
+         "reporting_period": "2026-10-25 16:00 to 2026-10-26 16:00 IST"
+        },
+        {
+         "x": -12,
+         "aqi": 197.0,
+         "category": "Moderate",
+         "bulletin_date": "2026-10-27",
+         "reporting_period": "2026-10-26 16:00 to 2026-10-27 16:00 IST"
+        },
+        {
+         "x": -11,
+         "aqi": 229.0,
+         "category": "Poor",
+         "bulletin_date": "2026-10-28",
+         "reporting_period": "2026-10-27 16:00 to 2026-10-28 16:00 IST"
+        },
+        {
+         "x": -10,
+         "aqi": 222.0,
+         "category": "Poor",
+         "bulletin_date": "2026-10-29",
+         "reporting_period": "2026-10-28 16:00 to 2026-10-29 16:00 IST"
+        },
+        {
+         "x": -9,
+         "aqi": 60.0,
+         "category": "Satisfactory",
+         "bulletin_date": "2026-10-30",
+         "reporting_period": "2026-10-29 16:00 to 2026-10-30 16:00 IST"
+        },
+        {
+         "x": -8,
+         "aqi": 117.0,
+         "category": "Moderate",
+         "bulletin_date": "2026-10-31",
+         "reporting_period": "2026-10-30 16:00 to 2026-10-31 16:00 IST"
+        },
+        {
+         "x": -7,
+         "aqi": 261.0,
+         "category": "Poor",
+         "bulletin_date": "2026-11-01",
+         "reporting_period": "2026-10-31 16:00 to 2026-11-01 16:00 IST"
+        },
+        {
+         "x": -6,
+         "aqi": 324.0,
+         "category": "Very Poor",
+         "bulletin_date": "2026-11-02",
+         "reporting_period": "2026-11-01 16:00 to 2026-11-02 16:00 IST"
+        },
+        {
+         "x": -5,
+         "aqi": 350.0,
+         "category": "Very Poor",
+         "bulletin_date": "2026-11-03",
+         "reporting_period": "2026-11-02 16:00 to 2026-11-03 16:00 IST"
+        },
+        {
+         "x": -4,
+         "aqi": 377.0,
+         "category": "Very Poor",
+         "bulletin_date": "2026-11-04",
+         "reporting_period": "2026-11-03 16:00 to 2026-11-04 16:00 IST"
+        },
+        {
+         "x": -3,
+         "aqi": 369.0,
+         "category": "Very Poor",
+         "bulletin_date": "2026-11-05",
+         "reporting_period": "2026-11-04 16:00 to 2026-11-05 16:00 IST"
+        },
+        {
+         "x": -2,
+         "aqi": 382.0,
+         "category": "Very Poor",
+         "bulletin_date": "2026-11-06",
+         "reporting_period": "2026-11-05 16:00 to 2026-11-06 16:00 IST"
+        },
+        {
+         "x": -1,
+         "aqi": 369.0,
+         "category": "Very Poor",
+         "bulletin_date": "2026-11-07",
+         "reporting_period": "2026-11-06 16:00 to 2026-11-07 16:00 IST"
+        },
+        {
+         "x": 0,
+         "aqi": 376.0,
+         "category": "Very Poor",
+         "bulletin_date": "2026-11-08",
+         "reporting_period": "2026-11-07 16:00 to 2026-11-08 16:00 IST"
+        },
+        {
+         "x": 1,
+         "aqi": 344.0,
+         "category": "Very Poor",
+         "bulletin_date": "2026-11-09",
+         "reporting_period": "2026-11-08 16:00 to 2026-11-09 16:00 IST"
+        },
+        {
+         "x": 2,
+         "aqi": 299.0,
+         "category": "Poor",
+         "bulletin_date": "2026-11-10",
+         "reporting_period": "2026-11-09 16:00 to 2026-11-10 16:00 IST"
+        },
+        {
+         "x": 3,
+         "aqi": 313.0,
+         "category": "Very Poor",
+         "bulletin_date": "2026-11-11",
+         "reporting_period": "2026-11-10 16:00 to 2026-11-11 16:00 IST"
+        },
+        {
+         "x": 4,
+         "aqi": null,
+         "category": null,
+         "bulletin_date": "2026-11-12",
+         "reporting_period": "2026-11-11 16:00 to 2026-11-12 16:00 IST"
+        }
+       ]
+      }
+     ],
      "units": "index (0-500)",
-     "bands": [],
+     "bands": [
+      {
+       "label": "Diwali 2026 festival bulletins (2026-11-09, 2026-11-10)",
+       "start": 1,
+       "end": 2
+      }
+     ],
      "colour_scale": "cpcb_aqi",
      "notes": [
       "Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on the bulletin date.",
@@ -6590,7 +6781,7 @@
      {
       "dataset_id": "ds1",
       "title": "Diwali air quality in Delhi (official AQI)",
-      "source": "CPCB daily AQI bulletin (via UrbanEmissions)",
+      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)",
       "data_type": "official_aqi",
       "date_range": {
        "start": "2026-10-25",
@@ -6603,7 +6794,9 @@
     ],
     "coverage": {
      "ds1": {
-      "years_available": []
+      "years_available": [
+       2026
+      ]
      }
     },
     "warnings": [
@@ -6612,7 +6805,8 @@
      "This is official AQI (an index of several pollutants), not a PM2.5 or PM10 concentration.",
      "Each bulletin covers 16:00 IST on the previous day to 16:00 IST on its date, so the bulletin dated D+1 reports Diwali evening.",
      "City AQI is CPCB's average over whichever stations reported; the station mix changes daily.",
-     "Percentage changes are withheld: they vary strongly with the baseline window (see baseline_candidates)."
+     "Percentage changes are withheld: they vary strongly with the baseline window (see baseline_candidates).",
+     "Bulletins after 25 Oct 2026 are read from CPCB's own bulletin PDFs (cpcb.gov.in); earlier ones from UrbanEmissions' copy of the same bulletins. Both report CPCB's official values."
     ],
     "required_warnings": [
      {
@@ -6653,39 +6847,39 @@
     "clarifying_question": null,
     "verification": {
      "passed": true,
-     "retries": 1,
-     "numbers_checked": 4,
+     "retries": 0,
+     "numbers_checked": 7,
      "answer_source": "llm",
      "follow_ups_source": "llm"
     },
     "model": "gemini-3.5-flash-lite",
     "usage": {
-     "requests": 4,
-     "input_tokens": 8201,
-     "output_tokens": 374
+     "requests": 2,
+     "input_tokens": 3961,
+     "output_tokens": 353
     }
    },
    "steps": [
     {
      "seq": 3,
      "type": "plan",
-     "title": "Plan: look up official CPCB AQI bulletins for Delhi around Diwali 2026.",
+     "title": "I will check the official CPCB AQI for Delhi on Diwali 2026.",
      "detail": {
-      "summary": "Plan: look up official CPCB AQI bulletins for Delhi around Diwali 2026.",
-      "source": "code",
+      "summary": "I will check the official CPCB AQI for Delhi on Diwali 2026.",
+      "source": "llm",
       "steps": [
        {
         "tool": "diwali_aqi",
         "args": {
-         "city": "Delhi",
          "years": [
           2026
-         ]
+         ],
+         "city": "Delhi"
         }
        }
       ]
      },
-     "ts": "2026-11-12T06:19:41.715+00:00"
+     "ts": "2026-11-12T08:15:24.691+00:00"
     },
     {
      "seq": 4,
@@ -6700,7 +6894,7 @@
        "percent": false
       }
      },
-     "ts": "2026-11-12T06:19:41.716+00:00"
+     "ts": "2026-11-12T08:15:24.693+00:00"
     },
     {
      "seq": 5,
@@ -6709,55 +6903,20 @@
      "detail": {
       "dataset_id": "ds1",
       "data_type": "official_aqi",
-      "fields": 1,
-      "warnings": 5
+      "fields": 6,
+      "warnings": 6
      },
-     "ts": "2026-11-12T06:19:41.727+00:00"
+     "ts": "2026-11-12T08:15:24.708+00:00"
     },
     {
      "seq": 7,
-     "type": "tool_call",
-     "title": "check_request",
-     "detail": {
-      "args": {
-       "cities": [
-        "Delhi"
-       ],
-       "pollutant": null,
-       "period": null,
-       "event": null
-      }
-     },
-     "ts": "2026-11-12T06:19:49.070+00:00"
-    },
-    {
-     "seq": 8,
-     "type": "tool_result",
-     "title": "check_request",
-     "detail": {
-      "unsupported": []
-     },
-     "ts": "2026-11-12T06:19:49.071+00:00"
-    },
-    {
-     "seq": 10,
-     "type": "verification",
-     "title": "failed",
-     "detail": {
-      "checked_numbers": 5,
-      "problems": 1
-     },
-     "ts": "2026-11-12T06:19:54.491+00:00"
-    },
-    {
-     "seq": 13,
      "type": "verification",
      "title": "passed",
      "detail": {
-      "checked_numbers": 4,
+      "checked_numbers": 7,
       "problems": 0
      },
-     "ts": "2026-11-12T06:19:59.969+00:00"
+     "ts": "2026-11-12T08:15:32.421+00:00"
     }
    ],
    "context": {
@@ -6766,9 +6925,9 @@
      2026
     ]
    },
-   "built": "2026-11-12 11:49",
+   "built": "2026-11-12 13:45",
    "model": "gemini-3.5-flash-lite",
-   "elapsed_s": 28.3
+   "elapsed_s": 11.7
   },
   {
    "question": "How complete is the data for Chennai in 2025?",

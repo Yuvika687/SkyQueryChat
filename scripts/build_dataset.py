@@ -13,6 +13,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from dotenv import load_dotenv  # noqa: E402
+
+load_dotenv(ROOT / ".env")
 from backend.pipeline import build, config as C  # noqa: E402
 
 ALL = ["Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"]
@@ -23,6 +26,8 @@ ap.add_argument("--cities", nargs="*", default=None)
 ap.add_argument("--start", default=None)
 ap.add_argument("--end", default=None)
 ap.add_argument("--out", default=None)
+ap.add_argument("--api-topup", action="store_true",
+                help="fetch recent days the archive has not published from the OpenAQ API (needs OPENAQ_API_KEY)")
 a = ap.parse_args()
 
 today = date.today()
@@ -39,6 +44,6 @@ t = time.time()
 m = build.run(out, cities, start, end, today,
               candidates_path=C.PROCESSED / "station_candidates.json",
               opencity_dir=C.RAW / "opencity",
-              bulletin_path=C.RAW / "bulletins" / "aqi-bulletins.parquet")
+              bulletin_path=C.RAW / "bulletins" / "aqi-bulletins.parquet", api_topup=a.api_topup)
 print(json.dumps(m["rows"], indent=1))
 print(f"built {cities} {start}..{end} -> {out} in {time.time()-t:.0f}s")

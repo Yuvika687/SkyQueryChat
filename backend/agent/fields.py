@@ -79,6 +79,17 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
                 f[f"{yr}_pct_low"] = Field(pv["percent_range"][0], f"{city} AQI change, lowest of 3 baselines, Diwali {yr}", "%")
                 f[f"{yr}_pct_high"] = Field(pv["percent_range"][1], f"{city} AQI change, highest of 3 baselines, Diwali {yr}", "%")
             f[f"{yr}_pct_baseline_aqi"] = Field(pv["baseline_aqi"], f"{city} AQI, week before Diwali {yr}", u)
+    elif k == "delhi_pm_context" and v.get("source") == "OpenAQ":
+        for p in v.get("pollutants", []):
+            n = PN[p["pollutant"]]
+            f[f"{p['pollutant']}_festival_mean"] = Field(p["festival_mean"], f"Delhi {n} festival days (OpenAQ)", "µg/m³")
+            if p["baseline_mean"] is not None:
+                f[f"{p['pollutant']}_baseline_mean"] = Field(p["baseline_mean"], f"Delhi {n} baseline days (OpenAQ)", "µg/m³")
+            else:
+                f[f"{p['pollutant']}_baseline"] = Field("not available (OpenAQ outage on baseline days)", f"Delhi {n} baseline")
+            f[f"{p['pollutant']}_hours_above_999"] = Field(p["hours_above_999_festival_nights"],
+                                                           f"Delhi {n} station-hours above 999, festival nights", "hours")
+        f["comparable_with_2024_2025"] = Field("no (different source and station panel)", "comparison with earlier years")
     elif k == "delhi_pm_context":
         for p in v.get("pollutants", []):
             n = PN[p["pollutant"]]

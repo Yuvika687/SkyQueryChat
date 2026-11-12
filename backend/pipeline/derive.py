@@ -237,6 +237,7 @@ def diwali_aqi_table(aqi: pd.DataFrame, years=(2024, 2025, 2026)) -> tuple[pd.Da
                            "aqi_category": row["aqi_category"] if row is not None else None,
                            "prominent_pollutant": row["prominent_pollutant"] if row is not None else None,
                            "no_stations": float(row["no_stations"]) if row is not None else np.nan,
+                           "source": row["source"] if row is not None and "source" in row else None,
                            "role": "festival" if ld in C.festival_days(y) else "context"})
             fest = [r["aqi"] for r in lv if r["city"] == city and r["year"] == y and r["role"] == "festival"]
             fv = float(np.mean(fest)) if fest and not np.isnan(fest).any() else np.nan
@@ -270,13 +271,67 @@ def blank_rates(raw: pd.DataFrame, stations: set[int], pollutant: str, nights: l
     return float(x.loc[m, "value"].isna().mean()) if m.any() else np.nan
 
 
+def hours_above(hourly: pd.DataFrame, source: str, keys: set[str], pollutant: str, nights: list[date],
+                limit: float = C.OPENCITY_LIMIT) -> tuple[int, int]:
+    """(hours with an hourly mean above `limit`, valid hours) for 18:00-06:00 nights starting on the given dates."""
+    h = hourly[(hourly["source"] == source) & hourly["sensor_key"].isin(keys) & (hourly["pollutant"] == pollutant)
+               & hourly["valid_hour"]]
+    m = pd.Series(False, index=h.index)
+    for d in nights:
+        s = pd.Timestamp(d).tz_localize(C.IST) + pd.Timedelta(hours=18)
+        m |= (h["hour"] >= s) & (h["hour"] < s + pd.Timedelta(hours=12))
+    return int((h.loc[m, "value"] > limit).sum()), int(m.sum())
+
+
+def night_coverage_gaps(hourly: pd.DataFrame, source: str, keys: set[str], pollutant: str,
+                        nights: list[date]) -> list[str]:
+    """Festival-night hours (18:00-06:00) in which fewer than half of the given sensors have any reading."""
+    h = hourly[(hourly["source"] == source) & hourly["sensor_key"].isin(keys) & (hourly["pollutant"] == pollutant)
+               & (hourly["n_readings"] > 0)]
+    out = []
+    for d in nights:
+        s = pd.Timestamp(d).tz_localize(C.IST) + pd.Timedelta(hours=18)
+        hours = pd.date_range(s, periods=12, freq="h")
+        n = h[(h["hour"] >= s) & (h["hour"] < s + pd.Timedelta(hours=12))].groupby("hour")["sensor_key"].nunique()
+        out += [f"{t:%Y-%m-%d %H}:00" for t in hours if n.get(t, 0) < 0.5 * len(keys)]
+    return out
+
+
 def delhi_pm_support(diwali: pd.DataFrame, opencity_raw: pd.DataFrame, panels: dict[str, set[int]],
-                     all_stations: set[int]) -> pd.DataFrame:
+                     all_stations: set[int], hourly: pd.DataFrame | None = None,
+                     stations: pd.DataFrame | None = None) -> pd.DataFrame:
     rows = []
     sup = diwali[(diwali["role"] == "supporting") & diwali["metric"].isin(C.POLLUTANTS)]
     for _, r in sup.iterrows():
         y, pol = int(r["year"]), r["metric"]
         D, F = C.diwali_date(y), C.festival_days(y)
+        if r["source"] == SRC_OPENAQ:
+            # Diwali 2026: OpenAQ keeps values above 999, so these are NOT lower bounds and have no blanks to count
+            col = f"delhi_diwali_panel_{pol}_2026_openaq"
+            ids = set(stations.loc[stations[col], "location_id"].astype(int)) if stations is not None and \
+                col in stations else set()
+            keys = set(stations.loc[stations["location_id"].isin(ids) & (stations["pollutant"] == pol), "sensor_key"]) \
+                if stations is not None else set()
+            above, valid = hours_above(hourly, SRC_OPENAQ, keys, pol, F) if hourly is not None else (0, 0)
+            all_keys = set(stations.loc[(stations["city"] == "Delhi") & (stations["tier"] == "primary")
+                                        & (stations["pollutant"] == pol), "sensor_key"]) if stations is not None else set()
+            thin = night_coverage_gaps(hourly, SRC_OPENAQ, all_keys, pol, F) if hourly is not None else []
+            rows.append({
+                "year": y, "pollutant": pol, "units": C.UNITS, "source": SRC_OPENAQ,
+                "data_type": "measured (OpenAQ; values above 999 kept)", "role": "supporting_context",
+                "panel_stations": int(r["n_stations"]), "values_are_lower_bounds": False,
+                "baseline_mean": r["baseline_value"], "festival_mean": r["festival_value"],
+                "baseline_mean_lower_bound": np.nan, "festival_mean_lower_bound": np.nan,
+                "blank_diwali_night_panel": np.nan, "blank_festival_nights_panel": np.nan,
+                "blank_diwali_night_all37": np.nan, "blank_baseline_nights_panel": np.nan,
+                "proven_over_999_festival_nights_panel": np.nan,
+                "hours_above_999_festival_nights": above, "valid_hours_festival_nights": valid,
+                "festival_night_hours_under_half_stations": ",".join(thin), "status": r["status"],
+                "low_quality_dates": r["low_quality_dates"],
+                "blank_definition": "not applicable: OpenAQ has no 999 limit",
+                "warning": r["warning"], "percent_change": np.nan,
+            })
+            continue
         rows.append({
             "year": y, "pollutant": pol, "units": C.UNITS, "source": SRC_OPENCITY,
             "data_type": "measured (values > 999 blank in source)", "role": "supporting_context",
@@ -287,6 +342,10 @@ def delhi_pm_support(diwali: pd.DataFrame, opencity_raw: pd.DataFrame, panels: d
             "blank_diwali_night_all37": blank_rates(opencity_raw, all_stations, pol, [D]),
             "blank_baseline_nights_panel": blank_rates(opencity_raw, panels[pol], pol, C.baseline_days(y)),
             "proven_over_999_festival_nights_panel": r["blank_proven_share_festival_nights"],
+            "values_are_lower_bounds": True, "baseline_mean": np.nan, "festival_mean": np.nan,
+            "hours_above_999_festival_nights": np.nan, "valid_hours_festival_nights": np.nan,
+            "festival_night_hours_under_half_stations": "", "status": r["status"],
+            "low_quality_dates": r["low_quality_dates"],
             "blank_definition": "share of 15-min slots blank, 18:00-06:00 IST, slot placed by interval start",
             "warning": r["warning"], "percent_change": np.nan,
         })
@@ -390,8 +449,10 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
 
     # Diwali AQI (main) + Delhi PM (supporting) + other-city PM status
     levels, baselines = diwali_aqi_table(aqi)
+    src = levels.dropna(subset=["source"]).groupby(["city", "year"])["source"].agg(lambda x: "; ".join(sorted(set(x))))
+    baselines["source"] = [src.get((c, y)) for c, y in zip(baselines["city"], baselines["year"])]
     for t in (levels, baselines):
-        t["source"] = "CPCB daily AQI bulletin (via UrbanEmissions)"
+        t["source"] = t["source"].fillna("CPCB daily AQI bulletin (via UrbanEmissions)")
         t["data_type"] = "official measured AQI (city average)"
         t["units"] = "index (0-500)"
     tables["diwali_aqi_levels"] = levels
@@ -399,7 +460,8 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
     m = json.loads((C.RAW / "opencity" / "mapping.json").read_text())
     oc_raw = pd.concat([T.read_opencity_csv(opencity_dir / f"{l}.csv", int(l)) for l in m], ignore_index=True)
     panels = {pol: set(st.loc[st[f"delhi_diwali_panel_{pol}"], "location_id"].astype(int)) for pol in C.POLLUTANTS}
-    tables["delhi_pm_diwali_support"] = delhi_pm_support(diwali, oc_raw, panels, {int(l) for l in m})
+    tables["delhi_pm_diwali_support"] = delhi_pm_support(diwali, oc_raw, panels, {int(l) for l in m},
+                                                         hourly=hourly, stations=st)
     tables["diwali_pm_status"] = diwali[diwali["role"] == "status"][
         ["city", "year", "metric", "units", "source", "data_type", "n_stations", "status", "reason_code",
          "low_quality_dates"]].reset_index(drop=True)
@@ -418,6 +480,10 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
     sizes = {f.name: f.stat().st_size for f in sorted(out.glob("*.parquet"))}
     manifest = {
         "derived_from": manifest_in["built_utc"], "openaq_data_end": str(data_end),
+        "openaq_archive_end": manifest_in.get("openaq_archive_end"),
+        "openaq_api_topup": manifest_in.get("openaq_api_topup"),
+        "bulletins": manifest_in.get("bulletins"),
+        "weather_end": str(weather["local_date"].max()),
         "default_analysis_rule": "exclude hours flagged flat-line (>= 6 identical h) or isolated spike, EXCEPT "
                                  "supported spikes (verified Diwali night 18:00-06:00, or corroborated by another "
                                  "clean same-city station within +-1 h at >= 50% of the value and > 2x the city "
@@ -428,7 +494,8 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
         "diwali_percent_note": MANIFEST_PERCENT_NOTE,
         "attribution": {"openaq": "OpenAQ (openaq.org), CPCB data",
                         "opencity": "CPCB data via OpenCity (data.opencity.in), public domain",
-                        "bulletins": "CPCB daily AQI bulletins, parsed by UrbanEmissions.info (GODL)",
+                        "bulletins": "CPCB daily AQI bulletins, parsed by UrbanEmissions.info (GODL); dates after "
+                                     "UrbanEmissions' last update read from CPCB's own bulletin PDFs (cpcb.gov.in)",
                         "weather": WEATHER_ATTRIBUTION},
         "weather_units": WEATHER_UNITS,
         "rows": {k: int(len(v)) for k, v in tables.items()},

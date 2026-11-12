@@ -255,7 +255,8 @@ def diwali_aqi(s: Store, city: str, years: tuple[int, ...] = (2024, 2025)) -> An
                                     "reporting_period": _period_label(x.bulletin_date),
                                     "aqi": r(x.aqi, 0), "category": x.aqi_category,
                                     "prominent_pollutant": x.prominent_pollutant,
-                                    "stations": int(x.no_stations) if pd.notna(x.no_stations) else None}
+                                    "stations": int(x.no_stations) if pd.notna(x.no_stations) else None,
+                                    "source": getattr(x, "source", None) or SRC_BULLETIN}
                                    for x in fest.itertuples()],
             "festival_level_aqi": r(level), "festival_level_category": category(level),
             "pre_festival_week_aqi": r(g[(g["offset_days"] >= -7) & (g["offset_days"] <= -1)]["aqi"].mean()),
@@ -300,9 +301,16 @@ def diwali_aqi(s: Store, city: str, years: tuple[int, ...] = (2024, 2025)) -> An
                       notes=["Each point is one CPCB bulletin: the 24 hours from 4 PM the previous day to 4 PM on "
                              "the bulletin date.", f"AQI category colours: {AQI_COLOURS}"])
     n_st = [x["stations"] for o in out if o.get("festival_bulletins") for x in o["festival_bulletins"]]
+    used = [y for y in years if any(o["year"] == y and o["status"] == "ok" for o in out)]
+    srcs = sorted(set(lv.loc[lv["year"].isin(used) & lv["aqi"].notna(), "source"].dropna())) \
+        if "source" in lv else []
+    if any(x != SRC_BULLETIN for x in srcs):
+        warns.append("Bulletins after 25 Oct 2026 are read from CPCB's own bulletin PDFs (cpcb.gov.in); earlier ones "
+                     "from UrbanEmissions' copy of the same bulletins. Both report CPCB's official values.")
     return AnalysisResult(
         kind="diwali_aqi", title=f"Diwali air quality in {city} (official AQI)", metric="aqi",
-        units="index (0-500)", data_type="official measured AQI (city average)", source=SRC_BULLETIN,
+        units="index (0-500)", data_type="official measured AQI (city average)",
+        source="; ".join(srcs) if srcs else SRC_BULLETIN,
         date_range={"start": str(C.diwali_date(min(years)) - timedelta(days=14)),
                     "end": str(C.diwali_date(max(years)) + timedelta(days=4))},
         stations={"bulletin_station_counts": n_st, "note": "stations chosen by CPCB for the city bulletin"},
@@ -321,9 +329,10 @@ def diwali_aqi_percent(s: Store, city: str, year: int) -> AnalysisResult:
     _check(city)
     bl = s.q("SELECT * FROM diwali_aqi_baselines WHERE city=? AND year=?", [city, year]).set_index("window")
     lv = s.q("SELECT * FROM diwali_aqi_levels WHERE city=? AND year=? ORDER BY offset_days", [city, year])
+    src = lv["source"].dropna().unique().tolist() if "source" in lv else []
     base = {"kind": "diwali_aqi_percent", "title": f"Diwali {year} AQI change in {city} (official AQI)",
             "metric": "aqi", "units": "% change in AQI index", "data_type": "official measured AQI (city average)",
-            "source": SRC_BULLETIN}
+            "source": "; ".join(sorted(src)) or SRC_BULLETIN}
     fest = lv[lv["role"] == "festival"]
     if bl.empty or fest.empty or fest["aqi"].isna().any() or bl.loc[list(PERCENT_STABILITY_WINDOWS), "baseline_aqi"].isna().any():
         return AnalysisResult(**base, date_range={"start": None, "end": None}, stations={}, coverage={}, quality={},
@@ -364,9 +373,11 @@ def delhi_pm_context(s: Store, year: int) -> AnalysisResult:
     Never a percentage change."""
     t = s.q("SELECT * FROM delhi_pm_diwali_support WHERE year=? ORDER BY pollutant", [year])
     warns = []
+    if not t.empty and t["source"].iat[0] == SRC_OPENAQ:
+        return _delhi_pm_openaq(t, year)
     if t.empty:
         msg = (f"Measured PM context for Delhi Diwali {year} is not available "
-               "(only 2024 and 2025 are covered by the OpenCity panel).")
+               "(2024 and 2025 come from the OpenCity panel; 2026 from OpenAQ once its festival days are published).")
         return AnalysisResult(kind="delhi_pm_context", title=f"Delhi PM around Diwali {year}", metric="pm25/pm10",
                               units=PM_UNITS, data_type="measured", source="CPCB via OpenCity",
                               date_range={"start": None, "end": None}, stations={}, coverage={}, quality={},
@@ -398,6 +409,50 @@ def delhi_pm_context(s: Store, year: int) -> AnalysisResult:
         method="Fixed panel of stations passing coverage in both years (both festival days valid, >= 5 of 7 "
                "baseline days). Baseline = D-14..D-8; festival = D, D+1. Values are lower bounds.",
         warnings=warns, values={"year": year, "pollutants": vals})
+
+
+NOT_COMPARABLE = ("Do not compare these 2026 values with Diwali 2024 or 2025: those came from OpenCity, which blanks "
+                  "every reading above 999 µg/m³ (so they are lower bounds), from a different station panel. OpenAQ "
+                  "keeps readings above 999 µg/m³.")
+
+
+def _delhi_pm_openaq(t: pd.DataFrame, year: int) -> AnalysisResult:
+    """Diwali 2026 Delhi PM from OpenAQ: SUPPORTING context only, not lower bounds, never compared with the
+    OpenCity years and never a percentage."""
+    vals = [{"pollutant": x.pollutant, "panel_stations": int(x.panel_stations),
+             "baseline_mean": r(x.baseline_mean) if pd.notna(x.baseline_mean) else None,
+             "festival_mean": r(x.festival_mean),
+             "hours_above_999_festival_nights": int(x.hours_above_999_festival_nights),
+             "valid_hours_festival_nights": int(x.valid_hours_festival_nights),
+             "percent_change": None} for x in t.itertuples()]
+    lq = sorted({d for x in t["low_quality_dates"].fillna("") for d in x.split(",") if d})
+    thin = sorted({h for x in t["festival_night_hours_under_half_stations"].fillna("") for h in x.split(",") if h})
+    warns = [NOT_COMPARABLE,
+             "Supporting context only: the main Diwali comparison is official AQI. No percentage change is given."]
+    if (t["status"] == "baseline_incomplete").any():
+        warns.append("No baseline is given: OpenAQ had a network-wide outage on baseline days, so no Delhi station "
+                     "has at least 5 of 7 valid baseline days. Festival-day values use stations valid on both "
+                     "festival days.")
+    if thin:
+        warns.append(f"On the festival nights fewer than half of Delhi's stations reported in {len(thin)} hours "
+                     f"(from {thin[0]} to {thin[-1]} IST), when smoke usually peaks, so festival-day values are "
+                     "likely underestimates.")
+    if lq:
+        warns.append("OpenAQ has data gaps (network-wide or across Delhi) on " + ", ".join(lq) + "; values for those "
+                     "days are less complete.")
+    D = C.diwali_date(year)
+    return AnalysisResult(
+        kind="delhi_pm_context", title=f"Delhi measured PM around Diwali {year} (supporting, OpenAQ)",
+        metric="pm25/pm10", units=PM_UNITS, data_type="measured (OpenAQ; values above 999 kept)", source=SRC_OPENAQ,
+        date_range={"start": str(D - timedelta(days=14)), "end": str(D + timedelta(days=1))},
+        stations={"panel_stations": {v["pollutant"]: v["panel_stations"] for v in vals},
+                  "note": f"OpenAQ primary stations passing coverage around Diwali {year}"},
+        coverage={"low_quality_dates": lq, "festival_night_hours_under_half_stations": thin}, quality={},
+        method="Stations with both festival days valid and >= 5 of 7 baseline days valid; if none qualifies, the "
+               "baseline is withheld and festival-day values use stations valid on both festival days. Baseline = "
+               "D-14..D-8; festival = D, D+1 (local IST dates). Values are station-day means averaged over those stations.",
+        warnings=warns, values={"year": year, "source": "OpenAQ", "values_are_lower_bounds": False,
+                                "comparable_with_2024_2025": False, "pollutants": vals})
 
 
 # ----------------------------------------------------------------------------- 5. unusual days

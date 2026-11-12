@@ -1,20 +1,55 @@
 {
- "derived_from": "2026-11-03T13:46:14+00:00",
- "openaq_data_end": "2026-10-30",
+ "derived_from": "2026-11-12T07:42:20+00:00",
+ "openaq_data_end": "2026-11-11",
+ "openaq_archive_end": "2026-11-08",
+ "openaq_api_topup": {
+  "dates": [
+   "2026-11-09",
+   "2026-11-10",
+   "2026-11-11"
+  ],
+  "location_days": 288,
+  "requests": 0,
+  "note": "API readings are used only for location-days the archive had not published; a later refresh replaces them with archive files."
+ },
+ "bulletins": {
+  "urbanemissions_end": "2026-10-25",
+  "cpcb_pdf_dates": [
+   "2026-10-26",
+   "2026-10-27",
+   "2026-10-28",
+   "2026-10-29",
+   "2026-10-30",
+   "2026-10-31",
+   "2026-11-01",
+   "2026-11-02",
+   "2026-11-03",
+   "2026-11-04",
+   "2026-11-05",
+   "2026-11-06",
+   "2026-11-07",
+   "2026-11-08",
+   "2026-11-09",
+   "2026-11-10",
+   "2026-11-11"
+  ],
+  "end": "2026-11-11"
+ },
+ "weather_end": "2026-11-11",
  "default_analysis_rule": "exclude hours flagged flat-line (>= 6 identical h) or isolated spike, EXCEPT supported spikes (verified Diwali night 18:00-06:00, or corroborated by another clean same-city station within +-1 h at >= 50% of the value and > 2x the city median); exclude station-days where matched-hour PM2.5 > PM10 + max(20% x PM10, 20 ug/m3) (impossible); peer-outlier station-days are flagged, not excluded",
  "spike_hours": {
   "CPCB via OpenCity | corroborated": 77,
   "CPCB via OpenCity | excluded": 143,
-  "OpenAQ archive (CPCB/AirNow/AirGradient) | corroborated": 94,
-  "OpenAQ archive (CPCB/AirNow/AirGradient) | excluded": 1062,
-  "OpenAQ archive (CPCB/AirNow/AirGradient) | festival_night": 2
+  "OpenAQ archive (CPCB/AirNow/AirGradient) | corroborated": 96,
+  "OpenAQ archive (CPCB/AirNow/AirGradient) | excluded": 1065,
+  "OpenAQ archive (CPCB/AirNow/AirGradient) | festival_night": 3
  },
  "diwali_percent_status": "approved_on_request_range",
  "diwali_percent_note": "Approved 2026-11-04: Diwali AQI percentages are never in the default answer (levels, categories and bulletin dates are the main result). Only when a user asks, diwali_aqi_percent gives baseline D-7..D-1 as a single figure if the D-14..D-8, D-7..D-1 and D-3..D-1 baselines agree within 25 points, otherwise a range. No single fixed baseline is approved, so the per-window percent_status in diwali_aqi_baselines stays pending_user_approval. Never a PM percentage.",
  "attribution": {
   "openaq": "OpenAQ (openaq.org), CPCB data",
   "opencity": "CPCB data via OpenCity (data.opencity.in), public domain",
-  "bulletins": "CPCB daily AQI bulletins, parsed by UrbanEmissions.info (GODL)",
+  "bulletins": "CPCB daily AQI bulletins, parsed by UrbanEmissions.info (GODL); dates after UrbanEmissions' last update read from CPCB's own bulletin PDFs (cpcb.gov.in)",
   "weather": "Weather data by Open-Meteo.com (https://open-meteo.com/), CC BY 4.0; reanalysis from the Copernicus Climate Change Service (C3S)."
  },
  "weather_units": {
@@ -24,32 +59,32 @@
   "precipitation_sum_mm": "mm"
  },
  "rows": {
-  "station_daily": 158120,
-  "date_quality": 4469,
-  "city_daily": 6816,
+  "station_daily": 160299,
+  "date_quality": 4523,
+  "city_daily": 6936,
   "diwali_aqi_levels": 324,
   "diwali_aqi_baselines": 72,
-  "delhi_pm_diwali_support": 4,
+  "delhi_pm_diwali_support": 6,
   "diwali_pm_status": 30,
-  "data_status_reasons": 5,
+  "data_status_reasons": 6,
   "stations": 204,
-  "city_daily_aqi": 24026,
-  "weather_daily": 3744,
-  "network_gaps": 1415
+  "city_daily_aqi": 24128,
+  "weather_daily": 3792,
+  "network_gaps": 1423
  },
  "bytes": {
-  "city_daily.parquet": 370726,
-  "city_daily_aqi.parquet": 238969,
-  "data_status_reasons.parquet": 3530,
-  "date_quality.parquet": 13737,
-  "delhi_pm_diwali_support.parquet": 12419,
-  "diwali_aqi_baselines.parquet": 10480,
-  "diwali_aqi_levels.parquet": 10632,
-  "diwali_pm_status.parquet": 6560,
-  "network_gaps.parquet": 13826,
-  "station_daily.parquet": 2409249,
-  "stations.parquet": 17764,
-  "weather_daily.parquet": 26192
+  "city_daily.parquet": 377000,
+  "city_daily_aqi.parquet": 264416,
+  "data_status_reasons.parquet": 4023,
+  "date_quality.parquet": 12749,
+  "delhi_pm_diwali_support.parquet": 18530,
+  "diwali_aqi_baselines.parquet": 10856,
+  "diwali_aqi_levels.parquet": 11021,
+  "diwali_pm_status.parquet": 6519,
+  "network_gaps.parquet": 13919,
+  "station_daily.parquet": 2471841,
+  "stations.parquet": 19034,
+  "weather_daily.parquet": 26334
  },
- "total_bytes": 3134084
+ "total_bytes": 3236242
 }

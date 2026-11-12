@@ -314,6 +314,30 @@ Rules:
 - `scripts/build_demo_answers.py --only 2,5` rebuilds chosen demo answers and prints model, tokens, time and
   verification per question.
 
+### Diwali 2026 data refresh (2026-11-12)
+
+- **Data ends:** measured PM 2026-11-11 (OpenAQ archive to 2026-11-08, then the OpenAQ API for 9-11 Nov); official AQI
+  2026-11-11; weather 2026-11-11. Values for earlier dates did not change (checked table by table).
+- **Bulletins:** UrbanEmissions `AQI_bulletins` still ends 2026-10-25. Later bulletins are read from CPCB's own PDFs
+  (`backend/pipeline/cpcb_bulletins.py`, cache `data/raw/bulletins/cpcb_pdfs/`); the reader matched UrbanEmissions
+  exactly on 1,501 overlapping city-days. Every bulletin row keeps its `source`; answers name both sources when mixed.
+  If a festival bulletin is missing, stop and tell the user (never guess).
+- **OpenAQ API top-up** (`backend/pipeline/openaq_api.py`, `build_dataset.py --api-topup`): only for location-days the
+  archive has not published, written in the archive's file format (same cleaning, validity, fault-flag and gap rules);
+  cached in `data/raw/openaq_api/` and replaced by archive files on a later refresh. Keep each API window short (a few
+  days): a 10-day window per sensor was very slow.
+- The station snapshot's sensor "last" dates are not an end: sensors active at the snapshot are requested to the build
+  end, and `station_candidates.json` "last" dates are moved forward from API results (selection unchanged).
+- **Weather:** `fetch_weather.py --append` adds only new days; existing rows are never refetched or changed.
+- **Delhi Diwali 2026 PM** comes from OpenAQ (keeps values above 999) and is NEVER compared with 2024/2025 (OpenCity,
+  999 blanking, different panel); required warning `not_comparable_years`. The 25-27 Oct 2026 OpenAQ outage falls on the
+  baseline days, so no station meets the baseline rule: no baseline, festival-day values from stations valid on both
+  festival days (status `baseline_incomplete`). Diwali night 2026 has a Delhi gap (fewer than half of stations
+  reporting 23:00-03:00 IST), so festival-day PM is an underestimate.
+- **Evaluation:** questions whose correct answer changed with new data carry `data_changed` (with `expect_before`);
+  published scores are unchanged. All-data references follow `DATA_END` from `data/app/manifest.json`. New set
+  `evals/diwali2026.json` (8 questions, references in `diwali2026_refs`), not yet run.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:
@@ -364,6 +388,7 @@ Deployment notes:
 ## 9. Environment notes (discovered during setup, 2026-11-02)
 
 - Python 3.13.15 in `.venv` (run tools via `.venv/bin/python`). Node v26.7.0, npm 11.19.0.
+- `pdfplumber` 0.11.4 (requirements-dev.txt) reads CPCB bulletin PDFs during data builds; never deployed.
 - **Node 26 became LTS on 28 October 2026.** Still confirm the chosen Next.js version
   officially supports Node 26 before starting the frontend.
 - **DuckDB 2.0:** relations no longer have `fetchone()`. Use

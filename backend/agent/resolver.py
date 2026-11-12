@@ -34,8 +34,8 @@ SEASONS = {  # (start month, end month, crosses year)
 }
 
 # data windows (set from data at startup; defaults match the current build)
-DATA = {"measured_start": date(2025, 2, 18), "measured_end": date(2026, 10, 30),
-        "aqi_end": date(2026, 10, 25), "weather_start": date(2025, 2, 18), "weather_end": date(2026, 11, 3)}
+DATA = {"measured_start": date(2025, 2, 18), "measured_end": date(2026, 11, 11),
+        "aqi_end": date(2026, 11, 11), "weather_start": date(2025, 2, 18), "weather_end": date(2026, 11, 11)}
 
 
 def set_data_windows(measured_end: date, aqi_end: date, weather_end: date) -> None:

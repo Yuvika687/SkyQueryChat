@@ -1,5 +1,5 @@
 {
- "_about": "Main evaluation set (47 questions, 51 turns). Used while tuning the agent, so it is NOT a holdout. expect.status: allowed statuses; tools_any: one must be called; forbid_tools; must_include/_any; must_not (regex); refs: independent reference values from evals/references.py (pandas, not backend.analysis). 'resolved' = what the tools must use (cities, pollutant, start, end); a wrong period fails (added 2026-11-06, applies to runs from then on).",
+ "_about": "Main evaluation set (47 questions, 51 turns). Used while tuning the agent, so it is NOT a holdout. expect.status: allowed statuses; tools_any: one must be called; forbid_tools; must_include/_any; must_not (regex); refs: independent reference values from evals/references.py (pandas, not backend.analysis). 'resolved' = what the tools must use (cities, pollutant, start, end); a wrong period fails (added 2026-11-06, applies to runs from then on). data_changed (added 2026-11-12): questions whose correct answer changed because new data arrived; expect_before keeps the expectation that published runs were scored with.",
  "questions": [
   {
    "id": "T1",
@@ -110,7 +110,12 @@
       ]
      }
     }
-   ]
+   ],
+   "data_changed": {
+    "on": "2026-11-12",
+    "reason": "Informational: 'last 30 days' now means 2026-10-13..2026-11-11 (was 2026-10-01..2026-10-30). No reference value, expectation unchanged.",
+    "published_scores": "unchanged (scored with the expectation at the time)"
+   }
   },
   {
    "id": "T5",
@@ -137,7 +142,12 @@
       "start": "2026-01-01"
      }
     }
-   ]
+   ],
+   "data_changed": {
+    "on": "2026-11-12",
+    "reason": "Data now runs to 2026-11-11: Chennai's highest PM2.5 day of 2026 so far is 109.1 µg/m³ (was 99.9 with data to 2026-10-30). The reference follows the data end, so only the value changed.",
+    "published_scores": "unchanged (scored with the expectation at the time)"
+   }
   },
   {
    "id": "T6",
@@ -997,17 +1007,44 @@
    "expect": [
     {
      "status": [
-      "unavailable"
+      "answered"
      ],
      "tools_any": [
-      "check_request",
       "diwali_aqi"
      ],
-     "must_include": [
-      "not available"
-     ]
+     "refs": [
+      "delhi_diwali2026_level"
+     ],
+     "must_not": [
+      "\\d%"
+     ],
+     "resolved": {
+      "cities": [
+       "Delhi"
+      ],
+      "pollutant": "AQI"
+     }
     }
-   ]
+   ],
+   "data_changed": {
+    "on": "2026-11-12",
+    "reason": "Diwali 2026 official AQI is now available (CPCB bulletins 9 and 10 Nov 2026, read from CPCB's PDFs). Was 'unavailable'; now answered with the festival bulletins.",
+    "published_scores": "unchanged (scored with the expectation at the time)",
+    "expect_before": [
+     {
+      "status": [
+       "unavailable"
+      ],
+      "tools_any": [
+       "check_request",
+       "diwali_aqi"
+      ],
+      "must_include": [
+       "not available"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "M2",
@@ -1037,15 +1074,38 @@
    "expect": [
     {
      "status": [
-      "unavailable"
+      "answered"
      ],
      "tools_any": [
-      "check_request",
       "city_trend",
       "data_coverage"
-     ]
+     ],
+     "resolved": {
+      "cities": [
+       "Chennai"
+      ],
+      "pollutant": "PM10",
+      "start": "2026-11-01"
+     }
     }
-   ]
+   ],
+   "data_changed": {
+    "on": "2026-11-12",
+    "reason": "Measured PM now covers 1-11 Nov 2026, so Chennai PM10 for November 2026 is a partial-month answer. Was 'unavailable'.",
+    "published_scores": "unchanged (scored with the expectation at the time)",
+    "expect_before": [
+     {
+      "status": [
+       "unavailable"
+      ],
+      "tools_any": [
+       "check_request",
+       "city_trend",
+       "data_coverage"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "M4",
@@ -1056,22 +1116,49 @@
    "expect": [
     {
      "status": [
-      "answered",
-      "unavailable"
+      "answered"
      ],
      "tools_any": [
       "diwali_aqi"
      ],
-     "must_include": [
-      "2026"
+     "refs": [
+      "kolkata_diwali_2025_2026"
      ],
-     "must_include_any": [
-      "not available",
-      "not yet",
-      "unavailable"
-     ]
+     "must_not": [
+      "\\d%"
+     ],
+     "resolved": {
+      "cities": [
+       "Kolkata"
+      ],
+      "pollutant": "AQI"
+     }
     }
-   ]
+   ],
+   "data_changed": {
+    "on": "2026-11-12",
+    "reason": "Diwali 2026 official AQI is now available, so Kolkata 2025 vs 2026 is answered with both years' levels. Was 'answered or unavailable' mentioning that 2026 was not available.",
+    "published_scores": "unchanged (scored with the expectation at the time)",
+    "expect_before": [
+     {
+      "status": [
+       "answered",
+       "unavailable"
+      ],
+      "tools_any": [
+       "diwali_aqi"
+      ],
+      "must_include": [
+       "2026"
+      ],
+      "must_include_any": [
+       "not available",
+       "not yet",
+       "unavailable"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "M5",

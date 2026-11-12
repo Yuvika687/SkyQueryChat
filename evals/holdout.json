@@ -1,5 +1,5 @@
 {
- "_about": "RETIRED 2026-11-06 (used once: run 20261105-1417_holdout_first; H02 exposed the year-first season gap, which was then fixed, so this set is no longer a clean holdout). Replaced by evals/holdout2.json. Holdout set: 10 fresh questions written after the agent was tuned and NEVER used to change prompts, tools or rules. Run once per release with --set holdout --kind first; report first-pass only. Add your own questions under user_questions (same format; leave expect as shown if unsure — status/tools are optional).",
+ "_about": "RETIRED 2026-11-06 (used once: run 20261105-1417_holdout_first; H02 exposed the year-first season gap, which was then fixed, so this set is no longer a clean holdout). Replaced by evals/holdout2.json. Holdout set: 10 fresh questions written after the agent was tuned and NEVER used to change prompts, tools or rules. Run once per release with --set holdout --kind first; report first-pass only. Add your own questions under user_questions (same format; leave expect as shown if unsure — status/tools are optional). data_changed (added 2026-11-12): questions whose correct answer changed because new data arrived; expect_before keeps the expectation that published runs were scored with.",
  "questions": [
   {
    "id": "H01",
@@ -23,7 +23,12 @@
       "start": "2026-01-01"
      }
     }
-   ]
+   ],
+   "data_changed": {
+    "on": "2026-11-12",
+    "reason": "Informational: '2026 month by month' now runs to 2026-11-11 (was 2026-10-30). No reference value, expectation unchanged.",
+    "published_scores": "unchanged (scored with the expectation at the time)"
+   }
   },
   {
    "id": "H02",

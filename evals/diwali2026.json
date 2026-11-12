@@ -1,0 +1,32 @@
+{
+ "_about": "Diwali 2026 set (added 2026-11-12, after the bulletins for 9 and 10 Nov 2026 were refreshed from CPCB's own PDFs). Separate from the main set so published main scores keep the same question list. Reference values are computed independently in evals/references.py (diwali2026_refs: plain pandas over data/app, not backend.analysis). Not yet run; no scores published.",
+ "questions": [
+  {"id": "E01", "category": "diwali", "turns": ["How bad was Delhi's air on Diwali 2026?"],
+   "expect": [{"status": ["answered"], "tools_any": ["diwali_aqi"], "refs": ["delhi_diwali2026_level"], "must_not": ["\\d%"],
+               "resolved": {"cities": ["Delhi"], "pollutant": "AQI"}}]},
+  {"id": "E02", "category": "diwali", "turns": ["Compare Delhi's Diwali AQI in 2025 and 2026."],
+   "expect": [{"status": ["answered"], "tools_any": ["diwali_aqi"], "refs": ["delhi_diwali_2025_2026"], "must_not": ["\\d%"],
+               "resolved": {"cities": ["Delhi"], "pollutant": "AQI"}}]},
+  {"id": "E03", "category": "diwali", "turns": ["Which bulletin dates are used for Mumbai's Diwali 2026 AQI?"],
+   "expect": [{"status": ["answered"], "tools_any": ["diwali_aqi"], "refs": ["mumbai_diwali2026_bulletins"],
+               "must_include_any": ["2026-11-09", "9 Nov", "November 9"],
+               "resolved": {"cities": ["Mumbai"], "pollutant": "AQI"}}]},
+  {"id": "E04", "category": "diwali", "turns": ["By what percentage did Kolkata's AQI change at Diwali 2026?"],
+   "expect": [{"status": ["answered"], "tools_any": ["diwali_aqi"], "refs": ["kolkata_diwali2026_pct"],
+               "resolved": {"cities": ["Kolkata"], "pollutant": "AQI"}}]},
+  {"id": "E05", "category": "diwali", "turns": ["What AQI category did Chennai's Diwali 2026 bulletins report?"],
+   "expect": [{"status": ["answered"], "tools_any": ["diwali_aqi"], "refs": ["chennai_diwali2026_category"], "must_not": ["\\d%"],
+               "resolved": {"cities": ["Chennai"], "pollutant": "AQI"}}]},
+  {"id": "E06", "category": "diwali", "turns": ["What did measured PM2.5 in Delhi look like around Diwali 2026?"],
+   "expect": [{"status": ["answered"], "tools_any": ["delhi_pm_diwali"], "must_include_any": ["OpenAQ", "999", "not compar", "cannot be compared"],
+               "must_not": ["PM2\\.5[^.]{0,60}\\d%"], "resolved": {"cities": ["Delhi"], "pollutant": "PM2.5"}}]},
+  {"id": "E07", "category": "diwali", "turns": ["Compare Hyderabad's Diwali AQI across 2024, 2025 and 2026."],
+   "expect": [{"status": ["answered"], "tools_any": ["diwali_aqi"], "refs": ["hyderabad_diwali_3yrs"], "must_not": ["\\d%"],
+               "resolved": {"cities": ["Hyderabad"], "pollutant": "AQI"}}]},
+  {"id": "E08", "category": "follow_up", "turns": ["How was Bengaluru's Diwali 2026 AQI?", "And in 2025?"],
+   "expect": [{"status": ["answered"], "tools_any": ["diwali_aqi"], "refs": ["bengaluru_diwali2026_level"],
+               "resolved": {"cities": ["Bengaluru"], "pollutant": "AQI"}},
+              {"status": ["answered"], "tools_any": ["diwali_aqi"], "must_include": ["2025"], "refs": ["bengaluru_diwali2025_level"],
+               "resolved": {"cities": ["Bengaluru"], "pollutant": "AQI"}}]}
+ ]
+}

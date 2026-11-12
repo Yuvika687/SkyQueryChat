@@ -147,7 +147,10 @@ def test_real_diwali_aqi_matches_bulletins(S):
     assert [x["bulletin_date"] for x in y[2025]["festival_bulletins"]] == ["2025-10-21", "2025-10-22"]
     assert y[2025]["festival_level_aqi"] == round((b[date(2025, 10, 21)] + b[date(2025, 10, 22)]) / 2, 1)
     assert y[2024]["festival_level_aqi"] == round((b[date(2024, 11, 1)] + b[date(2024, 11, 2)]) / 2, 1)
-    assert y[2026]["status"] == "not_available"
+    assert [x["bulletin_date"] for x in y[2026]["festival_bulletins"]] == ["2026-11-09", "2026-11-10"]
+    assert y[2026]["festival_level_aqi"] == round((b[date(2026, 11, 9)] + b[date(2026, 11, 10)]) / 2, 1)
+    assert {x["source"] for x in y[2026]["festival_bulletins"]} == {"CPCB daily AQI bulletin PDF (cpcb.gov.in)"}
+    assert {x["source"] for x in y[2025]["festival_bulletins"]} == {"CPCB daily AQI bulletin (via UrbanEmissions)"}
     assert all(c["percent_change"] is None for c in y[2025]["baseline_candidates"])     # withheld
     assert d["units"] == "index (0-500)" and "not a PM2.5" in " ".join(d["warnings"])
 
@@ -157,7 +160,13 @@ def test_real_delhi_pm_context_never_has_percent(S):
     d = F.delhi_pm_context(S, 2025).to_dict()
     assert all(p["percent_change"] is None for p in d["values"]["pollutants"])
     assert "999" in d["warnings"][0]
-    assert F.delhi_pm_context(S, 2026).to_dict()["values"]["status"] == "not_available"
+    d26 = F.delhi_pm_context(S, 2026).to_dict()
+    v = d26["values"]
+    assert v["source"] == "OpenAQ" and v["comparable_with_2024_2025"] is False and not v["values_are_lower_bounds"]
+    assert all(p["percent_change"] is None and p["baseline_mean"] is None for p in v["pollutants"])   # baseline outage
+    w = " ".join(d26["warnings"])
+    assert "Do not compare" in w and "999" in w and "No baseline is given" in w and "underestimates" in w
+    assert F.delhi_pm_context(S, 2023).to_dict()["values"]["status"] == "not_available"
 
 
 @real
@@ -237,4 +246,5 @@ def test_real_percent_rule_and_2026_unavailable(S):
     assert F.diwali_aqi_percent(S, "Delhi", 2024).to_dict()["values"]["percent_change"] is not None
     v = F.diwali_aqi_percent(S, "Delhi", 2025).to_dict()["values"]
     assert v["percent_change"] is None and v["percent_range"] is not None      # windows disagree (rain)
-    assert F.diwali_aqi_percent(S, "Delhi", 2026).to_dict()["values"]["status"] == "not_available"
+    v26 = F.diwali_aqi_percent(S, "Delhi", 2026).to_dict()["values"]
+    assert v26["status"] == "ok" and v26["percent_change"] is None and v26["percent_range"][0] < v26["percent_range"][1]

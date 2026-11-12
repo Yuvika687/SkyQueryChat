@@ -30,6 +30,8 @@ def _load():
 
 
 CD, AQI, W = _load()
+# "All data" questions use the measured data end recorded with the app tables (it moves when new data arrives).
+DATA_END = date.fromisoformat(json.loads((APP / "manifest.json").read_text())["openaq_data_end"])
 
 
 def _days(city, pol, a, b):
@@ -111,14 +113,14 @@ def references() -> dict:
     dl25, dl24 = diwali("Delhi", 2025), diwali("Delhi", 2024)
     mb24, mb25 = diwali("Mumbai", 2024), diwali("Mumbai", 2025)
     hy25, hy24 = diwali("Hyderabad", 2025), diwali("Hyderabad", 2024)
-    dry, rain = rain_groups("Mumbai", "pm25", d(2025, 2, 18), d(2026, 10, 30))
-    allp = (d(2025, 2, 18), d(2026, 10, 30))
+    allp = (d(2025, 2, 18), DATA_END)
+    dry, rain = rain_groups("Mumbai", "pm25", *allp)
     return {
         "delhi_pm25_2025_nov_dec": {"numbers": [mean("Delhi", "pm25", *nov), mean("Delhi", "pm25", d(2025, 12, 1), d(2025, 12, 31))]},
         "mumbai_pm10_nov2025": {"numbers": [mean("Mumbai", "pm10", *nov)]},
         "kolkata_pm25_winter2025": {"any_of": [[mean("Kolkata", "pm25", *winter)],
                                                [mean("Kolkata", "pm25", d(2025, 12, 1), d(2025, 12, 31))]]},
-        "chennai_pm25_2026_max": {"numbers": [highest("Chennai", "pm25", d(2026, 1, 1), d(2026, 10, 30))]},
+        "chennai_pm25_2026_max": {"numbers": [highest("Chennai", "pm25", d(2026, 1, 1), DATA_END)]},
         "delhi_pm25_monsoon2025": {"any_of": [[mean("Delhi", "pm25", *monsoon)],
                                               [mean("Delhi", "pm25", d(2025, 7, 1), d(2025, 7, 31))]]},
         "winter2025_top_city": {"text": [next(iter(w_rank))], "numbers": [next(iter(w_rank.values()))]},
@@ -143,6 +145,31 @@ def references() -> dict:
         "delhi_unusual_2025": {"numbers": [unusual_count("Delhi", "pm25", d(2025, 1, 1), d(2025, 12, 31))]},
         "mumbai_pm10_mar_jun2026": {"numbers": [mean("Mumbai", "pm10", d(2026, 3, 1), d(2026, 6, 30))]},
         **holdout2_refs(),
+        **diwali2026_refs(),
+    }
+
+
+def diwali2026_refs() -> dict:
+    """Diwali 2026 set (evals/diwali2026.json) and main-set questions whose answer changed when the 9 and 10 Nov
+    2026 bulletins arrived (M1, M4, groq G11). Empty when the 2026 festival bulletins are not in the data."""
+    try:
+        dl26, dl25 = diwali("Delhi", 2026), diwali("Delhi", 2025)
+    except (KeyError, IndexError):
+        return {}
+    mb26, kk26, kk25, ch26 = diwali("Mumbai", 2026), diwali("Kolkata", 2026), diwali("Kolkata", 2025), diwali("Chennai", 2026)
+    hy = [diwali("Hyderabad", y) for y in (2024, 2025, 2026)]
+    bl26, bl25 = diwali("Bengaluru", 2026), diwali("Bengaluru", 2025)
+    return {
+        "delhi_diwali2026_level": {"any_of": [[dl26["level"]], dl26["bulletins"]]},
+        "delhi_diwali_2025_2026": {"any_of": [[dl25["level"], dl26["level"]], dl25["bulletins"] + dl26["bulletins"]]},
+        "mumbai_diwali2026_bulletins": {"any_of": [[mb26["level"]], mb26["bulletins"]]},
+        "kolkata_diwali2026_pct": {"numbers": [kk26["w2"]]} if kk26["stable"]
+        else {"numbers": [min(kk26["pcts"]), max(kk26["pcts"])]},
+        "kolkata_diwali_2025_2026": {"any_of": [[kk25["level"], kk26["level"]], kk25["bulletins"] + kk26["bulletins"]]},
+        "chennai_diwali2026_category": {"text": [ch26["category_d1"]]},
+        "hyderabad_diwali_3yrs": {"any_of": [[h["level"] for h in hy], [b for h in hy for b in h["bulletins"]]]},
+        "bengaluru_diwali2026_level": {"any_of": [[bl26["level"]], bl26["bulletins"]]},
+        "bengaluru_diwali2025_level": {"any_of": [[bl25["level"]], bl25["bulletins"]]},
     }
 
 
@@ -160,7 +187,7 @@ def holdout2_refs() -> dict:
                                                         [mean(next(iter(dk)), "pm10", d(2026, 3, 1), d(2026, 5, 31))]]},
         "h2_mumbai_pm25_feb2026_max": {"numbers": [highest("Mumbai", "pm25", d(2026, 2, 1), d(2026, 2, 28))]},
         "h2_chennai_diwali2024": {"any_of": [[ch24["level"]], ch24["bulletins"]]},
-        "h2_mumbai_temp_pm10_rho": {"numbers": [spearman("Mumbai", "pm10", "temperature_mean_c", d(2025, 2, 18), d(2026, 10, 30))],
+        "h2_mumbai_temp_pm10_rho": {"numbers": [spearman("Mumbai", "pm10", "temperature_mean_c", d(2025, 2, 18), DATA_END)],
                                     "tol": 0.006},
         "h2_blr_pm10_aug_oct2025": {"numbers": [mean("Bengaluru", "pm10", d(2025, 8, 1), d(2025, 10, 31))]},
         "h2_chennai_hyd_pm25_mar2026": {"any_of": [[ch["Chennai"], ch["Hyderabad"]],

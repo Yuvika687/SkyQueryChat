@@ -4,6 +4,7 @@ FunctionModel scripts exactly what the 'LLM' does, so we can test the loop, tool
 verification, retries, refusals, memory and events deterministically."""
 import asyncio
 import json
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -124,8 +125,14 @@ def test_resolve_period_flags_missing_measured_data():
 def test_resolve_pollutants_and_events():
     assert R.resolve_pollutant("PM 2.5")["pollutant"] == "pm25"
     assert R.resolve_pollutant("ozone")["unsupported"]
-    e = R.resolve_event("Diwali 2026")["years"][0]
-    assert e["official_aqi_available"] is False and "not available yet" in e["message"]
+    assert R.resolve_event("Diwali 2026")["years"][0]["official_aqi_available"] is True    # bulletins to 11 Nov 2026
+    old = dict(R.DATA)
+    try:                                   # before the refresh the festival bulletins were not published yet
+        R.DATA["aqi_end"] = date(2026, 10, 25)
+        e = R.resolve_event("Diwali 2026")["years"][0]
+        assert e["official_aqi_available"] is False and "not available yet" in e["message"]
+    finally:
+        R.DATA.update(old)
     assert R.resolve_event("Holi 2025")["unsupported"]
 
 
@@ -299,18 +306,20 @@ def test_tool_error_is_sanitised(session_factory):
 
 
 @real
-def test_diwali_2026_unavailable_and_percent_option(session_factory):
+def test_diwali_2026_levels_and_percent_option(session_factory):
     def t(m, info):
         return [ToolCallPart("diwali_aqi", {"city": "Delhi", "years": [2025, 2026], "percent": True})]
 
     def ans(m, info):
         f = last_payload(m, "diwali_aqi")["fields"]
-        assert "not available" in f["2026_status"] and "2026_pct_status" in f
-        assert f["2025_pct_low"] < f["2025_pct_high"]               # windows disagree -> range
-        return final(info, status="answered", answer=f"Diwali 2026 is not available yet. For 2025 the AQI change "
-                                                     f"ranges from {f['2025_pct_low']}% to {f['2025_pct_high']}%.")
+        assert f["2026_bulletin_2026-11-09"] == 344 and f["2026_bulletin_2026-11-10"] == 299
+        assert f["2026_festival_aqi"] == 321.5 and f["2026_category"] == "Very Poor"
+        assert f["2025_pct_low"] < f["2025_pct_high"] and f["2026_pct_low"] < f["2026_pct_high"]   # ranges
+        return final(info, status="answered", answer=f"Delhi's official AQI over Diwali 2026 averaged "
+                                                     f"{f['2026_festival_aqi']}; the change ranges from "
+                                                     f"{f['2026_pct_low']}% to {f['2026_pct_high']}%.")
     out, _ = run(core.build_agent(scripted([t, ans])[0]), session_factory(), "Diwali AQI percent 2025 vs 2026?")
-    assert out.status == "answered"
+    assert out.status == "answered" and "cpcb.gov.in" in out.sources[0].source
 
 
 @real
@@ -587,6 +596,22 @@ def test_999_warning_comes_from_code_even_if_model_omits_it(session_factory):
     codes = [w.code for w in out.required_warnings]
     assert "source_limit_999" in codes and "999" not in out.answer
     assert out.warnings[0] == out.required_warnings[0].text                  # required ones first
+
+
+@real
+def test_delhi_2026_pm_warns_not_comparable_instead_of_the_999_lower_bound(session_factory):
+    def t(m, info):
+        return [ToolCallPart("delhi_pm_diwali", {"year": 2026})]
+
+    def ans(m, info):
+        f = last_payload(m, "delhi_pm_diwali")["fields"]
+        return final(info, status="answered", answer=f"Delhi PM2.5 averaged {f['pm25_festival_mean']} µg/m³ on the "
+                                                     f"Diwali 2026 festival days (OpenAQ).")
+    out, _ = run(core.build_agent(scripted([t, ans])[0]), session_factory(), "Delhi PM2.5 Diwali 2026?")
+    codes = [w.code for w in out.required_warnings]
+    assert "not_comparable_years" in codes and "source_limit_999" not in codes
+    assert any("underestimate" in w.text for w in out.required_warnings)
+    assert any("No baseline is given" in w.text for w in out.required_warnings)
 
 
 @real

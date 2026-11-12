@@ -3,3 +3,5 @@
 # Makes Python trust the macOS keychain (needed behind Sophos HTTPS inspection).
 # Certificate verification stays ON; only the trust source changes.
 truststore==0.10.5
+# Reads CPCB daily AQI bulletin PDFs during data refreshes (backend/pipeline/cpcb_bulletins.py).
+pdfplumber==0.11.4

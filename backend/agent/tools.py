@@ -189,7 +189,8 @@ def diwali_aqi(ctx: RunContext[RunDeps], city: str, years: list[int], percent: b
 
 
 def delhi_pm_diwali(ctx: RunContext[RunDeps], year: int) -> dict:
-    """Supporting context only: Delhi measured PM around Diwali 2024/2025 (lower bounds). Never a %."""
+    """Supporting context only: Delhi measured PM around Diwali 2024/2025 (OpenCity, lower bounds) or 2026 (OpenAQ;
+    not comparable with earlier years). Never a %."""
     def go():
         res = F.delhi_pm_context(ctx.deps.session.store, int(year))
         return res, {"city": "Delhi", "resolved": _rq(["Delhi"], "PM2.5 and PM10", res.date_range.get("start"),

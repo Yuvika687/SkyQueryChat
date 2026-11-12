@@ -102,7 +102,7 @@ def test_data_endpoints(store):
         assert t["kind"] == "city_trend" and t["chart"]["type"] == "line"
         assert c.get("/api/coverage", params={"city": "Chennai"}).json()["kind"] == "coverage_summary"
         d = c.get("/api/diwali/Delhi", params={"years": "2024,2025,2026"}).json()
-        assert d["values"]["years"][2]["status"] == "not_available"
+        assert d["values"]["years"][2]["status"] == "ok" and d["values"]["years"][2]["festival_level_aqi"] == 321.5
         assert "Bulletin" in d["chart"]["x"]["label"] or "bulletin" in d["chart"]["x"]["label"]
         lim = c.get("/api/limits").json()["limits"]
         assert any("481" in x["detail"] and "351" in x["detail"] for x in lim)
