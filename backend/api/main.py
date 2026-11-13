@@ -367,8 +367,9 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         cc = ROOT / "docs" / "crosscheck_bulletins.json"
         if cc.exists():
             d = json.loads(cc.read_text())
-            out["crosscheck"] = {"what": d.get("what"), "by_city": {
-                c: {k: v.get(k) for k in ("days", "correlation", "mean_absolute_difference", "within_20pct", "period")}
+            # agreement figures only; the internal estimates themselves are never exposed
+            out["crosscheck"] = {"by_city": {
+                c: {k: v.get(k) for k in ("days", "correlation", "within_20pct", "period")}
                 for c, v in (d.get("by_city") or {}).items()}}
         return out
 

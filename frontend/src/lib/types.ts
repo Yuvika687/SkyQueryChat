@@ -197,7 +197,7 @@ export interface EvalSummary {
 export interface Scoreboard {
   sets: Record<string, { main_first_pass: { run: string; started: string; model_chain?: string[]; summary: { overall?: EvalSummary } & Partial<EvalSummary> } | null }>;
   answer_wording_since?: string;
-  crosscheck?: { what: string; by_city: Record<string, { days: number; correlation: number; mean_absolute_difference: number; within_20pct: number; period: string }> };
+  crosscheck?: { by_city: Record<string, { days: number; correlation: number; within_20pct: number; period: string }> };
 }
 
 /** GET /api/explore: every station's 24-hour means over the latest 30 available days (measured, read-only). */
