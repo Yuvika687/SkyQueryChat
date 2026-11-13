@@ -62,7 +62,7 @@ export function HomeScreen() {
             <strong className="font-semibold text-foreground">PM2.5{latest ? `, ${fmtDate(latest.date)}` : ""}</strong> · 24-hour city average, µg/m³
           </p>
           <div className="relative aspect-[10/11] sm:aspect-auto sm:h-[600px] lg:h-[min(640px,calc(100dvh-170px))]">
-            <div aria-hidden className="pointer-events-none absolute inset-[-6%] bg-[radial-gradient(ellipse_52%_50%_at_50%_50%,rgba(45,212,191,0.13),rgba(30,64,120,0.10)_45%,transparent_72%)]" />
+            <div aria-hidden className="pointer-events-none absolute inset-y-[-6%] inset-x-0 lg:inset-x-[-6%] bg-[radial-gradient(ellipse_52%_50%_at_50%_50%,rgba(45,212,191,0.13),rgba(30,64,120,0.10)_45%,transparent_72%)]" />
             {latest ? (
               <IndiaMap cities={latest.cities} date={latest.date} className="sq-home-map absolute inset-0" />
             ) : (

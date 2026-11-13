@@ -121,11 +121,15 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
       }
     }
 
+    // The basemap starts on the visitor's first interaction, or after a few quiet seconds, so the first view stays
+    // light; the official outline is already on screen meanwhile.
     function idle() {
       return new Promise<void>((done) => {
-        const go = () => ("requestIdleCallback" in window ? window.requestIdleCallback(() => done(), { timeout: 4000 }) : setTimeout(done, 1500));
-        if (document.readyState === "complete") setTimeout(go, 1200);
-        else window.addEventListener("load", () => setTimeout(go, 1200), { once: true });
+        const evs = ["pointermove", "pointerdown", "scroll", "keydown", "touchstart", "wheel"] as const;
+        let t = 0;
+        const go = () => { clearTimeout(t); evs.forEach((e) => window.removeEventListener(e, go)); done(); };
+        evs.forEach((e) => window.addEventListener(e, go, { once: true, passive: true }));
+        t = window.setTimeout(go, 6500);
       });
     }
 
@@ -169,7 +173,8 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
   return (
     <div ref={wrap} className={cn("relative overflow-hidden", className)} data-map={mode}>
       {/* MapLibre styles its container as position: relative, so the canvas sits in a sized wrapper. */}
-      <div className="absolute inset-0" aria-hidden>
+      {/* not aria-hidden: the map credits ("ⓘ") live inside; the canvas itself is not focusable here */}
+      <div className="absolute inset-0">
         <div ref={canvas} className="h-full w-full" />
       </div>
       {mode === "loading" && <p className="absolute inset-0 grid place-items-center text-xs text-faint">Loading map</p>}

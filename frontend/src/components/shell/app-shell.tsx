@@ -148,7 +148,7 @@ function QuickAskHint() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMac(isMac()), []);
   return (
-    <button type="button" onClick={open} aria-label={`Quick ask (${mac ? "Command" : "Control"} K)`}
+    <button type="button" onClick={open} aria-label={`Quick ask ${mac ? "⌘" : "Ctrl"} K`} title="Quick ask"
       className="hidden h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] text-faint transition-colors hover:text-foreground xl:inline-flex">
       <Search className="size-3.5" aria-hidden />
       <kbd className="rounded-md border border-line-strong bg-white/[0.03] px-1.5 py-px font-sans text-[11px] text-subtle">{mac ? "⌘" : "Ctrl"} K</kbd>

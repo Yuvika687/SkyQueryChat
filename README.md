@@ -4,30 +4,40 @@
 
 **Live:** https://sky-query-chat.vercel.app · Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad · PM2.5, PM10 and official AQI
 
-![Home: the latest available PM2.5 for six cities on a map](docs/screenshots/home-desktop.png)
+![Home: the latest available PM2.5 for six cities on a map](docs/screenshots/home-top-desktop.png)
 
-| Ask, with proof | Explore | City page | Compare |
-|---|---|---|---|
-| ![Ask answer and proof](docs/screenshots/ask-proof-desktop.png) | ![Explore Delhi with a station open](docs/screenshots/explore-delhi-station-desktop.png) | ![Delhi city page](docs/screenshots/city-delhi-desktop.png) | ![Compare cities](docs/screenshots/compare-desktop.png) |
+| Ask, with proof | Explore | City page |
+|---|---|---|
+| ![Ask answer and the proof of one number](docs/screenshots/ask-proof-desktop.png) | ![Explore Delhi with a station open](docs/screenshots/explore-delhi-station-desktop.png) | ![Delhi city page](docs/screenshots/city-delhi-desktop.png) |
+| **Compare** | **Quick ask (⌘K / Ctrl+K)** | **On a phone** |
+| ![Compare cities over the same dates](docs/screenshots/compare-desktop.png) | ![Quick ask box](docs/screenshots/quick-ask-desktop.png) | ![Explore on a phone](docs/screenshots/explore-delhi-station-mobile.png) |
 
 ## Features
 
-- **Home:** the latest available 24-hour PM2.5 for each city on a map of India, ranked, with a 7-day sparkline.
+- **Home:** the latest available 24-hour PM2.5 for each city on a map of India, ranked, with a 7-day sparkline, the
+  change from the previous day ("▲ 17.3 vs 10 Nov", only when that day has a value) and CPCB's official health
+  statement for the category on hover or focus.
 - **Ask:** type a question in plain words. The answer comes with a chart, an evidence table and the agent's steps.
-  Click any highlighted number to see where it came from: the rows or bulletins used, the formula, the source and
-  the check.
-- **Explore:** every monitoring station on a map, with 30 days of daily values, a play button and a station panel.
-  Low-cost sensors are shown separately.
+  - Click any highlighted number to see where it came from: the rows or bulletins used, the formula, the source and
+    the check.
+  - Copy a link that reopens the question, copy the answer as text, and download the chart (PNG) or its data (CSV).
+- **Quick ask:** ⌘K or Ctrl+K opens a small question box from any page.
+- **Explore:** every monitoring station on a map, with 30 days of daily values. Low-cost sensors are shown separately.
+  - A slim timeline with a mini chart of the daily averages and a Diwali marker; play the last 30 days at 1× or 2×.
+  - Search any station by name across the six cities.
+  - The station panel shows CPCB's health statement.
 - **City pages** (`/city/delhi` and the other five cities):
-  - the latest value and a 30-day trend with significance
+  - the latest value, the change from the previous day, CPCB's health statement and a 30-day trend with significance
   - a calendar heatmap and Diwali AQI from CPCB's 4 PM bulletins
   - unusual days with the reason each was flagged
   - a weather association with a fitted line, and every station with its coverage
+  - copy link and download data (CSV)
 - **Compare:** 2–6 cities over the same dates, for PM2.5, PM10 or official AQI:
   - daily lines and a ranking with 95% range bars
   - "too close to call" when the ranges overlap
-  - a trend for each city and a warning when coverage is low
-  - the selection is kept in the link
+  - a trend for each city (periods under 90 days give the total change over the period) and a warning when coverage
+    is low
+  - the selection is kept in the link; copy link and download data (CSV)
 - **Data & accuracy panel:** sources and licences, coverage, the latest date, first-pass test scores, the CPCB
   cross-check and known limits.
 
@@ -97,9 +107,9 @@ and the scoreboard is `evals/scoreboard.json`.
 - **Agent:** Pydantic AI with Gemini 3.5 Flash-Lite, falling back to Gemini 3.1 Flash Lite and then Gemini 3.8
   Flash. One shared quota limiter serves all visitors.
 - **Tests:**
-  - 269 backend tests
+  - 276 backend tests
   - 61 frontend unit tests
-  - 77 Playwright tests (including axe accessibility checks)
+  - 90 Playwright tests (including axe accessibility checks)
   - live evaluation sets (above)
 
 ## Run locally

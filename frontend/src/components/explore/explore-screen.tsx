@@ -143,8 +143,10 @@ export function ExploreScreen() {
   }, [phone, station]);
   // Fit stations clear of the panels: left panel, station panel (kept free whenever a city is open, so opening a
   // station never hides another one) and the timeline at the bottom.
+  // phones: keep stations above the sheet (collapsed, or half open once a station is chosen)
+  const vh = typeof window === "undefined" ? 800 : window.innerHeight;
   const padding = phone
-    ? { top: 120, bottom: 230, left: 28, right: 28 }
+    ? { top: 120, bottom: station ? Math.round(vh * 0.55) + 16 : 230, left: 28, right: 28 }
     : { top: 100, bottom: 120, left: 420, right: city ? 420 : 60 };
 
   const loading = !data && !failed;
@@ -167,7 +169,7 @@ export function ExploreScreen() {
     </div>
   );
   const time = data && date && (
-    <TimeControl dates={dates} day={i} onDay={pickDay} playing={playing} onPlay={togglePlay} canPlay={!reduce} compact={phone}
+    <TimeControl dates={dates} day={i} onDay={pickDay} playing={playing} onPlay={togglePlay} canPlay={!reduce} compact={phone || !!stationObj}
       speed={speed} onSpeed={setSpeed}
       series={city ? [{ colour: "#2DD4BF", values: data.cities[city]?.values ?? [] }]
         : Object.entries(data.cities).map(([c, v]) => ({ colour: CITY_COLOURS[c] ?? "#94A0BC", values: v.values }))} />

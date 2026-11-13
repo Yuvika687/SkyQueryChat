@@ -453,6 +453,27 @@ Rules:
 - Memory (Linux amd64 container, 512 MB, 0.1 CPU): peak 305 MiB after every data, city and compare endpoint. The first
   city page takes about 15 s there under emulation (0.36 s natively), then it is cached.
 
+### Final UI touches (main, 2026-11-13)
+
+- Nav: frosted, mostly opaque pill plus a fade band behind it. Map credits: MapLibre's compact attribution ("ⓘ",
+  collapsed at start; top right on phones) built from `CREDIT_ITEMS` / `CREDITS_HTML` in `src/lib/map-base.ts`; the
+  basemap's own attribution is removed so nothing is listed twice; the same list is in the Data & accuracy panel.
+- Home map has no box: glow behind India, edges faded by a CSS mask on the canvas only (never on markers or credits).
+  The basemap loads on the first interaction or after 6.5 s (official outline drawn at once): Lighthouse Home 99/100/100/100.
+- Explore: no zoom buttons; Mumbai's label left of its dot (as Home); slim timeline ("Showing <date>", "Latest
+  available" on the last day, "Play last 30 days", 1x/2x, mini chart of daily averages, Diwali marker); station search;
+  map padding is clamped to the canvas (MapLibre refuses to fit, and stays at the world origin, when padding is too big).
+- Trends under 90 days are the total change over the period (`change_over_period` = Sen's slope per day x (days - 1)),
+  with "Short periods include seasonal change."; the agent field is `trend_change_over_period`. Time-axis labels always
+  carry the month.
+- Day-over-day change is calculated in Python (`/api/latest` `change`, from the displayed one-decimal values, only when
+  the previous calendar day has a value). CPCB health statements: `src/lib/health.ts`, verbatim from the bulletin's
+  "Health Statements for AQI Categories".
+- Evaluation quota guard (`backend/agent/eval_guard.py`, called by `scripts/run_eval.py`): counts today's evaluation runs
+  (since midnight Pacific) plus the live server's `/api/quota` visitor use, refuses to start when the run would pass the
+  public caps, and seeds the shared limiter (`ProviderQuota.seed`). The live counter resets on a server restart.
+- Lazily loaded components do not forward refs: the chart handle for PNG export is a plain `handle` prop.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

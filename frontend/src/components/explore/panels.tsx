@@ -137,9 +137,16 @@ export function TimeControl({ dates, day, onDay, playing, onPlay, canPlay, speed
     </div>
   );
   if (compact) {
+    // narrow bar (phones, or the station panel is open): caption over the date, play and speed beside it
     return (
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between gap-3">{label}{play}</div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 leading-tight" aria-live="polite">
+            <span className="block text-[11px] text-faint">{last ? "Latest available" : "Showing"}</span>
+            <strong className="num block truncate text-[15px] font-semibold">{fmtDate(dates[day])}</strong>
+          </p>
+          {play}
+        </div>
         {slider}
       </div>
     );

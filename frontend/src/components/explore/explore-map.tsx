@@ -16,6 +16,13 @@ import type { ExploreData } from "@/lib/types";
 import { shortName } from "./panels";
 
 type Pad = { top: number; bottom: number; left: number; right: number };
+
+/** Padding that always leaves room on the canvas (MapLibre refuses to fit, and stays put, when padding exceeds it). */
+function fitPad(p: Pad, w: number, h: number, room = 120): Pad {
+  const sy = Math.min(1, Math.max(0, h - room) / Math.max(1, p.top + p.bottom));
+  const sx = Math.min(1, Math.max(0, w - room) / Math.max(1, p.left + p.right));
+  return { top: Math.floor(p.top * sy), bottom: Math.floor(p.bottom * sy), left: Math.floor(p.left * sx), right: Math.floor(p.right * sx) };
+}
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 const FONT = ["Noto Sans Regular"]; // the font the basemap's own labels use
 
@@ -55,7 +62,7 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
         maplibregl.setWorkerUrl(WORKER_URL);
         lib.current = maplibregl;
         const m = new maplibregl.Map({
-          container: node, style, bounds: INDIA_BOUNDS, fitBoundsOptions: { padding }, attributionControl: false,
+          container: node, style, bounds: INDIA_BOUNDS, fitBoundsOptions: { padding: fitPad(padding, node.clientWidth, node.clientHeight) }, attributionControl: false,
           dragRotate: false, pitchWithRotate: false, touchPitch: false, fadeDuration: 0, minZoom: 3, maxZoom: 14,
         });
         m.touchZoomRotate.disableRotation();
@@ -149,14 +156,14 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
     if (ready !== "ready" || !m || !data) return;
     const duration = reduceMotion ? 0 : 1600;
     if (!city) {
-      m.fitBounds(INDIA_BOUNDS, { padding, duration });
+      m.fitBounds(INDIA_BOUNDS, { padding: fitPad(padding, m.getContainer().clientWidth, m.getContainer().clientHeight), duration });
       return;
     }
     const st = cityStations(data, city, lowCost);
     if (!st.length) return;
     const lons = st.map((s) => s.lon), lats = st.map((s) => s.lat);
     m.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
-      { padding, duration, maxZoom: 12.5, essential: true });
+      { padding: fitPad(padding, m.getContainer().clientWidth, m.getContainer().clientHeight), duration, maxZoom: 12.5, essential: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, city, lowCost, data?.pollutant]);
 
