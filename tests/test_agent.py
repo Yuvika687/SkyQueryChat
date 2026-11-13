@@ -694,3 +694,16 @@ def test_readable_dates_are_checked_against_tool_dates():
     assert V.check_numbers(["There was no bulletin for 5 Nov 2026."], allowed, V.user_safe_numbers(q)) == []
     # labels are not dates: "PM2.5 November" is not 5 November
     assert V.readable_dates("Delhi PM2.5 November 2025")[0] == []
+
+
+def test_checker_covers_statistics_numbers():
+    """Means, 95% ranges, p-values, Sen's slopes and correlations (incl. negative ranges) are checked."""
+    from backend.agent.verify import allowed_numbers, check_numbers
+    payload = {"fields": {"Delhi_mean": 133.7, "Delhi_range_low": 87.5, "Delhi_range_high": 201.9,
+                          "trend_per_month": 162.53, "trend_p_value": "< 0.001", "rho": -0.244,
+                          "rho_range_low": -0.322, "rho_range_high": -0.163}}
+    ok = allowed_numbers([payload])
+    good = ("Delhi averaged 133.7 µg/m³ (95% range 87.5–201.9), rising by about 162.5 µg/m³ per month "
+            "(p < 0.001). Wind was associated with lower PM2.5 (rho -0.24, range −0.32 to -0.16).")
+    assert check_numbers([good], ok) == []
+    assert check_numbers(["Delhi averaged 140.2 (range 87.5–210), p = 0.03, rho 0.5."], ok) == ["140.2", "210", "0.03", "0.5"]

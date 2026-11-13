@@ -146,6 +146,7 @@ def references() -> dict:
         "mumbai_pm10_mar_jun2026": {"numbers": [mean("Mumbai", "pm10", d(2026, 3, 1), d(2026, 6, 30))]},
         **holdout2_refs(),
         **diwali2026_refs(),
+        **analysis_refs(),
     }
 
 
@@ -194,6 +195,44 @@ def holdout2_refs() -> dict:
                                                    [mean("Chennai", "pm25", d(2026, 3, 1), d(2026, 3, 31)),
                                                     mean("Hyderabad", "pm25", d(2026, 3, 1), d(2026, 3, 31))]]},
         "h2_chennai_hyd_more_days_mar2026": {"text": [more], "numbers": [ch_valid[more]]},
+    }
+
+
+def trend_ref(city, pol, a, b):
+    """Second implementation of the trend: scipy's Theil-Sen slope and Kendall's tau against time."""
+    from scipy import stats as SS
+    x = _days(city, pol, a, b).sort_values("local_date")
+    t = np.array([(v - x.local_date.iat[0]).days for v in x.local_date], dtype=float)
+    slope = SS.theilslopes(x.city_mean.to_numpy(), t).slope * 365.25 / 12
+    p = SS.kendalltau(t, x.city_mean.to_numpy()).pvalue
+    return {"n": len(x), "slope_per_month": round(float(slope), 1), "p": float(p)}
+
+
+def wind_ends(city, pol, a, b):
+    """Mean PM on the calmest and windiest quarter of matched days (pd.qcut quartiles)."""
+    x = _days(city, pol, a, b)
+    x = x[x.severity != "severe"][["local_date", "city_mean"]]
+    j = x.merge(W[(W.city == city) & ~W.preliminary][["local_date", "wind_speed_mean_kmh"]], on="local_date")
+    q = pd.qcut(j.wind_speed_mean_kmh, 4, labels=False, duplicates="drop")
+    return round(float(j[q == 0].city_mean.mean()), 1), round(float(j[q == q.max()].city_mean.mean()), 1)
+
+
+def analysis_refs() -> dict:
+    """Analysis set (evals/analysis.json): comparisons with 95% ranges, trends, weather associations."""
+    d = date
+    winter = (d(2025, 12, 1), d(2026, 2, 28))
+    w_rank, _ = compare(CITIES, "pm25", *winter)
+    mar = compare(["Delhi", "Bengaluru"], "pm25", d(2026, 3, 1), d(2026, 3, 31))[0]
+    ch = trend_ref("Chennai", "pm25", d(2026, 3, 1), d(2026, 4, 30))
+    calm, windy = wind_ends("Delhi", "pm25", d(2025, 2, 18), DATA_END)
+    dry, rain = rain_groups("Mumbai", "pm25", d(2025, 2, 18), DATA_END)
+    return {
+        "an_winter_top_two": {"numbers": [w_rank["Delhi"], w_rank["Kolkata"]]},
+        "an_mar_delhi_bengaluru": {"numbers": [mar["Delhi"], mar["Bengaluru"]]},
+        "an_chennai_trend": {"any_of": [[ch["slope_per_month"]], [abs(ch["slope_per_month"])]], "tol": 0.15,
+                             "_p": ch["p"]},
+        "an_delhi_wind": {"any_of": [[calm, windy], [spearman("Delhi", "pm25", "wind_speed_mean_kmh", d(2025, 2, 18), DATA_END)]]},
+        "an_mumbai_rain": {"any_of": [[dry, rain], [spearman("Mumbai", "pm25", "precipitation_sum_mm", d(2025, 2, 18), DATA_END)]]},
     }
 
 

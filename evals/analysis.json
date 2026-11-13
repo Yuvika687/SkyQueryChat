@@ -1,0 +1,29 @@
+{
+ "_about": "Analysis set (added 2026-11-13): comparisons with 95% ranges and 'too close to call', Mann-Kendall/Sen trends and weather associations. Reference values are computed independently in evals/references.py (analysis_refs: plain pandas and scipy, not backend.analysis). Separate scoreboard set.",
+ "questions": [
+  {"id": "A01", "category": "comparison", "turns": ["Compare PM2.5 in all six cities over winter 2025-26."],
+   "expect": [{"status": ["answered"], "tools_any": ["compare_cities"], "refs": ["an_winter_top_two"],
+               "resolved": {"cities": ["Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"], "pollutant": "PM2.5", "start": "2025-12-01", "end": "2026-02-28"}}]},
+  {"id": "A02", "category": "too_close", "turns": ["Was Chennai or Mumbai more polluted in winter 2025-26?"],
+   "expect": [{"status": ["answered"], "tools_any": ["compare_cities"], "must_include_any": ["too close", "cannot be separated", "not clearly", "overlap"],
+               "resolved": {"cities": ["Chennai", "Mumbai"], "start": "2025-12-01", "end": "2026-02-28"}}]},
+  {"id": "A03", "category": "comparison", "turns": ["Which had higher PM2.5 in March 2026, Delhi or Bengaluru?"],
+   "expect": [{"status": ["answered"], "tools_any": ["compare_cities"], "refs": ["an_mar_delhi_bengaluru"], "must_include": ["Delhi"], "must_not": ["too close"],
+               "resolved": {"cities": ["Delhi", "Bengaluru"], "start": "2026-03-01", "end": "2026-03-31"}}]},
+  {"id": "A04", "category": "trend", "turns": ["Was PM2.5 in Chennai rising or falling across March and April 2026?"],
+   "expect": [{"status": ["answered"], "tools_any": ["city_trend"], "refs": ["an_chennai_trend"], "must_include_any": ["decreas", "fell", "falling", "declin", "down"],
+               "resolved": {"cities": ["Chennai"], "start": "2026-03-01", "end": "2026-04-30"}}]},
+  {"id": "A05", "category": "trend", "turns": ["Is there a trend in Mumbai's PM2.5 over the last 30 days?"],
+   "expect": [{"status": ["answered"], "tools_any": ["city_trend"], "must_include_any": ["no clear trend", "no clear", "not a clear", "no significant"],
+               "must_not": ["\\bis (rising|increasing|falling|decreasing)\\b"], "resolved": {"cities": ["Mumbai"]}}]},
+  {"id": "A06", "category": "trend", "turns": ["Is Delhi's PM2.5 trending up from 1 to 11 November 2026?"],
+   "expect": [{"status": ["answered", "unavailable"], "tools_any": ["city_trend"], "must_include_any": ["not enough", "too few", "too short"],
+               "resolved": {"cities": ["Delhi"], "start": "2026-11-01", "end": "2026-11-11"}}]},
+  {"id": "A07", "category": "weather", "turns": ["How is rainfall associated with PM2.5 in Mumbai?"],
+   "expect": [{"status": ["answered"], "tools_any": ["weather_association"], "refs": ["an_mumbai_rain"], "must_include": ["associat"],
+               "resolved": {"cities": ["Mumbai"]}}]},
+  {"id": "A08", "category": "weather", "turns": ["Are windy days in Delhi linked to lower PM2.5?"],
+   "expect": [{"status": ["answered"], "tools_any": ["weather_association"], "refs": ["an_delhi_wind"], "must_include": ["associat"],
+               "resolved": {"cities": ["Delhi"]}}]}
+ ]
+}

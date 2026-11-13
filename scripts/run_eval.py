@@ -35,7 +35,8 @@ from evals import references as REF  # noqa: E402
 
 SETS = {"main": ROOT / "evals" / "questions.json", "groq": ROOT / "evals" / "groq_test.json",
         "holdout": ROOT / "evals" / "holdout.json",          # retired 2026-11-06 (used)
-        "holdout2": ROOT / "evals" / "holdout2.json", "diwali2026": ROOT / "evals" / "diwali2026.json"}
+        "holdout2": ROOT / "evals" / "holdout2.json", "diwali2026": ROOT / "evals" / "diwali2026.json",
+        "analysis": ROOT / "evals" / "analysis.json"}
 RUNS = ROOT / "evals" / "runs"
 LEDGER = ROOT / "evals" / "groq_ledger.jsonl"
 GROQ_TPD, GROQ_TPD_STOP, GROQ_EST_PER_Q = 200_000, 185_000, 8_000

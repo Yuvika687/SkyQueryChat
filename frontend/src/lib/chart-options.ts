@@ -270,8 +270,10 @@ function barOption(spec: ChartSpec) {
 
 // ------------------------------------------------------------------ weather scatter
 function scatterOption(spec: ChartSpec) {
+  const fitted = spec.series.some((s) => s.type === "line");
   return {
     ...base(spec),
+    grid: { ...base(spec).grid, right: fitted ? 84 : 24 },
     legend: { show: false },
     xAxis: { type: "value", name: spec.x.label ?? spec.x.field, nameLocation: "middle", nameGap: 30, ...axisCommon },
     yAxis: { type: "value", name: yAxisName(spec), nameLocation: "middle", nameGap: 44, min: 0, ...axisCommon },
@@ -279,7 +281,12 @@ function scatterOption(spec: ChartSpec) {
       ...base(spec).tooltip, trigger: "item",
       formatter: (p: { value: [number, number] }) => `${spec.x.label ?? spec.x.field}: ${fmt(p.value[0], 2)}<br/>${yAxisName(spec)}: <b>${fmt(p.value[1])}</b>`,
     },
-    series: spec.series.map((s) => ({ name: s.name, type: "scatter", data: s.data, symbolSize: 6, itemStyle: { color: C.accent, opacity: 0.65 } })),
+    // days as dots; a fitted line (calculated in Python, Theil-Sen) when the backend sends one
+    series: spec.series.map((s) => s.type === "line"
+      ? { name: s.name, type: "line", data: s.data, showSymbol: false, silent: true, z: 4,
+          lineStyle: { color: C.text, width: 2, type: "dashed" },
+          endLabel: { show: true, formatter: "fitted line", color: C.sub, fontSize: 11 } }
+      : { name: s.name, type: "scatter", data: s.data, symbolSize: 6, itemStyle: { color: C.accent, opacity: 0.6 } }),
   };
 }
 

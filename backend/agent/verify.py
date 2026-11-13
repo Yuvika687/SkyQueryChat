@@ -25,6 +25,7 @@ STRIP = [
     re.compile(r"\bW[1-4]\b"), re.compile(r"\bCC BY 4\.0\b"), re.compile(r"\bC3S\b"),
     re.compile(r"\b(?:gpt|gemini|llama)[\w.\-/]*", re.I),
     re.compile(r"\bds\d+\b"),                                      # dataset ids
+    re.compile(r"\b95\s?%\s?(?=(?:confidence\s)?(?:range|interval|CI)\b)", re.I),  # "95% range": the method, not a value
 ]
 
 MONTHS = {m: i + 1 for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"])}
