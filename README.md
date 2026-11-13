@@ -78,9 +78,13 @@ plain pandas and scipy. Reruns are kept apart and never replace these numbers.
 | Unseen (holdout 2) | never used for tuning | **10 / 11** | 100% | 6 Nov 2026 | earlier wording |
 | First unseen (retired) | used once | **11 / 11** | 100% | 5 Nov 2026 | earlier wording |
 | Diwali 2026 | festival bulletins and caveats | **9 / 9** | 100% | 12 Nov 2026 | earlier wording |
-| Statistics | 95% ranges, too close to call, trends, weather | **5 / 8** | 100% | 13 Nov 2026 | before the trend check |
+| Statistics | 95% ranges, too close to call, trends, weather | **8 / 8** | 100% | 13 Nov 2026 | current wording |
 
-The current wording (readable dates, caveats kept in the answer) dates from 13 Nov 2026. Runs are in `evals/runs/`,
+The current wording (readable dates, caveats kept in the answer) dates from 13 Nov 2026. The statistics set is new:
+its first complete run scored 5/8, and one failure showed a real problem (an answer said "no clear trend" when the test
+said "not enough data"). A trend-wording check was added, and the second complete run, shown above, scored 8/8.
+The other sets have not been re-run in full with the current wording yet (the free daily quota is shared with
+visitors). Runs are in `evals/runs/`,
 and the scoreboard is `evals/scoreboard.json`.
 
 ## Tech stack

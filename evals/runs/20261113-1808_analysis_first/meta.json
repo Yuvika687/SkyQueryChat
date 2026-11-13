@@ -1,0 +1,14 @@
+{
+ "set": "analysis",
+ "kind": "first",
+ "started": "2026-11-13 18:08",
+ "model_chain": [
+  "google:gemini-3.5-flash-lite",
+  "google:gemini-3.1-flash-lite",
+  "google:gemini-3.8-flash"
+ ],
+ "commit": "be4cdb1",
+ "ids": "all",
+ "complete": true,
+ "stopped": null
+}

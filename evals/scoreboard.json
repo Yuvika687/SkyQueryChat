@@ -1779,8 +1779,8 @@
   },
   "analysis": {
    "main_first_pass": {
-    "run": "20261113-1711_analysis_first",
-    "started": "2026-11-13 17:11",
+    "run": "20261113-1808_analysis_first",
+    "started": "2026-11-13 18:08",
     "model_chain": [
      "google:gemini-3.5-flash-lite",
      "google:gemini-3.1-flash-lite",
@@ -1788,115 +1788,65 @@
     ],
     "kind": "first",
     "complete": true,
-    "commit": "94d0409",
+    "commit": "be4cdb1",
     "summary": {
      "overall": {
       "turns": 8,
-      "pass": 5,
-      "pass_pct": 62.5,
+      "pass": 8,
+      "pass_pct": 100.0,
       "tool_choice_pct": 100.0,
       "tool_choice_n": 8,
       "numbers_traceable_pct": 100.0,
-      "answered": 6,
-      "reference_checks_pct": 80.0,
+      "answered": 8,
+      "reference_checks_pct": 100.0,
       "reference_checks_n": 5,
-      "reference_failures": [
-       "an_mumbai_rain"
-      ],
+      "reference_failures": [],
       "refusals_correct_pct": null,
       "refusals_n": 0,
-      "resolved_checks_pct": 75.0,
+      "resolved_checks_pct": 100.0,
       "resolved_checks_n": 8,
-      "resolved_failures": [
-       "A02.1: no resolved_query",
-       "A07.1: no resolved_query"
-      ],
-      "pass_lenient_wording_SEPARATE": 5,
-      "errors": [
-       "A02.1",
-       "A07.1"
-      ],
-      "failed": [
-       "A02.1",
-       "A06.1",
-       "A07.1"
-      ],
-      "verifier_retries": 3,
-      "tokens_median": 8761,
-      "tokens_mean": 8446,
-      "tokens_max": 15619,
-      "tokens_total": 50679
+      "resolved_failures": [],
+      "pass_lenient_wording_SEPARATE": 8,
+      "errors": [],
+      "failed": [],
+      "verifier_retries": 4,
+      "tokens_median": 5224,
+      "tokens_mean": 7110,
+      "tokens_max": 11480,
+      "tokens_total": 56883
      },
      "by_model": {
       "gemini-3.5-flash-lite": {
-       "turns": 6,
-       "pass": 5,
-       "pass_pct": 83.3,
+       "turns": 8,
+       "pass": 8,
+       "pass_pct": 100.0,
        "tool_choice_pct": 100.0,
-       "tool_choice_n": 6,
+       "tool_choice_n": 8,
        "numbers_traceable_pct": 100.0,
-       "answered": 6,
+       "answered": 8,
        "reference_checks_pct": 100.0,
-       "reference_checks_n": 4,
+       "reference_checks_n": 5,
        "reference_failures": [],
        "refusals_correct_pct": null,
        "refusals_n": 0,
        "resolved_checks_pct": 100.0,
-       "resolved_checks_n": 6,
+       "resolved_checks_n": 8,
        "resolved_failures": [],
-       "pass_lenient_wording_SEPARATE": 5,
+       "pass_lenient_wording_SEPARATE": 8,
        "errors": [],
-       "failed": [
-        "A06.1"
-       ],
-       "verifier_retries": 3,
-       "tokens_median": 8761,
-       "tokens_mean": 8446,
-       "tokens_max": 15619,
-       "tokens_total": 50679
-      },
-      "no answer (model error)": {
-       "turns": 2,
-       "pass": 0,
-       "pass_pct": 0.0,
-       "tool_choice_pct": 100.0,
-       "tool_choice_n": 2,
-       "numbers_traceable_pct": null,
-       "answered": 0,
-       "reference_checks_pct": 0.0,
-       "reference_checks_n": 1,
-       "reference_failures": [
-        "an_mumbai_rain"
-       ],
-       "refusals_correct_pct": null,
-       "refusals_n": 0,
-       "resolved_checks_pct": 0.0,
-       "resolved_checks_n": 2,
-       "resolved_failures": [
-        "A02.1: no resolved_query",
-        "A07.1: no resolved_query"
-       ],
-       "pass_lenient_wording_SEPARATE": 0,
-       "errors": [
-        "A02.1",
-        "A07.1"
-       ],
-       "failed": [
-        "A02.1",
-        "A07.1"
-       ],
-       "verifier_retries": 0,
-       "tokens_median": null,
-       "tokens_mean": null,
-       "tokens_max": null,
-       "tokens_total": 0
+       "failed": [],
+       "verifier_retries": 4,
+       "tokens_median": 5224,
+       "tokens_mean": 7110,
+       "tokens_max": 11480,
+       "tokens_total": 56883
       }
      },
      "by_category": {
       "comparison": "2/2",
-      "too_close": "0/1",
-      "trend": "2/3",
-      "weather": "1/2"
+      "too_close": "1/1",
+      "trend": "3/3",
+      "weather": "2/2"
      }
     }
    },
