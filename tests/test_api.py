@@ -603,3 +603,12 @@ def test_compare_page_data(store):
         bad = c.get("/api/compare", params={"cities": "Delhi", "metric": "pm25", "start": p30["start"], "end": p30["end"]})
         assert bad.status_code == 400
         assert c.get("/api/compare", params={"cities": "Delhi,Mumbai", "start": "2020-01-01", "end": "2020-02-01"}).status_code == 400
+
+
+def test_accuracy_reports_first_pass_scores_and_crosscheck(store):
+    with TestClient(make(store)) as c:
+        d = c.get("/api/accuracy").json()
+        assert d["answer_wording_since"] and "main" in d["sets"]
+        mp = d["sets"]["main"]["main_first_pass"]
+        assert mp["kind"] == "first" and mp["complete"]                     # only complete first passes are headline
+        assert set(d["crosscheck"]["by_city"]) == {"Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"}

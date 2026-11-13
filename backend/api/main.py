@@ -355,10 +355,22 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
     async def diwali(city: str, years: str = Query("2024,2025", pattern=r"^\d{4}(,\d{4}){0,2}$")):
         return F.diwali_aqi(S(), _city(city), tuple(int(y) for y in years.split(","))).to_dict()
 
+    # The answer wording the live app uses (readable dates, caveats kept in the answer) dates from this day.
+    # A first-pass run that started earlier was measured with an earlier wording; the panel says so.
+    ANSWER_WORDING_SINCE = "2026-11-13"
+
     @app.get("/api/accuracy")
     async def accuracy():
         p = ROOT / "evals" / "scoreboard.json"
-        return json.loads(p.read_text()) if p.exists() else {"sets": {}}
+        out = json.loads(p.read_text()) if p.exists() else {"sets": {}}
+        out["answer_wording_since"] = ANSWER_WORDING_SINCE
+        cc = ROOT / "docs" / "crosscheck_bulletins.json"
+        if cc.exists():
+            d = json.loads(cc.read_text())
+            out["crosscheck"] = {"what": d.get("what"), "by_city": {
+                c: {k: v.get(k) for k in ("days", "correlation", "mean_absolute_difference", "within_20pct", "period")}
+                for c, v in (d.get("by_city") or {}).items()}}
+        return out
 
     # ------------------------------------------------------------------ chat (SSE)
     salt = uuid.uuid4().hex                     # per process: hashed IPs are never stored in clear

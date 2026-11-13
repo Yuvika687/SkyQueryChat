@@ -39,6 +39,7 @@ export const getMeta = () => getJSON<Meta>("/api/meta");
 export const getLatest = (signal?: AbortSignal) => getJSON<Latest>("/api/latest", 15_000, signal);
 /** Stored evaluation scores (first-pass runs only). */
 export const getAccuracy = () => getJSON<Scoreboard>("/api/accuracy");
+export const getLimits = () => getJSON<{ limits: { id: string; title: string; detail: string }[] }>("/api/limits");
 /** Explore map: station 24-hour means over the latest 30 available days (read-only, no AI). */
 export const getExplore = (pollutant: "pm25" | "pm10") => getJSON<ExploreData>(`/api/explore?pollutant=${pollutant}`, 20_000);
 
