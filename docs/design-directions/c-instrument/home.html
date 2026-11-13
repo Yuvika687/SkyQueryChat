@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyQueryChat — Instrument</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="../shared/data.js"></script>
+<script src="../shared/india-official.js"></script>
+<script src="../shared/common.js"></script>
+<link href="style.css" rel="stylesheet">
+</head>
+<body>
+<nav class="nav" aria-label="Main">
+  <a class="brand" href="#"><span class="mark" aria-hidden="true"></span>SkyQueryChat</a>
+  <div class="links"><a aria-current="page" href="#">Home</a><a href="#">Explore</a><a href="ask.html">Ask</a><a href="#">Compare</a></div>
+  <div class="nav-meta"><span class="lbl">Latest available</span><span class="stamp num" id="stamp"></span><a href="#">Data &amp; accuracy</a></div>
+</nav>
+
+<div class="shell">
+  <header class="intro">
+    <div>
+      <h1>Ask India's air <span>anything</span></h1>
+      <p class="purpose">The latest available air quality for six Indian cities, with an analyst that shows proof for every number.</p>
+    </div>
+    <form class="cmd" onsubmit="return false">
+      <div class="ask">
+        <span class="prompt" aria-hidden="true">ask&gt;</span>
+        <label class="sr-only" for="q">Your question</label>
+        <input id="q" placeholder="Which city had the cleanest air this week?" autocomplete="off">
+        <kbd>Enter</kbd><button type="submit">Ask</button>
+      </div>
+      <p class="hint">Type a question in plain words, or pick one:</p>
+      <ul class="suggest" id="suggest"></ul>
+    </form>
+  </header>
+
+  <section class="stage" aria-label="Latest available air quality">
+    <div class="map-panel panel">
+      <div id="map" class="map" aria-label="Map of India with the six cities"></div>
+      <div class="map-top">
+        <p class="chipbox"><span class="stamp-dot" aria-hidden="true"></span><span>Latest available: <b id="latest"></b></span></p>
+        <p class="chipbox">PM2.5 · 24-hour city average · µg/m³</p>
+      </div>
+      <p class="attr-inline" id="attr-map"></p>
+    </div>
+    <aside class="rail panel" aria-labelledby="rail-h">
+      <div class="rail-head"><h2 id="rail-h">Six cities, highest first</h2><span class="label" id="rail-date"></span></div>
+      <div id="cards"></div>
+    </aside>
+  </section>
+
+  <section class="ways" aria-labelledby="ways-h">
+    <h2 id="ways-h">Three ways to use SkyQueryChat</h2>
+    <a class="way panel" href="ask.html"><span class="k">A</span><b>Ask</b><span>Type a question in plain words; every number links to its proof.</span></a>
+    <a class="way panel" href="#"><span class="k">E</span><b>Explore</b><span>Click a city on the map to see its monitoring stations.</span></a>
+    <a class="way panel" href="#"><span class="k">C</span><b>Compare</b><span>Put two to six cities side by side over any period.</span></a>
+  </section>
+
+  <footer class="foot"><p id="attr-data"></p><a href="#">Data &amp; accuracy</a></footer>
+</div>
+<nav class="tabbar" data-dock aria-label="Main"><a aria-current="page" href="#">Home</a><a href="#">Explore</a><a href="ask.html">Ask</a><a href="#">Compare</a></nav>
+
+<script>
+const { D, fmtDate, fmtRange, category, scaleBar, chip, sparkline, mountMap, ATTRIBUTION } = SQ;
+const H = D.home;
+document.getElementById("stamp").textContent = fmtDate(H.latest);
+document.getElementById("latest").textContent = fmtDate(H.latest);
+document.getElementById("rail-date").textContent = fmtDate(H.latest);
+const qs = ["How did Delhi's air change around Diwali 2026?", "Which of the six cities had the highest PM2.5 in winter 2025?",
+            "Is rain associated with lower PM10 in Mumbai?", "Were there any unusual PM2.5 days in Delhi in 2025?"];
+document.getElementById("q").placeholder = qs[0];
+document.getElementById("suggest").innerHTML = qs.map((q) => `<li><button type="button">${q}</button></li>`).join("");
+const sorted = [...H.cities].sort((a, b) => b.pm25 - a.pm25);
+document.getElementById("cards").innerHTML = sorted.map((c, i) => `<a class="readout" href="#">
+  <span class="rank">${String(i + 1).padStart(2, "0")}</span>
+  <h3>${c.city} ${chip(c.pm25, "pm25")}</h3>
+  <p class="val"><span class="num">${c.pm25.toFixed(1)}</span><small>µg/m³</small></p>
+  ${scaleBar(c.pm25, "pm25", { ends: false })}
+  <p class="meta"><span>${c.stations} of ${c.stations_total} stations · last 7 days</span>
+    ${sparkline(c.week, { w: 96, h: 22, stroke: "#5CC8FF", label: `${c.city} PM2.5, ${fmtRange(H.week_start, H.latest)}` })}</p>
+</a>`).join("");
+document.getElementById("attr-map").innerHTML = ATTRIBUTION.map;
+document.getElementById("attr-data").textContent = ATTRIBUTION.data + ` · Scale bar runs from Good to Severe (CPCB PM2.5 categories) · Lines: ${fmtRange(H.week_start, H.latest)}`;
+const mobile = matchMedia("(max-width: 760px)").matches;
+mountMap(document.getElementById("map"), {
+  land: "#11161D", water: "#0A0D11", water_line: "#141B24", mask: "#0A0D11", mask_opacity: 0.78,
+  india_fill: "#161D26", india_fill_opacity: 1, outline: "#5CC8FF", outline_width: 0.8,
+  padding: mobile ? { top: 56, bottom: 30, left: 12, right: 12 } : { top: 60, bottom: 50, left: 60, right: 60 },
+}, H.cities, (c) => {
+  const k = category(c.pm25, "pm25");
+  const el = document.createElement("div");
+  el.className = "pin" + (["Mumbai", "Bengaluru"].includes(c.city) ? " left" : "");
+  el.style.setProperty("--c", k.bg); el.style.setProperty("--fg", k.fg);
+  el.dataset.city = c.city;
+  el.innerHTML = `<span class="glow" aria-hidden="true"></span><span class="core" aria-hidden="true"></span>
+    <span class="tag"><b>${c.city}</b><span class="num">${c.pm25.toFixed(1)}</span><span class="cat">${k.name}</span></span>`;
+  return el;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyQueryChat — Night Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="../shared/data.js"></script>
+<script src="../shared/india-official.js"></script>
+<script src="../shared/common.js"></script>
+<link href="style.css" rel="stylesheet">
+</head>
+<body class="home">
+<nav class="nav" aria-label="Main">
+  <a class="brand" href="#"><span class="mark" aria-hidden="true"></span>SkyQueryChat</a>
+  <div class="links"><a aria-current="page" href="#">Home</a><a href="#">Explore</a><a href="ask.html">Ask</a><a href="#">Compare</a></div>
+  <a class="nav-meta" href="#">Data &amp; accuracy</a>
+</nav>
+
+<header class="hero">
+  <div id="map" class="map" aria-label="Map of India with the six cities"></div>
+  <div class="hero-shade" aria-hidden="true"></div>
+  <div class="hero-copy">
+    <p class="badge"><span class="dot" aria-hidden="true"></span>Latest available: <strong id="latest"></strong></p>
+    <h1>Ask India's air <em>anything</em></h1>
+    <p class="purpose">See the latest available air quality for six Indian cities, then ask about any of it in plain words.</p>
+    <form class="ask glass" onsubmit="return false">
+      <label class="sr-only" for="q">Your question</label>
+      <input id="q" placeholder="e.g. How did Delhi's air change around Diwali 2026?" autocomplete="off">
+      <button type="submit">Ask</button>
+    </form>
+    <p class="hint">Type a question, or pick one below. Every number in the answer links to its proof.</p>
+    <ul class="suggest" id="suggest"></ul>
+  </div>
+  <p class="legend glass" id="legend"></p>
+</header>
+
+<main class="wrap">
+  <section aria-labelledby="cities-h">
+    <div class="sec-head">
+      <h2 id="cities-h">Six cities, latest available day</h2>
+      <p id="cities-sub"></p>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section aria-labelledby="ways-h" class="ways">
+    <h2 id="ways-h">Three ways to use SkyQueryChat</h2>
+    <div class="ways-grid">
+      <a class="way" href="ask.html"><span class="way-n">Ask</span><span>Type a question in plain words; every number links to its proof.</span></a>
+      <a class="way" href="#"><span class="way-n">Explore</span><span>Click a city on the map to see its monitoring stations.</span></a>
+      <a class="way" href="#"><span class="way-n">Compare</span><span>Put two to six cities side by side over any period.</span></a>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p id="attr-map"></p>
+  <p id="attr-data"></p>
+  <a href="#">Data &amp; accuracy</a>
+</footer>
+
+<nav class="tabbar" data-dock aria-label="Main">
+  <a aria-current="page" href="#">Home</a><a href="#">Explore</a><a href="ask.html">Ask</a><a href="#">Compare</a>
+</nav>
+
+<script>
+const { D, fmtDate, fmtRange, category, scaleBar, chip, sparkline, mountMap, ATTRIBUTION } = SQ;
+const H = D.home;
+document.getElementById("latest").textContent = fmtDate(H.latest);
+document.getElementById("cities-sub").textContent =
+  `PM2.5 24-hour city average for ${fmtDate(H.latest)}, in µg/m³. Small line: the 7 days ${fmtRange(H.week_start, H.latest)}.`;
+document.getElementById("legend").innerHTML =
+  `<strong>PM2.5, ${fmtDate(H.latest)}</strong> · 24-hour city average · glow shows the CPCB category, also written on each label`;
+
+const qs = ["How did Delhi's air change around Diwali 2026?", "Which of the six cities had the highest PM2.5 in winter 2025?",
+            "Is rain associated with lower PM10 in Mumbai?", "Were there any unusual PM2.5 days in Delhi in 2025?"];
+document.getElementById("suggest").innerHTML = qs.map((q) => `<li><button type="button">${q}</button></li>`).join("");
+
+document.getElementById("cards").innerHTML = H.cities.map((c) => {
+  const k = category(c.pm25, "pm25");
+  return `<a class="card glass" href="#">
+    <div class="card-top"><h3>${c.city}</h3>${chip(c.pm25, "pm25")}</div>
+    <p class="big"><span class="num">${c.pm25.toFixed(1)}</span><span class="unit">µg/m³</span></p>
+    ${scaleBar(c.pm25, "pm25")}
+    <div class="card-foot">
+      <span>${c.stations} of ${c.stations_total} stations</span>
+      <span class="spark-wrap"><span class="spark-l">7 days</span>${sparkline(c.week, { w: 104, h: 28, stroke: "#9FB3D9", label: `${c.city} PM2.5, ${fmtRange(H.week_start, H.latest)}` })}</span>
+    </div>
+  </a>`;
+}).join("");
+
+document.getElementById("attr-map").innerHTML = ATTRIBUTION.map;
+document.getElementById("attr-data").textContent = ATTRIBUTION.data;
+
+const mobile = matchMedia("(max-width: 760px)").matches;
+mountMap(document.getElementById("map"), {
+  land: "#0C1426", water: "#050912", water_line: "#0A1222", mask: "#050912", mask_opacity: 0.72,
+  india_fill: "#101B33", india_fill_opacity: 0.9, outline: "#5E7AB0", outline_width: 1,
+  padding: mobile ? { top: 16, bottom: 16, left: 12, right: 12 } : { top: 110, bottom: 120, left: 720, right: 60 },
+}, H.cities, (c) => {
+  const k = category(c.pm25, "pm25");
+  const el = document.createElement("div");
+  el.className = "pin";
+  el.dataset.city = c.city;
+  el.style.setProperty("--c", k.bg);
+  el.innerHTML = `<span class="glow" aria-hidden="true"></span><span class="core" aria-hidden="true"></span>
+    <span class="tag"><b>${c.city}</b><span class="num">${c.pm25.toFixed(1)}</span> <small><span class="u">µg/m³ · </span>${k.name}</small></span>`;
+  if (["Mumbai", "Bengaluru"].includes(c.city)) el.classList.add("left");
+  return el;
+});
+</script>
+</body>
+</html>

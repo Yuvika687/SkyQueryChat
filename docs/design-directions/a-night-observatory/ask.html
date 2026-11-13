@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyQueryChat — Night Observatory · Ask</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="../shared/data.js"></script>
+<script src="../shared/common.js"></script>
+<link href="style.css" rel="stylesheet">
+</head>
+<body class="ask-page">
+<nav class="nav" aria-label="Main">
+  <a class="brand" href="home.html"><span class="mark" aria-hidden="true"></span>SkyQueryChat</a>
+  <div class="links"><a href="home.html">Home</a><a href="#">Explore</a><a aria-current="page" href="#">Ask</a><a href="#">Compare</a></div>
+  <a class="nav-meta" href="#">Data &amp; accuracy</a>
+</nav>
+
+<main class="ask-main">
+  <header class="page-head">
+    <h1>Ask</h1>
+    <p>Answers from real air data. Click any underlined number to see where it came from.</p>
+  </header>
+
+  <p class="q-bubble" id="question"></p>
+
+  <article class="insight glass" aria-labelledby="hl">
+    <div class="type-row"><span class="pill">Official AQI</span><span id="period"></span></div>
+    <p class="headline" id="hl"></p>
+    <dl class="keys" id="keys"></dl>
+    <p class="explain" id="explain"></p>
+    <ul class="warns" id="warns"></ul>
+  </article>
+
+  <section class="chart-card glass" aria-label="Chart">
+    <div class="chart-head"><h3>Delhi official AQI by bulletin date</h3><span>AQI (index, 0–500)</span></div>
+    <div id="chart"></div>
+    <p class="cat-key" id="catkey"></p>
+  </section>
+
+  <details class="steps glass">
+    <summary><span class="ok" aria-hidden="true">✓</span><b>How this answer was made</b><span id="steps-sum"></span><span class="chev" aria-hidden="true">▾</span></summary>
+  </details>
+
+  <p class="evidence" id="evidence"></p>
+
+  <section class="follow" aria-labelledby="fu-h">
+    <h3 id="fu-h">Ask next</h3>
+    <ul id="follow"></ul>
+  </section>
+</main>
+
+<div class="composer" data-dock>
+  <form class="ask glass" onsubmit="return false">
+    <label class="sr-only" for="q">Ask a follow-up</label>
+    <input id="q" placeholder="Ask a follow-up about Delhi or another city" autocomplete="off">
+    <button type="submit">Ask</button>
+  </form>
+  <p class="hint">Ask a follow-up in plain words, or click an underlined number to see its proof.</p>
+</div>
+
+<div class="scrim" data-close></div>
+<aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="pf-title" id="drawer"></aside>
+
+<nav class="tabbar" data-dock aria-label="Main">
+  <a href="home.html">Home</a><a href="#">Explore</a><a aria-current="page" href="#">Ask</a><a href="#">Compare</a>
+</nav>
+
+<script>
+const { fmtDate, CATS, category, scaleBar, aqiChart, answer, wireProof } = SQ;
+const M = answer();
+document.getElementById("question").textContent = M.A.question;
+document.getElementById("period").textContent = `Delhi · ${M.period}`;
+document.getElementById("hl").innerHTML = M.headline;
+document.getElementById("explain").innerHTML = M.explanation;
+document.getElementById("warns").innerHTML = M.warnings.map((w) => `<li>${w}</li>`).join("");
+document.getElementById("keys").innerHTML = M.keys.map((k) => `<div class="key">
+  <dt>${k.label}</dt>
+  <dd><button class="n-link" type="button" data-proof="${k.id}" aria-haspopup="dialog">${k.value}</button><small>AQI · ${category(k.value, "aqi").name}</small></dd>
+  ${scaleBar(k.value, "aqi")}
+  <dt style="margin-top:6px">${k.sub}</dt></div>`).join("");
+document.getElementById("chart").innerHTML = aqiChart(M.chart, {
+  width: Math.max(320, document.getElementById("chart").clientWidth || 760), height: innerWidth < 760 ? 230 : 270, band: [M.b1.date, M.b2.date], band_label: "Diwali bulletins", band_fill: "rgba(45,212,191,0.10)",
+  grid: "rgba(148,170,214,0.10)", axis: "rgba(148,170,214,0.35)", line: "#8FA6D6", dot_stroke: "#0E1729", every: innerWidth < 760 ? 4 : 2 });
+document.getElementById("catkey").innerHTML = CATS.map((c) => `<span><i style="background:${c.bg}"></i>${c.name} ${c.aqi[0]}–${c.aqi[1]}</span>`).join("");
+document.getElementById("steps-sum").textContent = `· ${M.steps.length} steps · ${M.A.seconds} s · ${M.A.verification.numbers_checked} numbers checked`;
+document.querySelector(".steps").insertAdjacentHTML("beforeend",
+  `<ol style="margin:0 18px 16px 46px;color:var(--text-2);font-size:13.5px;display:grid;gap:6px">${M.steps.map((s) => `<li>${s}</li>`).join("")}</ol>`);
+document.getElementById("evidence").innerHTML =
+  `<span><b>Official AQI</b> (index)</span><span>CPCB Delhi city bulletin</span><span>${M.period}</span><span>Source: CPCB daily bulletins</span><span>${M.A.verification.numbers_checked} of ${M.A.verification.numbers_checked} numbers checked</span>`;
+document.getElementById("follow").innerHTML = M.A.follow_ups.map((q) => `<li><button type="button">${q}</button></li>`).join("");
+
+wireProof((p) => {
+  const c = category(p.value, "aqi");
+  document.getElementById("drawer").innerHTML = `
+    <button class="close" type="button" data-close aria-label="Close proof">✕</button>
+    <p class="eyebrow">${p.eyebrow}</p>
+    <h2 id="pf-title">${p.title}</h2>
+    <p class="val num">${p.value}<small>AQI · ${c.name}</small></p>
+    ${scaleBar(p.value, "aqi")}
+    <h4>How it was worked out</h4>
+    <p class="calc">${p.calc}</p>
+    <h4>Bulletins used</h4>
+    <div class="rows">${p.rows.map((r) => `<div class="row"><b>${r.title}</b><span class="num v">${r.value}</span>
+      <span>${r.sub}</span><span class="right">${r.category}</span>
+      <span>${r.stations}</span><span class="right">Main pollutant ${r.pollutant}</span></div>`).join("")}</div>
+    <h4>About this number</h4>
+    <dl class="facts">${p.facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+    <p class="check"><span class="ok" aria-hidden="true">✓</span>${p.check}</p>`;
+});
+window.SQ_MAP_READY = true;
+</script>
+</body>
+</html>

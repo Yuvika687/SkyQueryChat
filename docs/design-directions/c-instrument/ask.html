@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyQueryChat — Instrument · Ask</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="../shared/data.js"></script>
+<script src="../shared/common.js"></script>
+<link href="style.css" rel="stylesheet">
+</head>
+<body>
+<nav class="nav" aria-label="Main">
+  <a class="brand" href="home.html"><span class="mark" aria-hidden="true"></span>SkyQueryChat</a>
+  <div class="links"><a href="home.html">Home</a><a href="#">Explore</a><a aria-current="page" href="#">Ask</a><a href="#">Compare</a></div>
+  <div class="nav-meta"><a href="#">Data &amp; accuracy</a></div>
+</nav>
+
+<main class="ws">
+  <section class="convo panel" aria-label="Conversation">
+    <header class="ws-head">
+      <h1>Ask</h1>
+      <p>Answers from real air data. Click any highlighted number to see its proof on the right.</p>
+    </header>
+    <div class="q-row"><span class="who">You</span><p id="question"></p></div>
+    <article class="a-row" aria-labelledby="hl">
+      <span class="who">SQC</span>
+      <div>
+        <div class="tags"><span class="tag type">Official AQI</span><span class="tag" id="period"></span><span class="tag ok" id="checked"></span></div>
+        <p class="headline" id="hl"></p>
+        <dl class="keys" id="keys"></dl>
+        <p class="explain" id="explain"></p>
+        <ul class="warns" id="warns"></ul>
+        <ul class="follow" id="follow" aria-label="Ask next"></ul>
+      </div>
+    </article>
+    <form class="composer" data-dock onsubmit="return false">
+      <div class="ask">
+        <span class="prompt" aria-hidden="true">ask&gt;</span>
+        <label class="sr-only" for="q">Ask a follow-up</label>
+        <input id="q" placeholder="Ask a follow-up about Delhi or another city" autocomplete="off">
+        <kbd>Enter</kbd><button type="submit">Ask</button>
+      </div>
+      <p class="hint">Ask a follow-up in plain words, or click a highlighted number to see its proof.</p>
+    </form>
+  </section>
+
+  <aside class="inspector panel" aria-label="Evidence">
+    <div class="insp-head" role="tablist"><span aria-selected="true">Evidence</span><span>Data table</span></div>
+    <div class="insp-body">
+      <section>
+        <div class="chart-head"><h3>Delhi official AQI by bulletin date</h3><span>AQI (index)</span></div>
+        <div id="chart"></div>
+        <p class="cat-key" id="catkey"></p>
+      </section>
+      <section>
+        <h4 class="label" style="margin-bottom:8px">Evidence</h4>
+        <dl class="ev" id="evidence"></dl>
+      </section>
+      <details class="steps"><summary><span class="okdot" aria-hidden="true">✓</span><b>How this answer was made</b><span id="steps-sum"></span><span class="chev" aria-hidden="true">+</span></summary></details>
+    </div>
+    <div class="scrim" data-close></div>
+    <div class="drawer" role="dialog" aria-labelledby="pf-title" id="drawer"></div>
+  </aside>
+</main>
+<nav class="tabbar" data-dock aria-label="Main"><a href="home.html">Home</a><a href="#">Explore</a><a aria-current="page" href="#">Ask</a><a href="#">Compare</a></nav>
+
+<script>
+const { CATS, category, scaleBar, aqiChart, answer, wireProof } = SQ;
+const M = answer();
+const n = M.A.verification.numbers_checked;
+document.getElementById("question").textContent = M.A.question;
+document.getElementById("period").textContent = M.period;
+document.getElementById("checked").textContent = `✓ ${n} numbers checked`;
+document.getElementById("hl").innerHTML = M.headline;
+document.getElementById("explain").innerHTML = M.explanation;
+document.getElementById("warns").innerHTML = M.warnings.map((w) => `<li>${w}</li>`).join("");
+document.getElementById("keys").innerHTML = M.keys.map((k) => `<div class="key"><dt class="label">${k.label}</dt>
+  <dd><button class="n-link" type="button" data-proof="${k.id}" aria-haspopup="dialog">${k.value}</button><small>AQI · ${category(k.value, "aqi").name}</small></dd>
+  ${scaleBar(k.value, "aqi", { ends: false })}<p class="sub">${k.sub}</p></div>`).join("");
+document.getElementById("follow").innerHTML = M.A.follow_ups.map((q) => `<li><button type="button">${q}</button></li>`).join("");
+document.getElementById("chart").innerHTML = aqiChart(M.chart, {
+  width: Math.max(320, document.getElementById("chart").clientWidth || 500), height: innerWidth < 760 ? 230 : 250, band: [M.b1.date, M.b2.date], band_label: "Diwali", band_fill: "rgba(92,200,255,0.10)",
+  grid: "#1C232C", axis: "#3A4553", line: "#A3AFBD", dot_stroke: "#101318", every: innerWidth < 760 ? 4 : 3, dot: 3.6 });
+document.getElementById("catkey").innerHTML = CATS.map((c) => `<span><i style="background:${c.bg}"></i>${c.name}</span>`).join("");
+const ev = [["Data", "Official AQI (an index, 0–500)"], ["Area", "Delhi · CPCB city bulletin"], ["Period", M.period],
+            ["Source", "CPCB daily AQI bulletins"], ["Checked", `${n} of ${n} numbers match the analysis`]];
+document.getElementById("evidence").innerHTML = ev.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+document.getElementById("steps-sum").textContent = `${M.steps.length} steps · ${M.A.seconds} s`;
+document.querySelector(".steps").insertAdjacentHTML("beforeend",
+  `<ol style="margin:8px 0 0 30px;font-size:12.5px;color:var(--text-2);display:grid;gap:4px">${M.steps.map((s) => `<li>${s}</li>`).join("")}</ol>`);
+
+wireProof((p) => {
+  const c = category(p.value, "aqi");
+  document.getElementById("drawer").innerHTML = `
+    <div class="bar"><span class="label">Proof</span><button class="close" type="button" data-close>Close ✕</button></div>
+    <h2 id="pf-title">${p.title}</h2>
+    <p class="val"><span class="num">${p.value}</span><small>AQI · ${c.name}</small></p>
+    ${scaleBar(p.value, "aqi", { ends: false })}
+    <h4 class="label">Worked out</h4><p class="calc">${p.calc}</p>
+    <h4 class="label">Bulletins used</h4>
+    <div class="rows">${p.rows.map((r) => `<div class="row"><b>${r.title}</b><span class="v">${r.value}</span>
+      <span>${r.sub}</span><span class="r">${r.category}</span><span>${r.stations}</span><span class="r">Main pollutant ${r.pollutant}</span></div>`).join("")}</div>
+    <h4 class="label">About this number</h4>
+    <dl class="ev">${p.facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+    <p class="check"><span class="okdot" aria-hidden="true">✓</span>${p.check}</p>`;
+});
+window.SQ_MAP_READY = true;
+</script>
+</body>
+</html>
