@@ -676,3 +676,21 @@ def test_follow_ups_never_suggest_comparing_delhi_pm_across_sources():
     assert core.compares_pm_across_sources("Compare PM10 for Diwali 2024 and 2026")
     assert not core.compares_pm_across_sources("What was Delhi's PM2.5 around Diwali 2026?")
     assert not core.compares_pm_across_sources("Compare Delhi's Diwali AQI in 2025 and 2026")
+
+
+def test_readable_dates_are_checked_against_tool_dates():
+    allowed = V.allowed_numbers([{"period": "2026-10-13..2026-11-11", "2026_bulletin_2026-11-09": 344.0,
+                                  "row": {"date": "2026-11-10", "aqi": 299}}])
+    ok = ["The bulletin dated 9 Nov 2026 recorded 344 and the one dated 10 Nov 2026 recorded 299.",
+          "From 13 Oct – 11 Nov 2026 the highest bulletin was 344.", "The festival bulletins (9–10 Nov 2026) averaged 344.",
+          "On Nov 9, 2026 it was 344; by 10 Nov it was 299. Each bulletin covers 4 PM to 4 PM.",
+          "Delhi PM2.5 in November 2026 peaked at 344."]
+    for t in ok:
+        assert V.check_numbers([t], allowed) == [], t
+    assert V.check_numbers(["On 12 Nov 2026 the AQI was 344."], allowed) == ["12 Nov 2026"]        # not a tool date
+    assert V.check_numbers(["From 8–10 Nov 2026 the AQI was 344."], allowed) == ["8–10 Nov 2026"]
+    # a date the user wrote may be echoed back
+    q = "What was the AQI on 5 Nov 2026?"
+    assert V.check_numbers(["There was no bulletin for 5 Nov 2026."], allowed, V.user_safe_numbers(q)) == []
+    # labels are not dates: "PM2.5 November" is not 5 November
+    assert V.readable_dates("Delhi PM2.5 November 2025")[0] == []

@@ -16,7 +16,8 @@ test("flies into a city, opens a station, switches pollutant and moves through t
   await expect(page.getByRole("heading", { name: "Six cities, highest first" })).toBeVisible();
   await page.locator('.sq-city-pin[aria-label^="Delhi"]').click();
   await expect(page).toHaveURL(/city=delhi/);
-  await expect(page.locator(".sq-station-pin").first()).toBeVisible();
+  // stations are drawn by the map (dots with collision-free labels); the list is their accessible twin
+  await expect(page.getByRole("list", { name: "Delhi stations" })).toBeVisible();
   const stations = page.getByRole("list", { name: "Delhi stations" }).getByRole("button");
   expect(await stations.count()).toBeGreaterThan(20);
 
@@ -28,8 +29,11 @@ test("flies into a city, opens a station, switches pollutant and moves through t
   await expect(panel.getByText(/Valid hours:|Not enough data|No readings/)).toBeVisible();
   await expect(panel.getByRole("link", { name: "Ask about this station" })).toHaveAttribute("href", /\/ask\?q=/);
   await expect(page).toHaveURL(/station=\d+/);
-  // the same station is a pressed marker on the map
-  await expect(page.locator('.sq-station-pin[aria-pressed="true"]')).toHaveCount(1);
+  // the same station is the pressed row in the list (and drawn larger, always labelled, on the map)
+  await expect(page.getByRole("list", { name: "Delhi stations" }).locator('button[aria-pressed="true"]')).toHaveCount(1);
+  // the panel title has no operator suffix; provider and monitor type sit underneath
+  await expect(panel.getByRole("heading").first()).not.toContainText(/ - (CPCB|DPCC|IMD)$/);
+  await expect(panel.getByText(/^(CPCB|AirNow|AirGradient|StateAir \w+) · /)).toBeVisible();
 
   // PM10: legend ranges and address follow
   await page.getByRole("radio", { name: "PM10" }).click();

@@ -65,13 +65,14 @@ export function CategoryChip({ category, prefix }: { category: string; prefix?: 
 }
 
 // ------------------------------------------------------------------ chart + table + actions
-export function ChartPanel({ spec, dataType, answerText }: { spec: ChartSpec; dataType: DataType | null; answerText: string }) {
+/** compact: inside the evidence panel, where the Data tab already holds the table. */
+export function ChartPanel({ spec, dataType, answerText, compact }: { spec: ChartSpec; dataType: DataType | null; answerText: string; compact?: boolean }) {
   const [view, setView] = useState<"chart" | "table">("chart");
   const [copied, setCopied] = useState(false);
   const chartRef = useRef<EChartHandle>(null);
   const option = useMemo(() => buildOption(spec, dataType), [spec, dataType]);
   const table = useMemo(() => chartTable(spec), [spec]);
-  const height = spec.type === "calendar_heatmap" ? 230 : spec.type === "bar" ? Math.max(160, (spec.series[0]?.data.length ?? 4) * 36 + 56) : 280;
+  const height = spec.type === "calendar_heatmap" ? 230 : spec.type === "bar" ? Math.max(160, (spec.series[0]?.data.length ?? 4) * 36 + 56) : compact ? 250 : 280;
   const name = slug(spec.title);
   const aqi = isAQI(spec);
   const key = eventKey(spec);
@@ -97,11 +98,11 @@ export function ChartPanel({ spec, dataType, answerText }: { spec: ChartSpec; da
     <section aria-label="Chart" className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <h3 className="w-full min-w-0 text-sm font-medium sm:w-auto sm:flex-1">
-          {spec.title}
+          {readable(spec.title)}
           <span className="ml-2 font-normal text-subtle">{aqi ? "AQI (index)" : spec.units}</span>
         </h3>
         <div className="ml-auto flex items-center gap-0.5">
-          <div role="tablist" aria-label="Chart or table" className="mr-1 flex rounded-lg bg-surface p-0.5">
+          <div role="tablist" aria-label="Chart or table" className={cn("mr-1 flex rounded-lg bg-surface p-0.5", compact && "hidden")}>
             {(["chart", "table"] as const).map((v) => (
               <button
                 key={v}

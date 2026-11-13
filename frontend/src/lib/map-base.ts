@@ -23,15 +23,22 @@ export async function loadBoundary(): Promise<IndiaGeo> {
   return r.json();
 }
 
-/** The dark style with only land and water kept, recoloured to the app's palette. */
-export async function loadBaseStyle(): Promise<StyleSpecification> {
+/** The dark style recoloured to the app's palette. Country and state boundary layers are always removed (the
+ * official India boundary replaces them). Home keeps only land and water; Explore (`context`) also keeps roads,
+ * water names and place names, shown from city zoom (7+) only, so stations have context. */
+export async function loadBaseStyle(opts: { context?: boolean } = {}): Promise<StyleSpecification> {
   const r = await fetch(STYLE_URL);
   if (!r.ok) throw new Error("style");
   const style = await r.json();
-  type Layer = { id: string; type: string; paint?: Record<string, unknown> };
+  type Layer = { id: string; type: string; paint?: Record<string, unknown>; minzoom?: number };
+  const base = (l: Layer) => l.type === "background" || l.id === "water" || l.id === "waterway" || l.id.startsWith("landcover") || l.id.startsWith("landuse");
   style.layers = (style.layers as Layer[])
-    .filter((l) => l.type === "background" || l.id === "water" || l.id === "waterway" || l.id.startsWith("landcover") || l.id.startsWith("landuse"))
+    .filter((l) => !l.id.startsWith("boundary") && (base(l) || !!opts.context))
     .map((l) => {
+      if (!base(l)) {                       // roads, labels, buildings: city zoom only
+        l.minzoom = Math.max(l.minzoom ?? 0, 7);
+        return l;
+      }
       if (l.type === "background") l.paint = { "background-color": THEME.land };
       else if (l.id === "water") l.paint = { "fill-color": THEME.water };
       else if (l.id === "waterway") l.paint = { "line-color": THEME.waterLine, "line-width": 0.6 };
@@ -47,9 +54,27 @@ export function addIndiaLayers(map: MLMap, geo: IndiaGeo, opts: { maskOpacity?: 
   map.addSource("india", { type: "geojson", data: geo as unknown as GeoJSON.FeatureCollection });
   map.addSource("mask", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "Polygon",
     coordinates: [[[-179, -80], [179, -80], [179, 80], [-179, 80], [-179, -80]], ...holes] } } });
-  map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": THEME.mask, "fill-opacity": opts.maskOpacity ?? 0.72 } });
-  map.addLayer({ id: "india-fill", type: "fill", source: "india", paint: { "fill-color": THEME.indiaFill, "fill-opacity": 0.9 } });
+  // mask and fill go under the roads and labels (if the style has them); the fill fades at city zoom
+  const before = map.getStyle().layers.find((l) => (l.minzoom ?? 0) >= 7)?.id;
+  map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": THEME.mask, "fill-opacity": opts.maskOpacity ?? 0.72 } }, before);
+  map.addLayer({ id: "india-fill", type: "fill", source: "india",
+    paint: { "fill-color": THEME.indiaFill, "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.9, 8, 0.3] } }, before);
   map.addLayer({ id: "india-line", type: "line", source: "india", paint: { "line-color": THEME.outline, "line-width": 1 } });
+}
+
+export const OUTLINES_URL = "/geo/city-outlines.geojson";
+
+/** Faint outline of the chosen city's districts (DataMeet, Census of India 2011 districts, CC BY 2.5 India). */
+export async function addCityOutlines(map: MLMap) {
+  const r = await fetch(OUTLINES_URL);
+  if (!r.ok) return;
+  map.addSource("city-outlines", { type: "geojson", data: await r.json() });
+  map.addLayer({ id: "city-outline", type: "line", source: "city-outlines", filter: ["==", ["get", "city"], ""],
+    paint: { "line-color": "#8FA6D6", "line-width": 1.2, "line-opacity": 0.55, "line-dasharray": [3, 2] } });
+}
+
+export function showCityOutline(map: MLMap, city: string | null) {
+  if (map.getLayer("city-outline")) map.setFilter("city-outline", ["==", ["get", "city"], city ?? ""]);
 }
 
 export const MAP_CREDITS = [

@@ -1,26 +1,32 @@
 "use client";
 
 // Explore map: India with the six cities; choosing a city flies in and shows its monitoring stations.
-// Station markers are coloured by the CPCB category for the selected pollutant, grey when the station-day has
-// fewer than 16 valid hours (no 24-hour value) or no readings. Each marker is a labelled button, so the map is
-// keyboard reachable; the station list in the side panel is the full accessible alternative.
-// Only real station values are drawn: no heat surfaces, nothing between stations.
+// Stations are small dots coloured by the CPCB category for the selected pollutant (grey when the station-day has
+// fewer than 16 valid hours or no readings). Value labels use MapLibre's collision handling, so labels never
+// overlap; the hovered or selected station is drawn larger and always labelled. Low-cost sensors are diamonds.
+// City markers are keyboard-reachable buttons; for stations, the list in the side panel is the keyboard path
+// (focusing a list row highlights its dot). Only real station values are drawn: no surfaces between stations.
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
-import type { Map as MLMap, Marker } from "maplibre-gl";
+import type { GeoJSONSource, Map as MLMap, Marker } from "maplibre-gl";
 import { CATEGORY_STYLE, CITIES, pmCategory } from "@/lib/categories";
-import { cityStations, dayStatus, statusColour, statusText, type Pollutant, POLLUTANT_LABEL } from "@/lib/explore";
-import { INDIA_BOUNDS, WORKER_URL, addIndiaLayers, hasWebGL, loadBaseStyle, loadBoundary } from "@/lib/map-base";
-import type { ExploreData, ExploreStation } from "@/lib/types";
+import { cityStations, dayStatus, statusColour, type Pollutant, POLLUTANT_LABEL } from "@/lib/explore";
+import { INDIA_BOUNDS, WORKER_URL, addCityOutlines, addIndiaLayers, hasWebGL, loadBaseStyle, loadBoundary, showCityOutline } from "@/lib/map-base";
+import type { ExploreData } from "@/lib/types";
+import { shortName } from "./panels";
 
 type Pad = { top: number; bottom: number; left: number; right: number };
+const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+const FONT = ["Noto Sans Regular"]; // the font the basemap's own labels use
 
-export function ExploreMap({ data, day, pollutant, city, station, lowCost, padding, reduceMotion, onCity, onStation }: {
+export function ExploreMap({ data, day, pollutant, city, station, highlight, lowCost, padding, reduceMotion, onCity, onStation }: {
   data: ExploreData | null;
   day: number;
   pollutant: Pollutant;
   city: string | null;
   station: number | null;
+  /** a station highlighted from the list (hover or keyboard focus) */
+  highlight: number | null;
   lowCost: boolean;
   padding: Pad;
   reduceMotion: boolean;
@@ -31,9 +37,9 @@ export function ExploreMap({ data, day, pollutant, city, station, lowCost, paddi
   const map = useRef<MLMap | null>(null);
   const lib = useRef<typeof import("maplibre-gl") | null>(null);
   const cityMarkers = useRef<Map<string, { m: Marker; b: HTMLButtonElement }>>(new Map());
-  const stationMarkers = useRef<Map<number, { m: Marker; b: HTMLButtonElement }>>(new Map());
   const handlers = useRef({ onCity, onStation });
   const [ready, setReady] = useState<"loading" | "ready" | "failed">("loading");
+  const [hover, setHover] = useState<number | null>(null);
   useEffect(() => { handlers.current = { onCity, onStation }; }, [onCity, onStation]);
 
   // ---------------------------------------------------------------- create the map once
@@ -44,7 +50,7 @@ export function ExploreMap({ data, day, pollutant, city, station, lowCost, paddi
     (async () => {
       try {
         if (!hasWebGL()) throw new Error("no webgl");
-        const [maplibregl, style, geo] = await Promise.all([import("maplibre-gl"), loadBaseStyle(), loadBoundary()]);
+        const [maplibregl, style, geo] = await Promise.all([import("maplibre-gl"), loadBaseStyle({ context: true }), loadBoundary()]);
         if (cancelled) return;
         maplibregl.setWorkerUrl(WORKER_URL);
         lib.current = maplibregl;
@@ -55,9 +61,16 @@ export function ExploreMap({ data, day, pollutant, city, station, lowCost, paddi
         m.touchZoomRotate.disableRotation();
         m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
         map.current = m;
-        m.on("load", () => {
+        m.on("load", async () => {
           if (cancelled) return;
           addIndiaLayers(m, geo, { maskOpacity: 0.6 });
+          await addCityOutlines(m);
+          addStationLayers(m);
+          for (const layer of ["st-dot", "st-diamond"]) {
+            m.on("click", layer, (e) => { const id = e.features?.[0]?.properties?.id; if (id != null) handlers.current.onStation(Number(id)); });
+            m.on("mousemove", layer, (e) => { m.getCanvas().style.cursor = "pointer"; setHover(Number(e.features?.[0]?.properties?.id)); });
+            m.on("mouseleave", layer, () => { m.getCanvas().style.cursor = ""; setHover(null); });
+          }
           m.once("idle", () => !cancelled && setReady("ready"));
         });
         m.on("error", () => { if (!m.isStyleLoaded()) setReady("failed"); });
@@ -95,34 +108,36 @@ export function ExploreMap({ data, day, pollutant, city, station, lowCost, paddi
     for (const [c, { b }] of cityMarkers.current) paintCity(b, c, data.cities[c]?.values[day] ?? null, pollutant, city !== null);
   }, [ready, data, day, pollutant, city]);
 
-  // ---------------------------------------------------------------- station markers (one city)
-  const listKey = data && city ? `${city}|${lowCost}|${data.pollutant}` : "";
+  // ---------------------------------------------------------------- stations for the day; the active one is larger
+  const active = station ?? highlight ?? hover;
   useEffect(() => {
-    const m = map.current, L = lib.current;
-    for (const { m: mk } of stationMarkers.current.values()) mk.remove();
-    stationMarkers.current.clear();
-    if (ready !== "ready" || !m || !L || !data || !city) return;
-    for (const s of cityStations(data, city, lowCost)) {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = `sq-station-pin${s.tier === "low_cost" ? " low" : ""}`;
-      b.dataset.station = String(s.id);
-      b.addEventListener("click", () => handlers.current.onStation(s.id));
-      const mk = new L.Marker({ element: b }).setLngLat([s.lon, s.lat]).addTo(m);
-      stationMarkers.current.set(s.id, { m: mk, b });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, listKey]);
+    const m = map.current;
+    if (ready !== "ready" || !m) return;
+    const src = m.getSource("stations") as GeoJSONSource | undefined;
+    if (!src) return;
+    if (!data || !city) { src.setData(EMPTY); return; }
+    const feats = cityStations(data, city, lowCost).map((s) => {
+      const st = dayStatus(s, day, pollutant);
+      const value = st.kind === "value" ? String(Math.round(st.value)) : "–";
+      return {
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [s.lon, s.lat] },
+        properties: {
+          id: s.id, color: statusColour(st).bg, low: s.tier === "low_cost", value, rank: st.kind === "value" ? st.value : -1,
+          active: s.id === active || s.id === highlight, selected: s.id === station,
+          name: `${shortName(s.name)}  ${st.kind === "value" ? value : "not enough data"}`,
+        },
+      };
+    });
+    src.setData({ type: "FeatureCollection", features: feats });
+  }, [ready, data, city, lowCost, day, pollutant, active, highlight, station]);
 
   useEffect(() => {
-    if (!data || !city) return;
-    for (const [id, { b }] of stationMarkers.current) {
-      const s = data.stations.find((x) => x.id === id);
-      if (s) paintStation(b, s, day, pollutant, id === station);
-    }
-  }, [data, day, pollutant, city, station, listKey, ready]);
+    const m = map.current;
+    if (ready === "ready" && m) showCityOutline(m, city);
+  }, [ready, city]);
 
-  // ---------------------------------------------------------------- fly in and out
+  // ---------------------------------------------------------------- fly in and out (padding keeps stations clear of panels)
   useEffect(() => {
     const m = map.current;
     if (ready !== "ready" || !m || !data) return;
@@ -140,7 +155,7 @@ export function ExploreMap({ data, day, pollutant, city, station, lowCost, paddi
   }, [ready, city, lowCost, data?.pollutant]);
 
   return (
-    // isolate: marker z-indexes stay inside the map, under the side panels
+    // isolate: the map's own stacking stays inside it, under the side panels
     <div className="absolute inset-0 isolate z-0" data-map={ready}>
       <div className="absolute inset-0"><div ref={el} className="h-full w-full" /></div>
       {ready === "failed" && (
@@ -152,7 +167,42 @@ export function ExploreMap({ data, day, pollutant, city, station, lowCost, paddi
   );
 }
 
-// Marker painting lives outside the component: it only updates the DOM buttons MapLibre positions.
+// ------------------------------------------------------------------ station layers
+function diamond(size = 48): ImageData {
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#fff";
+  g.beginPath();
+  g.moveTo(size / 2, 3); g.lineTo(size - 3, size / 2); g.lineTo(size / 2, size - 3); g.lineTo(3, size / 2);
+  g.closePath(); g.fill();
+  return g.getImageData(0, 0, size, size);
+}
+
+function addStationLayers(m: MLMap) {
+  m.addImage("diamond", diamond(), { sdf: true, pixelRatio: 2 });
+  m.addSource("stations", { type: "geojson", data: EMPTY });
+  // reference monitors: dots with a light ring (so dark maroon "Severe" still stands out); low-cost: diamonds
+  m.addLayer({ id: "st-dot", type: "circle", source: "stations", filter: ["!", ["get", "low"]],
+    paint: { "circle-color": ["get", "color"], "circle-radius": ["case", ["get", "active"], 9, 5.5],
+      "circle-stroke-color": ["case", ["get", "selected"], "#2DD4BF", "rgba(234,240,251,0.85)"],
+      "circle-stroke-width": ["case", ["get", "selected"], 3, ["get", "active"], 2, 1.2] } });
+  m.addLayer({ id: "st-diamond", type: "symbol", source: "stations", filter: ["get", "low"],
+    layout: { "icon-image": "diamond", "icon-size": ["case", ["get", "active"], 1.2, 0.75], "icon-allow-overlap": true, "icon-ignore-placement": true },
+    paint: { "icon-color": ["get", "color"], "icon-halo-color": ["case", ["get", "selected"], "#2DD4BF", "rgba(234,240,251,0.9)"], "icon-halo-width": 1.5 } });
+  // value labels only where they fit (MapLibre collision); higher values are placed first
+  m.addLayer({ id: "st-label", type: "symbol", source: "stations", filter: ["!", ["get", "active"]],
+    layout: { "text-field": ["get", "value"], "text-font": FONT, "text-size": 11.5, "text-offset": [0, -0.9],
+      "text-anchor": "bottom", "text-allow-overlap": false, "text-padding": 3, "symbol-sort-key": ["-", 0, ["get", "rank"]] },
+    paint: { "text-color": "#EAF0FB", "text-halo-color": "rgba(6,10,20,0.95)", "text-halo-width": 1.6 } });
+  // the hovered or selected station is always labelled, with its name
+  m.addLayer({ id: "st-active-label", type: "symbol", source: "stations", filter: ["get", "active"],
+    layout: { "text-field": ["get", "name"], "text-font": FONT, "text-size": 13, "text-offset": [0, -1.3],
+      "text-anchor": "bottom", "text-allow-overlap": true, "text-ignore-placement": true },
+    paint: { "text-color": "#FFFFFF", "text-halo-color": "rgba(6,10,20,0.98)", "text-halo-width": 2 } });
+}
+
+// City marker painting lives outside the component: it only updates the DOM buttons MapLibre positions.
 function paintCity(b: HTMLButtonElement, c: string, v: number | null, pollutant: Pollutant, hidden: boolean) {
   const cat = pmCategory(v, pollutant);
   const col = cat ? CATEGORY_STYLE[cat] : { bg: "#64748B", fg: "#fff", label: "No city value" };
@@ -160,17 +210,4 @@ function paintCity(b: HTMLButtonElement, c: string, v: number | null, pollutant:
   b.hidden = hidden;
   b.innerHTML = `<span class="dot" aria-hidden="true"></span><span class="lbl" aria-hidden="true"><b>${c}</b> ${v == null ? "no city value" : v.toFixed(1)}</span>`;
   b.setAttribute("aria-label", `${c}: ${v == null ? "no city value this day" : `${v.toFixed(1)} µg/m³ ${POLLUTANT_LABEL[pollutant]}, ${col.label}`}. Show its stations`);
-}
-
-function paintStation(b: HTMLButtonElement, s: ExploreStation, day: number, pollutant: Pollutant, selected: boolean) {
-  const st = dayStatus(s, day, pollutant);
-  const col = statusColour(st);
-  b.style.background = col.bg;
-  b.style.color = col.fg;
-  b.textContent = st.kind === "value" ? String(Math.round(st.value)) : "–";
-  b.classList.toggle("grey", st.kind !== "value");
-  b.classList.toggle("selected", selected);
-  b.setAttribute("aria-pressed", String(selected));
-  b.setAttribute("aria-label", `${s.name} (${s.type}): ${statusText(st)}`);
-  b.title = `${s.name}: ${statusText(st)}`;
 }

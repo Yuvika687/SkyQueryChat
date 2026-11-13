@@ -21,7 +21,8 @@ export function AskPage() {
       <header className="mx-auto flex w-full max-w-[1120px] flex-wrap items-end gap-x-6 gap-y-2 px-4 pt-2 pb-3 sm:px-6">
         <div className="min-w-0">
           <h1 className="font-display text-[34px] leading-none sm:text-[40px]">Ask</h1>
-          <p className="mt-1.5 text-[13px] text-subtle">Answers from real air data. Click any underlined number to see where it came from.</p>
+          <p className="mt-1.5 text-[14px] text-foreground">Ask any question about air quality in the six cities.</p>
+          <p className="mt-0.5 text-[12.5px] text-faint">Click any highlighted number to see where it came from.</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <AskContextLabel />

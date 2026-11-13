@@ -11,7 +11,7 @@ export const CATEGORY_STYLE: Record<Category | "None", { bg: string; fg: string;
   Moderate: { bg: "#FACC15", fg: "#0B1020", label: "Moderate" },
   Poor: { bg: "#FB923C", fg: "#0B1020", label: "Poor" },
   "Very poor": { bg: "#EF4444", fg: "#1A0404", label: "Very poor" }, // dark text: white on this red is only 3.8:1
-  Severe: { bg: "#B91C1C", fg: "#FFFFFF", label: "Severe" },
+  Severe: { bg: "#7A0E12", fg: "#FFFFFF", label: "Severe" }, // CPCB maroon, darker than Very poor; white text 11:1
   None: { bg: "#64748B", fg: "#FFFFFF", label: "No valid average" },
 };
 

@@ -28,6 +28,7 @@ export function CategoryBadge({ category, size = "md", label, className }: {
       className={cn(
         "inline-flex shrink-0 items-center rounded-md font-semibold whitespace-nowrap",
         size === "sm" ? "h-5 px-1.5 text-[11px]" : "h-6 px-2 text-xs",
+        category === "Severe" && "ring-1 ring-white/35 ring-inset", // dark maroon: a light edge keeps it visible on navy
         className,
       )}
       style={{ background: st.bg, color: st.fg }}

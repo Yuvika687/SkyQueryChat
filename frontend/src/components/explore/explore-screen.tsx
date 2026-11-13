@@ -46,6 +46,7 @@ export function ExploreScreen() {
   const [day, setDay] = useState<number | null>(null);
   const [lowCost, setLowCost] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [highlight, setHighlight] = useState<number | null>(null);
   const cache = useRef<Partial<Record<Pollutant, ExploreData>>>({});
   const [data, setData] = useState<ExploreData | null>(null);
   const [failed, setFailed] = useState(false);
@@ -129,13 +130,15 @@ export function ExploreScreen() {
   // ---------------------------------------------------------------- layout
   const [sheet, setSheet] = useState<"peek" | "half" | "full">("peek");
   useEffect(() => {
-    // the sheet opens up when there is more to read
+    // the sheet starts collapsed (date, play, slider); it opens when a station is chosen
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (phone && (city || station)) setSheet((s) => (s === "peek" ? "half" : s));
-  }, [phone, city, station]);
+    if (phone && station) setSheet((s) => (s === "peek" ? "half" : s));
+  }, [phone, station]);
+  // Fit stations clear of the panels: left panel, station panel (kept free whenever a city is open, so opening a
+  // station never hides another one) and the timeline at the bottom.
   const padding = phone
-    ? { top: 150, bottom: 260, left: 24, right: 24 }
-    : { top: 96, bottom: 200, left: 410, right: stationObj ? 420 : 60 };
+    ? { top: 120, bottom: 230, left: 28, right: 28 }
+    : { top: 100, bottom: 210, left: 420, right: city ? 420 : 60 };
 
   const loading = !data && !failed;
   const shownStations = data && city ? cityStations(data, city, lowCost) : [];
@@ -159,7 +162,7 @@ export function ExploreScreen() {
   const list = data && date ? (
     city ? (
       <StationList city={city} stations={shownStations} day={i} date={date} pollutant={pollutant} selected={stationObj?.id ?? null}
-        onStation={pickStation} onBack={() => pickCity(null)} cityValue={data.cities[city]?.values[i] ?? null} />
+        onStation={pickStation} onHighlight={setHighlight} onBack={() => pickCity(null)} cityValue={data.cities[city]?.values[i] ?? null} />
     ) : (
       <CityRanking data={data} day={i} onCity={pickCity} />
     )
@@ -170,17 +173,19 @@ export function ExploreScreen() {
   ) : backend === "waking" ? <WakeUpState compact /> : null;
   const credits = (
     <p className="text-[10.5px] leading-4 text-faint">
+      {"Map: "}
       {MAP_CREDITS.slice(0, 3).map((c, k) => (
         <span key={c.text}>{k === 1 ? " © " : k === 2 ? " Data from " : ""}<a className="underline underline-offset-2" href={c.href} target="_blank" rel="noreferrer">{c.text}</a></span>
       ))}
       {" · India boundary as per the Survey of India ("}<a className="underline underline-offset-2" href={MAP_CREDITS[3].href} target="_blank" rel="noreferrer">DataMeet</a>, CC0)
+      {" · districts: "}<a className="underline underline-offset-2" href="https://github.com/datameet/maps/tree/master/Districts" target="_blank" rel="noreferrer">DataMeet</a>, CC BY 2.5 IN
       {" · Station data: CPCB and others via OpenAQ"}
     </p>
   );
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-background">
-      <ExploreMap data={data} day={i} pollutant={pollutant} city={city} station={stationObj?.id ?? null} lowCost={lowCost}
+      <ExploreMap data={data} day={i} pollutant={pollutant} city={city} station={stationObj?.id ?? null} highlight={highlight} lowCost={lowCost}
         padding={padding} reduceMotion={reduce} onCity={pickCity} onStation={pickStation} />
 
       {!phone ? (
@@ -190,17 +195,16 @@ export function ExploreScreen() {
               {header}
               {controls}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+            {/* one scroll area for the list and the legend, so nothing is cut off */}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-5">
               {state && <div className="px-2 pb-3">{state}</div>}
               {loading ? <ListSkeleton /> : list}
-            </div>
-            <div className="flex flex-col gap-3 border-t border-line px-5 py-3">
-              <Legend pollutant={pollutant} />
-              {credits}
+              <div className="mx-2 mt-5 border-t border-line pt-4"><Legend pollutant={pollutant} /></div>
             </div>
           </aside>
           <div className={cn("absolute bottom-4 left-[402px] z-10 border border-line-strong bg-[#0b1324]/[0.96] backdrop-blur-xl rounded-2xl px-5 py-4 shadow-float", stationObj ? "right-[402px]" : "right-4 xl:right-auto xl:w-[560px]")}>
             {time ?? <Skeleton className="h-[86px]" />}
+            <div className="mt-2 border-t border-line pt-2">{credits}</div>
           </div>
           {stationObj && data && (
             <aside aria-label="Station" className="absolute top-[76px] right-4 bottom-4 z-10 border border-line-strong bg-[#0b1324]/[0.97] backdrop-blur-xl w-[370px] overflow-y-auto rounded-3xl p-5 shadow-float">
@@ -210,13 +214,13 @@ export function ExploreScreen() {
         </>
       ) : (
         <>
-          <div className="absolute top-[68px] right-3 left-3 z-10 border border-line-strong bg-[#0b1324]/[0.94] backdrop-blur-xl rounded-2xl px-4 py-3">
-            <p className="text-[14px] font-medium">See every monitoring station in the six cities.</p>
-            <p className="text-[12px] text-faint">Tap a city, then a station. Press play to watch the last 30 days.</p>
-          </div>
+          <p className="absolute top-[66px] right-3 left-3 z-10 truncate rounded-full border border-line-strong bg-[#0b1324]/[0.94] px-4 py-2 text-[13px] font-medium backdrop-blur-xl">
+            Every monitoring station in the six cities
+          </p>
           <BottomSheet size={sheet} onSize={setSheet}>
             <div className="flex flex-col gap-4">
               {time ?? <Skeleton className="h-[80px]" />}
+              <p className="-mt-1 text-[12px] text-faint">Tap a city, then a station. Drag up for the list.</p>
               {controls}
               {state}
               {stationObj && data ? (
@@ -241,7 +245,7 @@ function ListSkeleton() {
 }
 
 // ------------------------------------------------------------------ phone bottom sheet
-const SIZES = { peek: 0.3, half: 0.55, full: 0.82 } as const;
+const SIZES = { peek: 0.21, half: 0.55, full: 0.82 } as const; // peek: date, play and slider only
 
 function BottomSheet({ size, onSize, children }: { size: keyof typeof SIZES; onSize: (s: keyof typeof SIZES) => void; children: React.ReactNode }) {
   const [drag, setDrag] = useState<number | null>(null);

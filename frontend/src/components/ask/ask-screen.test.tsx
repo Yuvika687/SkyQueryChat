@@ -77,7 +77,8 @@ describe("Ask screen", () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: /Compare Delhi and Mumbai over the last 30 days/ }));
     expect(await screen.findByText(/^Delhi had a higher measured PM2.5 mean than Mumbai/)).toBeInTheDocument();
-    expect(screen.getByText(/the comparison covers 24 common days out of 30/)).toBeInTheDocument();
+    // the explanation is split around its clickable numbers, so match the whole paragraph
+    expect(screen.getByText((_, el) => el?.tagName === "P" && /the comparison covers 24 common days out of 30/.test(el.textContent ?? ""))).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "How does Bengaluru compare to Hyderabad over the last 30 days?" })).toBeInTheDocument();
     expect(screen.queryByText(/Is rain associated with lower/)).not.toBeInTheDocument();      // no template follow-ups
   });
@@ -92,33 +93,67 @@ describe("Ask screen", () => {
     expect(screen.queryByText(/ranked 1/)).not.toBeInTheDocument();
     expect(vi.mocked(api.streamChat).mock.calls[0][0]).toBe("Compare Delhi and Mumbai over the last 30 days");
 
-    // one data-type badge, no rank cards, short key-number labels
-    expect(screen.getAllByText("Measured")).toHaveLength(2); // badge + evidence row
+    // badge row: data type and numbers checked; no rank cards; short key-number labels
+    expect(screen.getByText("Measured PM")).toBeInTheDocument();
     expect(screen.queryByText(/Saved answer/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Backup model/)).not.toBeInTheDocument();
-    const nums = screen.getByLabelText("Key numbers");
-    expect(within(nums).getByText("73.0")).toBeInTheDocument();
-    expect(within(nums).queryByText(/rank/i)).not.toBeInTheDocument();
+    expect(screen.queryAllByText(/rank/i).filter((el) => el.closest("dl"))).toHaveLength(0);
+    expect(screen.getAllByRole("button", { name: "73.0" }).length).toBeGreaterThanOrEqual(1);   // headline and key number
     expect(screen.getByLabelText("Your question")).toHaveAttribute("placeholder", "Ask about air quality in the six cities");
-    // evidence row, details on demand (interpreted dates live there)
-    const evidence = screen.getByRole("region", { name: "Evidence" });
-    expect(within(evidence).getByText(/% coverage/)).toBeInTheDocument();
-    expect(within(evidence).getByText(/stations/)).toBeInTheDocument();
-    expect(within(evidence).getByText(/Latest 30 days available/)).toBeInTheDocument();
-    await user.click(within(evidence).getByRole("button", { name: "Details" }));
-    const interp = screen.getByRole("region", { name: "How the question was read" });
-    expect(within(interp).getByText("Delhi, Mumbai")).toBeInTheDocument();
-    expect(within(interp).getByText("1 Oct 2026 – 30 Oct 2026")).toBeInTheDocument();
-    // after the answer the steps panel gives its space back; a compact summary expands to the steps
-    expect(screen.queryByRole("complementary", { name: "Agent steps" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Agent steps: 6 done/ }));
-    expect(screen.getByText("Checking every number")).toBeInTheDocument();
-    // data table view
-    await user.click(screen.getByRole("tab", { name: "Data table" }));
+    // the evidence follows the answer (phone layout in tests): coverage, stations and the period in words
+    const tabs = screen.getByRole("tablist", { name: "Evidence or data" });
+    expect(within(tabs).getByRole("tab", { name: "Evidence" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getAllByText(/Latest 30 days available/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Stations").length).toBeGreaterThan(0);   // evidence table row
+    // how the answer was made: collapsed summary, then the steps
+    const summary = screen.getAllByText("How this answer was made")[0];
+    await user.click(summary);
+    expect(screen.getAllByText(/Checked all \d+ numbers against the analysis|Checked every number/).length).toBeGreaterThan(0);
+    // the Data tab holds the table of values
+    await user.click(within(tabs).getByRole("tab", { name: "Data" }));
     const table = screen.getByRole("table");
-    expect(within(table).getByText("Delhi")).toBeInTheDocument();
+    expect(within(table).getAllByText("Delhi").length).toBeGreaterThan(0);
     // saved to recent chats
     await waitFor(() => expect(JSON.parse(localStorage.getItem("sq_recent_chats_v1") || "[]")).toHaveLength(1));
+  });
+
+  it("clicking a highlighted number opens its proof", async () => {
+    vi.mocked(api.streamChat).mockImplementation(streamOf(fixtureEvents("diwali-cached.sse")));
+    renderAsk();
+    const user = await ask("How bad was Delhi's air on Diwali 2025?");
+    await screen.findByText("Saved demo answer");
+    const nums = screen.getAllByRole("button", { name: /^\d+(\.\d+)?$/ });
+    expect(nums.length).toBeGreaterThan(0);
+    await user.click(nums[0]);
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getAllByText("Proof").length).toBeGreaterThan(0);
+    expect(within(dialog).getByText("How it was worked out")).toBeInTheDocument();
+    expect(within(dialog).getByText(/^Copied exactly from the analysis result\./)).toBeInTheDocument();
+    expect(dialog.textContent).not.toMatch(/gemini|\d{4}-\d{2}-\d{2}|16:00/);
+  });
+
+  it("a follow-up chip asks at once and the chat is kept in this browser", async () => {
+    vi.mocked(api.streamChat).mockImplementation(streamOf(fixtureEvents("compare-llm.sse")));
+    renderAsk();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: /Compare Delhi and Mumbai over the last 30 days/ }));
+    const chip = await screen.findByRole("button", { name: "How does Bengaluru compare to Hyderabad over the last 30 days?" });
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("sq_recent_chats_v1") || "[]")).toHaveLength(1));
+    await user.click(chip);
+    await waitFor(() => expect(vi.mocked(api.streamChat)).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(api.streamChat).mock.calls[1][0]).toBe("How does Bengaluru compare to Hyderabad over the last 30 days?");
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("sq_recent_chats_v1") || "[]")[0].turns).toHaveLength(2));
+  });
+
+  it("history survives blocked storage", async () => {
+    const set = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("blocked"); });
+    vi.mocked(api.streamChat).mockImplementation(streamOf(fixtureEvents("compare-llm.sse")));
+    renderAsk();
+    await ask("Compare Delhi and Mumbai over the last 30 days");
+    // the answer still shows and its follow-ups still work, even though nothing can be saved
+    expect(await screen.findByRole("button", { name: "How does Bengaluru compare to Hyderabad over the last 30 days?" })).toBeInTheDocument();
+    expect(set).toHaveBeenCalled();
+    set.mockRestore();
   });
 
   it("labels saved answers and always shows required warnings", async () => {
@@ -141,7 +176,7 @@ describe("Ask screen", () => {
     vi.mocked(api.streamChat).mockImplementation(streamOf(evs));
     renderAsk();
     await ask("Compare Delhi and Mumbai over the last 30 days");
-    expect(await screen.findByText("Backup model: gemini-3.1-flash-lite")).toBeInTheDocument();
+    expect(await screen.findByText("Backup model")).toBeInTheDocument();
     expect(screen.getByText(/so this answer uses a backup model/)).toBeInTheDocument();
   });
 
@@ -151,7 +186,9 @@ describe("Ask screen", () => {
     );
     renderAsk();
     await ask("Show PM2.5 in Delhi");
-    expect(await screen.findByText("Live AI limit reached")).toBeInTheDocument();
+    expect(await screen.findByText("Today's AI limit has been reached")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Explore" })).toHaveAttribute("href", "/explore");
+    expect(screen.getByRole("link", { name: "Compare" })).toHaveAttribute("href", "/compare");
     expect(screen.getByRole("button", { name: "How bad was Delhi's air on Diwali 2025?" })).toBeInTheDocument();
   });
 
@@ -160,10 +197,10 @@ describe("Ask screen", () => {
     vi.mocked(api.streamChat).mockImplementationOnce(streamOf(fixtureEvents("compare-live.sse")));
     renderAsk();
     const user = await ask("Compare Delhi and Mumbai over the last 30 days");
-    expect(await screen.findByText("The AI service is busy. Try again in a moment.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("The AI service is busy right now")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText(/Delhi's PM2.5 was higher/)).toBeInTheDocument();
-    expect(screen.queryByText("The AI service is busy. Try again in a moment.")).not.toBeInTheDocument();
+    expect(screen.queryByText("The AI service is busy right now")).not.toBeInTheDocument();
   });
 
   it("rate limited: Retry waits for the Retry-After countdown", async () => {
@@ -172,9 +209,10 @@ describe("Ask screen", () => {
     );
     renderAsk();
     await ask("q");
-    const btn = await screen.findByRole("button", { name: /Retry in \d+ s/ });
+    const btn = await screen.findByRole("button", { name: /Try again in \d+ seconds/ });
     expect(btn).toBeDisabled();
-    expect(screen.getByText("Too many questions. Please wait 30 seconds.")).toBeInTheDocument();
+    expect(screen.getByText("You've asked a lot of questions in a short time")).toBeInTheDocument();
+    expect(screen.getByText(/You can ask again in \d+ seconds\./)).toBeInTheDocument();
   });
 
   it("request failed: plain message, no technical text, Retry", async () => {
@@ -183,8 +221,8 @@ describe("Ask screen", () => {
     );
     renderAsk();
     await ask("q");
-    expect(await screen.findByText("We couldn't reach the analysis service")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
+    expect(await screen.findByText("We couldn't reach the data server")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
     expect(document.body.textContent).not.toMatch(/TypeError|Traceback|500/);
   });
 

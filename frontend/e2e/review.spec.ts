@@ -39,7 +39,7 @@ for (const c of CASES) {
     }
     await page.goto("/ask");
     await ask(page, c.q);
-    await expect(page.getByRole("region", { name: "Evidence" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("How this answer was made").first()).toBeVisible({ timeout: 30_000 });   // the answer is complete
     await page.locator("article").first().evaluate((e) => e.scrollIntoView());
     await shot(page, info, c.name);
     expect(problems).toEqual([]);

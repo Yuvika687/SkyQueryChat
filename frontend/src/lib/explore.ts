@@ -98,3 +98,22 @@ export const LEGEND_RANGES: Record<Pollutant, string[]> = {
   pm25: ["0–30", "31–60", "61–90", "91–120", "121–250", "251+"],
   pm10: ["0–50", "51–100", "101–250", "251–350", "351–430", "431+"],
 };
+
+/** How a station is described: provider, then monitor type ("CPCB · Reference monitor"). */
+export function monitorType(s: ExploreStation): string {
+  if (s.tier === "low_cost") return "Low-cost sensor (indicative)";
+  if (s.tier === "supporting_single_station") return "Reference monitor (US consulate, supporting)";
+  return "Reference monitor";
+}
+
+/** Runs of consecutive days without a 24-hour value: [startIndex, endIndex] inclusive. */
+export function gapRuns(values: (number | null)[]): [number, number][] {
+  const out: [number, number][] = [];
+  let start = -1;
+  values.forEach((v, i) => {
+    if (v == null && start < 0) start = i;
+    if (v != null && start >= 0) { out.push([start, i - 1]); start = -1; }
+  });
+  if (start >= 0) out.push([start, values.length - 1]);
+  return out;
+}

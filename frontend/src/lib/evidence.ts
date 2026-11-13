@@ -1,7 +1,7 @@
 // Evidence summary for an answer, built only from what the backend returned.
 import { DATA_TYPE_LABEL } from "./categories";
 import type { Turn } from "./chat-state";
-import { fmtRange, pollutantLabel } from "./format";
+import { fmtRange, fmtSpan, pollutantLabel } from "./format";
 import type { SourceRef } from "./types";
 
 export interface Evidence {
@@ -92,10 +92,10 @@ function coverageOf(cov: Record<string, unknown> | null, pollutant: string | nul
 
 const pct = (s: number) => `${Math.round(s * 100)}% coverage`;
 
-/** "Latest 30 days available · 1 Oct 2026 – 30 Oct 2026" when a relative period was anchored to the data's
+/** "Latest 30 days available · 1–30 Oct 2026" when a relative period was anchored to the data's
  * last day (the data ends before today); otherwise just the dates. */
 export function periodLabel(start: string, end: string | null, assumptions: string[] = []): string {
-  const range = fmtRange(start, end);
+  const range = end ? fmtSpan(start, end) : fmtRange(start, end);
   if (!end || !assumptions.some((a) => /relative to the latest data/i.test(a))) return range;
   const n = Math.round((Date.parse(end + "T00:00:00Z") - Date.parse(start + "T00:00:00Z")) / 86_400_000) + 1;
   return `Latest ${n} days available · ${range}`;

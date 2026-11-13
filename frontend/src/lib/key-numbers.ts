@@ -20,9 +20,10 @@ const DATE = /\d{4}-\d{2}-\d{2}/g;
 
 export const isAqiCard = (c: Card) => c.data_type === "official_aqi" && /index/i.test(c.unit);
 
-/** AQI is shown as a whole number (half up); exact values stay in the data table. */
+/** Bulletin AQI values are whole numbers and stay whole; a mean of bulletins (e.g. 321.5) keeps its one
+ * decimal, so the figure matches the headline and its proof. */
 export function fmtAqi(v: number): string {
-  return String(Math.round(v));
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
 export function fmtNumber(c: Card): string {

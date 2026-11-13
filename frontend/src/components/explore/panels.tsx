@@ -5,14 +5,15 @@ import Link from "next/link";
 import { ArrowLeft, MessageSquare, Pause, Play, X } from "lucide-react";
 import { CATEGORY_STYLE, pmCategory, type Category } from "@/lib/categories";
 import {
-  LEGEND_RANGES, POLLUTANT_LABEL, dayStatus, fmtLastReading, rankCities, rankStations, stationQuestion, statusColour,
+  LEGEND_RANGES, POLLUTANT_LABEL, dayStatus, fmtLastReading, monitorType, rankCities, rankStations, stationQuestion, statusColour,
   type Pollutant,
 } from "@/lib/explore";
+import { StationChart } from "./station-chart";
 import { fmtDate, fmtSpan } from "@/lib/format";
 import type { ExploreData, ExploreStation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { askHref } from "@/components/ds/ask-box";
-import { CategoryBadge, ScaleBar, Sparkline } from "@/components/ds/data-display";
+import { CategoryBadge, ScaleBar } from "@/components/ds/data-display";
 
 const ORDER: Category[] = ["Good", "Satisfactory", "Moderate", "Poor", "Very poor", "Severe"];
 
@@ -151,9 +152,10 @@ export function CityRanking({ data, day, onCity }: { data: ExploreData; day: num
   );
 }
 
-export function StationList({ city, stations, day, date, pollutant, selected, onStation, onBack, cityValue }: {
+export function StationList({ city, stations, day, date, pollutant, selected, onStation, onHighlight, onBack, cityValue }: {
   city: string;
   date: string;
+  onHighlight: (id: number | null) => void;
   stations: ExploreStation[];
   day: number;
   pollutant: Pollutant;
@@ -186,14 +188,18 @@ export function StationList({ city, stations, day, date, pollutant, selected, on
               <button
                 type="button"
                 onClick={() => onStation(s.id)}
+                onMouseEnter={() => onHighlight(s.id)}
+                onMouseLeave={() => onHighlight(null)}
+                onFocus={() => onHighlight(s.id)}
+                onBlur={() => onHighlight(null)}
                 aria-pressed={selected === s.id}
                 className={cn("flex min-h-11 w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left hover:bg-white/[0.04]",
                   selected === s.id && "bg-teal/10 ring-1 ring-teal/50")}
               >
-                <span aria-hidden className={cn("h-5 w-1.5 shrink-0", s.tier === "low_cost" ? "rounded-full" : "rounded-sm")} style={{ background: col.bg }} />
+                <span aria-hidden className={cn("size-3 shrink-0 ring-1 ring-white/60", s.tier === "low_cost" ? "rotate-45 rounded-[2px]" : "rounded-full")} style={{ background: col.bg }} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] font-medium">{shortName(s.name)}</span>
-                  <span className="block text-[11px] text-faint">{s.tier === "primary" ? s.provider : s.type}</span>
+                  <span className="block text-[11px] text-faint">{s.tier === "primary" ? s.provider : monitorType(s)}</span>
                 </span>
                 {st.kind === "value" ? (
                   <span className="text-right">
@@ -212,22 +218,22 @@ export function StationList({ city, stations, day, date, pollutant, selected, on
   );
 }
 
+/** "DTU, New Delhi - CPCB" -> "DTU, New Delhi": the operator suffix is shown once, under the title. */
 export function shortName(name: string): string {
-  return name.replace(/\s*-\s*(DPCC|CPCB|IMD|IITM|MPCB|KSPCB|TSPCB|TNPCB|WBPCB|APPCB|BSPCB)\s*$/i, "").trim() || name;
+  return name.replace(/\s*-\s*[A-Z][A-Za-z]{1,8}\s*$/, "").trim() || name;
 }
 
 export function StationPanel({ station, data, day, onClose }: { station: ExploreStation; data: ExploreData; day: number; onClose: () => void }) {
   const pol = data.pollutant;
   const st = dayStatus(station, day, pol);
-  const series = data.dates.map((d, i) => ({ date: d, value: station.values[i] }));
   const q = stationQuestion(station, pol, data.dates[0], data.dates[data.dates.length - 1]);
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium tracking-wide text-faint uppercase">{station.type}</p>
-          <h2 className="mt-1 text-[19px] leading-6 font-semibold">{station.name}</h2>
-          <p className="mt-0.5 text-[12.5px] text-subtle">{station.city} · {station.provider} · {station.km_from_centre} km from the city centre</p>
+          <h2 className="text-[20px] leading-6 font-semibold">{shortName(station.name)}</h2>
+          <p className="mt-1 text-[13px] text-subtle">{station.provider} · {monitorType(station)}</p>
+          <p className="mt-0.5 text-[12px] text-faint">{station.city} · {station.km_from_centre} km from the city centre</p>
         </div>
         <button type="button" onClick={onClose} aria-label="Close station" className="grid size-9 shrink-0 place-items-center rounded-full border border-line-strong text-subtle hover:text-foreground">
           <X className="size-4" aria-hidden />
@@ -258,16 +264,13 @@ export function StationPanel({ station, data, day, onClose }: { station: Explore
       </div>
 
       <div>
-        <div className="mb-1 flex items-baseline justify-between text-[12px] text-faint">
-          <span>Last 30 days ({fmtSpan(data.dates[0], data.dates[data.dates.length - 1])})</span>
-          <span>gaps = no 24-hour value</span>
-        </div>
-        <Sparkline points={series} width={320} height={64} className="w-full text-teal" />
+        <p className="mb-1 text-[12px] text-faint">Last 30 days · {fmtSpan(data.dates[0], data.dates[data.dates.length - 1])}</p>
+        <StationChart dates={data.dates} values={station.values} day={day} pollutant={pol} />
       </div>
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[13px]">
         <dt className="text-faint">Provider</dt><dd>{station.provider}</dd>
-        <dt className="text-faint">Monitor type</dt><dd>{station.type}</dd>
+        <dt className="text-faint">Monitor type</dt><dd>{monitorType(station)}</dd>
         <dt className="text-faint">Last reading</dt><dd>{fmtLastReading(station.last_reading_utc)}</dd>
       </dl>
 

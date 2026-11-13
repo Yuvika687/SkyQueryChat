@@ -412,6 +412,27 @@ Rules:
   request takes about 8 s at 0.1 CPU under emulation (0.06 s natively), then it is cached.
 - The MapLibre worker copy runs as `predev` and `prebuild` (package.json), so `npm run build` on Vercel includes it.
 
+### Explore map fixes and Ask redesign (branch `redesign`, 2026-11-13)
+
+- Explore basemap: Explore keeps OpenFreeMap roads, water names and place names from zoom 7 (Home keeps land and water
+  only); every `boundary*` layer is removed on both. City outlines: `frontend/public/geo/city-outlines.geojson`, built by
+  `frontend/scripts/build-city-outlines.py` from DataMeet's Census 2011 districts (CC BY 2.5 India; shapefile read
+  directly, no GIS library). Delhi = its 9 districts; Mumbai = Mumbai + Mumbai Suburban; Bengaluru = Bangalore district.
+- Station markers are MapLibre layers (dots; low-cost sensors are SDF diamonds), value labels use symbol collision,
+  the selected/hovered station is larger and always labelled. The list is the keyboard path (focus highlights the dot).
+  Fly-in padding keeps the left panel, the station panel area and the timeline clear.
+- Severe is CPCB maroon `#7A0E12` (white text 11:1), with a light edge on dark backgrounds.
+- Ask: conversation left, right panel with Evidence / Data tabs; a clicked number swaps the panel to its Proof (Back
+  button); phones show evidence under the answer and the proof as a bottom sheet. Clickable numbers and proof content:
+  `src/lib/proof.ts` (a number is clickable only when it equals a card value or chart point at the precision written).
+  Live steps: `src/components/ask/live-steps.tsx` (real stream events; the model name only inside "How this answer was
+  made").
+- Answer wording: instructions ask for readable dates and "4 PM" times, no "date(s)"/"noting that", no bracketed
+  definitions, but the answer must keep requested values and key caveats. The number checker now checks readable dates
+  ("9 Nov 2026", "9–10 Nov 2026", "13 Oct – 11 Nov 2026", "Nov 9, 2026"): each day must be a tool date (dates are kept in
+  the allowed set as `DATE_CODE + yyyymmdd`); "PM2.5 November" is not a date. The evaluation scorer matches readable
+  dates against ISO expectations (`iso_dates` in `scripts/run_eval.py`).
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:
