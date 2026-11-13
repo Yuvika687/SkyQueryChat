@@ -57,15 +57,17 @@ export function HomeScreen() {
         </FadeIn>
 
         <FadeIn delay={0.08}>
-          <div className="relative aspect-[10/11] overflow-hidden rounded-3xl border border-line bg-[#050912] shadow-float sm:aspect-auto sm:h-[600px] lg:h-[min(660px,calc(100dvh-150px))]">
+          {/* no box: the map sits on the page, with a soft glow behind India and edges that fade out (CSS mask) */}
+          <p className="mb-2 text-xs text-subtle sm:text-center lg:text-left">
+            <strong className="font-semibold text-foreground">PM2.5{latest ? `, ${fmtDate(latest.date)}` : ""}</strong> · 24-hour city average, µg/m³
+          </p>
+          <div className="relative aspect-[10/11] sm:aspect-auto sm:h-[600px] lg:h-[min(640px,calc(100dvh-170px))]">
+            <div aria-hidden className="pointer-events-none absolute inset-[-6%] bg-[radial-gradient(ellipse_52%_50%_at_50%_50%,rgba(45,212,191,0.13),rgba(30,64,120,0.10)_45%,transparent_72%)]" />
             {latest ? (
-              <IndiaMap cities={latest.cities} date={latest.date} className="absolute inset-0" />
+              <IndiaMap cities={latest.cities} date={latest.date} className="sq-home-map absolute inset-0" />
             ) : (
-              <Skeleton className="absolute inset-0 rounded-none bg-[#0b1324]" />
+              <Skeleton className="sq-fade absolute inset-[8%] rounded-[40%] bg-[#0b1324]" />
             )}
-            <p className="glass absolute top-3 left-3 rounded-xl px-3 py-1.5 text-xs text-subtle">
-              <strong className="font-semibold text-foreground">PM2.5{latest ? `, ${fmtDate(latest.date)}` : ""}</strong> · 24-hour city average, µg/m³
-            </p>
             {(loading || failed) && (
               <div className="absolute inset-x-3 bottom-12 sm:inset-x-6">
                 {failed ? (
@@ -75,7 +77,6 @@ export function HomeScreen() {
                 ) : null}
               </div>
             )}
-            <MapAttribution />
           </div>
         </FadeIn>
       </section>
@@ -113,12 +114,12 @@ export function HomeScreen() {
         <ul className="mt-5 grid gap-4 md:grid-cols-3">
           {WAYS.map((w) => (
             <li key={w.href}>
-              <Link href={w.href} className="glass group flex h-full items-center gap-4 rounded-2xl p-5 text-subtle shadow-card transition-colors hover:border-line-strong">
+              <Link href={w.href} className="glass group sq-lift flex h-full items-start gap-4 rounded-2xl p-5 text-subtle shadow-card transition-colors hover:border-line-strong">
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="font-display text-[28px] leading-none text-foreground">{w.name}</span>
                   <span>{w.line}</span>
                 </span>
-                <ArrowRight className="size-5 shrink-0 text-teal transition-transform group-hover:translate-x-0.5" aria-hidden />
+                <ArrowRight className="mt-1.5 size-5 shrink-0 text-teal transition-transform group-hover:translate-x-0.5" aria-hidden />
               </Link>
             </li>
           ))}
@@ -134,7 +135,7 @@ export function HomeScreen() {
             <a className="underline underline-offset-2 hover:text-foreground" href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo.com</a> (CC BY 4.0), reanalysis from the Copernicus Climate Change Service.
           </p>
           <p>
-            Map: <MapCredits />.
+            Map: <MapCredits />. Full credits: the ⓘ on the map.
           </p>
         </div>
         <button type="button" onClick={openData} className="self-start text-sm text-subtle underline underline-offset-2 hover:text-foreground">
@@ -157,10 +158,3 @@ function MapCredits() {
   );
 }
 
-function MapAttribution() {
-  return (
-    <p className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#050912] to-transparent px-3 pt-6 pb-2 text-[10.5px] leading-4 text-faint">
-      <MapCredits />
-    </p>
-  );
-}

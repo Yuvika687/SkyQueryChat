@@ -47,51 +47,106 @@ export function LowCostToggle({ on, onChange }: { on: boolean; onChange: (v: boo
   );
 }
 
-export function TimeControl({ dates, day, onDay, playing, onPlay, canPlay, compact }: {
+// Verified Diwali dates (backend/config/events.json).
+const DIWALI = ["2024-10-31", "2025-10-20", "2026-11-08"];
+
+/** Faint daily averages behind the slider: one line per series, gaps kept as gaps. */
+function MiniChart({ dates, series }: { dates: string[]; series: { colour: string; values: (number | null)[] }[] }) {
+  const max = Math.max(1, ...series.flatMap((s) => s.values.filter((v): v is number => v != null)));
+  const n = Math.max(1, dates.length - 1);
+  const path = (vals: (number | null)[]) => vals.map((v, k) => {
+    if (v == null) return "";
+    const cmd = k === 0 || vals[k - 1] == null ? "M" : "L";
+    return `${cmd}${((k / n) * 100).toFixed(2)},${(32 - (v / max) * 28).toFixed(2)}`;
+  }).join("");
+  const dots = (vals: (number | null)[]) => vals.map((v, k) => v != null && (k === 0 || vals[k - 1] == null) && (k === vals.length - 1 || vals[k + 1] == null)
+    ? <circle key={k} cx={(k / n) * 100} cy={32 - (v / max) * 28} r={0.9} /> : null);
+  const diwali = dates.findIndex((d) => DIWALI.includes(d));
+  return (
+    <svg aria-hidden viewBox="0 0 100 34" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+      {diwali >= 0 && <line x1={(diwali / n) * 100} x2={(diwali / n) * 100} y1={0} y2={34} stroke="#F5B942" strokeOpacity={0.55} strokeWidth={1} vectorEffect="non-scaling-stroke" strokeDasharray="2 2" />}
+      {series.map((s, k) => (
+        <g key={k} stroke={s.colour} fill={s.colour} strokeOpacity={series.length > 1 ? 0.45 : 0.7} fillOpacity={0.6}>
+          <path d={path(s.values)} fill="none" strokeWidth={1.3} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+          {dots(s.values)}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/** Slim timeline: play (1x / 2x), the day shown, and a slider over a faint chart of the daily averages. */
+export function TimeControl({ dates, day, onDay, playing, onPlay, canPlay, speed, onSpeed, series, compact }: {
   dates: string[];
   day: number;
   onDay: (i: number) => void;
   playing: boolean;
   onPlay: () => void;
   canPlay: boolean;
+  speed: 1 | 2;
+  onSpeed: (s: 1 | 2) => void;
+  series: { colour: string; values: (number | null)[] }[];
   compact?: boolean;
 }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-medium tracking-wide text-faint uppercase">{day === dates.length - 1 ? "Latest available day" : "Selected day"}</p>
-          <p className={cn("num font-display leading-none", compact ? "text-[30px]" : "text-[38px]")} aria-live="polite">{fmtDate(dates[day])}</p>
-        </div>
-        {canPlay ? (
-          <button
-            type="button"
-            onClick={onPlay}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-teal px-4 text-sm font-semibold text-teal-ink hover:bg-teal-hover"
-          >
-            {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
-            {playing ? "Pause" : "Play 30 days"}
+  const last = day === dates.length - 1;
+  const diwali = dates.findIndex((d) => DIWALI.includes(d));
+  const label = (
+    <p className="min-w-0 text-[13px] whitespace-nowrap text-subtle" aria-live="polite">
+      {last ? "Latest available: " : "Showing "}<strong className="num font-semibold text-foreground">{fmtDate(dates[day])}</strong>
+    </p>
+  );
+  const play = canPlay ? (
+    <div className="flex shrink-0 items-center gap-1.5">
+      <button type="button" onClick={onPlay}
+        className="inline-flex h-9 items-center gap-1.5 rounded-full bg-teal px-3.5 text-[13px] font-semibold whitespace-nowrap text-teal-ink hover:bg-teal-hover">
+        {playing ? <Pause className="size-3.5" aria-hidden /> : <Play className="size-3.5" aria-hidden />}
+        {playing ? "Pause" : "Play last 30 days"}
+      </button>
+      <div role="radiogroup" aria-label="Playback speed" className="inline-flex rounded-full border border-line p-0.5">
+        {([1, 2] as const).map((v) => (
+          <button key={v} type="button" role="radio" aria-checked={speed === v} onClick={() => onSpeed(v)}
+            className={cn("h-7 min-w-8 rounded-full px-2 text-[12px] font-medium", speed === v ? "bg-white/[0.1] text-foreground" : "text-faint hover:text-foreground")}>
+            {v}×
           </button>
-        ) : (
-          <p className="max-w-[150px] text-right text-[11px] text-faint">Autoplay is off because your device asks for less motion.</p>
-        )}
+        ))}
       </div>
-      <label htmlFor="day-slider" className="sr-only">Day</label>
-      <input
-        id="day-slider"
-        type="range"
-        min={0}
-        max={dates.length - 1}
-        step={1}
-        value={day}
-        onChange={(e) => onDay(Number(e.target.value))}
-        aria-valuetext={fmtDate(dates[day])}
-        className="w-full accent-[var(--sq-accent)]"
-      />
-      <div className="flex justify-between text-[11px] text-faint">
+    </div>
+  ) : (
+    <p className="max-w-[170px] text-[11px] leading-4 text-faint">Autoplay is off because your device asks for less motion. Drag the slider.</p>
+  );
+  // chart above the track: the line sits on the slider's baseline, dates below (never on top of the chart)
+  const slider = (
+    <div className="min-w-0 flex-1">
+      <div className="relative h-[46px]">
+        <div className="absolute inset-x-[8px] top-[6px] h-[26px]"><MiniChart dates={dates} series={series} /></div>
+        {diwali >= 0 && (
+          <span aria-hidden className="pointer-events-none absolute -top-1 -translate-x-1/2 text-[10px] leading-none font-medium text-warn"
+            style={{ left: `calc(8px + (100% - 16px) * ${diwali / Math.max(1, dates.length - 1)})` }}>Diwali</span>
+        )}
+        <label htmlFor="day-slider" className="sr-only">Day</label>
+        <input id="day-slider" type="range" min={0} max={dates.length - 1} step={1} value={day}
+          onChange={(e) => onDay(Number(e.target.value))} aria-valuetext={fmtDate(dates[day])}
+          className="sq-range absolute inset-x-0 top-[22px] h-6 w-full" />
+      </div>
+      <div className="flex justify-between px-[2px] text-[10.5px] leading-none text-faint">
         <span>{fmtDate(dates[0])}</span>
         <span>{fmtDate(dates[dates.length - 1])}</span>
       </div>
+    </div>
+  );
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-3">{label}{play}</div>
+        {slider}
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-4">
+      {play}
+      <div className="w-[208px] shrink-0">{label}</div>
+      {slider}
     </div>
   );
 }

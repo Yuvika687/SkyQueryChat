@@ -2,7 +2,7 @@
 // Basemap: OpenFreeMap "dark" vector style (no API key; OpenMapTiles schema, OpenStreetMap data). Its border,
 // label and road layers are removed, so only land and water remain. India is drawn on top from the official
 // boundary of India as per the Survey of India (DataMeet india-composite.geojson, CC0). Never any heat surface.
-import type { Map as MLMap, StyleSpecification } from "maplibre-gl";
+import type { AttributionControl, Map as MLMap, StyleSpecification } from "maplibre-gl";
 
 export const STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 export const BOUNDARY_URL = "/geo/india-official.geojson";
@@ -32,6 +32,8 @@ export async function loadBaseStyle(opts: { context?: boolean } = {}): Promise<S
   const style = await r.json();
   type Layer = { id: string; type: string; paint?: Record<string, unknown>; minzoom?: number };
   const base = (l: Layer) => l.type === "background" || l.id === "water" || l.id === "waterway" || l.id.startsWith("landcover") || l.id.startsWith("landuse");
+  // the full credit list is added by addCredits (one place, nothing listed twice)
+  for (const src of Object.values(style.sources as Record<string, { attribution?: string }>)) delete src.attribution;
   style.layers = (style.layers as Layer[])
     .filter((l) => !l.id.startsWith("boundary") && (base(l) || !!opts.context))
     .map((l) => {
@@ -75,6 +77,35 @@ export async function addCityOutlines(map: MLMap) {
 
 export function showCityOutline(map: MLMap, city: string | null) {
   if (map.getLayer("city-outline")) map.setFilter("city-outline", ["==", ["get", "city"], city ?? ""]);
+}
+
+/** Full map and data credits (licence requirements). Shown by MapLibre's compact "ⓘ" control on every map and
+ * listed in the Data & accuracy panel. */
+export const CREDIT_ITEMS: { label: string; links: { text: string; href: string }[]; licence?: string }[] = [
+  { label: "Basemap", links: [{ text: "OpenFreeMap", href: "https://openfreemap.org" }, { text: "OpenMapTiles", href: "https://openmaptiles.org" }, { text: "OpenStreetMap", href: "https://www.openstreetmap.org/copyright" }], licence: "ODbL" },
+  { label: "India boundary as per the Survey of India", links: [{ text: "DataMeet", href: "https://github.com/datameet/maps" }], licence: "CC0" },
+  { label: "Districts (Census 2011)", links: [{ text: "DataMeet", href: "https://github.com/datameet/maps/tree/master/Districts" }], licence: "CC BY 2.5 IN" },
+  { label: "Station data", links: [{ text: "CPCB via OpenAQ", href: "https://openaq.org" }] },
+];
+
+const a = (l: { text: string; href: string }) => `<a href="${l.href}" target="_blank" rel="noreferrer">${l.text}</a>`;
+export const CREDITS_HTML = [
+  `${a(CREDIT_ITEMS[0].links[0])} © ${a(CREDIT_ITEMS[0].links[1])} Data from ${a(CREDIT_ITEMS[0].links[2])}`,
+  `India boundary as per the Survey of India via ${a(CREDIT_ITEMS[1].links[0])} (CC0)`,
+  `Districts via ${a(CREDIT_ITEMS[2].links[0])} (CC BY 2.5 IN)`,
+  `Station data: CPCB via ${a(CREDIT_ITEMS[3].links[0])}`,
+].join(" · ");
+
+/** MapLibre's compact attribution ("ⓘ", bottom-right), collapsed at start (MapLibre opens it until the first drag). */
+export function addCredits(map: MLMap, Control: typeof AttributionControl, position: "bottom-right" | "top-right" = "bottom-right") {
+  map.addControl(new Control({ compact: true, customAttribution: CREDITS_HTML }), position);
+  const collapse = () => {
+    const el = map.getContainer().querySelector(".maplibregl-ctrl-attrib");
+    el?.classList.remove("maplibregl-compact-show");
+    el?.removeAttribute("open");
+  };
+  collapse();
+  map.once("load", () => setTimeout(collapse, 0));
 }
 
 export const MAP_CREDITS = [

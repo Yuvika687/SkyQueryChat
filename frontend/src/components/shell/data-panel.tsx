@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Skeleton } from "@/components/ds/states";
 import { getAccuracy, getLimits } from "@/lib/api";
 import { fmtDate, fmtRange } from "@/lib/format";
+import { CREDIT_ITEMS } from "@/lib/map-base";
 import type { EvalSummary, Scoreboard } from "@/lib/types";
 import { useApp } from "./app-context";
 
@@ -28,7 +29,6 @@ const SOURCES: { k: string; v: string; licence: string; href: string }[] = [
   { k: "Official AQI", v: "CPCB daily city bulletins at 4 PM, via UrbanEmissions and cpcb.gov.in", licence: "GODL-India", href: "https://cpcb.gov.in/AQI_Bulletin.php" },
   { k: "Delhi PM, Diwali 2024 and 2025", v: "OpenCity Delhi station files (supporting context only)", licence: "public domain", href: "https://data.opencity.in" },
   { k: "Weather (modelled)", v: "Open-Meteo, reanalysis from Copernicus C3S", licence: "CC BY 4.0", href: "https://open-meteo.com" },
-  { k: "Maps", v: "OpenFreeMap (OpenStreetMap data); India boundary and districts from DataMeet", licence: "ODbL; CC0; CC BY 2.5 IN", href: "https://github.com/datameet/maps" },
 ];
 
 export function DataPanel({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
@@ -75,6 +75,20 @@ export function DataPanel({ open, onOpenChange }: { open: boolean; onOpenChange:
                 <li key={s.k}>
                   <p className="font-medium">{s.k}</p>
                   <p className="text-[13px] text-subtle">{s.v} · <a className="underline underline-offset-2 hover:text-teal" href={s.href} target="_blank" rel="noreferrer">{s.licence}</a></p>
+                </li>
+              ))}
+            </ul>
+          </Section>
+
+          <Section title="Map credits">
+            <ul className="flex flex-col gap-1.5 text-[13px] text-subtle">
+              {CREDIT_ITEMS.map((c) => (
+                <li key={c.label}>
+                  <span className="text-foreground">{c.label}:</span>{" "}
+                  {c.links.map((l, k) => (
+                    <span key={l.href}>{k > 0 ? ", " : ""}<a className="underline underline-offset-2 hover:text-teal" href={l.href} target="_blank" rel="noreferrer">{l.text}</a></span>
+                  ))}
+                  {c.licence && <> ({c.licence})</>}
                 </li>
               ))}
             </ul>

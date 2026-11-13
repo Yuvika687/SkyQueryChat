@@ -14,7 +14,7 @@ import { fmtDate } from "@/lib/format";
 import type { LatestCity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CategoryBadge, categoryOf } from "@/components/ds/data-display";
-import { INDIA_BOUNDS, THEME, WORKER_URL, addIndiaLayers, hasWebGL, loadBaseStyle, loadBoundary, type IndiaGeo } from "@/lib/map-base";
+import { CREDITS_HTML, INDIA_BOUNDS, THEME, WORKER_URL, addCredits, addIndiaLayers, hasWebGL, loadBaseStyle, loadBoundary, type IndiaGeo } from "@/lib/map-base";
 
 const BOUNDS = INDIA_BOUNDS;
 
@@ -104,6 +104,7 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
           attributionControl: false, fadeDuration: 0,
         });
         map = m;
+        addCredits(m, maplibregl.AttributionControl);
         m.on("load", () => {
           if (cancelled) return;
           addIndiaLayers(m, geo);
@@ -140,7 +141,7 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
       const d = geo.features[0].geometry.coordinates
         .map((poly) => poly.map((r) => "M" + r.map(([x, y]) => P(x, y).map((v) => v.toFixed(1)).join(",")).join("L") + "Z").join(""))
         .join("");
-      el.innerHTML = `<svg width="${w}" height="${h}" style="position:absolute;inset:0" aria-hidden="true"><path d="${d}" fill="${THEME.indiaFill}" stroke="${THEME.outline}" stroke-width="1" fill-rule="evenodd"/></svg>`;
+      el.innerHTML = `<svg data-outline width="${w}" height="${h}" style="position:absolute;inset:0" aria-hidden="true"><path d="${d}" fill="${THEME.indiaFill}" stroke="${THEME.outline}" stroke-width="1" fill-rule="evenodd"/></svg>`;
       project.current = P;
       place();
       setMode("outline");
@@ -172,7 +173,14 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
         <div ref={canvas} className="h-full w-full" />
       </div>
       {mode === "loading" && <p className="absolute inset-0 grid place-items-center text-xs text-faint">Loading map</p>}
-      <ul aria-label={`Six cities on the map: PM2.5 on ${fmtDate(date)}`} className="absolute inset-0">
+      {/* without a basemap (no WebGL) the same credits sit in a small "ⓘ" of our own */}
+      {mode === "outline" && (
+        <details className="sq-credits absolute right-2 bottom-2 z-20">
+          <summary aria-label="Map credits">ⓘ</summary>
+          <p dangerouslySetInnerHTML={{ __html: CREDITS_HTML }} />
+        </details>
+      )}
+      <ul aria-label={`Six cities on the map: PM2.5 on ${fmtDate(date)}`} className="pointer-events-none absolute inset-0 [&>li]:pointer-events-auto">
         {cities.map((c) => {
           const at = pos[c.city];
           if (!at) return null;

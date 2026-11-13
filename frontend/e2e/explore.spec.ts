@@ -65,12 +65,28 @@ test("play steps through the days", async ({ page }) => {
   await page.waitForSelector('[data-map="ready"]', { timeout: 60_000 });
   const slider = page.getByRole("slider", { name: "Day" });
   await expect(slider).toBeVisible();
-  await page.getByRole("button", { name: /Play 30 days/ }).click();      // starts again from the first day
-  await page.waitForTimeout(2000);
+  await expect(page.getByText(/^Latest available: /).first()).toBeVisible();   // the last day says "latest available"
+  await page.getByRole("radio", { name: "2×" }).click();
+  await expect(page.getByRole("radio", { name: "2×" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: "Play last 30 days" }).click();      // starts again from the first day
+  await page.waitForTimeout(1500);
+  await expect(page.getByText(/^Showing /).first()).toBeVisible();
   const v = Number(await slider.inputValue());
   expect(v).toBeGreaterThan(0);
   await page.getByRole("button", { name: "Pause" }).click();
   const paused = Number(await slider.inputValue());
   await page.waitForTimeout(1200);
   expect(Number(await slider.inputValue())).toBe(paused);
+});
+
+test("map credits sit in the compact ⓘ control and expand to the full list", async ({ page }, info) => {
+  test.skip((info.project.use.viewport?.width ?? 0) < 768, "phones: same control, top right");
+  await page.goto("/explore");
+  await page.waitForSelector('[data-map="ready"]', { timeout: 60_000 });
+  const attrib = page.locator(".maplibregl-ctrl-attrib");
+  await expect(attrib).not.toHaveClass(/maplibregl-compact-show/);           // collapsed at start
+  await page.locator(".maplibregl-ctrl-attrib-button").click();
+  for (const t of ["OpenFreeMap", "OpenMapTiles", "OpenStreetMap", "Survey of India", "CC BY 2.5 IN", "OpenAQ"]) {
+    await expect(attrib).toContainText(t);
+  }
 });

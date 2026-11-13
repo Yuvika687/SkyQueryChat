@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MLMap, Marker } from "maplibre-gl";
 import { CATEGORY_STYLE, CITIES, pmCategory } from "@/lib/categories";
 import { cityStations, dayStatus, statusColour, type Pollutant, POLLUTANT_LABEL } from "@/lib/explore";
-import { INDIA_BOUNDS, WORKER_URL, addCityOutlines, addIndiaLayers, hasWebGL, loadBaseStyle, loadBoundary, showCityOutline } from "@/lib/map-base";
+import { INDIA_BOUNDS, WORKER_URL, addCityOutlines, addIndiaLayers, hasWebGL, loadBaseStyle, loadBoundary, showCityOutline, addCredits } from "@/lib/map-base";
 import type { ExploreData } from "@/lib/types";
 import { shortName } from "./panels";
 
@@ -59,8 +59,9 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
           dragRotate: false, pitchWithRotate: false, touchPitch: false, fadeDuration: 0, minZoom: 3, maxZoom: 14,
         });
         m.touchZoomRotate.disableRotation();
-        // phones pinch to zoom; the buttons would sit under the bottom sheet and be too small to tap
-        if (window.matchMedia("(min-width: 768px)").matches) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+        // no zoom buttons: scroll, pinch, double-click and keyboard zoom all work; only the credits sit bottom-right
+        // phones: top right, under the header strip (the bottom sheet covers the bottom corner)
+        addCredits(m, maplibregl.AttributionControl, window.matchMedia("(max-width: 767px)").matches ? "top-right" : "bottom-right");
         map.current = m;
         m.on("load", async () => {
           if (cancelled) return;
@@ -99,10 +100,14 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
         const lon = st.reduce((a, s) => a + s.lon, 0) / st.length, lat = st.reduce((a, s) => a + s.lat, 0) / st.length;
         const b = document.createElement("button");
         b.type = "button";
-        const left = c === "Bengaluru"; // its label sits left of the dot so it never covers Chennai's
-        b.className = left ? "sq-city-pin left" : "sq-city-pin";
+        // Same label sides as Home: Mumbai and Bengaluru left of the dot (so Mumbai never touches Hyderabad's marker
+        // and Bengaluru never covers Chennai's); on phones Mumbai's label sits above its dot.
+        const phone = window.matchMedia("(max-width: 767px)").matches;
+        const side = c === "Bengaluru" || (c === "Mumbai" && !phone) ? "left" : c === "Mumbai" ? "top" : "right";
+        b.className = side === "right" ? "sq-city-pin" : `sq-city-pin ${side}`;
         b.addEventListener("click", () => handlers.current.onCity(c));
-        const mk = new L.Marker({ element: b, anchor: left ? "right" : "left", offset: [left ? 9 : -9, 0] }).setLngLat([lon, lat]).addTo(m);
+        const mk = new L.Marker({ element: b, anchor: side === "left" ? "right" : side === "top" ? "bottom" : "left",
+          offset: side === "left" ? [9, 0] : side === "top" ? [0, 9] : [-9, 0] }).setLngLat([lon, lat]).addTo(m);
         cityMarkers.current.set(c, { m: mk, b });
       }
     }

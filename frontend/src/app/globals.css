@@ -180,8 +180,24 @@
 }
 .sq-pulse { animation: sq-pulse 3.2s ease-in-out infinite; }
 
-/* MapLibre: our own attribution line is shown under the map; keep the canvas dark while tiles load. */
+/* MapLibre: keep the canvas dark while tiles load. */
 .maplibregl-map { background: var(--sq-bg); font: inherit; }
+
+/* Compact credits ("ⓘ", bottom-right), restyled for the dark theme. Same look for our no-WebGL fallback. */
+.maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact, .sq-credits {
+  background: rgb(8 13 26 / 0.9) !important; color: var(--sq-text-3); border: 1px solid var(--sq-border-strong);
+  border-radius: 12px; font-size: 11px; line-height: 16px; max-width: min(520px, calc(100vw - 24px));
+  min-height: 28px; padding: 5px 30px 5px 8px; margin: 0 8px 8px 0;
+}
+.maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) { padding: 0; width: 28px; height: 28px; }
+.maplibregl-ctrl-attrib a, .sq-credits a { color: var(--sq-text-2); text-decoration: underline; text-underline-offset: 2px; }
+.maplibregl-ctrl-attrib-button { background-color: transparent !important; filter: invert(0.8); width: 26px !important; height: 26px !important; border-radius: 999px; }
+.sq-credits { padding: 0; }
+.sq-credits summary { list-style: none; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; color: var(--sq-text-2); }
+.sq-credits summary::-webkit-details-marker { display: none; }
+.sq-credits[open] { padding: 6px 10px 8px; }
+.sq-credits[open] summary { position: absolute; right: 0; top: 0; }
+.sq-credits p { margin: 0; padding-right: 22px; }
 
 /* Explore map markers (built as DOM buttons inside MapLibre markers). */
 .sq-city-pin {
@@ -199,6 +215,7 @@
 .sq-city-pin:hover .lbl, .sq-city-pin:focus-visible .lbl { border-color: var(--sq-accent); }
 .sq-city-pin[hidden] { display: none; }
 .sq-city-pin.left { flex-direction: row-reverse; }
+.sq-city-pin.top { flex-direction: column-reverse; gap: 4px; }
 .sq-station-pin {
   min-width: 30px; height: 22px; padding: 0 5px; border-radius: 6px; border: 1.5px solid rgb(6 10 20 / 0.85);
   font: 600 11px/1 var(--font-inter), system-ui, sans-serif; font-variant-numeric: tabular-nums; cursor: pointer;
@@ -211,3 +228,28 @@
 .maplibregl-ctrl-group { background: rgb(14 22 41 / 0.92) !important; border: 1px solid var(--sq-border-strong); }
 .maplibregl-ctrl-group button + button { border-top-color: var(--sq-border) !important; }
 .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(0.85); }
+
+/* Home map: edges fade into the page (mask on the map drawing only, never on the markers or the credits). */
+.sq-home-map .maplibregl-canvas, .sq-home-map svg[data-outline], .sq-fade {
+  -webkit-mask-image: radial-gradient(ellipse 70% 68% at 50% 50%, #000 58%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 68% at 50% 50%, #000 58%, transparent 100%);
+}
+.sq-home-map .maplibregl-map, .sq-home-map .maplibregl-canvas { background: transparent; }
+
+/* Gentle hover lift on cards (off with reduced motion). */
+.sq-lift { transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms, box-shadow 200ms; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .sq-lift:hover { transform: translateY(-2px); }
+}
+
+/* Explore day slider: the mini chart shows through a transparent track. */
+.sq-range { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+.sq-range::-webkit-slider-runnable-track { height: 2px; background: rgb(148 160 188 / 0.35); border-radius: 2px; }
+.sq-range::-moz-range-track { height: 2px; background: rgb(148 160 188 / 0.35); border-radius: 2px; }
+.sq-range::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -7px; border-radius: 999px;
+  background: var(--sq-accent); border: 3px solid #0b1324; box-shadow: 0 0 0 1px var(--sq-accent), 0 0 14px rgb(45 212 191 / 0.55); }
+.sq-range::-moz-range-thumb { width: 12px; height: 12px; border-radius: 999px; background: var(--sq-accent); border: 3px solid #0b1324; }
+.sq-range:focus-visible { outline: none; }
+.sq-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--sq-accent), 0 0 14px rgb(45 212 191 / 0.55); }
+.sq-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--sq-accent); }
+@media (max-width: 767px) { .maplibregl-ctrl-top-right { margin-top: 112px; } }

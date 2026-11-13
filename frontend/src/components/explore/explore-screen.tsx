@@ -12,7 +12,7 @@ import { useApp } from "@/components/shell/app-context";
 import { ErrorState, Skeleton, WakeUpState } from "@/components/ds/states";
 import { getExplore } from "@/lib/api";
 import { cityStations, hasLowCost, parseView, viewQuery, type Pollutant } from "@/lib/explore";
-import { MAP_CREDITS } from "@/lib/map-base";
+import { CITY_COLOURS } from "@/lib/categories";
 import type { ExploreData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ExploreMap } from "./explore-map";
@@ -46,6 +46,7 @@ export function ExploreScreen() {
   const [day, setDay] = useState<number | null>(null);
   const [lowCost, setLowCost] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState<1 | 2>(1);
   const [highlight, setHighlight] = useState<number | null>(null);
   const cache = useRef<Partial<Record<Pollutant, ExploreData>>>({});
   const [data, setData] = useState<ExploreData | null>(null);
@@ -100,9 +101,9 @@ export function ExploreScreen() {
         }
         return cur + 1;
       });
-    }, STEP_MS);
+    }, STEP_MS / speed);
     return () => clearInterval(t);
-  }, [playing, dates.length]);
+  }, [playing, dates.length, speed]);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (reduce) setPlaying(false);
@@ -138,7 +139,7 @@ export function ExploreScreen() {
   // station never hides another one) and the timeline at the bottom.
   const padding = phone
     ? { top: 120, bottom: 230, left: 28, right: 28 }
-    : { top: 100, bottom: 210, left: 420, right: city ? 420 : 60 };
+    : { top: 100, bottom: 120, left: 420, right: city ? 420 : 60 };
 
   const loading = !data && !failed;
   const shownStations = data && city ? cityStations(data, city, lowCost) : [];
@@ -157,7 +158,10 @@ export function ExploreScreen() {
     </div>
   );
   const time = data && date && (
-    <TimeControl dates={dates} day={i} onDay={pickDay} playing={playing} onPlay={togglePlay} canPlay={!reduce} compact={phone} />
+    <TimeControl dates={dates} day={i} onDay={pickDay} playing={playing} onPlay={togglePlay} canPlay={!reduce} compact={phone}
+      speed={speed} onSpeed={setSpeed}
+      series={city ? [{ colour: "#2DD4BF", values: data.cities[city]?.values ?? [] }]
+        : Object.entries(data.cities).map(([c, v]) => ({ colour: CITY_COLOURS[c] ?? "#94A0BC", values: v.values }))} />
   );
   const list = data && date ? (
     city ? (
@@ -171,17 +175,6 @@ export function ExploreScreen() {
     <ErrorState title="The station data could not load" message="The data server did not answer."
       onRetry={() => void (backend === "down" ? recheckBackend() : load(pollutant))} />
   ) : backend === "waking" ? <WakeUpState compact /> : null;
-  const credits = (
-    <p className="text-[10.5px] leading-4 text-faint">
-      {"Map: "}
-      {MAP_CREDITS.slice(0, 3).map((c, k) => (
-        <span key={c.text}>{k === 1 ? " © " : k === 2 ? " Data from " : ""}<a className="underline underline-offset-2" href={c.href} target="_blank" rel="noreferrer">{c.text}</a></span>
-      ))}
-      {" · India boundary as per the Survey of India ("}<a className="underline underline-offset-2" href={MAP_CREDITS[3].href} target="_blank" rel="noreferrer">DataMeet</a>, CC0)
-      {" · districts: "}<a className="underline underline-offset-2" href="https://github.com/datameet/maps/tree/master/Districts" target="_blank" rel="noreferrer">DataMeet</a>, CC BY 2.5 IN
-      {" · Station data: CPCB and others via OpenAQ"}
-    </p>
-  );
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-background">
@@ -202,9 +195,8 @@ export function ExploreScreen() {
               <div className="mx-2 mt-5 border-t border-line pt-4"><Legend pollutant={pollutant} /></div>
             </div>
           </aside>
-          <div className={cn("absolute bottom-4 left-[402px] z-10 border border-line-strong bg-[#0b1324]/[0.96] backdrop-blur-xl rounded-2xl px-5 py-4 shadow-float", stationObj ? "right-[402px]" : "right-4 xl:right-auto xl:w-[560px]")}>
-            {time ?? <Skeleton className="h-[86px]" />}
-            <div className="mt-2 border-t border-line pt-2">{credits}</div>
+          <div className={cn("absolute bottom-4 left-[402px] z-10 rounded-2xl border border-line-strong bg-[#0b1324]/[0.94] px-4 py-2 shadow-float backdrop-blur-xl", stationObj ? "right-[402px]" : "right-[60px]")}>
+            {time ?? <Skeleton className="h-[52px]" />}
           </div>
           {stationObj && data && (
             <aside aria-label="Station" className="absolute top-[76px] right-4 bottom-4 z-10 border border-line-strong bg-[#0b1324]/[0.97] backdrop-blur-xl w-[370px] overflow-y-auto rounded-3xl p-5 shadow-float">
@@ -219,7 +211,7 @@ export function ExploreScreen() {
           </p>
           <BottomSheet size={sheet} onSize={setSheet}>
             <div className="flex flex-col gap-4">
-              {time ?? <Skeleton className="h-[80px]" />}
+              {time ?? <Skeleton className="h-[72px]" />}
               <p className="-mt-1 text-[12px] text-faint">Tap a city, then a station. Drag up for the list.</p>
               {controls}
               {state}
@@ -227,7 +219,6 @@ export function ExploreScreen() {
                 <StationPanel station={stationObj} data={data} day={i} onClose={() => setStation(null)} />
               ) : loading ? <ListSkeleton /> : list}
               <Legend pollutant={pollutant} />
-              {credits}
             </div>
           </BottomSheet>
         </>
