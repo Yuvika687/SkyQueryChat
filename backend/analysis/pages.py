@@ -55,8 +55,9 @@ def _unusual_reason(u: dict, festival: set[date]) -> str:
     return "; ".join(parts)
 
 
-def city_page(s: Store, city: str) -> dict:
-    latest = {p: latest_city_values(s, p) for p in ("pm25", "pm10")}
+def city_page(s: Store, city: str, latest: dict | None = None, explore: dict | None = None) -> dict:
+    """latest ({"pm25": ..., "pm10": ...}) and explore (PM2.5) may be passed in from the API's caches."""
+    latest = latest or {p: latest_city_values(s, p) for p in ("pm25", "pm10")}
     end = date.fromisoformat(latest["pm25"]["date"])
     start30 = end - timedelta(days=29)
     hero = next(c for c in latest["pm25"]["cities"] if c["city"] == city)
@@ -118,7 +119,7 @@ def city_page(s: Store, city: str) -> dict:
                          "groups": [{"label": g.get("label") or g["group"], "days": g["n_days"], "mean": g["mean_pm"]}
                                     for g in v["groups"]], "chart": w["chart"], "source": w["source"]}
 
-    ex = explore_data(s, "pm25")
+    ex = explore or explore_data(s, "pm25")
     stations = []
     for st in ex["stations"]:
         if st["city"] != city:

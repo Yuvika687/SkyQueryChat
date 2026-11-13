@@ -322,7 +322,9 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         c = _city(city)
         cache = state.setdefault("city", {})
         if c not in cache:
-            cache[c] = await asyncio.to_thread(PG.city_page, S(), c)
+            lat = {p: await latest(pollutant=p) for p in ("pm25", "pm10")}      # reuse the cached results
+            ex = await explore(pollutant="pm25")
+            cache[c] = await asyncio.to_thread(PG.city_page, S(), c, lat, ex)
         return cache[c]
 
     @app.get("/api/compare/periods")

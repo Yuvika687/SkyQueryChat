@@ -36,7 +36,7 @@ export interface CompareData {
 }
 export interface Periods { data_start: string; data_end: string; presets: { id: string; label: string; start: string; end: string }[] }
 
-export const getCityPage = (slug: string, signal?: AbortSignal) => getJSON<CityPage>(`/api/city/${slug}`, 30_000, signal);
+export const getCityPage = (slug: string, signal?: AbortSignal) => getJSON<CityPage>(`/api/city/${slug}`, 60_000, signal);
 export const getPeriods = (signal?: AbortSignal) => getJSON<Periods>("/api/compare/periods", 15_000, signal);
 export const getCompare = (cities: string[], metric: Metric, start: string, end: string, signal?: AbortSignal) =>
-  getJSON<CompareData>(`/api/compare?cities=${encodeURIComponent(cities.join(","))}&metric=${metric}&start=${start}&end=${end}`, 30_000, signal);
+  getJSON<CompareData>(`/api/compare?cities=${encodeURIComponent(cities.join(","))}&metric=${metric}&start=${start}&end=${end}`, 60_000, signal);

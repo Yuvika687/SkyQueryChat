@@ -387,7 +387,7 @@ Rules:
 - Ask accepts `/ask?q=...` (starts a new chat, sends once, then clears the address). Answer text is shown through
   `readable()` (ISO dates -> "9 Nov 2026", "16:00" -> "4 PM"); numbers are untouched.
 - "Very poor" chips use dark text (#1A0404): white on #EF4444 is only 3.8:1.
-- Explore and Compare are placeholder pages that say they are being built and offer an Ask question.
+- *(Replaced 2026-11-13: Explore, the city pages and Compare are built; see below.)* Explore and Compare were placeholder pages.
 
 ### Home polish and Explore (branch `redesign`, 2026-11-13)
 
@@ -432,6 +432,26 @@ Rules:
   ("9 Nov 2026", "9–10 Nov 2026", "13 Oct – 11 Nov 2026", "Nov 9, 2026"): each day must be a tool date (dates are kept in
   the allowed set as `DATE_CODE + yyyymmdd`); "PM2.5 November" is not a date. The evaluation scorer matches readable
   dates against ISO expectations (`iso_dates` in `scripts/run_eval.py`).
+
+### Statistics, city pages, Compare and release polish (2026-11-13)
+
+- `backend/analysis/stats.py` (numpy only; tests check it against scipy, a dev dependency): Mann-Kendall + Sen's slope
+  (direction only when p < 0.05; "not enough data" under 20 valid days), weekly block-bootstrap 95% ranges (fixed seed),
+  Spearman with a Fisher-z 95% range, "too close to call" when neighbouring ranges overlap by at least half of the
+  narrower one. `city_trend`, `compare_cities` (now a multi-line daily chart) and `weather_relationship` (scatter plus a
+  Python-calculated Theil-Sen line) carry these. The checker allows the label "95% range"; `trend_conflicts` rejects
+  trend wording that contradicts the trend test. Eval set `evals/analysis.json` (references in `analysis_refs`, scipy).
+- Read-only `backend/analysis/pages.py`: `/api/city/{city}`, `/api/compare`, `/api/compare/periods` (cached; compare
+  cache bounded). Frontend `/city/[slug]` (six static slugs; params read inside Suspense, unknown slug shows not-found),
+  `/compare` (selection in the address), styled 404, `error.tsx` and `global-error.tsx` (this Next version passes
+  `retry`), sitemap, robots, icon, static `public/og.png`.
+- `/api/accuracy` adds `answer_wording_since` and the CPCB cross-check agreement figures only (never the PM-only
+  estimates). The panel shows first-pass scores and marks runs measured with an earlier wording.
+- Home draws the official outline as SVG at once and loads MapLibre when the browser is idle (Lighthouse desktop: Home
+  99/100/100/100, Ask 100 x4). Explore has no zoom buttons on phones (pinch; axe target size).
+- `e2e/a11y.spec.ts` runs axe on every page at three sizes (zero serious/critical).
+- Memory (Linux amd64 container, 512 MB, 0.1 CPU): peak 305 MiB after every data, city and compare endpoint. The first
+  city page takes about 15 s there under emulation (0.36 s natively), then it is cached.
 
 ## 6. UI requirements
 

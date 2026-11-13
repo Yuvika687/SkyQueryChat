@@ -1393,3 +1393,17 @@ Run with the shared limiter, Gemini 3.5 Flash Lite only, within the free daily q
 
 The first wording ("briefly") made headlines drop caveats the scorer looks for; the caveat wording fixed that.
 Not rerun with the final wording because of the daily quota: the 44 main turns that passed, holdout2's other 10 turns.
+
+# Part 16 — Statistics, city pages and Compare (2026-11-13)
+
+- **Statistics:** Mann-Kendall with Sen's slope, weekly block-bootstrap 95% ranges, and Spearman with a Fisher-z range.
+  Each is checked against scipy in `tests/test_stats.py`.
+- **Statistics set (`evals/analysis.json`, 8 questions):**
+  - **First complete run 20261113-1711:** 5/8. A02 hit the step limit, A06 said "no clear trend" when the test said
+    "not enough data", and A07 was a model timeout.
+  - **Fixes:** the trend-wording check and clearer tool fields.
+  - **Second complete run 20261113-1808:** 8/8, using 21 requests and 56,883 tokens.
+- **Other sets:** not re-run in full with the current wording. Gemini 3.5 Flash-Lite had about 309 requests used
+  today (cap 400 = 80% of 500), and the main set needs about 125.
+- **Memory (Linux amd64 container, 512 MB, 0.1 CPU):** 267 MiB idle; 305 MiB peak after `/api/latest`, both explore
+  payloads, all six `/api/city` pages and three `/api/compare` requests. No out-of-memory events.
