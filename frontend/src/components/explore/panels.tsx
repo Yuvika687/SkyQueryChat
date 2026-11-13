@@ -2,7 +2,9 @@
 
 // Explore side-panel pieces: controls, date player, legend, city ranking, station list and station panel.
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, MessageSquare, Pause, Play, X } from "lucide-react";
+import { useState } from "react";
+import { healthNote } from "@/lib/health";
+import { ArrowLeft, ArrowRight, MessageSquare, Pause, Play, Search, X } from "lucide-react";
 import { CATEGORY_STYLE, pmCategory, type Category } from "@/lib/categories";
 import {
   LEGEND_RANGES, POLLUTANT_LABEL, dayStatus, fmtLastReading, monitorType, rankCities, rankStations, stationQuestion, statusColour,
@@ -309,6 +311,9 @@ export function StationPanel({ station, data, day, onClose }: { station: Explore
             </p>
             <ScaleBar value={st.value} scale={pol} />
             <p className="mt-3 text-[13px] text-subtle">Valid hours: <span className="num font-semibold text-foreground">{st.hours} of 24</span></p>
+            {healthNote(st.category) && (
+              <p className="mt-2 text-[12.5px] text-subtle"><span className="text-faint">CPCB health note:</span> {healthNote(st.category)}.</p>
+            )}
           </>
         ) : (
           <p className="mt-2 text-[15px] font-medium">
@@ -323,7 +328,13 @@ export function StationPanel({ station, data, day, onClose }: { station: Explore
 
       <div>
         <p className="mb-1 text-[12px] text-faint">Last 30 days · {fmtSpan(data.dates[0], data.dates[data.dates.length - 1])}</p>
-        <StationChart dates={data.dates} values={station.values} day={day} pollutant={pol} />
+        {station.values.some((v) => v != null) ? (
+          <StationChart dates={data.dates} values={station.values} day={day} pollutant={pol} />
+        ) : (
+          <p className="rounded-xl border border-dashed border-line px-3.5 py-4 text-[13px] text-subtle">
+            No 24-hour values for this station in this period. Try {pol === "pm25" ? "PM10" : "PM2.5"} or another station.
+          </p>
+        )}
       </div>
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[13px]">
@@ -339,6 +350,55 @@ export function StationPanel({ station, data, day, onClose }: { station: Explore
         </Link>
         <p className="mt-1.5 text-[11.5px] text-faint">Opens Ask with: “{q}” Answers use the city average, which includes this station.</p>
       </div>
+    </div>
+  );
+}
+
+/** Find any station by name across the six cities (combobox: arrows, Enter, Escape). Choosing one flies to it. */
+export function StationSearch({ stations, onPick }: { stations: ExploreStation[]; onPick: (s: ExploreStation) => void }) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [at, setAt] = useState(0);
+  const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[^a-z0-9 ]/g, " ");
+  const words = norm(q).split(/\s+/).filter(Boolean);
+  const hits = words.length
+    ? stations.filter((s) => words.every((w) => norm(`${s.name} ${s.city}`).includes(w))).slice(0, 8)
+    : [];
+  const pick = (s: ExploreStation) => { onPick(s); setQ(""); setOpen(false); };
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setOpen(true); setAt((a) => Math.min(a + 1, hits.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setAt((a) => Math.max(a - 1, 0)); }
+    else if (e.key === "Enter" && hits[at]) { e.preventDefault(); pick(hits[at]); }
+    else if (e.key === "Escape") { setOpen(false); }
+  };
+  const show = open && words.length > 0;
+  return (
+    <div className="relative">
+      <label htmlFor="station-search" className="sr-only">Find a station</label>
+      <div className="flex h-10 items-center gap-2 rounded-xl border border-line bg-white/[0.03] px-3 focus-within:border-teal">
+        <Search className="size-4 shrink-0 text-faint" aria-hidden />
+        <input id="station-search" role="combobox" aria-expanded={show} aria-controls="station-results" aria-autocomplete="list"
+          aria-activedescendant={show && hits[at] ? `station-opt-${hits[at].id}` : undefined}
+          value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); setAt(0); }} onKeyDown={onKey}
+          onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 120)}
+          placeholder="Find a station by name" autoComplete="off"
+          className="min-w-0 flex-1 bg-transparent text-[13.5px] outline-none placeholder:text-faint" />
+      </div>
+      {show && (
+        <ul id="station-results" role="listbox" aria-label="Stations"
+          className="absolute inset-x-0 top-11 z-30 max-h-72 overflow-y-auto rounded-xl border border-line-strong bg-[#0d1528] p-1 shadow-float">
+          {hits.length === 0 ? (
+            <li className="px-3 py-2.5 text-[13px] text-subtle">No station matches “{q}”. Try part of the name, such as “Vihar”.</li>
+          ) : hits.map((s, k) => (
+            <li key={s.id} id={`station-opt-${s.id}`} role="option" aria-selected={k === at}
+              onMouseDown={(e) => { e.preventDefault(); pick(s); }} onMouseEnter={() => setAt(k)}
+              className={cn("flex cursor-pointer items-baseline justify-between gap-3 rounded-lg px-3 py-2 text-[13px]", k === at && "bg-white/[0.07]")}>
+              <span className="min-w-0 truncate">{shortName(s.name)}</span>
+              <span className="shrink-0 text-[11.5px] text-faint">{s.city}{s.tier === "low_cost" ? " · low-cost" : ""}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

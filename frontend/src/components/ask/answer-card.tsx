@@ -2,9 +2,10 @@
 
 // The answer: data-type badge, period, "N numbers checked", the model's headline with clickable numbers, key
 // numbers with category and scale bar, the short explanation, notes and follow-ups that ask at once.
-import { ArrowUpRight, Check } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Link2 } from "lucide-react";
 import { useMemo } from "react";
 import { CategoryBadge, ScaleBar } from "@/components/ds/data-display";
+import { copyText, useToast } from "@/components/ds/toast";
 import type { Turn } from "@/lib/chat-state";
 import { evidenceFor } from "@/lib/evidence";
 import { followUps } from "@/lib/followups";
@@ -45,6 +46,23 @@ export function NumberText({ text, targets, onProof, active, className }: {
   );
 }
 
+/** Plain-text copy of an answer: headline, explanation, notes, period, source and the number check. */
+export function answerAsText(turn: Turn): string {
+  const a = turn.answer!;
+  const ev = evidenceFor(turn);
+  const parts = [`Q: ${turn.question}`, readable(a.headline || a.text)];
+  if (a.method !== undefined && a.explanation) parts.push(readable(a.explanation));
+  for (const w of a.required_warnings ?? []) parts.push(`Note: ${readable(w.text)}`);
+  const facts = [ev.dataType && `Data: ${ev.dataType}`, ev.period && `Period: ${readable(ev.period)}`, ev.source && `Source: ${readable(ev.source)}`,
+    a.verification?.numbers_checked ? `${a.verification.numbers_checked} numbers checked against the analysis` : null].filter(Boolean);
+  parts.push(facts.join(" · "));
+  return parts.join("\n\n") + "\n";
+}
+
+export function shareLink(question: string): string {
+  return `${window.location.origin}/ask?q=${encodeURIComponent(question)}`;
+}
+
 export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
   turn: Turn; onProof: (t: Target) => void; activeProof: string | null; onAsk: (q: string) => void; busy: boolean;
 }) {
@@ -58,6 +76,7 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
   const explanation = a.method !== undefined ? a.explanation : "";
   const fups = followUps(turn);
   const notes = (a.required_warnings ?? []).map((w) => w.text);
+  const toast = useToast();
   return (
     <div className="glass flex flex-col gap-4 rounded-3xl p-5 shadow-card sm:p-6">
       <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-subtle">
@@ -70,6 +89,18 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
             <Check className="size-3.5" aria-hidden />{checked} numbers checked
           </span>
         ) : null}
+        {a.status === "answered" && (
+          <span className="ml-auto flex items-center gap-1">
+            <button type="button" onClick={() => void copyText(shareLink(turn.question), toast, "Link copied")}
+              className="inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12px] text-subtle hover:bg-white/[0.05] hover:text-foreground">
+              <Link2 className="size-3.5" aria-hidden />Copy link
+            </button>
+            <button type="button" onClick={() => void copyText(answerAsText(turn), toast, "Answer copied")}
+              className="inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12px] text-subtle hover:bg-white/[0.05] hover:text-foreground">
+              <Copy className="size-3.5" aria-hidden />Copy answer
+            </button>
+          </span>
+        )}
       </div>
 
       <NumberText text={lead} targets={targets} onProof={onProof} active={activeProof}

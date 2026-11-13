@@ -253,3 +253,19 @@
 .sq-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--sq-accent), 0 0 14px rgb(45 212 191 / 0.55); }
 .sq-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--sq-accent); }
 @media (max-width: 767px) { .maplibregl-ctrl-top-right { margin-top: 112px; } }
+
+/* Page transition: a quick fade in (no transform, so fixed layouts keep the viewport as their frame). */
+@keyframes sq-page-in { from { opacity: 0.35; } to { opacity: 1; } }
+.sq-page { animation: sq-page-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Loading skeletons: a soft shimmer. */
+@keyframes sq-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+.sq-shimmer {
+  background-image: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 0.06) 45%, transparent 70%);
+  background-size: 200% 100%; animation: sq-shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sq-page, .sq-shimmer, .sq-pulse { animation: none !important; }
+  .sq-lift { transition: none; }
+}

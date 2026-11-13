@@ -612,3 +612,15 @@ def test_accuracy_reports_first_pass_scores_and_crosscheck(store):
         mp = d["sets"]["main"]["main_first_pass"]
         assert mp["kind"] == "first" and mp["complete"]                     # only complete first passes are headline
         assert set(d["crosscheck"]["by_city"]) == {"Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"}
+
+
+def test_day_over_day_change_only_against_a_valid_previous_day(store):
+    with TestClient(make(store)) as c:
+        for x in c.get("/api/latest").json()["cities"]:
+            prev = x["series"][-2]
+            if prev["value"] is None:
+                assert x["change"] is None and x["previous"] is None
+            else:
+                assert x["previous"] == prev and x["change"] == round(x["value"] - prev["value"], 1)
+        h = c.get("/api/city/delhi").json()["hero"]
+        assert "change" in h and "previous" in h

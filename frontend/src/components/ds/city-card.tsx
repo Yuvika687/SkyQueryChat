@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { fmtDate } from "@/lib/format";
 import type { LatestCity } from "@/lib/types";
+import { healthNote } from "@/lib/health";
 import { CategoryBadge, ScaleBar, Sparkline, StatNumber, categoryOf } from "./data-display";
+import { DayChange } from "./day-change";
 
 /** One city's latest available value: figure, category, scale bar, stations reporting and 7 days.
  * Phones get a compact version (about a third of the height) with the same facts. */
@@ -15,11 +17,12 @@ export function CityCard({ city, rank, date, pollutantLabel = "PM2.5" }: {
 }) {
   const cat = categoryOf(city.value, "pm25");
   const rankText = String(rank).padStart(2, "0");
+  const health = healthNote(cat);
   return (
     <Link
       href={`/city/${city.city.toLowerCase()}`}
-      className="glass group flex h-full flex-col rounded-2xl px-4 py-3 shadow-card transition-colors hover:border-line-strong md:p-5"
-      aria-label={`${city.city}: ${city.value} µg/m³ ${pollutantLabel}, ${cat ?? "no category"}, ${fmtDate(date)}, ${city.stations_reporting} of ${city.stations_total} stations reporting. Open the city page.`}
+      className="glass group sq-lift flex h-full flex-col rounded-2xl px-4 py-3 shadow-card transition-colors hover:border-line-strong md:p-5"
+      aria-label={`${city.city}: ${city.value} µg/m³ ${pollutantLabel}, ${cat ?? "no category"}, ${fmtDate(date)}${city.change != null && city.previous ? `, ${city.change > 0 ? "up" : city.change < 0 ? "down" : "no change"} ${Math.abs(city.change).toFixed(1)} from ${fmtDate(city.previous.date)}` : ""}, ${city.stations_reporting} of ${city.stations_total} stations reporting.${health ? ` CPCB health note: ${health}.` : ""} Open the city page.`}
     >
       {/* phone: two rows */}
       <div className="flex items-center gap-2.5 md:hidden">
@@ -33,6 +36,7 @@ export function CityCard({ city, rank, date, pollutantLabel = "PM2.5" }: {
       </div>
       <div className="mt-2 flex items-center gap-3 pl-[30px] md:hidden">
         <ScaleBar value={city.value} scale="pm25" showEnds={false} className="flex-1" />
+        <DayChange change={city.change} previous={city.previous} className="text-[11px]" />
         <Sparkline points={city.series} width={72} height={20} />
       </div>
 
@@ -47,10 +51,15 @@ export function CityCard({ city, rank, date, pollutantLabel = "PM2.5" }: {
       <p className="mt-3 mb-4 hidden items-baseline gap-1.5 md:flex">
         <StatNumber value={city.value} className="text-[40px] leading-none font-medium tracking-tight" />
         <span className="text-sm text-subtle">µg/m³</span>
+        <DayChange change={city.change} previous={city.previous} className="ml-auto self-center" />
       </p>
       <ScaleBar value={city.value} scale="pm25" className="hidden md:block" />
       <div className="mt-auto hidden items-end justify-between gap-3 pt-4 text-[12.5px] text-faint md:flex">
-        <span>{city.stations_reporting} of {city.stations_total} stations reporting</span>
+        {/* hover/focus: CPCB's health note for the category replaces the stations line (same space, no jump) */}
+        <span className="relative min-h-8 flex-1">
+          <span className="absolute inset-x-0 bottom-0 transition-opacity duration-200 group-hover:opacity-0 group-focus-visible:opacity-0">{city.stations_reporting} of {city.stations_total} stations reporting</span>
+          {health && <span aria-hidden className="absolute inset-x-0 bottom-0 line-clamp-2 leading-4 text-subtle opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">CPCB: {health}</span>}
+        </span>
         <span className="flex items-end gap-2">
           <span className="text-[11px]">7 days</span>
           <Sparkline points={city.series} width={104} height={28} />

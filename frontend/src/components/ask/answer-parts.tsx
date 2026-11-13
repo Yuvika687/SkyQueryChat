@@ -14,6 +14,7 @@ const EChart = dynamic(() => import("@/components/chart/echart").then((m) => m.E
 import { CATEGORY_STYLE, DATA_TYPE_LABEL, normaliseCategory } from "@/lib/categories";
 import { buildOption, eventKey, isAQI } from "@/lib/chart-options";
 import { chartTable, download, slug, toCSV } from "@/lib/chart-data";
+import { useToast } from "@/components/ds/toast";
 import type { Evidence } from "@/lib/evidence";
 import { fmtDate, fmtRange, pollutantLabel, readable } from "@/lib/format";
 import { keyNumbers } from "@/lib/key-numbers";
@@ -76,8 +77,8 @@ export function CategoryChip({ category, prefix }: { category: string; prefix?: 
 /** compact: inside the evidence panel, where the Data tab already holds the table. */
 export function ChartPanel({ spec, dataType, answerText, compact }: { spec: ChartSpec; dataType: DataType | null; answerText: string; compact?: boolean }) {
   const [view, setView] = useState<"chart" | "table">("chart");
-  const [copied, setCopied] = useState(false);
-  const chartRef = useRef<EChartHandle>(null);
+  const toast = useToast();
+  const chartRef = useRef<EChartHandle | null>(null);
   const option = useMemo(() => buildOption(spec, dataType), [spec, dataType]);
   const table = useMemo(() => chartTable(spec), [spec]);
   const height = spec.type === "calendar_heatmap" ? 230 : spec.type === "bar" ? Math.max(160, (spec.series[0]?.data.length ?? 4) * 36 + 56) : compact ? 250 : 280;
@@ -86,21 +87,17 @@ export function ChartPanel({ spec, dataType, answerText, compact }: { spec: Char
   const key = eventKey(spec);
   const notes = (spec.notes ?? []).filter((n) => !/colours?:/i.test(n) && !/^Each point is one CPCB bulletin/i.test(n));
 
-  const csv = () => download(`${name}.csv`, URL.createObjectURL(new Blob([toCSV(table)], { type: "text/csv;charset=utf-8" })));
+  const csv = () => {
+    download(`${name}.csv`, URL.createObjectURL(new Blob([toCSV(table)], { type: "text/csv;charset=utf-8" })));
+    toast("Data downloaded (CSV)");
+  };
   const png = () => {
     if (view !== "chart") setView("chart");
     const url = chartRef.current?.toPNG();
-    if (url) download(`${name}.png`, url);
+    if (url) { download(`${name}.png`, url); toast("Chart downloaded (PNG)"); }
+    else toast("The chart is still loading", "error");
   };
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(answerText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* clipboard blocked */
-    }
-  };
+  void answerText;
 
   return (
     <section aria-label="Chart" className="flex flex-col gap-1">
@@ -124,14 +121,13 @@ export function ChartPanel({ spec, dataType, answerText, compact }: { spec: Char
               </button>
             ))}
           </div>
-          <IconAction icon={Download} label="Download CSV" onClick={csv} />
-          <IconAction icon={FileImage} label="Download PNG" onClick={png} />
-          <IconAction icon={copied ? Check : Copy} label={copied ? "Copied" : "Copy answer"} onClick={copy} />
+          <IconAction icon={FileImage} label="Download chart" onClick={png} />
+          <IconAction icon={Download} label="Download data" onClick={csv} />
         </div>
       </div>
       {key && view === "chart" && <p className="text-xs leading-4 text-subtle">{key}</p>}
       <div className={cn("-mx-1", view !== "chart" && "hidden")}>
-        <EChart ref={chartRef} option={option} height={height} ariaLabel={`${spec.title}. Open the data table for the values.`} />
+        <EChart handle={chartRef} option={option} height={height} ariaLabel={`${spec.title}. Open the data table for the values.`} />
       </div>
       {view === "table" && <DataTable columns={table.columns} rows={table.rows} caption={spec.title} />}
       {notes.length > 0 && (

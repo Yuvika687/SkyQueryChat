@@ -22,9 +22,11 @@ interface Props {
   option: Record<string, unknown>;
   height: number;
   ariaLabel: string;
+  /** Receives the chart handle (PNG export). A plain prop, because lazily loaded components do not forward refs. */
+  handle?: React.MutableRefObject<EChartHandle | null>;
 }
 
-export const EChart = forwardRef<EChartHandle, Props>(function EChart({ option, height, ariaLabel }, ref) {
+export const EChart = forwardRef<EChartHandle, Props>(function EChart({ option, height, ariaLabel, handle }, ref) {
   const el = useRef<HTMLDivElement>(null);
   const chart = useRef<echarts.ECharts | null>(null);
 
@@ -36,14 +38,16 @@ export const EChart = forwardRef<EChartHandle, Props>(function EChart({ option, 
     if (!el.current) return;
     const c = echarts.init(el.current, undefined, { renderer: "canvas" });
     chart.current = c;
+    if (handle) handle.current = { toPNG: () => c.getDataURL({ type: "png", pixelRatio: 2, backgroundColor: "#121A2E" }) };
     const ro = new ResizeObserver(() => c.resize());
     ro.observe(el.current);
     return () => {
       ro.disconnect();
       c.dispose();
       chart.current = null;
+      if (handle) handle.current = null;
     };
-  }, []);
+  }, [handle]);
 
   useEffect(() => {
     const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;

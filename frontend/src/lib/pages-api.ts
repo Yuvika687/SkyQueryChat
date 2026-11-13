@@ -16,7 +16,8 @@ export interface Trend {
 
 export interface CityPage {
   city: string; date: string; units: string; source: string;
-  hero: { pm25: number; pm10: number; stations_reporting: number; stations_total: number; rank_of_six: number; date: string };
+  hero: { pm25: number; pm10: number; stations_reporting: number; stations_total: number; rank_of_six: number; date: string;
+    change?: number | null; previous?: { date: string; value: number } | null };
   trend30: { start: string; end: string; pm25: DayValue[]; pm10: DayValue[]; trend: Trend };
   calendar: { start: string; end: string; days: DayValue[] };
   diwali: {

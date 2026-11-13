@@ -6,7 +6,7 @@ import { CloudOff, Loader2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
-  return <div aria-hidden className={cn("animate-pulse rounded-lg bg-raised/70", className)} {...props} />;
+  return <div aria-hidden className={cn("sq-shimmer rounded-lg bg-raised/70", className)} {...props} />;
 }
 
 /** Shown when the free backend is asleep (it wakes on the first request). */
@@ -72,5 +72,15 @@ export function FadeIn({ children, delay = 0, className, as = "div" }: {
     >
       {children}
     </M>
+  );
+}
+
+/** Friendly empty state for a chart, table or panel: what is missing and what to try. */
+export function EmptyNote({ title, hint, className }: { title: string; hint?: string; className?: string }) {
+  return (
+    <div className={cn("rounded-xl border border-dashed border-line px-4 py-5 text-center", className)}>
+      <p className="text-[13.5px] font-medium">{title}</p>
+      {hint && <p className="mt-1 text-[12.5px] text-subtle">{hint}</p>}
+    </div>
   );
 }

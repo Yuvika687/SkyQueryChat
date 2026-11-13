@@ -723,7 +723,12 @@ def latest_city_values(s: Store, pollutant: str = "pm25", days: int = 7) -> dict
             "city": c, "value": r(float(row.city_mean)), "stations_reporting": int(row.n_valid_stations),
             "stations_total": int(row.n_primary_stations), "primary_stations": int(len(pos)),
             "lat": round(float(pos.lat.mean()), 4), "lon": round(float(pos.lon.mean()), 4),
-            "series": [{"date": str(d), "value": r(float(x.loc[d, "city_mean"])) if d in x.index else None} for d in week]})
+            "series": [{"date": str(d), "value": r(float(x.loc[d, "city_mean"])) if d in x.index else None} for d in week],
+            # change versus the previous calendar day, only when that day has a valid city value (never a gap-bridging)
+            **({"previous": {"date": str(week[-2]), "value": r(float(x.loc[week[-2], "city_mean"]))},
+                # from the values as shown (one decimal), so the change always matches the two figures on screen
+                "change": r(r(float(row.city_mean)) - r(float(x.loc[week[-2], "city_mean"])))} if week[-2] in x.index else
+               {"previous": None, "change": None})})
     return {"date": str(end), "start": str(week[0]), "pollutant": pollutant, "units": PM_UNITS,
             "data_type": "measured", "source": SRC_OPENAQ,
             "method": "24-hour city average of primary reference stations (IST day); a day counts only when enough "

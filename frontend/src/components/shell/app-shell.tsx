@@ -3,12 +3,13 @@
 // App frame: a slim floating top bar on desktop, a bottom tab bar on phones, and the "Data & accuracy" panel.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useContext, useState } from "react";
-import { BarChart3, Compass, GitCompareArrows, Home, MessageSquare } from "lucide-react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { BarChart3, Compass, GitCompareArrows, Home, MessageSquare, Search } from "lucide-react";
 import { fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useApp } from "./app-context";
 import { DataPanel } from "./data-panel";
+import { isMac, useQuickAsk } from "./quick-ask";
 
 export const NAV = [
   { href: "/", label: "Home", icon: Home },
@@ -97,6 +98,7 @@ function TopBar({ onData }: { onData: () => void }) {
             );
           })}
         </ul>
+        <QuickAskHint />
         <LatestChip className="ml-auto hidden lg:inline-flex md:ml-0" />
         <button
           type="button"
@@ -136,5 +138,20 @@ function TabBar() {
         })}
       </ul>
     </nav>
+  );
+}
+
+/** Desktop only: a subtle hint for the quick-ask shortcut (also clickable). */
+function QuickAskHint() {
+  const open = useQuickAsk();
+  const [mac, setMac] = useState(true);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMac(isMac()), []);
+  return (
+    <button type="button" onClick={open} aria-label={`Quick ask (${mac ? "Command" : "Control"} K)`}
+      className="hidden h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] text-faint transition-colors hover:text-foreground xl:inline-flex">
+      <Search className="size-3.5" aria-hidden />
+      <kbd className="rounded-md border border-line-strong bg-white/[0.03] px-1.5 py-px font-sans text-[11px] text-subtle">{mac ? "⌘" : "Ctrl"} K</kbd>
+    </button>
   );
 }

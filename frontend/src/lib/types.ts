@@ -173,6 +173,9 @@ export interface LatestCity {
   lat: number;
   lon: number;
   series: { date: string; value: number | null }[];
+  /** Change versus the previous calendar day, only when that day has a value (calculated in Python). */
+  change?: number | null;
+  previous?: { date: string; value: number } | null;
 }
 export interface Latest {
   date: string;

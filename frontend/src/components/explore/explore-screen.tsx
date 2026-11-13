@@ -13,10 +13,10 @@ import { ErrorState, Skeleton, WakeUpState } from "@/components/ds/states";
 import { getExplore } from "@/lib/api";
 import { cityStations, hasLowCost, parseView, viewQuery, type Pollutant } from "@/lib/explore";
 import { CITY_COLOURS } from "@/lib/categories";
-import type { ExploreData } from "@/lib/types";
+import type { ExploreData, ExploreStation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ExploreMap } from "./explore-map";
-import { CityRanking, Legend, LowCostToggle, PollutantToggle, StationList, StationPanel, TimeControl } from "./panels";
+import { CityRanking, Legend, LowCostToggle, PollutantToggle, StationList, StationPanel, StationSearch, TimeControl } from "./panels";
 
 const STEP_MS = 800;
 
@@ -127,6 +127,12 @@ export function ExploreScreen() {
     setStation(null);
   }, []);
   const pickStation = useCallback((id: number) => setStation(id), []);
+  /** From the search: open that station's city (and the low-cost layer if needed), then the station; the map flies. */
+  const findStation = (s: ExploreStation) => {
+    if (s.tier === "low_cost") setLowCost(true);
+    setCity(s.city);
+    setStation(s.id);
+  };
 
   // ---------------------------------------------------------------- layout
   const [sheet, setSheet] = useState<"peek" | "half" | "full">("peek");
@@ -152,9 +158,12 @@ export function ExploreScreen() {
     </div>
   );
   const controls = data && (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <PollutantToggle value={pollutant} onChange={pickPollutant} />
-      {hasLowCost(data) && <LowCostToggle on={lowCost} onChange={(v) => { setLowCost(v); if (!v && stationObj?.tier === "low_cost") setStation(null); }} />}
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <PollutantToggle value={pollutant} onChange={pickPollutant} />
+        {hasLowCost(data) && <LowCostToggle on={lowCost} onChange={(v) => { setLowCost(v); if (!v && stationObj?.tier === "low_cost") setStation(null); }} />}
+      </div>
+      <StationSearch stations={data.stations} onPick={findStation} />
     </div>
   );
   const time = data && date && (

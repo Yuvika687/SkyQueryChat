@@ -5,12 +5,13 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
-import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, Download, Link2, Sparkles } from "lucide-react";
 import { LazyChart } from "@/components/chart/lazy-chart";
 import { askHref } from "@/components/ds/ask-box";
 import { DataGate } from "@/components/ds/data-state";
 import { Section, Segmented } from "@/components/ds/section";
-import { Skeleton } from "@/components/ds/states";
+import { EmptyNote, Skeleton } from "@/components/ds/states";
+import { copyText, download, toCSV, useToast } from "@/components/ds/toast";
 import { CITIES, CITY_COLOURS } from "@/lib/categories";
 import { buildOption } from "@/lib/chart-options";
 import { fmtDate, fmtRange } from "@/lib/format";
@@ -145,6 +146,30 @@ function CompareBody({ sel, per, update }: { sel: Selection; per: Periods; updat
 }
 
 // ------------------------------------------------------------------ results
+/** The daily values shown in the chart, one row per date, plus what they are. */
+export function compareCSV(d: CompareData): string {
+  const cities = Object.keys(d.lines);
+  const rows: (string | number | null)[][] = [["date", ...cities.map((c) => `${c}_${d.metric}`), "unit", "data_type", "source"]];
+  d.dates.forEach((dt, i) => rows.push([dt, ...cities.map((c) => d.lines[c][i]), d.units, d.data_type, d.source]));
+  return toCSV(rows);
+}
+
+function Tools({ d }: { d: CompareData }) {
+  const toast = useToast();
+  const btn = "inline-flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 text-[13px] text-subtle transition-colors hover:border-teal/60 hover:text-foreground";
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button type="button" className={btn} onClick={() => void copyText(window.location.href, toast, "Link copied")}>
+        <Link2 className="size-3.5" aria-hidden />Copy link
+      </button>
+      <button type="button" className={btn}
+        onClick={() => { download(`compare-${d.metric}-${d.start}-${d.end}.csv`, compareCSV(d), "text/csv;charset=utf-8"); toast("Data downloaded (CSV)"); }}>
+        <Download className="size-3.5" aria-hidden />Download data (CSV)
+      </button>
+    </div>
+  );
+}
+
 function Results({ d, label }: { d: CompareData; label: string }) {
   const aqi = d.metric === "aqi";
   const unit = aqi ? "AQI" : "µg/m³";
@@ -168,8 +193,11 @@ function Results({ d, label }: { d: CompareData; label: string }) {
         </p>
       )}
       <Section id="lines" title={`${METRIC_NAME[d.metric].replace(/^o/, "O")} by day`}
-        line={<>{label}: {aqi ? "CPCB's 4 PM bulletins (official AQI, an index)" : "24-hour city averages (measured)"}. Days without a value are gaps.</>}>
-        <LazyChart option={option} height={340} ariaLabel={`${METRIC_NAME[d.metric]} by day for ${listJoin(d.cities.map((c) => c.city))}, ${fmtRange(d.start, d.end)}`} />
+        line={<>{label}: {aqi ? "CPCB's 4 PM bulletins (official AQI, an index)" : "24-hour city averages (measured)"}. Days without a value are gaps.</>}
+        action={<Tools d={d} />}>
+        {Object.values(d.lines).every((v) => v.every((x) => x == null)) ? (
+          <EmptyNote title="No values for these cities in this period" hint="Try a longer period, another pollutant, or a preset such as the last 90 days." className="h-[340px] content-center" />
+        ) : <LazyChart option={option} height={340} ariaLabel={`${METRIC_NAME[d.metric]} by day for ${listJoin(d.cities.map((c) => c.city))}, ${fmtRange(d.start, d.end)}`} />}
       </Section>
       <Section id="ranking" title="Ranking"
         line={`Highest first. Means use the ${d.common_days} days on which every selected city has a value; the bar shows the approximate 95% range.`}

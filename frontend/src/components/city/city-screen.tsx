@@ -4,11 +4,15 @@
 // comes from the read-only /api/city endpoint (the same Python analysis the Ask answers use).
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Download, Link2, MapPin } from "lucide-react";
 import { LazyChart } from "@/components/chart/lazy-chart";
 import { askHref } from "@/components/ds/ask-box";
-import { CategoryBadge, ScaleBar, categoryOf } from "@/components/ds/data-display";
+import { CategoryBadge, ScaleBar, StatNumber, categoryOf } from "@/components/ds/data-display";
+import { DayChange } from "@/components/ds/day-change";
+import { copyText, download, toCSV, useToast } from "@/components/ds/toast";
+import { HEALTH_SOURCE, healthNote } from "@/lib/health";
 import { DataGate } from "@/components/ds/data-state";
+import { EmptyNote } from "@/components/ds/states";
 import { Section, Segmented } from "@/components/ds/section";
 import { CATEGORY_STYLE, normaliseCategory } from "@/lib/categories";
 import { buildOption } from "@/lib/chart-options";
@@ -30,7 +34,7 @@ export function CityScreen({ slug, city }: { slug: string; city: string }) {
         <p className="mt-1 text-[13.5px] text-faint">Scroll for the last 30 days, a calendar, Diwali and the stations; each section says where its numbers come from.</p>
       </header>
       <DataGate state={state} what={`${city} page`}>
-        {(d) => <CityBody d={d} />}
+        {(d) => <><PageTools d={d} /><CityBody d={d} /></>}
       </DataGate>
     </div>
   );
@@ -50,6 +54,32 @@ function CityBody({ d }: { d: CityPage }) {
   );
 }
 
+// ------------------------------------------------------------------ copy link + CSV
+/** Every daily value on this page in one CSV: date, PM2.5, PM10 (last 30 days) and the calendar's PM2.5. */
+export function cityCSV(d: CityPage): string {
+  const pm10 = new Map(d.trend30.pm10.map((x) => [x.date, x.value]));
+  const rows: (string | number | null)[][] = [["city", "date", "pm25_ugm3", "pm10_ugm3", "stations_pm25", "data_type", "source"]];
+  for (const x of d.calendar.days) {
+    rows.push([d.city, x.date, x.value, pm10.get(x.date) ?? null, x.stations || null, "measured 24-hour city average", d.source]);
+  }
+  return toCSV(rows);
+}
+
+function PageTools({ d }: { d: CityPage }) {
+  const toast = useToast();
+  const btn = "inline-flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 text-[13px] text-subtle transition-colors hover:border-teal/60 hover:text-foreground";
+  return (
+    <div className="-mt-2 mb-5 flex flex-wrap gap-2">
+      <button type="button" className={btn} onClick={() => void copyText(window.location.href, toast, "Link copied")}>
+        <Link2 className="size-3.5" aria-hidden />Copy link
+      </button>
+      <button type="button" className={btn} onClick={() => { download(`${d.city.toLowerCase()}-daily-pm.csv`, cityCSV(d), "text/csv;charset=utf-8"); toast("Data downloaded (CSV)"); }}>
+        <Download className="size-3.5" aria-hidden />Download data (CSV)
+      </button>
+    </div>
+  );
+}
+
 // ------------------------------------------------------------------ hero
 function Hero({ d, className }: { d: CityPage; className?: string }) {
   const h = d.hero;
@@ -61,11 +91,18 @@ function Hero({ d, className }: { d: CityPage; className?: string }) {
         PM2.5 · 24-hour city average · latest available, <strong className="font-semibold text-foreground">{fmtDate(h.date)}</strong>
       </h2>
       <p className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-2">
-        <span className="num text-[64px] leading-none font-medium tracking-tight">{h.pm25.toFixed(1)}</span>
+        <StatNumber value={h.pm25} className="text-[64px] leading-none font-medium tracking-tight" />
         <span className="text-[15px] text-subtle">µg/m³</span>
         <CategoryBadge category={cat} label="PM2.5 category" className="ml-auto" />
       </p>
-      <ScaleBar value={h.pm25} scale="pm25" className="mt-5" />
+      <DayChange change={h.change} previous={h.previous} className="mt-2 text-[13px]" />
+      <ScaleBar value={h.pm25} scale="pm25" className="mt-4" />
+      {healthNote(cat) && (
+        <p className="mt-4 rounded-xl border border-line bg-white/[0.03] px-3.5 py-2.5 text-[13px]">
+          <span className="text-subtle">CPCB health note:</span> {healthNote(cat)}.
+          <span className="mt-0.5 block text-[11.5px] text-faint">{HEALTH_SOURCE}.</span>
+        </p>
+      )}
       <dl className="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-4 text-[13px]">
         <div><dt className="text-faint">PM10</dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.pm10.toFixed(1)} <span className="text-[12px] font-normal text-subtle">µg/m³</span></dd></div>
         <div><dt className="text-faint">Stations reporting</dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.stations_reporting} <span className="text-[12px] font-normal text-subtle">of {h.stations_total}</span></dd></div>
@@ -96,7 +133,9 @@ function Trend30({ d, className }: { d: CityPage; className?: string }) {
     <Section id="t30" title="Last 30 days" className={className}
       line={<>Daily city average, {fmtSpan(d.trend30.start, d.trend30.end)}. {gaps ? `${gaps} days without enough stations are left as gaps.` : "Every day has a value."}</>}
       action={<Segmented label="Pollutant" value={pol} onChange={setPol} options={[{ value: "pm25", label: "PM2.5" }, { value: "pm10", label: "PM10" }]} />}>
-      <LazyChart option={option} height={300} ariaLabel={`${d.city} ${pol === "pm25" ? "PM2.5" : "PM10"} by day, ${fmtSpan(d.trend30.start, d.trend30.end)}`} />
+      {days.every((x) => x.value == null) ? (
+        <EmptyNote title={`No city values for ${pol === "pm25" ? "PM2.5" : "PM10"} in the last 30 days`} hint={`Too few stations had 24-hour values. Try ${pol === "pm25" ? "PM10" : "PM2.5"}, or open Explore to see each station.`} className="h-[300px] content-center" />
+      ) : <LazyChart option={option} height={300} ariaLabel={`${d.city} ${pol === "pm25" ? "PM2.5" : "PM10"} by day, ${fmtSpan(d.trend30.start, d.trend30.end)}`} />}
       <p className="mt-3 text-[13px] text-subtle"><strong className="font-semibold text-foreground">PM2.5 trend: {t.short}.</strong> {cap(t.detail)}. Mann-Kendall test with Sen&apos;s slope.{d.trend30.trend.note ? ` ${d.trend30.trend.note}` : ""}</p>
     </Section>
   );
@@ -117,6 +156,13 @@ function Calendar({ d, className }: { d: CityPage; className?: string }) {
     return [...m.entries()].filter(([, v]) => v.some((x) => x.value != null));
   }, [d.calendar.days]);
   const [i, setI] = useState(months.length - 1);
+  if (!months.length) {
+    return (
+      <Section id="cal" title="Calendar" className={className} line="Daily PM2.5 for each month with data.">
+        <EmptyNote title="No daily PM2.5 values yet" hint="Months appear here once enough stations report a full day." />
+      </Section>
+    );
+  }
   const [key, days] = months[Math.min(i, months.length - 1)];
   const [y, mo] = key.split("-").map(Number);
   const lead = (new Date(Date.UTC(y, mo - 1, 1)).getUTCDay() + 6) % 7;
@@ -282,7 +328,9 @@ function Weather({ d, className }: { d: CityPage; className?: string }) {
     <Section id="weather" title="Weather and air" className={className}
       line="An association, not a cause: each dot is a day; the dashed line is fitted in Python (Theil-Sen)."
       action={<Segmented label="Weather" value={v} onChange={setV} options={[{ value: "rainfall", label: "Rainfall" }, { value: "wind speed", label: "Wind" }]} />}>
-      <LazyChart option={option} height={240} ariaLabel={`${d.city}: daily PM2.5 against ${v}`} />
+      {w.days < 20 ? (
+        <EmptyNote title="Too few matched days for an association" hint={`Only ${w.days} days have both a city PM2.5 value and weather. Try the other weather variable.`} className="h-[240px] content-center" />
+      ) : <LazyChart option={option} height={240} ariaLabel={`${d.city}: daily PM2.5 against ${v}`} />}
       {w.rho != null && (
         <p className="mt-3 text-[13px]">
           <strong className="font-semibold">{cap(w.strength ?? "")} association</strong>: Spearman ρ <span className="num">{fmtSigned(w.rho)}</span>
@@ -310,6 +358,7 @@ function Stations({ d, className }: { d: CityPage; className?: string }) {
   return (
     <Section id="stations" title="Stations" className={className}
       line="Every station with PM2.5 data in the last 30 days. Coverage is the share of those days with a 24-hour value. Open one to see it on the map.">
+      {d.stations.length === 0 && <EmptyNote title="No station reported PM2.5 in the last 30 days" hint="Try the calendar for earlier months." />}
       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {d.stations.map((s) => (
           <li key={s.id}>

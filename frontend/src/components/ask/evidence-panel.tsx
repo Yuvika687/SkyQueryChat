@@ -6,6 +6,7 @@
 import { ArrowLeft, Check } from "lucide-react";
 import { useState } from "react";
 import { CategoryBadge, ScaleBar } from "@/components/ds/data-display";
+import { EmptyNote } from "@/components/ds/states";
 import type { Turn } from "@/lib/chat-state";
 import { chartTable } from "@/lib/chart-data";
 import { evidenceFor } from "@/lib/evidence";
@@ -41,8 +42,10 @@ export function EvidencePanel({ turn, className }: { turn: Turn; className?: str
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-5 overflow-y-auto p-4" role="tabpanel">
         {tab === "evidence" ? (
           <>
-            {turn.chart && turn.chart.series?.some((s) => s.data.length > 0) && (
+            {turn.chart && turn.chart.series?.some((s) => s.data.length > 0) ? (
               <ChartPanel spec={turn.chart} dataType={dataType} answerText={a.headline || a.text} compact />
+            ) : (
+              <EmptyNote title="No chart for this answer" hint="Ask about a period (for example “over the last 30 days”) to get a chart." />
             )}
             <dl className="grid grid-cols-[96px_1fr] overflow-hidden rounded-xl border border-line text-[13px]">
               {rows.filter(([, v]) => v).map(([k, v]) => (
@@ -69,9 +72,11 @@ export function EvidencePanel({ turn, className }: { turn: Turn; className?: str
                 </ul>
               </section>
             )}
-            {table.rows.length > 0 && (
+            {table.rows.length > 0 ? (
               <DataTable columns={table.columns} rows={table.rows.map((r) => r.map((x) => (typeof x === "string" ? readable(x) : x)))} caption={readable(turn.chart?.title ?? "Values")} />
-            )}
+            ) : turn.cards.length === 0 ? (
+              <EmptyNote title="No data table for this answer" hint="This answer has no values to list. The Evidence tab says why." />
+            ) : null}
           </>
         )}
       </div>
