@@ -83,7 +83,7 @@ export function DataPanel({ open, onOpenChange }: { open: boolean; onOpenChange:
           <Section title="Cities and stations">
             {latest ? (
               <>
-                <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                <ul className="grid grid-cols-1 gap-x-4 gap-y-1.5 min-[420px]:grid-cols-2">
                   {[...latest.cities].sort((a, b) => a.city.localeCompare(b.city)).map((c) => (
                     <li key={c.city} className="flex justify-between gap-2">
                       <span>{c.city}</span>

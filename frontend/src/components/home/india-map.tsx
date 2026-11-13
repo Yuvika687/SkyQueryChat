@@ -89,6 +89,11 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
     async function start() {
       const geo: Geo = await loadBoundary();
       if (cancelled || !el) return;
+      // The official outline is drawn at once (cheap SVG); the basemap (MapLibre, ~1 MB) loads when the browser
+      // is idle and replaces it once rendered, so the first view never waits for it.
+      outline(geo);
+      await idle();
+      if (cancelled || !el) return;
       try {
         if (!hasWebGL()) throw new Error("no webgl");
         const [maplibregl, style] = await Promise.all([import("maplibre-gl"), loadBaseStyle()]);
@@ -104,16 +109,23 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
           addIndiaLayers(m, geo);
           project.current = (lon, lat) => { const p = m.project([lon, lat]); return [p.x, p.y]; };
           place();
-          m.once("idle", () => !cancelled && setMode("basemap"));
+          m.once("idle", () => { if (cancelled) return; el.querySelector(":scope > svg")?.remove(); setMode("basemap"); });
         });
         m.on("error", (ev) => {
           console.warn("Map error", ev?.error?.message ?? ev);
           if (map && !m.isStyleLoaded()) { m.remove(); map = null; outline(geo); }
         });
       } catch (e) {
-        console.warn("Basemap unavailable; drawing the official outline only.", e);
-        outline(geo);
+        console.warn("Basemap unavailable; keeping the official outline.", e);
       }
+    }
+
+    function idle() {
+      return new Promise<void>((done) => {
+        const go = () => ("requestIdleCallback" in window ? window.requestIdleCallback(() => done(), { timeout: 4000 }) : setTimeout(done, 1500));
+        if (document.readyState === "complete") setTimeout(go, 1200);
+        else window.addEventListener("load", () => setTimeout(go, 1200), { once: true });
+      });
     }
 
     function outline(geo: Geo) {

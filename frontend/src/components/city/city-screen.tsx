@@ -182,7 +182,7 @@ function Diwali({ d, className }: { d: CityPage; className?: string }) {
   return (
     <Section id="diwali" title="Diwali" className={className}
       line="Official AQI from CPCB's 4 PM bulletins. Diwali night shows in the next day's bulletin, so the festival level is the mean of the two bulletins after Diwali.">
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {d.diwali.years.map((y) => {
           const cat = normaliseCategory(y.category);
           return (
@@ -249,7 +249,7 @@ function Unusual({ d, className }: { d: CityPage; className?: string }) {
     <Section id="unusual" title="Unusual days" className={className}
       line={`Days far from the 15-day median of their neighbours (PM2.5; ${d.unusual.tested} days tested). The 12 most recent are shown.`}>
       {days.length === 0 ? <p className="text-[13px] text-subtle">No unusual days were flagged.</p> : (
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {days.map((u) => {
             const tags = u.reason.split("; ").slice(1);
             return (
@@ -310,7 +310,7 @@ function Stations({ d, className }: { d: CityPage; className?: string }) {
   return (
     <Section id="stations" title="Stations" className={className}
       line="Every station with PM2.5 data in the last 30 days. Coverage is the share of those days with a 24-hour value. Open one to see it on the map.">
-      <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {d.stations.map((s) => (
           <li key={s.id}>
             <Link href={`/explore?city=${encodeURIComponent(d.city)}&station=${s.id}`}
