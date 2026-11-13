@@ -660,3 +660,34 @@ def aqi_calendar_chart(s: Store, city: str, year: int) -> ChartSpec:
                      units="index (0-500)", bands=bands, colour_scale="cpcb_aqi",
                      notes=["Bulletin date X covers 16:00 IST on X-1 to 16:00 IST on X.",
                             f"AQI category colours: {AQI_COLOURS}"])
+
+
+# ----------------------------------------------------------------------------- home: latest available values
+def latest_city_values(s: Store, pollutant: str = "pm25", days: int = 7) -> dict:
+    """Each city's measured city value on the latest date every city has one, plus the `days` days up to it.
+    Read-only, no LLM. A day without a valid city value (fewer stations than the rule needs) is None, so the
+    sparkline shows a gap. Map position = mean coordinates of the city's primary stations."""
+    _check(pollutant=pollutant)
+    cd = s.q("SELECT city, local_date, city_mean, n_valid_stations, n_primary_stations, meets_rule "
+             "FROM city_daily WHERE pollutant=?", [pollutant])
+    cd["local_date"] = pd.to_datetime(cd["local_date"]).dt.date
+    ok = cd[cd.meets_rule]
+    end = min(ok[ok.city == c].local_date.max() for c in C.CITIES)
+    week = [end - timedelta(days=i) for i in range(days - 1, -1, -1)]
+    st = s.q("SELECT city, location_id, AVG(lat) AS lat, AVG(lon) AS lon FROM stations WHERE tier='primary' "
+             "GROUP BY city, location_id")
+    cities = []
+    for c in C.CITIES:
+        x = ok[ok.city == c].set_index("local_date")
+        row = x.loc[end]
+        pos = st[st.city == c]
+        cities.append({
+            "city": c, "value": r(float(row.city_mean)), "stations_reporting": int(row.n_valid_stations),
+            "stations_total": int(row.n_primary_stations), "primary_stations": int(len(pos)),
+            "lat": round(float(pos.lat.mean()), 4), "lon": round(float(pos.lon.mean()), 4),
+            "series": [{"date": str(d), "value": r(float(x.loc[d, "city_mean"])) if d in x.index else None} for d in week]})
+    return {"date": str(end), "start": str(week[0]), "pollutant": pollutant, "units": PM_UNITS,
+            "data_type": "measured", "source": SRC_OPENAQ,
+            "method": "24-hour city average of primary reference stations (IST day); a day counts only when enough "
+                      "stations have at least 16 valid hours.",
+            "cities": sorted(cities, key=lambda v: -v["value"])}

@@ -162,3 +162,38 @@ export interface Meta {
   attribution: Record<string, string> | null;
   demo_questions: string[];
 }
+
+/** GET /api/latest: each city's latest available value and its last 7 days (measured, read-only). */
+export interface LatestCity {
+  city: string;
+  value: number;
+  stations_reporting: number;
+  stations_total: number;
+  primary_stations: number;
+  lat: number;
+  lon: number;
+  series: { date: string; value: number | null }[];
+}
+export interface Latest {
+  date: string;
+  start: string;
+  pollutant: "pm25" | "pm10";
+  units: string;
+  data_type: string;
+  source: string;
+  method: string;
+  cities: LatestCity[]; // highest first
+}
+
+/** GET /api/accuracy: stored evaluation run summaries (never recomputed). */
+export interface EvalSummary {
+  turns: number;
+  pass: number;
+  pass_pct: number;
+  numbers_traceable_pct: number | null;
+  tool_choice_pct?: number | null;
+  reference_checks_pct?: number | null;
+}
+export interface Scoreboard {
+  sets: Record<string, { main_first_pass: { run: string; started: string; summary: { overall?: EvalSummary } & Partial<EvalSummary> } | null }>;
+}

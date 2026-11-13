@@ -7,7 +7,7 @@ import { CATEGORY_STYLE, DATA_TYPE_LABEL, normaliseCategory } from "@/lib/catego
 import { buildOption, eventKey, isAQI } from "@/lib/chart-options";
 import { chartTable, download, slug, toCSV } from "@/lib/chart-data";
 import type { Evidence } from "@/lib/evidence";
-import { fmtDate, fmtRange, pollutantLabel } from "@/lib/format";
+import { fmtDate, fmtRange, pollutantLabel, readable } from "@/lib/format";
 import { keyNumbers } from "@/lib/key-numbers";
 import type { Card, ChartSpec, DataType, ResolvedQuery, SourceRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -127,7 +127,7 @@ export function ChartPanel({ spec, dataType, answerText }: { spec: ChartSpec; da
       {view === "table" && <DataTable columns={table.columns} rows={table.rows} caption={spec.title} />}
       {notes.length > 0 && (
         <ul className="space-y-1 text-xs leading-4 text-subtle">
-          {notes.map((n) => <li key={n}>{n}</li>)}
+          {notes.map((n) => <li key={n}>{readable(n)}</li>)}
         </ul>
       )}
     </section>
@@ -271,7 +271,7 @@ export function EvidenceArea({ ev, rq, explanation, notes }: { ev: Evidence; rq:
           {explanation && (
             <>
               <p className="font-medium text-foreground">Method</p>
-              <p>{explanation.replace(/(\d{4}-\d{2}-\d{2})/g, (m) => fmtDate(m))}</p>
+              <p>{readable(explanation)}</p>
             </>
           )}
           <p className="font-medium text-foreground">Sources</p>
@@ -280,7 +280,7 @@ export function EvidenceArea({ ev, rq, explanation, notes }: { ev: Evidence; rq:
             <>
               <p className="font-medium text-foreground">Notes</p>
               <ul className="list-disc space-y-1 pl-4">
-                {notes.map((w) => <li key={w}>{w}</li>)}
+                {notes.map((w) => <li key={w}>{readable(w)}</li>)}
               </ul>
             </>
           )}
@@ -345,7 +345,7 @@ export function RequiredNotes({ notes }: { notes: { code: string; text: string }
   if (!notes.length) return null;
   return (
     <ul aria-label="Important notes" className="flex flex-col gap-1 border-l-2 border-warn/60 pl-3 text-[13px] leading-5 text-subtle">
-      {notes.map((w) => <li key={`${w.code}:${w.text}`}>{w.text}</li>)}
+      {notes.map((w) => <li key={`${w.code}:${w.text}`}>{readable(w.text)}</li>)}
     </ul>
   );
 }

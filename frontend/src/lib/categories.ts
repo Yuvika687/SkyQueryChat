@@ -10,7 +10,7 @@ export const CATEGORY_STYLE: Record<Category | "None", { bg: string; fg: string;
   Satisfactory: { bg: "#A3E635", fg: "#0B1020", label: "Satisfactory" },
   Moderate: { bg: "#FACC15", fg: "#0B1020", label: "Moderate" },
   Poor: { bg: "#FB923C", fg: "#0B1020", label: "Poor" },
-  "Very poor": { bg: "#EF4444", fg: "#FFFFFF", label: "Very poor" },
+  "Very poor": { bg: "#EF4444", fg: "#1A0404", label: "Very poor" }, // dark text: white on this red is only 3.8:1
   Severe: { bg: "#B91C1C", fg: "#FFFFFF", label: "Severe" },
   None: { bg: "#64748B", fg: "#FFFFFF", label: "No valid average" },
 };

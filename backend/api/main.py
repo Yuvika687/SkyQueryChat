@@ -297,6 +297,15 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         a, b = _period(period)
         return F.coverage_summary(S(), _city(city), a, b).to_dict()
 
+    @app.get("/api/latest")
+    async def latest(pollutant: str = Query("pm25", pattern="^pm(25|10)$")):
+        """Home page: each city's latest available value and its last 7 days. Read-only, no LLM, no quota.
+        The app tables never change while the server runs, so each result is computed once and kept."""
+        cache = state.setdefault("latest", {})
+        if pollutant not in cache:
+            cache[pollutant] = F.latest_city_values(S(), pollutant)
+        return cache[pollutant]
+
     @app.get("/api/diwali/{city}")
     async def diwali(city: str, years: str = Query("2024,2025", pattern=r"^\d{4}(,\d{4}){0,2}$")):
         return F.diwali_aqi(S(), _city(city), tuple(int(y) for y in years.split(","))).to_dict()

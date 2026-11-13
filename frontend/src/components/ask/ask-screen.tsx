@@ -18,7 +18,9 @@ function newId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now());
 }
 
-export function AskScreen() {
+/** initialQuestion: a question passed in the address (/ask?q=...), e.g. from the Home page. It starts a new chat
+ * and is sent once; onInitialSent lets the page remove it from the address. */
+export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?: string | null; onInitialSent?: () => void } = {}) {
   const app = useApp();
   const chatId = useRef<string | null>(null);
   const composer = useRef<ComposerHandle>(null);
@@ -41,8 +43,26 @@ export function AskScreen() {
   const chat = useChat({ ensureBackend: app.recheckBackend, backendReady: app.backend === "ready", onTurnFinished });
   const { load } = chat;
 
+  // A question from the address starts a new chat and is sent once. sentFor remembers the chat state it was
+  // sent in, so a repeated effect run (React development mode) does not reset that chat.
+  const pendingQ = useRef<string | null>(initialQuestion?.trim() || null);
+  const sentFor = useRef<string | null>(null);
+
   // Open a saved chat, or start a new one.
   useEffect(() => {
+    const key = `${app.activeChatId}|${app.newChatKey}`;
+    if (sentFor.current === key) return;
+    if (pendingQ.current) {
+      const q = pendingQ.current;
+      pendingQ.current = null;
+      sentFor.current = key;
+      chatId.current = null;
+      load([], null);
+      setSelected(null);
+      void chat.send(q);
+      onInitialSent?.();
+      return;
+    }
     if (app.activeChatId && app.activeChatId === chatId.current) return;
     const saved = app.activeChatId ? app.chats.find((c) => c.id === app.activeChatId) : null;
     chatId.current = saved?.id ?? null;

@@ -7,7 +7,7 @@ import { backupModel, servedFrom, type Turn } from "@/lib/chat-state";
 import { CITIES } from "@/lib/categories";
 import { evidenceFor } from "@/lib/evidence";
 import { followUps } from "@/lib/followups";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, readable } from "@/lib/format";
 import { buildTimeline } from "@/lib/timeline";
 import type { Health } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -250,11 +250,11 @@ function AnswerView({ turn, health, onAsk, busy }: { turn: Turn; health: Health 
   const fups = followUps(turn);
   // The lead is the model's number-checked headline. Older saved answers carried a code-written headline next
   // to the model's sentence; that sentence is kept as support when the answer drew on more than one dataset.
-  const lead = a.headline || a.text;
-  const support = a.headline && (turn.sources?.sources.length ?? 0) > 1 && a.text !== a.headline ? a.text : null;
+  const lead = readable(a.headline || a.text);
+  const support = a.headline && (turn.sources?.sources.length ?? 0) > 1 && a.text !== a.headline ? readable(a.text) : null;
   // Newer answers send the code-written method separately; in older ones `explanation` was that method text.
   const method = a.method ?? a.explanation;
-  const explanation = a.method !== undefined ? a.explanation : "";
+  const explanation = a.method !== undefined ? readable(a.explanation) : "";
   const copyText = [
     lead,
     support ?? "",

@@ -366,6 +366,29 @@ Rules:
   loaded once). Startup to healthy: 25 s native, 72 s under emulation, so a cold visitor waits about a minute plus
   that; the frontend waits up to 150 s and shows "Starting the analysis service".
 
+### Design system, navigation and Home (branch `redesign`, 2026-11-13)
+
+- Chosen design: direction A's visual style (navy, teal accent, Instrument Serif headlines with Inter, soft glow,
+  rounded glass cards) with direction C's layouts (Home: map plus ranked cities; Ask: answer left, evidence right).
+  Direction B is dropped. Work happens on branch `redesign`; it is not merged to main.
+- Tokens in `frontend/src/app/globals.css` (`--sq-*`, `--cat-*` for CPCB data colours only, radius, shadows,
+  `glass` utility). Fonts via next/font. Components in `frontend/src/components/ds/`: CategoryBadge, ScaleBar,
+  Sparkline, StatNumber (counts up; reduced motion shows the value), AskBox, CityCard, Skeleton, ErrorState,
+  WakeUpState, FadeIn (Framer Motion, `MotionConfig reducedMotion="user"`).
+- Navigation: floating top bar (desktop) and bottom tab bar (phone); the old sidebar is gone. Chat history moved to
+  the Ask page ("New chat", "Recent chats"). "Data & accuracy" panel reads `/api/accuracy` (stored first-pass scores).
+- Home reads `GET /api/latest` (latest date every city has a valid PM2.5 city value, highest first, 7-day series,
+  stations reporting, map position = mean of primary stations). Read-only, no LLM, cached per process.
+- Map: MapLibre GL 6 + OpenFreeMap dark style with border/label/road layers removed, official India outline from
+  `frontend/public/geo/india-official.geojson` (Survey of India via DataMeet, CC0); SVG outline fallback. MapLibre 6
+  needs its worker file served: `scripts/copy-maplibre-worker.mjs` copies it to `public/maplibre/` on predev and
+  prebuild (gitignored). The map is static (no scroll-zoom or drag); markers are React buttons laid over it.
+  Label sides are fixed per city (Mumbai and Bengaluru left; on phones Mumbai above) so labels never overlap.
+- Ask accepts `/ask?q=...` (starts a new chat, sends once, then clears the address). Answer text is shown through
+  `readable()` (ISO dates -> "9 Nov 2026", "16:00" -> "4 PM"); numbers are untouched.
+- "Very poor" chips use dark text (#1A0404): white on #EF4444 is only 3.8:1.
+- Explore and Compare are placeholder pages that say they are being built and offer an Ask question.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

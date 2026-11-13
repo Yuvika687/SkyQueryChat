@@ -1,7 +1,7 @@
 // Typed client for the SkyQueryChat API.
 import { API_BASE_URL, DEMO_FLAG_COOKIE } from "./env";
 import { readSSE } from "./sse";
-import type { ChatEvent, ErrorEvent, Health, Meta } from "./types";
+import type { ChatEvent, ErrorEvent, Health, Latest, Meta, Scoreboard } from "./types";
 
 export class ApiError extends Error {
   constructor(public code: string, message: string, public retryAfterS?: number) {
@@ -35,6 +35,10 @@ async function getJSON<T>(path: string, timeoutMs = 8000, signal?: AbortSignal):
 
 export const getHealth = (timeoutMs = 5000, signal?: AbortSignal) => getJSON<Health>("/api/health", timeoutMs, signal);
 export const getMeta = () => getJSON<Meta>("/api/meta");
+/** Latest available city values and 7-day series for the home page (read-only, no AI). */
+export const getLatest = (signal?: AbortSignal) => getJSON<Latest>("/api/latest", 15_000, signal);
+/** Stored evaluation scores (first-pass runs only). */
+export const getAccuracy = () => getJSON<Scoreboard>("/api/accuracy");
 
 /**
  * Wait until the backend answers /api/health. Render's free service sleeps after 15 minutes idle; waking takes

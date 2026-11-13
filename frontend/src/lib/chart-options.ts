@@ -3,6 +3,7 @@
 // modelled data = dashed violet line, six fixed city colours.
 import { CATEGORY_STYLE, CITY_COLOURS, REFERENCE_LINES, aqiCategory, normaliseCategory } from "./categories";
 import type { ChartPoint, ChartSpec, DataType } from "./types";
+import { readable } from "./format";
 
 const C = {
   text: "#E6EAF5", sub: "#94A0BC", line: "#2A3556", surface: "#121A2E", raised: "#1B2540",
@@ -200,8 +201,8 @@ function eventLineOption(spec: ChartSpec) {
         const v = p.data.value[1];
         const cat = normaliseCategory(r.category) ?? (aqi ? aqiCategory(v) : null);
         const lines = [`<b>${p.seriesName}</b>`, `${aqi ? "AQI" : spec.y.label}: <b>${aqi && typeof v === "number" ? Math.round(v) : fmt(v, 0)}</b>${cat ? ` (${CATEGORY_STYLE[cat].label})` : ""}`];
-        if (r.bulletin_date) lines.push(`Bulletin date: ${r.bulletin_date}`);
-        if (r.reporting_period) lines.push(`Period: ${r.reporting_period}`);
+        if (r.bulletin_date) lines.push(`Bulletin date: ${readable(String(r.bulletin_date))}`);
+        if (r.reporting_period) lines.push(`Period: ${readable(String(r.reporting_period))}`);
         return lines.join("<br/>");
       },
     },

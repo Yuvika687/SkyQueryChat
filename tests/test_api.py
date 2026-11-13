@@ -515,3 +515,26 @@ def test_saved_demo_answer_replays_its_llm_text(store):
         a = dict(ev)["answer"]
         assert a["text"] == saved["answer"] and a["headline"] == (saved.get("headline") or saved["answer"])
         assert a["method"] and a["cached"]
+
+
+def test_latest_city_values_for_the_home_page(store):
+    with TestClient(make(store)) as c:
+        r = c.get("/api/latest")
+        assert r.status_code == 200
+        d = r.json()
+        assert d["data_type"] == "measured" and d["pollutant"] == "pm25" and d["units"] == "µg/m³"
+        assert {x["city"] for x in d["cities"]} == {"Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"}
+        vals = [x["value"] for x in d["cities"]]
+        assert vals == sorted(vals, reverse=True)                       # highest first
+        for x in d["cities"]:
+            assert len(x["series"]) == 7 and x["series"][-1] == {"date": d["date"], "value": x["value"]}
+            assert x["series"][0]["date"] == d["start"]
+            assert 0 < x["stations_reporting"] <= x["stations_total"]
+            assert 5 < x["lat"] < 35 and 68 < x["lon"] < 98
+        # same values as the city table: latest date every city has a valid value
+        cd = store.tables["city_daily"]
+        delhi = cd[(cd.city == "Delhi") & (cd.pollutant == "pm25") & (cd.local_date.astype(str) == d["date"])]
+        assert round(float(delhi.city_mean.iloc[0]), 1) == next(x["value"] for x in d["cities"] if x["city"] == "Delhi")
+        assert c.get("/api/latest", params={"pollutant": "pm10"}).json()["pollutant"] == "pm10"
+        assert c.get("/api/latest", params={"pollutant": "no2"}).status_code == 422
+        assert c.get("/api/latest").json() == d                         # cached, unchanged
