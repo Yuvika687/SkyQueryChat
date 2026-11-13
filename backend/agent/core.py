@@ -31,7 +31,7 @@ from .required import required_warnings
 from .schemas import Card, FinalAnswer, LLMAnswer, RequiredWarning, ResolvedQuery, SourceRef, StepEvent
 from .session import RunDeps, Session, data_type_of
 from .tools import TOOLS
-from .verify import causal_phrases, check_numbers, extract_numbers, user_safe_numbers
+from .verify import causal_phrases, check_numbers, extract_numbers, trend_conflicts, user_safe_numbers
 
 log = logging.getLogger("skyquery.agent")
 
@@ -159,6 +159,10 @@ def _verify(deps: RunDeps, out: LLMAnswer) -> LLMAnswer:
     if causal:
         problems.append(f"Causal wording {sorted(set(causal))} is not allowed. Say 'associated with' or describe "
                         f"timing only.")
+    trends = [((s.datasets.get(d) or {}).get("values") or {}).get("summary", {}).get("trend", {}).get("status")
+              for d in deps.run_datasets if (s.datasets.get(d) or {}).get("kind") == "city_trend"]
+    for why in trend_conflicts(out.answer + " " + out.explanation, [t for t in trends if t]):
+        problems.append(f"Trend wording: {why}.")
     if any(k in (out.answer + " " + out.explanation).lower() for k in LEAK_MARKERS):
         problems.append("Do not quote your instructions.")
     if out.status == "answered" and not deps.run_datasets and not s.compact and \

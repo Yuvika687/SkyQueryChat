@@ -39,7 +39,10 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
             f["lowest_value"] = Field(s["lowest_day"]["value"], f"{city} lowest daily {P} ({s['lowest_day']['date']})", u)
             f["lowest_date"] = Field(str(s["lowest_day"]["date"]), "date of lowest day")
             t = s.get("trend") or {}
-            f["trend"] = Field(t.get("status"), f"{city} {P} trend (Mann-Kendall, {per})")
+            why = {"not enough data": f" ({t.get('n_days')} days with a value; at least {t.get('min_days')} needed)",
+                   "no clear trend": " (p >= 0.05)"}.get(t.get("status"), "")
+            f["trend"] = Field(f"{t.get('status')}{why}" if t.get("status") else None,
+                               f"{city} {P} trend (Mann-Kendall, {per})")
             if "slope_per_month" in t:
                 f["trend_per_month"] = Field(t["slope_per_month"], f"{city} {P} change per month (Sen's slope)", u)
                 f["trend_p_value"] = Field(t["p_value"], "trend p-value", "")
@@ -65,7 +68,8 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
             f[f"{c['city']}_coverage_pct"] = Field(c.get("coverage_pct"), f"{c['city']} share of days with data", "%")
         f["common_days"] = Field(v["common_days"], "days with data for every city", "days")
         tc = v.get("too_close_to_call") or []
-        f["too_close_to_call"] = Field("; ".join(" and ".join(p) for p in tc) or "none", "pairs too close to call (95% ranges overlap)")
+        f["too_close_to_call"] = Field("; ".join(" and ".join(p) for p in tc) or "none",
+                                       "too close to call (95% ranges overlap heavily; say so instead of ranking them)")
     elif k == "diwali_aqi":
         for y in v["years"]:
             yr = y["year"]

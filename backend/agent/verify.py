@@ -220,3 +220,31 @@ def causal_phrases(text: str) -> list[str]:
 
 def payload_text(p: Any) -> str:
     return json.dumps(p, ensure_ascii=False, default=str)
+
+
+# Trend wording must match the trend test (Mann-Kendall). Checked like numbers: a conflict goes back to the model.
+_CLAIM_DIRECTION = re.compile(r"\b(?:trend(?:ing|ed)?\s+(?:up|down)\w*|(?:upward|downward|increasing|decreasing|rising|falling)"
+                              r"\s+trend|(?:is|was|has been|kept)\s+(?:steadily\s+|clearly\s+)?(?:rising|increasing|falling|"
+                              r"decreasing|declining))\b", re.I)
+_CLAIM_NONE = re.compile(r"\bno\s+(?:clear|significant|statistically significant)\s+trend\b", re.I)
+_SAYS_TOO_FEW = re.compile(r"\b(?:not enough|too few|insufficient|too short)\b", re.I)
+
+
+def trend_conflicts(text: str, statuses: list[str]) -> list[str]:
+    """Problems when the answer's trend wording contradicts the trend result(s) used in this run."""
+    st = set(statuses)
+    if len(st) != 1 or not text:
+        return []
+    s = st.pop()
+    bad = []
+    if s == "not enough data":
+        if _CLAIM_NONE.search(text) or _CLAIM_DIRECTION.search(text):
+            bad.append('the trend result is "not enough data" (fewer than 20 days with a value): say there is not '
+                       'enough data for a trend; do not say "no clear trend" or give a direction')
+        elif not _SAYS_TOO_FEW.search(text) and re.search(r"\btrend", text, re.I):
+            bad.append('the trend result is "not enough data": say so')
+    elif s == "no clear trend" and _CLAIM_DIRECTION.search(text):
+        bad.append('the trend result is "no clear trend" (p >= 0.05): do not describe it as rising or falling')
+    elif s in ("increasing", "decreasing") and _CLAIM_NONE.search(text):
+        bad.append(f'the trend result is "{s}" (p < 0.05): do not say there is no clear trend')
+    return bad

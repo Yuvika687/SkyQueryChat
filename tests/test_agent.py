@@ -707,3 +707,15 @@ def test_checker_covers_statistics_numbers():
             "(p < 0.001). Wind was associated with lower PM2.5 (rho -0.24, range −0.32 to -0.16).")
     assert check_numbers([good], ok) == []
     assert check_numbers(["Delhi averaged 140.2 (range 87.5–210), p = 0.03, rho 0.5."], ok) == ["140.2", "210", "0.03", "0.5"]
+
+
+def test_trend_wording_must_match_the_trend_result():
+    from backend.agent.verify import trend_conflicts
+    assert trend_conflicts("Delhi's PM2.5 showed no clear trend from 1 to 11 Nov 2026.", ["not enough data"])
+    assert trend_conflicts("PM2.5 was rising.", ["not enough data"])
+    assert not trend_conflicts("There is not enough data for a trend (9 days).", ["not enough data"])
+    assert trend_conflicts("Mumbai's PM2.5 is rising over the period.", ["no clear trend"])
+    assert not trend_conflicts("Mumbai shows no clear trend.", ["no clear trend"])
+    assert trend_conflicts("There was no clear trend.", ["decreasing"])
+    assert not trend_conflicts("PM2.5 fell, a decreasing trend of 14.3 µg/m³ per month.", ["decreasing"])
+    assert not trend_conflicts("anything", ["decreasing", "no clear trend"])      # mixed results: not judged here

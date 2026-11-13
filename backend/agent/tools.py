@@ -163,7 +163,8 @@ def compare_cities(ctx: RunContext[RunDeps], cities: list[str], pollutant: str |
                    period: str | None = None) -> dict:
     """Compare measured PM across 2-6 cities on days when every city has data; rank 1 = highest. Each city has a
     mean, a 95% range (weekly block bootstrap) and coverage; too_close_to_call lists neighbours whose ranges
-    overlap heavily (say "too close to call", do not rank them confidently).
+    overlap heavily (say "too close to call", do not rank them confidently). Coverage is included; no separate
+    coverage call is needed.
     pollutant defaults to PM2.5; period defaults to all data."""
     def go():
         a = []
