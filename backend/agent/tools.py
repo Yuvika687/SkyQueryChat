@@ -144,7 +144,9 @@ def check_request(ctx: RunContext[RunDeps], cities: list[str] | None = None, pol
 
 def city_trend(ctx: RunContext[RunDeps], city: str, pollutant: str | None = None, period: str | None = None,
                freq: Literal["M", "W", "D"] | None = None) -> dict:
-    """Measured PM trend for one city: mean, median, highest/lowest day, coverage, period means.
+    """Measured PM trend for one city: mean, median, highest/lowest day, coverage, period means, and the trend
+    (Mann-Kendall + Sen's slope on daily values: increasing/decreasing/"no clear trend"/"not enough data",
+    change per month, p-value).
     pollutant defaults to PM2.5; period defaults to all data; freq defaults to daily for up to 92 days,
     weekly up to a year, else monthly."""
     def go():
@@ -159,7 +161,10 @@ def city_trend(ctx: RunContext[RunDeps], city: str, pollutant: str | None = None
 
 def compare_cities(ctx: RunContext[RunDeps], cities: list[str], pollutant: str | None = None,
                    period: str | None = None) -> dict:
-    """Compare measured PM across 2-6 cities on days when every city has data; rank 1 = highest.
+    """Compare measured PM across 2-6 cities on days when every city has data; rank 1 = highest. Each city has a
+    mean, a 95% range (weekly block bootstrap) and coverage; too_close_to_call lists neighbours whose ranges
+    overlap heavily (say "too close to call", do not rank them confidently). Coverage is included; no separate
+    coverage call is needed.
     pollutant defaults to PM2.5; period defaults to all data."""
     def go():
         a = []
@@ -227,7 +232,8 @@ def unusual_days(ctx: RunContext[RunDeps], city: str, pollutant: str | None = No
 
 def weather_association(ctx: RunContext[RunDeps], city: str, weather: WeatherVar, pollutant: str | None = None,
                         period: str | None = None) -> dict:
-    """Association (not cause) between measured PM and modelled weather. Defaults: PM2.5, all data."""
+    """Association (not cause) between measured PM and modelled weather: Spearman rho with a 95% range, and mean PM
+    on rainy vs dry days or calm vs windy days. Defaults: PM2.5, all data."""
     def go():
         a = []
         s, e, n = _period(period, a)

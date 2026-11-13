@@ -676,3 +676,46 @@ def test_follow_ups_never_suggest_comparing_delhi_pm_across_sources():
     assert core.compares_pm_across_sources("Compare PM10 for Diwali 2024 and 2026")
     assert not core.compares_pm_across_sources("What was Delhi's PM2.5 around Diwali 2026?")
     assert not core.compares_pm_across_sources("Compare Delhi's Diwali AQI in 2025 and 2026")
+
+
+def test_readable_dates_are_checked_against_tool_dates():
+    allowed = V.allowed_numbers([{"period": "2026-10-13..2026-11-11", "2026_bulletin_2026-11-09": 344.0,
+                                  "row": {"date": "2026-11-10", "aqi": 299}}])
+    ok = ["The bulletin dated 9 Nov 2026 recorded 344 and the one dated 10 Nov 2026 recorded 299.",
+          "From 13 Oct – 11 Nov 2026 the highest bulletin was 344.", "The festival bulletins (9–10 Nov 2026) averaged 344.",
+          "On Nov 9, 2026 it was 344; by 10 Nov it was 299. Each bulletin covers 4 PM to 4 PM.",
+          "Delhi PM2.5 in November 2026 peaked at 344."]
+    for t in ok:
+        assert V.check_numbers([t], allowed) == [], t
+    assert V.check_numbers(["On 12 Nov 2026 the AQI was 344."], allowed) == ["12 Nov 2026"]        # not a tool date
+    assert V.check_numbers(["From 8–10 Nov 2026 the AQI was 344."], allowed) == ["8–10 Nov 2026"]
+    # a date the user wrote may be echoed back
+    q = "What was the AQI on 5 Nov 2026?"
+    assert V.check_numbers(["There was no bulletin for 5 Nov 2026."], allowed, V.user_safe_numbers(q)) == []
+    # labels are not dates: "PM2.5 November" is not 5 November
+    assert V.readable_dates("Delhi PM2.5 November 2025")[0] == []
+
+
+def test_checker_covers_statistics_numbers():
+    """Means, 95% ranges, p-values, Sen's slopes and correlations (incl. negative ranges) are checked."""
+    from backend.agent.verify import allowed_numbers, check_numbers
+    payload = {"fields": {"Delhi_mean": 133.7, "Delhi_range_low": 87.5, "Delhi_range_high": 201.9,
+                          "trend_per_month": 162.53, "trend_p_value": "< 0.001", "rho": -0.244,
+                          "rho_range_low": -0.322, "rho_range_high": -0.163}}
+    ok = allowed_numbers([payload])
+    good = ("Delhi averaged 133.7 µg/m³ (95% range 87.5–201.9), rising by about 162.5 µg/m³ per month "
+            "(p < 0.001). Wind was associated with lower PM2.5 (rho -0.24, range −0.32 to -0.16).")
+    assert check_numbers([good], ok) == []
+    assert check_numbers(["Delhi averaged 140.2 (range 87.5–210), p = 0.03, rho 0.5."], ok) == ["140.2", "210", "0.03", "0.5"]
+
+
+def test_trend_wording_must_match_the_trend_result():
+    from backend.agent.verify import trend_conflicts
+    assert trend_conflicts("Delhi's PM2.5 showed no clear trend from 1 to 11 Nov 2026.", ["not enough data"])
+    assert trend_conflicts("PM2.5 was rising.", ["not enough data"])
+    assert not trend_conflicts("There is not enough data for a trend (9 days).", ["not enough data"])
+    assert trend_conflicts("Mumbai's PM2.5 is rising over the period.", ["no clear trend"])
+    assert not trend_conflicts("Mumbai shows no clear trend.", ["no clear trend"])
+    assert trend_conflicts("There was no clear trend.", ["decreasing"])
+    assert not trend_conflicts("PM2.5 fell, a decreasing trend of 14.3 µg/m³ per month.", ["decreasing"])
+    assert not trend_conflicts("anything", ["decreasing", "no clear trend"])      # mixed results: not judged here

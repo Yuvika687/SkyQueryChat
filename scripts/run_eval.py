@@ -35,7 +35,8 @@ from evals import references as REF  # noqa: E402
 
 SETS = {"main": ROOT / "evals" / "questions.json", "groq": ROOT / "evals" / "groq_test.json",
         "holdout": ROOT / "evals" / "holdout.json",          # retired 2026-11-06 (used)
-        "holdout2": ROOT / "evals" / "holdout2.json", "diwali2026": ROOT / "evals" / "diwali2026.json"}
+        "holdout2": ROOT / "evals" / "holdout2.json", "diwali2026": ROOT / "evals" / "diwali2026.json",
+        "analysis": ROOT / "evals" / "analysis.json"}
 RUNS = ROOT / "evals" / "runs"
 LEDGER = ROOT / "evals" / "groq_ledger.jsonl"
 GROQ_TPD, GROQ_TPD_STOP, GROQ_EST_PER_Q = 200_000, 185_000, 8_000
@@ -82,6 +83,14 @@ def check_resolved(exp_r: dict | None, rq: dict | None) -> dict | None:
     return {"ok": not why, "why": "; ".join(why)}
 
 
+def iso_dates(text: str) -> str:
+    """ISO forms of the readable dates in text (answers now write "21 Oct 2025", never "2025-10-21")."""
+    out = []
+    for _, ds in V.readable_dates(text)[0]:
+        out += [f"{y:04d}-{m:02d}-{d:02d}" for y, m, d in ds if y]
+    return " ".join(out)
+
+
 def include_lenient(exp: dict, text: str, required: list[str]) -> bool:
     low = (text + "\n" + "\n".join(required)).lower()
     hit = lambda x: x.lower() in low or any(a in low for a in SYNONYMS.get(x.lower(), []))
@@ -91,7 +100,7 @@ def include_lenient(exp: dict, text: str, required: list[str]) -> bool:
 
 def score_turn(exp: dict, final, deps, refs: dict, question: str) -> dict:
     text = f"{final.answer}\n{final.clarifying_question or ''}"
-    low = text.lower()
+    low = text.lower() + "\n" + iso_dates(text)       # a readable date ("21 Oct 2025") counts as that date
     called = set(deps.tools_called)
     c = {"status_ok": final.status in exp["status"]}
     need, forbid = set(exp.get("tools_any", [])), set(exp.get("forbid_tools", []))

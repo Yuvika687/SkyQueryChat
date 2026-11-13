@@ -1,0 +1,22 @@
+{
+ "set": "main",
+ "kind": "rerun",
+ "started": "2026-11-13 16:33",
+ "model_chain": [
+  "google:gemini-3.5-flash-lite",
+  "google:gemini-3.1-flash-lite",
+  "google:gemini-3.8-flash"
+ ],
+ "commit": "a87e5c1",
+ "ids": [
+  "D3",
+  "D5",
+  "D7",
+  "T1",
+  "W1",
+  "W5",
+  "X1"
+ ],
+ "complete": true,
+ "stopped": null
+}

@@ -9,3 +9,5 @@ pdfplumber==0.11.4
 pytest==9.2.0
 # Groq SDK: only for the local Groq test set (the public app is Gemini only).
 groq==1.7.0
+# Statistics checks in tests (scipy is not a production dependency).
+scipy==1.16.3

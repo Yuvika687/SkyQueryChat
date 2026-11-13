@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CloudOff, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { proofFor, type Target } from "@/lib/proof";
 import { useApp } from "@/components/shell/app-context";
 import { useChat } from "@/hooks/use-chat";
 import type { Turn } from "@/lib/chat-state";
 import { periodLabel } from "@/lib/evidence";
 import { pollutantLabel } from "@/lib/format";
-import { AgentTimeline, announcement } from "./agent-timeline";
+import { announcement } from "./agent-timeline";
 import { Callout } from "./answer-parts";
+import { EvidencePanel, ProofView } from "./evidence-panel";
 import { Composer, type ComposerHandle } from "./composer";
 import { EmptyState } from "./empty-state";
 import { TurnView } from "./turn-view";
@@ -18,13 +20,17 @@ function newId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now());
 }
 
-export function AskScreen() {
+/** initialQuestion: a question passed in the address (/ask?q=...), e.g. from the Home page. It starts a new chat
+ * and is sent once; onInitialSent lets the page remove it from the address. */
+export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?: string | null; onInitialSent?: () => void } = {}) {
   const app = useApp();
   const chatId = useRef<string | null>(null);
   const composer = useRef<ComposerHandle>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [drawer, setDrawer] = useState(false);
+  // the evidence panel follows the newest answer, or the answer whose number was clicked
+  const [proof, setProof] = useState<{ turnId: string; target: Target } | null>(null);
+  const desktop = useIsDesktop();
   const { storeChat, openChat } = app;
 
   const onTurnFinished = useCallback(
@@ -41,8 +47,26 @@ export function AskScreen() {
   const chat = useChat({ ensureBackend: app.recheckBackend, backendReady: app.backend === "ready", onTurnFinished });
   const { load } = chat;
 
+  // A question from the address starts a new chat and is sent once. sentFor remembers the chat state it was
+  // sent in, so a repeated effect run (React development mode) does not reset that chat.
+  const pendingQ = useRef<string | null>(initialQuestion?.trim() || null);
+  const sentFor = useRef<string | null>(null);
+
   // Open a saved chat, or start a new one.
   useEffect(() => {
+    const key = `${app.activeChatId}|${app.newChatKey}`;
+    if (sentFor.current === key) return;
+    if (pendingQ.current) {
+      const q = pendingQ.current;
+      pendingQ.current = null;
+      sentFor.current = key;
+      chatId.current = null;
+      load([], null);
+      setSelected(null);
+      void chat.send(q);
+      onInitialSent?.();
+      return;
+    }
     if (app.activeChatId && app.activeChatId === chatId.current) return;
     const saved = app.activeChatId ? app.chats.find((c) => c.id === app.activeChatId) : null;
     chatId.current = saved?.id ?? null;
@@ -52,8 +76,9 @@ export function AskScreen() {
   }, [app.activeChatId, app.newChatKey]);
 
   const latest = chat.turns[chat.turns.length - 1] ?? null;
-  const timelineTurn = chat.turns.find((t) => t.id === selected) ?? latest;
-  const running = !!latest && (latest.phase === "streaming" || latest.phase === "waking");
+  const answered = [...chat.turns].reverse().find((t) => t.answer && t.phase === "done") ?? null;
+  const panelTurn = chat.turns.find((t) => t.id === (proof?.turnId ?? selected)) ?? answered;
+  const proofView = proof && panelTurn ? proofFor(proof.target, panelTurn) : null;
 
   // The top bar follows what the conversation is about (from the latest answer's resolved_query).
   const { setAskContext } = app;
@@ -81,15 +106,17 @@ export function AskScreen() {
 
   const ask = (q: string) => {
     setSelected(null);
+    setProof(null);
     void chat.send(q);
   };
   const retry = (t: Turn) => {
     setSelected(null);
+    setProof(null);
     void chat.send(t.question, { replaceId: t.id });
   };
-  const showSteps = (t: Turn) => {
+  const openProof = (t: Turn, target: Target) => {
     setSelected(t.id);
-    setDrawer(true);
+    setProof({ turnId: t.id, target });
   };
   const placeholder = "Ask about air quality in the six cities";
 
@@ -101,7 +128,7 @@ export function AskScreen() {
           {chat.turns.length === 0 ? (
             <EmptyState onAsk={ask} disabled={chat.busy} />
           ) : (
-            <div className="mx-auto flex w-full max-w-[760px] flex-col gap-10 px-4 py-6">
+            <div className="mx-auto flex w-full max-w-[780px] min-w-0 flex-col gap-10 px-4 py-6">
               {chat.turns.map((t, i) => (
                 <TurnView
                   key={t.id}
@@ -111,8 +138,9 @@ export function AskScreen() {
                   busy={chat.busy}
                   onAsk={ask}
                   onRetry={retry}
-                  onShowSteps={showSteps}
-                  showStepsButton
+                  onProof={openProof}
+                  activeProof={proof?.turnId === t.id ? proof.target.id : null}
+                  inlineEvidence={!desktop}
                 />
               ))}
             </div>
@@ -123,21 +151,37 @@ export function AskScreen() {
         <p className="sr-only" aria-live="polite">{announcement(latest)}</p>
         <Composer ref={composer} busy={chat.busy} onSend={ask} onStop={chat.stop} placeholder={placeholder} />
       </div>
-      {/* The steps panel is there while the agent works; once the answer is ready it gives the space back
-          and each answer carries a compact, expandable summary instead. */}
-      {running && (
-        <aside aria-label="Agent steps" className="hidden w-80 shrink-0 overflow-y-auto border-l border-line bg-surface xl:block">
-          <AgentTimeline turn={latest} />
+      {/* Desktop: the evidence for the focused answer; a clicked number swaps it to that number's proof. */}
+      {desktop && panelTurn?.answer && (
+        <aside aria-label={proofView ? "Proof" : "Evidence"} className="flex w-[440px] shrink-0 flex-col border-l border-line bg-[#0a1122]/80 xl:w-[480px]">
+          {proofView ? (
+            <div className="overflow-y-auto p-5"><ProofView proof={proofView} onBack={() => setProof(null)} /></div>
+          ) : (
+            <EvidencePanel turn={panelTurn} className="min-h-0 flex-1" />
+          )}
         </aside>
       )}
-      <Sheet open={drawer} onOpenChange={setDrawer}>
-        <SheetContent side="right" className="w-[min(360px,100vw)] overflow-y-auto border-line bg-surface p-0 xl:hidden">
-          <SheetTitle className="sr-only">Agent steps</SheetTitle>
-          <AgentTimeline turn={timelineTurn} inDrawer />
+      {/* Phones: the proof opens as a bottom sheet over the conversation. */}
+      <Sheet open={!desktop && !!proofView} onOpenChange={(o) => { if (!o) setProof(null); }}>
+        <SheetContent side="bottom" className="max-h-[86dvh] overflow-y-auto rounded-t-3xl border-line bg-surface p-5">
+          <SheetTitle className="sr-only">Proof</SheetTitle>
+          {proofView && <ProofView proof={proofView} />}
         </SheetContent>
       </Sheet>
     </div>
   );
+}
+
+function useIsDesktop() {
+  const [d, setD] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const on = () => setD(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return d;
 }
 
 function BackendBanner() {

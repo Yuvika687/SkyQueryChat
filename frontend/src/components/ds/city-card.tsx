@@ -1,0 +1,61 @@
+"use client";
+
+import Link from "next/link";
+import { fmtDate } from "@/lib/format";
+import type { LatestCity } from "@/lib/types";
+import { CategoryBadge, ScaleBar, Sparkline, StatNumber, categoryOf } from "./data-display";
+
+/** One city's latest available value: figure, category, scale bar, stations reporting and 7 days.
+ * Phones get a compact version (about a third of the height) with the same facts. */
+export function CityCard({ city, rank, date, pollutantLabel = "PM2.5" }: {
+  city: LatestCity;
+  rank: number;
+  date: string;
+  pollutantLabel?: string;
+}) {
+  const cat = categoryOf(city.value, "pm25");
+  const rankText = String(rank).padStart(2, "0");
+  return (
+    <Link
+      href={`/city/${city.city.toLowerCase()}`}
+      className="glass group flex h-full flex-col rounded-2xl px-4 py-3 shadow-card transition-colors hover:border-line-strong md:p-5"
+      aria-label={`${city.city}: ${city.value} µg/m³ ${pollutantLabel}, ${cat ?? "no category"}, ${fmtDate(date)}, ${city.stations_reporting} of ${city.stations_total} stations reporting. Open the city page.`}
+    >
+      {/* phone: two rows */}
+      <div className="flex items-center gap-2.5 md:hidden">
+        <span className="num w-5 text-xs text-faint" aria-hidden>{rankText}</span>
+        <h3 className="min-w-0 truncate text-[15px] font-semibold">{city.city}</h3>
+        <CategoryBadge category={cat} size="sm" />
+        <span className="ml-auto flex items-baseline gap-1">
+          <StatNumber value={city.value} className="text-[22px] leading-none font-medium" />
+          <span className="text-[11px] text-subtle">µg/m³</span>
+        </span>
+      </div>
+      <div className="mt-2 flex items-center gap-3 pl-[30px] md:hidden">
+        <ScaleBar value={city.value} scale="pm25" showEnds={false} className="flex-1" />
+        <Sparkline points={city.series} width={72} height={20} />
+      </div>
+
+      {/* wider screens: full card */}
+      <div className="hidden items-center justify-between gap-3 md:flex">
+        <h3 className="flex items-baseline gap-2.5 text-base font-semibold">
+          <span className="num text-xs font-medium text-faint" aria-hidden>{rankText}</span>
+          {city.city}
+        </h3>
+        <CategoryBadge category={cat} label={`${pollutantLabel} category`} />
+      </div>
+      <p className="mt-3 mb-4 hidden items-baseline gap-1.5 md:flex">
+        <StatNumber value={city.value} className="text-[40px] leading-none font-medium tracking-tight" />
+        <span className="text-sm text-subtle">µg/m³</span>
+      </p>
+      <ScaleBar value={city.value} scale="pm25" className="hidden md:block" />
+      <div className="mt-auto hidden items-end justify-between gap-3 pt-4 text-[12.5px] text-faint md:flex">
+        <span>{city.stations_reporting} of {city.stations_total} stations reporting</span>
+        <span className="flex items-end gap-2">
+          <span className="text-[11px]">7 days</span>
+          <Sparkline points={city.series} width={104} height={28} />
+        </span>
+      </div>
+    </Link>
+  );
+}

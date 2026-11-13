@@ -1,0 +1,14 @@
+{
+ "set": "holdout",
+ "kind": "rerun",
+ "started": "2026-11-13 16:15",
+ "model_chain": [
+  "google:gemini-3.5-flash-lite",
+  "google:gemini-3.1-flash-lite",
+  "google:gemini-3.8-flash"
+ ],
+ "commit": "a87e5c1",
+ "ids": "all",
+ "complete": true,
+ "stopped": null
+}

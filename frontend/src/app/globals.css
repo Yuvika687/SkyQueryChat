@@ -2,29 +2,50 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* SkyQueryChat is dark-only (docs/ui-design-spec.md "Design system"). */
+/* SkyQueryChat design system: "Night Observatory" visual style (docs/design-directions/README.md, direction A).
+   Dark only. Navy base, one teal accent, translucent floating panels, soft glow, rounded cards.
+   CPCB category colours (--cat-*) are for DATA ONLY: map glows, chips, scale bars, chart points. */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
-  --font-mono: var(--font-jetbrains);
+  --font-mono: var(--font-inter);
   --font-heading: var(--font-inter);
+  --font-display: var(--font-display-serif);
 
-  /* spec tokens */
+  /* tokens */
   --color-surface: var(--sq-surface);
   --color-raised: var(--sq-raised);
+  --color-panel: var(--sq-panel);
   --color-line: var(--sq-border);
+  --color-line-strong: var(--sq-border-strong);
   --color-text: var(--sq-text);
   --color-subtle: var(--sq-text-2);
+  --color-faint: var(--sq-text-3);
   --color-teal: var(--sq-accent);
   --color-teal-hover: var(--sq-accent-hover);
+  --color-teal-ink: var(--sq-accent-ink);
   --color-modelled: var(--sq-modelled);
   --color-warn: var(--sq-warning);
   --color-danger: var(--sq-error);
 
-  /* shadcn tokens mapped onto the spec */
+  /* CPCB categories: data only */
+  --color-cat-good: var(--cat-good);
+  --color-cat-satisfactory: var(--cat-satisfactory);
+  --color-cat-moderate: var(--cat-moderate);
+  --color-cat-poor: var(--cat-poor);
+  --color-cat-very-poor: var(--cat-very-poor);
+  --color-cat-severe: var(--cat-severe);
+  --color-cat-none: var(--cat-none);
+
+  /* shadows */
+  --shadow-float: 0 24px 60px -20px rgb(0 0 0 / 0.7), inset 0 1px 0 rgb(255 255 255 / 0.05);
+  --shadow-card: 0 12px 32px -18px rgb(0 0 0 / 0.8);
+  --shadow-glow: 0 0 22px rgb(45 212 191 / 0.35);
+
+  /* shadcn tokens mapped onto ours */
   --color-sidebar-ring: var(--ring);
   --color-sidebar-border: var(--border);
   --color-sidebar-accent-foreground: var(--foreground);
@@ -49,27 +70,42 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* radius: controls 10, cards 18, large panels 22, pills full */
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-3xl: 20px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 22px;
   --radius-4xl: 999px;
 }
 
 :root {
-  --sq-bg: #0b1020;
-  --sq-surface: #121a2e;
-  --sq-raised: #1b2540;
-  --sq-border: #2a3556;
-  --sq-text: #e6eaf5;
-  --sq-text-2: #94a0bc;
+  /* spacing follows Tailwind's 4 px step (1 = 4 px): use 1, 2, 3, 4, 6, 8, 12, 16 */
+  --sq-bg: #060a14;
+  --sq-surface: #0e1629;
+  --sq-raised: #16213b;
+  --sq-panel: rgb(16 25 46 / 0.72);
+  --sq-border: #222e4a;
+  --sq-border-strong: #33426a;
+  --sq-text: #eaf0fb;
+  --sq-text-2: #a9b6d0;
+  --sq-text-3: #8391ae;
   --sq-accent: #2dd4bf;
   --sq-accent-hover: #5eead4;
+  --sq-accent-ink: #04231f;
   --sq-modelled: #a78bfa;
   --sq-warning: #f5b942;
   --sq-error: #f87171;
+
+  --cat-good: #22c55e;
+  --cat-satisfactory: #a3e635;
+  --cat-moderate: #facc15;
+  --cat-poor: #fb923c;
+  --cat-very-poor: #ef4444;
+  --cat-severe: #7a0e12;
+  --cat-none: #64748b;
 
   --background: var(--sq-bg);
   --foreground: var(--sq-text);
@@ -78,7 +114,7 @@
   --popover: var(--sq-raised);
   --popover-foreground: var(--sq-text);
   --primary: var(--sq-accent);
-  --primary-foreground: var(--sq-bg);
+  --primary-foreground: var(--sq-accent-ink);
   --secondary: var(--sq-raised);
   --secondary-foreground: var(--sq-text);
   --muted: var(--sq-raised);
@@ -89,7 +125,7 @@
   --border: var(--sq-border);
   --input: var(--sq-border);
   --ring: var(--sq-accent);
-  --radius: 8px;
+  --radius: 10px;
   color-scheme: dark;
 }
 
@@ -123,9 +159,55 @@
   }
 }
 
-/* Figures: Inter with tabular digits. (JetBrains Mono gave the decimal point a full character cell,
-   so "43.7" read as "43 . 7".) */
+/* Figures: Inter with tabular digits. */
 @utility num {
   font-family: var(--font-inter), Inter, system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
+
+/* Translucent floating panel over the map or page. */
+@utility glass {
+  background: var(--sq-panel);
+  border: 1px solid rgb(148 170 214 / 0.18);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+/* City marker glow: a gentle pulse in the city's category colour (off for reduced motion). */
+@keyframes sq-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.22); opacity: 0.45; }
+}
+.sq-pulse { animation: sq-pulse 3.2s ease-in-out infinite; }
+
+/* MapLibre: our own attribution line is shown under the map; keep the canvas dark while tiles load. */
+.maplibregl-map { background: var(--sq-bg); font: inherit; }
+
+/* Explore map markers (built as DOM buttons inside MapLibre markers). */
+.sq-city-pin {
+  display: flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: var(--sq-text); cursor: pointer;
+}
+.sq-city-pin .dot {
+  width: 18px; height: 18px; border-radius: 999px; background: var(--c); flex: none;
+  box-shadow: 0 0 0 3px rgb(6 10 20 / 0.9), 0 0 22px 6px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.sq-city-pin .lbl {
+  font-size: 13px; white-space: nowrap; padding: 3px 9px; border-radius: 9px;
+  background: rgb(8 13 26 / 0.88); border: 1px solid var(--sq-border-strong); font-variant-numeric: tabular-nums;
+}
+.sq-city-pin .lbl b { font-weight: 600; color: var(--sq-text-2); margin-right: 4px; }
+.sq-city-pin:hover .lbl, .sq-city-pin:focus-visible .lbl { border-color: var(--sq-accent); }
+.sq-city-pin[hidden] { display: none; }
+.sq-city-pin.left { flex-direction: row-reverse; }
+.sq-station-pin {
+  min-width: 30px; height: 22px; padding: 0 5px; border-radius: 6px; border: 1.5px solid rgb(6 10 20 / 0.85);
+  font: 600 11px/1 var(--font-inter), system-ui, sans-serif; font-variant-numeric: tabular-nums; cursor: pointer;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
+}
+.sq-station-pin.low { border-radius: 999px; border-style: dashed; border-color: rgb(234 240 251 / 0.75); }
+.sq-station-pin.grey { opacity: 0.9; }
+.sq-station-pin.selected { outline: 2px solid var(--sq-accent); outline-offset: 2px; z-index: 5; }
+.sq-station-pin:hover { z-index: 6; filter: brightness(1.15); } /* MapLibre positions markers with transform */
+.maplibregl-ctrl-group { background: rgb(14 22 41 / 0.92) !important; border: 1px solid var(--sq-border-strong); }
+.maplibregl-ctrl-group button + button { border-top-color: var(--sq-border) !important; }
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(0.85); }

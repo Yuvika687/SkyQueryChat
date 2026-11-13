@@ -2,12 +2,20 @@
 
 import { useMemo, useRef, useState } from "react";
 import { AlertTriangle, CalendarRange, Check, ChevronDown, Copy, Download, FileImage, Gauge, Info, MapPin } from "lucide-react";
-import { EChart, type EChartHandle } from "@/components/chart/echart";
+import dynamic from "next/dynamic";
+import type { EChartHandle } from "@/components/chart/echart";
+import { Skeleton } from "@/components/ds/states";
+
+// ECharts loads in its own chunk, only when an answer has a chart.
+const EChart = dynamic(() => import("@/components/chart/echart").then((m) => m.EChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-full min-h-48 w-full" />,
+});
 import { CATEGORY_STYLE, DATA_TYPE_LABEL, normaliseCategory } from "@/lib/categories";
 import { buildOption, eventKey, isAQI } from "@/lib/chart-options";
 import { chartTable, download, slug, toCSV } from "@/lib/chart-data";
 import type { Evidence } from "@/lib/evidence";
-import { fmtDate, fmtRange, pollutantLabel } from "@/lib/format";
+import { fmtDate, fmtRange, pollutantLabel, readable } from "@/lib/format";
 import { keyNumbers } from "@/lib/key-numbers";
 import type { Card, ChartSpec, DataType, ResolvedQuery, SourceRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -65,13 +73,14 @@ export function CategoryChip({ category, prefix }: { category: string; prefix?: 
 }
 
 // ------------------------------------------------------------------ chart + table + actions
-export function ChartPanel({ spec, dataType, answerText }: { spec: ChartSpec; dataType: DataType | null; answerText: string }) {
+/** compact: inside the evidence panel, where the Data tab already holds the table. */
+export function ChartPanel({ spec, dataType, answerText, compact }: { spec: ChartSpec; dataType: DataType | null; answerText: string; compact?: boolean }) {
   const [view, setView] = useState<"chart" | "table">("chart");
   const [copied, setCopied] = useState(false);
   const chartRef = useRef<EChartHandle>(null);
   const option = useMemo(() => buildOption(spec, dataType), [spec, dataType]);
   const table = useMemo(() => chartTable(spec), [spec]);
-  const height = spec.type === "calendar_heatmap" ? 230 : spec.type === "bar" ? Math.max(160, (spec.series[0]?.data.length ?? 4) * 36 + 56) : 280;
+  const height = spec.type === "calendar_heatmap" ? 230 : spec.type === "bar" ? Math.max(160, (spec.series[0]?.data.length ?? 4) * 36 + 56) : compact ? 250 : 280;
   const name = slug(spec.title);
   const aqi = isAQI(spec);
   const key = eventKey(spec);
@@ -97,11 +106,11 @@ export function ChartPanel({ spec, dataType, answerText }: { spec: ChartSpec; da
     <section aria-label="Chart" className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <h3 className="w-full min-w-0 text-sm font-medium sm:w-auto sm:flex-1">
-          {spec.title}
+          {readable(spec.title)}
           <span className="ml-2 font-normal text-subtle">{aqi ? "AQI (index)" : spec.units}</span>
         </h3>
         <div className="ml-auto flex items-center gap-0.5">
-          <div role="tablist" aria-label="Chart or table" className="mr-1 flex rounded-lg bg-surface p-0.5">
+          <div role="tablist" aria-label="Chart or table" className={cn("mr-1 flex rounded-lg bg-surface p-0.5", compact && "hidden")}>
             {(["chart", "table"] as const).map((v) => (
               <button
                 key={v}
@@ -127,7 +136,7 @@ export function ChartPanel({ spec, dataType, answerText }: { spec: ChartSpec; da
       {view === "table" && <DataTable columns={table.columns} rows={table.rows} caption={spec.title} />}
       {notes.length > 0 && (
         <ul className="space-y-1 text-xs leading-4 text-subtle">
-          {notes.map((n) => <li key={n}>{n}</li>)}
+          {notes.map((n) => <li key={n}>{readable(n)}</li>)}
         </ul>
       )}
     </section>
@@ -271,7 +280,7 @@ export function EvidenceArea({ ev, rq, explanation, notes }: { ev: Evidence; rq:
           {explanation && (
             <>
               <p className="font-medium text-foreground">Method</p>
-              <p>{explanation.replace(/(\d{4}-\d{2}-\d{2})/g, (m) => fmtDate(m))}</p>
+              <p>{readable(explanation)}</p>
             </>
           )}
           <p className="font-medium text-foreground">Sources</p>
@@ -280,7 +289,7 @@ export function EvidenceArea({ ev, rq, explanation, notes }: { ev: Evidence; rq:
             <>
               <p className="font-medium text-foreground">Notes</p>
               <ul className="list-disc space-y-1 pl-4">
-                {notes.map((w) => <li key={w}>{w}</li>)}
+                {notes.map((w) => <li key={w}>{readable(w)}</li>)}
               </ul>
             </>
           )}
@@ -345,7 +354,7 @@ export function RequiredNotes({ notes }: { notes: { code: string; text: string }
   if (!notes.length) return null;
   return (
     <ul aria-label="Important notes" className="flex flex-col gap-1 border-l-2 border-warn/60 pl-3 text-[13px] leading-5 text-subtle">
-      {notes.map((w) => <li key={`${w.code}:${w.text}`}>{w.text}</li>)}
+      {notes.map((w) => <li key={`${w.code}:${w.text}`}>{readable(w.text)}</li>)}
     </ul>
   );
 }

@@ -136,11 +136,14 @@ describe("charts", () => {
     expect(o.series[0].markArea).toBeTruthy(); // festival band
   });
 
-  it("draws Diwali lines in one plain colour per line (no category-coloured dots)", () => {
+  it("colours Diwali points by CPCB category and labels the festival bulletins", () => {
     const t = turnFrom("diwali-cached.sse");
-    const o = buildOption(t.chart!) as { series: { itemStyle: { color: string }; data: { itemStyle?: unknown }[] }[] };
-    expect(o.series[0].data.every((p) => p.itemStyle === undefined)).toBe(true);
-    expect(o.series[0].itemStyle.color).toBe("#2DD4BF");
+    const o = buildOption(t.chart!) as { series: { data: { itemStyle?: { color: string }; label?: { show: boolean }; raw: Record<string, unknown> }[] }[] };
+    const pts = o.series[0].data.filter((p) => typeof p.raw.aqi === "number");
+    expect(pts.every((p) => typeof p.itemStyle?.color === "string")).toBe(true);
+    const veryPoor = pts.find((p) => /very poor/i.test(String(p.raw.category)));
+    if (veryPoor) expect(veryPoor.itemStyle!.color).toBe("#EF4444");
+    expect(o.series[0].data.filter((p) => p.label?.show).length).toBeGreaterThanOrEqual(1);
   });
 
   it("puts reference-line labels outside the plot and zooms only long ranges", () => {
@@ -167,7 +170,7 @@ describe("evidence and follow-ups", () => {
   it("summarises data type, period, stations, coverage and source", () => {
     const ev = evidenceFor(turnFrom("compare-live.sse"));
     expect(ev.dataType).toBe("Measured");
-    expect(ev.period).toBe("Latest 30 days available · 1 Oct 2026 – 30 Oct 2026"); // data ends before today
+    expect(ev.period).toBe("Latest 30 days available · 1–30 Oct 2026"); // data ends before today
     expect(ev.stations).toMatch(/stations/);
     expect(ev.coverageText).toMatch(/% coverage/);
     expect(ev.source).toMatch(/OpenAQ/);
@@ -204,12 +207,12 @@ describe("key numbers", () => {
     expect(k.every((x) => x.unit === "µg/m³")).toBe(true);
   });
 
-  it("shows AQI as a whole number with its category, keeping the exact value", () => {
+  it("shows bulletin AQI whole and a mean of bulletins with its decimal, matching the headline", () => {
     const t = turnFrom("diwali-cached.sse");
     const [d] = keyNumbers(t.cards);
     expect(d).toMatchObject({ label: "Diwali 2025", value: "352", unit: "AQI", category: "Very poor", exact: 352 });
     const half = keyNumbers([{ ...t.cards[0], value: 188.5 }])[0];
-    expect(half.value).toBe("189");
+    expect(half.value).toBe("188.5");                     // (a + b) / 2: not rounded into a different number
     expect(half.exact).toBe(188.5);
   });
 });

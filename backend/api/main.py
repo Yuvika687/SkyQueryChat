@@ -29,7 +29,7 @@ from pydantic import BaseModel, Field, field_validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.agent import core, models as M, resolver as R
-from backend.analysis import functions as F
+from backend.analysis import functions as F, pages as PG
 from backend.analysis.store import Store, read_tables
 from backend.agent.quota import QuotaManager
 from .protect import AnswerCache, RateLimiter, load_demo, normalise
@@ -297,14 +297,83 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         a, b = _period(period)
         return F.coverage_summary(S(), _city(city), a, b).to_dict()
 
+    @app.get("/api/latest")
+    async def latest(pollutant: str = Query("pm25", pattern="^pm(25|10)$")):
+        """Home page: each city's latest available value and its last 7 days. Read-only, no LLM, no quota.
+        The app tables never change while the server runs, so each result is computed once and kept."""
+        cache = state.setdefault("latest", {})
+        if pollutant not in cache:
+            cache[pollutant] = F.latest_city_values(S(), pollutant)
+        return cache[pollutant]
+
+    @app.get("/api/explore")
+    async def explore(pollutant: str = Query("pm25", pattern="^pm(25|10)$")):
+        """Explore map: every station's daily values over the latest 30 available days. Read-only, no LLM,
+        computed once per pollutant and kept (the app tables never change while the server runs)."""
+        cache = state.setdefault("explore", {})
+        if pollutant not in cache:
+            cache[pollutant] = F.explore_data(S(), pollutant)
+        return cache[pollutant]
+
+    @app.get("/api/city/{city}")
+    async def city_page(city: str):
+        """City page: latest value, 30 days, calendar, Diwali AQI, unusual days, weather association, stations.
+        Read-only, no LLM, computed once per city and kept."""
+        c = _city(city)
+        cache = state.setdefault("city", {})
+        if c not in cache:
+            lat = {p: await latest(pollutant=p) for p in ("pm25", "pm10")}      # reuse the cached results
+            ex = await explore(pollutant="pm25")
+            cache[c] = await asyncio.to_thread(PG.city_page, S(), c, lat, ex)
+        return cache[c]
+
+    @app.get("/api/compare/periods")
+    async def compare_periods():
+        """Compare page presets, limited to dates that exist in the data."""
+        if "periods" not in state:
+            state["periods"] = PG.periods(S())
+        return state["periods"]
+
+    @app.get("/api/compare")
+    async def compare(cities: str = Query(..., max_length=80), metric: str = Query("pm25", pattern="^(pm25|pm10|aqi)$"),
+                      start: date = Query(...), end: date = Query(...)):
+        """Compare page: daily lines on matching dates, ranking with 95% ranges, trends. Read-only, no LLM."""
+        cs = list(dict.fromkeys(_city(c.strip()) for c in cities.split(",") if c.strip()))
+        if not 2 <= len(cs) <= 6:
+            raise ValueError("Pick between 2 and 6 cities.")
+        lo = date(2025, 2, 18) if metric != "aqi" else date(2024, 1, 1)
+        hi = date.fromisoformat((await latest(pollutant="pm25"))["date"])
+        if start > end or start < lo or end > hi or (end - start).days > 400:
+            raise ValueError(f"Pick dates between {lo} and {hi}, at most 400 days apart.")
+        key = (tuple(cs), metric, start, end)
+        cache = state.setdefault("compare", {})
+        if key not in cache:
+            if len(cache) > 200:                    # bounded: shareable links make many keys possible
+                cache.clear()
+            cache[key] = await asyncio.to_thread(PG.compare_page, S(), cs, metric, start, end)
+        return cache[key]
+
     @app.get("/api/diwali/{city}")
     async def diwali(city: str, years: str = Query("2024,2025", pattern=r"^\d{4}(,\d{4}){0,2}$")):
         return F.diwali_aqi(S(), _city(city), tuple(int(y) for y in years.split(","))).to_dict()
 
+    # The answer wording the live app uses (readable dates, caveats kept in the answer) dates from this day.
+    # A first-pass run that started earlier was measured with an earlier wording; the panel says so.
+    ANSWER_WORDING_SINCE = "2026-11-13"
+
     @app.get("/api/accuracy")
     async def accuracy():
         p = ROOT / "evals" / "scoreboard.json"
-        return json.loads(p.read_text()) if p.exists() else {"sets": {}}
+        out = json.loads(p.read_text()) if p.exists() else {"sets": {}}
+        out["answer_wording_since"] = ANSWER_WORDING_SINCE
+        cc = ROOT / "docs" / "crosscheck_bulletins.json"
+        if cc.exists():
+            d = json.loads(cc.read_text())
+            # agreement figures only; the internal estimates themselves are never exposed
+            out["crosscheck"] = {"by_city": {
+                c: {k: v.get(k) for k in ("days", "correlation", "within_20pct", "period")}
+                for c, v in (d.get("by_city") or {}).items()}}
+        return out
 
     # ------------------------------------------------------------------ chat (SSE)
     salt = uuid.uuid4().hex                     # per process: hashed IPs are never stored in clear

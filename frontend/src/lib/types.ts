@@ -162,3 +162,68 @@ export interface Meta {
   attribution: Record<string, string> | null;
   demo_questions: string[];
 }
+
+/** GET /api/latest: each city's latest available value and its last 7 days (measured, read-only). */
+export interface LatestCity {
+  city: string;
+  value: number;
+  stations_reporting: number;
+  stations_total: number;
+  primary_stations: number;
+  lat: number;
+  lon: number;
+  series: { date: string; value: number | null }[];
+}
+export interface Latest {
+  date: string;
+  start: string;
+  pollutant: "pm25" | "pm10";
+  units: string;
+  data_type: string;
+  source: string;
+  method: string;
+  cities: LatestCity[]; // highest first
+}
+
+/** GET /api/accuracy: stored evaluation run summaries (never recomputed). */
+export interface EvalSummary {
+  turns: number;
+  pass: number;
+  pass_pct: number;
+  numbers_traceable_pct: number | null;
+  tool_choice_pct?: number | null;
+  reference_checks_pct?: number | null;
+}
+export interface Scoreboard {
+  sets: Record<string, { main_first_pass: { run: string; started: string; model_chain?: string[]; summary: { overall?: EvalSummary } & Partial<EvalSummary> } | null }>;
+  answer_wording_since?: string;
+  crosscheck?: { by_city: Record<string, { days: number; correlation: number; within_20pct: number; period: string }> };
+}
+
+/** GET /api/explore: every station's 24-hour means over the latest 30 available days (measured, read-only). */
+export interface ExploreStation {
+  id: number;
+  city: string;
+  name: string;
+  provider: string;
+  tier: "primary" | "low_cost" | "supporting_single_station" | string;
+  type: string;
+  lat: number;
+  lon: number;
+  km_from_centre: number;
+  last_reading_utc: string | null;
+  /** 24-hour mean per day; null when the day had fewer than 16 valid hours or no readings. */
+  values: (number | null)[];
+  /** Valid hours per day; null when the station sent no readings that day. */
+  valid_hours: (number | null)[];
+}
+export interface ExploreData {
+  pollutant: "pm25" | "pm10";
+  units: string;
+  data_type: string;
+  source: string;
+  dates: string[];
+  min_valid_hours: number;
+  cities: Record<string, { values: (number | null)[]; stations_reporting: number[] }>;
+  stations: ExploreStation[];
+}

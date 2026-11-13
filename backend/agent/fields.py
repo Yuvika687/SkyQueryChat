@@ -38,6 +38,16 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
             f["highest_date"] = Field(str(s["highest_day"]["date"]), "date of highest day")
             f["lowest_value"] = Field(s["lowest_day"]["value"], f"{city} lowest daily {P} ({s['lowest_day']['date']})", u)
             f["lowest_date"] = Field(str(s["lowest_day"]["date"]), "date of lowest day")
+            t = s.get("trend") or {}
+            why = {"not enough data": f" ({t.get('n_days')} days with a value; at least {t.get('min_days')} needed)",
+                   "no clear trend": " (p >= 0.05)"}.get(t.get("status"), "")
+            f["trend"] = Field(f"{t.get('status')}{why}" if t.get("status") else None,
+                               f"{city} {P} trend (Mann-Kendall, {per})")
+            if "slope_per_month" in t:
+                f["trend_per_month"] = Field(t["slope_per_month"], f"{city} {P} change per month (Sen's slope)", u)
+                f["trend_p_value"] = Field(t["p_value"], "trend p-value", "")
+            if t.get("note"):
+                f["trend_note"] = Field(t["note"], "trend caveat")
         f["days_with_data"] = Field(cov.get("days_with_city_value"), f"{city} days with a city value", "days")
         f["days_in_period"] = Field(cov.get("days_in_period"), "days in period", "days")
         sh = cov.get("share_of_days_with_city_value")
@@ -52,7 +62,14 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
             f[f"{c['city']}_mean"] = Field(c["mean_common_days"], f"{c['city']} mean {P} (common days), {per}", u)
             f[f"{c['city']}_rank"] = Field(c["rank_highest_first"], f"{c['city']} rank (1 = highest {P})", "")
             f[f"{c['city']}_valid_days"] = Field(c["n_valid_days"], f"{c['city']} days with data", "days")
+            if c.get("range95_low") is not None:
+                f[f"{c['city']}_range_low"] = Field(c["range95_low"], f"{c['city']} 95% range, low", u)
+                f[f"{c['city']}_range_high"] = Field(c["range95_high"], f"{c['city']} 95% range, high", u)
+            f[f"{c['city']}_coverage_pct"] = Field(c.get("coverage_pct"), f"{c['city']} share of days with data", "%")
         f["common_days"] = Field(v["common_days"], "days with data for every city", "days")
+        tc = v.get("too_close_to_call") or []
+        f["too_close_to_call"] = Field("; ".join(" and ".join(p) for p in tc) or "none",
+                                       "too close to call (95% ranges overlap heavily; say so instead of ranking them)")
     elif k == "diwali_aqi":
         for y in v["years"]:
             yr = y["year"]
@@ -115,6 +132,9 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
     elif k == "weather_relationship":
         wu = u.split("; ")[-1] if "; " in u else ""
         f["rho"] = Field(v.get("spearman_rho"), f"{city} Spearman rho, {P} vs {d['title'].split(' and ')[-1].split(' in ')[0]}", "")
+        if v.get("rho_range95_low") is not None:
+            f["rho_range_low"] = Field(v["rho_range95_low"], "Spearman rho 95% range, low", "")
+            f["rho_range_high"] = Field(v["rho_range95_high"], "Spearman rho 95% range, high", "")
         f["strength"] = Field(v.get("strength"), "association strength")
         f["days"] = Field(v.get("n_days"), "matched days", "days")
         for i, g in enumerate(v.get("groups", []), 1):
@@ -122,7 +142,7 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
             f[f"{key}_mean"] = Field(g["mean_pm"], f"{city} mean {P}, {g['group']}", "µg/m³")
             f[f"{key}_days"] = Field(g["n_days"], f"days, {g['group']}", "days")
             if key.startswith("q"):
-                f[f"{key}_group"] = Field(g["group"], f"group {i}")
+                f[f"{key}_group"] = Field(g.get("label") or g["group"], f"group {i}")
         f["statement"] = Field(v.get("statement"), "association statement")
         _ = wu
     elif k == "coverage_summary":

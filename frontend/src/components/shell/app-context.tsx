@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { waitForBackend } from "@/lib/api";
+import { getLatest, waitForBackend } from "@/lib/api";
 import { CITIES } from "@/lib/categories";
 import { deleteChat, getPref, loadChats, saveChat, setPref, type SavedChat } from "@/lib/recent";
-import type { Health } from "@/lib/types";
+import type { Health, Latest } from "@/lib/types";
 
 export type BackendState = "checking" | "ready" | "waking" | "down";
 export type Pollutant = "pm25" | "pm10";
+export type LoadState = "idle" | "loading" | "ready" | "error";
 
 /** What the current Ask conversation is about, from the latest answer's resolved_query (read-only). */
 export interface AskContext {
@@ -32,6 +33,10 @@ interface AppState {
   newChatKey: number;
   askContext: AskContext | null;
   setAskContext: (c: AskContext | null) => void;
+  /** Latest available city values (home page, nav chip). Loaded once the backend answers. */
+  latest: Latest | null;
+  latestState: LoadState;
+  reloadLatest: () => Promise<void>;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -51,6 +56,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeChatId, setActive] = useState<string | null>(null);
   const [newChatKey, setNewChatKey] = useState(0);
   const [askContext, setAskContext] = useState<AskContext | null>(null);
+  const [latest, setLatest] = useState<Latest | null>(null);
+  const [latestState, setLatestState] = useState<LoadState>("idle");
 
   useEffect(() => {
     // Browser-only state is read after mount so server and client render the same first frame.
@@ -80,6 +87,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void recheckBackend();
   }, [recheckBackend]);
+
+  const reloadLatest = useCallback(async () => {
+    await Promise.resolve();
+    setLatestState("loading");
+    try {
+      setLatest(await getLatest());
+      setLatestState("ready");
+    } catch {
+      setLatestState("error");
+    }
+  }, []);
+
+  useEffect(() => {
+    // Read-only data for the home page and the nav chip, fetched once the backend is awake.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (backend === "ready" && latestState === "idle") void reloadLatest();
+  }, [backend, latestState, reloadLatest]);
 
   const value = useMemo<AppState>(
     () => ({
@@ -113,8 +137,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       newChatKey,
       askContext,
       setAskContext,
+      latest,
+      latestState,
+      reloadLatest,
     }),
-    [city, pollutant, backend, health, recheckBackend, chats, activeChatId, newChatKey, askContext],
+    [city, pollutant, backend, health, recheckBackend, chats, activeChatId, newChatKey, askContext, latest, latestState, reloadLatest],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

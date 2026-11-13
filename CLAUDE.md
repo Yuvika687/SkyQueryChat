@@ -366,6 +366,93 @@ Rules:
   loaded once). Startup to healthy: 25 s native, 72 s under emulation, so a cold visitor waits about a minute plus
   that; the frontend waits up to 150 s and shows "Starting the analysis service".
 
+### Design system, navigation and Home (branch `redesign`, 2026-11-13)
+
+- Chosen design: direction A's visual style (navy, teal accent, Instrument Serif headlines with Inter, soft glow,
+  rounded glass cards) with direction C's layouts (Home: map plus ranked cities; Ask: answer left, evidence right).
+  Direction B is dropped. Work happens on branch `redesign`; it is not merged to main.
+- Tokens in `frontend/src/app/globals.css` (`--sq-*`, `--cat-*` for CPCB data colours only, radius, shadows,
+  `glass` utility). Fonts via next/font. Components in `frontend/src/components/ds/`: CategoryBadge, ScaleBar,
+  Sparkline, StatNumber (counts up; reduced motion shows the value), AskBox, CityCard, Skeleton, ErrorState,
+  WakeUpState, FadeIn (Framer Motion, `MotionConfig reducedMotion="user"`).
+- Navigation: floating top bar (desktop) and bottom tab bar (phone); the old sidebar is gone. Chat history moved to
+  the Ask page ("New chat", "Recent chats"). "Data & accuracy" panel reads `/api/accuracy` (stored first-pass scores).
+- Home reads `GET /api/latest` (latest date every city has a valid PM2.5 city value, highest first, 7-day series,
+  stations reporting, map position = mean of primary stations). Read-only, no LLM, cached per process.
+- Map: MapLibre GL 6 + OpenFreeMap dark style with border/label/road layers removed, official India outline from
+  `frontend/public/geo/india-official.geojson` (Survey of India via DataMeet, CC0); SVG outline fallback. MapLibre 6
+  needs its worker file served: `scripts/copy-maplibre-worker.mjs` copies it to `public/maplibre/` on predev and
+  prebuild (gitignored). The map is static (no scroll-zoom or drag); markers are React buttons laid over it.
+  Label sides are fixed per city (Mumbai and Bengaluru left; on phones Mumbai above) so labels never overlap.
+- Ask accepts `/ask?q=...` (starts a new chat, sends once, then clears the address). Answer text is shown through
+  `readable()` (ISO dates -> "9 Nov 2026", "16:00" -> "4 PM"); numbers are untouched.
+- "Very poor" chips use dark text (#1A0404): white on #EF4444 is only 3.8:1.
+- *(Replaced 2026-11-13: Explore, the city pages and Compare are built; see below.)* Explore and Compare were placeholder pages.
+
+### Home polish and Explore (branch `redesign`, 2026-11-13)
+
+- Home: the "Latest available" badge shows only below the `lg` width (the nav chip shows it on wide screens). The map
+  card picks the first spot that covers no other city's label or marker, and that city's own label hides while it is
+  open. Phones: suggested questions are one sideways-scrolling row, city cards are compact (two rows), the page has
+  bottom padding for the tab bar.
+- `GET /api/explore?pollutant=pm25|pm10` (read-only, cached per pollutant): the latest 30 available days (ending on
+  the `/api/latest` date) for every station with data in that window: metadata (provider, tier, monitor type, lat/lon,
+  km from centre, last reading UTC) plus each day's 24-hour mean and valid hours. A value needs >= 16 valid hours;
+  otherwise `values[i]` is null and `valid_hours[i]` says how many hours there were (the map shows grey "not enough
+  data"); no row at all = no readings. City values per day use the normal city rule. About 50 KB per pollutant.
+- Explore (`/explore`): MapLibre map (shared setup in `src/lib/map-base.ts`), city markers then station markers (DOM
+  buttons inside MapLibre markers, painted outside React components), left panel (ranking, then the city's station
+  list = accessible alternative to the map), right station panel, date slider over 30 days with play (0.8 s per day;
+  no autoplay with reduced motion), PM2.5/PM10 toggle, low-cost sensor toggle (real AirGradient sensors exist), legend.
+  View in the address: `?city=&station=&pollutant=&date=`. Phones: bottom sheet (peek/half/full; drag or tap the handle).
+  Logic in `src/lib/explore.ts` (tests in `explore.test.ts`); Playwright: `e2e/explore.spec.ts`, `e2e/explore-phone.spec.ts`.
+- "Ask about this station" opens a city question for the 30-day window (the analyst works on city averages, which
+  include the station); the panel says so.
+- Memory (Linux container, 512 MB, 0.1 CPU, both explore payloads built): peak 284 MiB. The first `/api/explore`
+  request takes about 8 s at 0.1 CPU under emulation (0.06 s natively), then it is cached.
+- The MapLibre worker copy runs as `predev` and `prebuild` (package.json), so `npm run build` on Vercel includes it.
+
+### Explore map fixes and Ask redesign (branch `redesign`, 2026-11-13)
+
+- Explore basemap: Explore keeps OpenFreeMap roads, water names and place names from zoom 7 (Home keeps land and water
+  only); every `boundary*` layer is removed on both. City outlines: `frontend/public/geo/city-outlines.geojson`, built by
+  `frontend/scripts/build-city-outlines.py` from DataMeet's Census 2011 districts (CC BY 2.5 India; shapefile read
+  directly, no GIS library). Delhi = its 9 districts; Mumbai = Mumbai + Mumbai Suburban; Bengaluru = Bangalore district.
+- Station markers are MapLibre layers (dots; low-cost sensors are SDF diamonds), value labels use symbol collision,
+  the selected/hovered station is larger and always labelled. The list is the keyboard path (focus highlights the dot).
+  Fly-in padding keeps the left panel, the station panel area and the timeline clear.
+- Severe is CPCB maroon `#7A0E12` (white text 11:1), with a light edge on dark backgrounds.
+- Ask: conversation left, right panel with Evidence / Data tabs; a clicked number swaps the panel to its Proof (Back
+  button); phones show evidence under the answer and the proof as a bottom sheet. Clickable numbers and proof content:
+  `src/lib/proof.ts` (a number is clickable only when it equals a card value or chart point at the precision written).
+  Live steps: `src/components/ask/live-steps.tsx` (real stream events; the model name only inside "How this answer was
+  made").
+- Answer wording: instructions ask for readable dates and "4 PM" times, no "date(s)"/"noting that", no bracketed
+  definitions, but the answer must keep requested values and key caveats. The number checker now checks readable dates
+  ("9 Nov 2026", "9–10 Nov 2026", "13 Oct – 11 Nov 2026", "Nov 9, 2026"): each day must be a tool date (dates are kept in
+  the allowed set as `DATE_CODE + yyyymmdd`); "PM2.5 November" is not a date. The evaluation scorer matches readable
+  dates against ISO expectations (`iso_dates` in `scripts/run_eval.py`).
+
+### Statistics, city pages, Compare and release polish (2026-11-13)
+
+- `backend/analysis/stats.py` (numpy only; tests check it against scipy, a dev dependency): Mann-Kendall + Sen's slope
+  (direction only when p < 0.05; "not enough data" under 20 valid days), weekly block-bootstrap 95% ranges (fixed seed),
+  Spearman with a Fisher-z 95% range, "too close to call" when neighbouring ranges overlap by at least half of the
+  narrower one. `city_trend`, `compare_cities` (now a multi-line daily chart) and `weather_relationship` (scatter plus a
+  Python-calculated Theil-Sen line) carry these. The checker allows the label "95% range"; `trend_conflicts` rejects
+  trend wording that contradicts the trend test. Eval set `evals/analysis.json` (references in `analysis_refs`, scipy).
+- Read-only `backend/analysis/pages.py`: `/api/city/{city}`, `/api/compare`, `/api/compare/periods` (cached; compare
+  cache bounded). Frontend `/city/[slug]` (six static slugs; params read inside Suspense, unknown slug shows not-found),
+  `/compare` (selection in the address), styled 404, `error.tsx` and `global-error.tsx` (this Next version passes
+  `retry`), sitemap, robots, icon, static `public/og.png`.
+- `/api/accuracy` adds `answer_wording_since` and the CPCB cross-check agreement figures only (never the PM-only
+  estimates). The panel shows first-pass scores and marks runs measured with an earlier wording.
+- Home draws the official outline as SVG at once and loads MapLibre when the browser is idle (Lighthouse desktop: Home
+  99/100/100/100, Ask 100 x4). Explore has no zoom buttons on phones (pinch; axe target size).
+- `e2e/a11y.spec.ts` runs axe on every page at three sizes (zero serious/critical).
+- Memory (Linux amd64 container, 512 MB, 0.1 CPU): peak 305 MiB after every data, city and compare endpoint. The first
+  city page takes about 15 s there under emulation (0.36 s natively), then it is cached.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

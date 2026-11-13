@@ -1,0 +1,90 @@
+{
+ "overall": {
+  "turns": 51,
+  "pass": 44,
+  "pass_pct": 86.3,
+  "tool_choice_pct": 97.7,
+  "tool_choice_n": 43,
+  "numbers_traceable_pct": 100.0,
+  "answered": 41,
+  "reference_checks_pct": 91.7,
+  "reference_checks_n": 24,
+  "reference_failures": [
+   "delhi_pm25_2025_nov_dec",
+   "delhi_diwali2025_pct"
+  ],
+  "refusals_correct_pct": 85.7,
+  "refusals_n": 14,
+  "resolved_checks_pct": 100.0,
+  "resolved_checks_n": 38,
+  "resolved_failures": [],
+  "pass_lenient_wording_SEPARATE": 46,
+  "errors": [],
+  "failed": [
+   "T1.1",
+   "D3.1",
+   "D5.1",
+   "D7.1",
+   "W1.1",
+   "W5.1",
+   "X1.1"
+  ],
+  "verifier_retries": 3,
+  "tokens_median": 4478,
+  "tokens_mean": 5133,
+  "tokens_max": 9974,
+  "tokens_total": 261763
+ },
+ "by_model": {
+  "gemini-3.5-flash-lite": {
+   "turns": 51,
+   "pass": 44,
+   "pass_pct": 86.3,
+   "tool_choice_pct": 97.7,
+   "tool_choice_n": 43,
+   "numbers_traceable_pct": 100.0,
+   "answered": 41,
+   "reference_checks_pct": 91.7,
+   "reference_checks_n": 24,
+   "reference_failures": [
+    "delhi_pm25_2025_nov_dec",
+    "delhi_diwali2025_pct"
+   ],
+   "refusals_correct_pct": 85.7,
+   "refusals_n": 14,
+   "resolved_checks_pct": 100.0,
+   "resolved_checks_n": 38,
+   "resolved_failures": [],
+   "pass_lenient_wording_SEPARATE": 46,
+   "errors": [],
+   "failed": [
+    "T1.1",
+    "D3.1",
+    "D5.1",
+    "D7.1",
+    "W1.1",
+    "W5.1",
+    "X1.1"
+   ],
+   "verifier_retries": 3,
+   "tokens_median": 4478,
+   "tokens_mean": 5133,
+   "tokens_max": 9974,
+   "tokens_total": 261763
+  }
+ },
+ "by_category": {
+  "comparison": "6/6",
+  "diwali": "4/7",
+  "follow_up": "8/8",
+  "missing_data": "5/5",
+  "trap_causal": "0/1",
+  "trap_code": "1/1",
+  "trap_injection": "2/2",
+  "trap_pm_percent": "1/1",
+  "trend": "6/7",
+  "unsupported": "3/4",
+  "unusual_days": "5/5",
+  "weather": "3/4"
+ }
+}

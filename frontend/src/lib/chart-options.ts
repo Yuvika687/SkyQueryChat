@@ -1,8 +1,9 @@
 // Backend chart spec -> ECharts option. Pure (testable). Rules from the UI spec:
 // straight segments, gaps stay gaps, AQI and PM never share a chart, bars start at zero, units always shown,
 // modelled data = dashed violet line, six fixed city colours.
-import { CATEGORY_STYLE, CITY_COLOURS, REFERENCE_LINES, aqiCategory, normaliseCategory } from "./categories";
+import { CATEGORY_STYLE, CITY_COLOURS, REFERENCE_LINES, aqiCategory, normaliseCategory, pmCategory as pmCategoryOf } from "./categories";
 import type { ChartPoint, ChartSpec, DataType } from "./types";
+import { readable } from "./format";
 
 const C = {
   text: "#E6EAF5", sub: "#94A0BC", line: "#2A3556", surface: "#121A2E", raised: "#1B2540",
@@ -44,7 +45,7 @@ function base(spec: ChartSpec) {
 
 const axisCommon = {
   axisLine: { lineStyle: { color: C.line } },
-  axisLabel: { color: C.sub, fontSize: 12 },
+  axisLabel: { color: C.sub, fontSize: 12, hideOverlap: true },
   splitLine: { lineStyle: { color: C.line, opacity: 0.5 } },
   nameTextStyle: { color: C.sub, fontSize: 12 },
 };
@@ -118,8 +119,16 @@ function lineOption(spec: ChartSpec, dataType: DataType | null) {
     }
     const colour = modelled ? C.modelled : CITY_COLOURS[s.name] ?? (i === 0 ? C.accent : /median|rolling/i.test(s.name) ? C.sub : YEAR_COLOURS[i % 3]);
     const isRef = /median|rolling/i.test(s.name);
+    const single = spec.series.length === 1 && pol && !modelled;
     return {
-      name: s.name, type: "line", data: withGaps(s.data), smooth: false, connectNulls: false,
+      name: s.name, type: "line", smooth: false, connectNulls: false,
+      data: single ? withGaps(s.data).map((p) => {
+        const v = Array.isArray(p) ? (p[1] as number | null) : null;
+        const cat = v == null ? null : pmCategoryOf(v, pol!);
+        return { value: p, itemStyle: cat ? { color: CATEGORY_STYLE[cat].bg, borderColor: "#0E1729", borderWidth: 1 } : undefined };
+      }) : withGaps(s.data),
+      ...(single && time ? { markPoint: { symbol: "pin", symbolSize: 34, label: { color: "#06140B", fontSize: 10, fontWeight: 600, formatter: (q: { value: number }) => q.value.toFixed(1) },
+        itemStyle: { color: C.text }, data: [{ type: "max", name: "Highest" }] } } : {}),
       // small symbols on dense series so a single day between two gaps is still visible
       showSymbol: true, symbolSize: s.data.length <= 2 ? 10 : s.data.length <= 40 ? 5 : 2,
       lineStyle: { width: isRef ? 1.5 : 2, color: colour, type: modelled || isRef ? "dashed" : "solid" },
@@ -154,16 +163,29 @@ function lineOption(spec: ChartSpec, dataType: DataType | null) {
 function eventLineOption(spec: ChartSpec) {
   const bands = dedupeBands(spec.bands ?? []);
   const aqi = isAQI(spec);
-  // One plain colour per line: the AQI category is in the tooltip and table, not in coloured dots.
+  const dateOf = spec.series.length === 1
+    ? new Map((spec.series[0].data as Record<string, unknown>[]).filter((o) => o.bulletin_date)
+        .map((o) => [Number(o[spec.x.field]), shortDate(String(o.bulletin_date))]))
+    : null;
+  // One colour per line; each point is coloured by its CPCB category (also named in the tooltip and table).
+  // The festival bulletins carry their value as a label.
+  const inBand = (x: unknown) => bands.some((b) => Number(x) >= Number(b.start) && Number(x) <= Number(b.end));
   const series = spec.series.map((s, i) => {
-    const colour = spec.series.length === 1 ? C.accent : EVENT_COLOURS[i % EVENT_COLOURS.length];
+    const colour = spec.series.length === 1 ? "#8FA6D6" : EVENT_COLOURS[i % EVENT_COLOURS.length];
     return {
-      name: s.name, type: "line", smooth: false, connectNulls: false, showSymbol: true, symbol: "circle", symbolSize: 5,
+      name: s.name, type: "line", smooth: false, connectNulls: false, showSymbol: true, symbol: "circle", symbolSize: 7,
       lineStyle: { width: 2, color: colour }, itemStyle: { color: colour },
       data: s.data.map((p) => {
         const o = p as Record<string, unknown>;
         const v = (o[spec.y.field] as number | null) ?? null;
-        return { value: [o[spec.x.field], v], raw: o };
+        const cat = normaliseCategory(o.category) ?? (aqi ? aqiCategory(v) : null);
+        return {
+          value: [o[spec.x.field], v], raw: o,
+          itemStyle: { color: cat ? CATEGORY_STYLE[cat].bg : colour, borderColor: "#0E1729", borderWidth: 1.5 },
+          label: v != null && inBand(o[spec.x.field])
+            ? { show: true, position: "top", color: C.text, fontWeight: 600, fontSize: 12, formatter: () => String(aqi ? Math.round(v) : v) }
+            : undefined,
+        };
       }),
       ...(i === 0
         ? {
@@ -187,9 +209,10 @@ function eventLineOption(spec: ChartSpec) {
     legend: { ...base(spec).legend, top: 0, right: 8, left: "auto" },
     grid: { ...base(spec).grid, top: 40, bottom: 40 },
     xAxis: {
-      type: "value", name: "Bulletin day (D = Diwali)", nameLocation: "middle", nameGap: 30, ...axisCommon,
+      type: "value", name: dateOf ? "Bulletin date" : "Bulletin day (D = Diwali)", nameLocation: "middle", nameGap: 30, ...axisCommon,
       min: "dataMin", max: "dataMax",
-      axisLabel: { ...axisCommon.axisLabel, formatter: (v: number) => (v === 0 ? "D" : v > 0 ? `D+${v}` : `D−${-v}`) },
+      // one year: real bulletin dates ("9 Nov"); several years: days from Diwali
+      axisLabel: { ...axisCommon.axisLabel, formatter: (v: number) => (dateOf?.get(v) ?? (v === 0 ? "D" : v > 0 ? `D+${v}` : `D−${-v}`)) },
       splitLine: { show: false }, minInterval: 1,
     },
     yAxis: { type: "value", name: yAxisName(spec), nameLocation: "middle", nameGap: 44, min: 0, ...axisCommon },
@@ -200,13 +223,17 @@ function eventLineOption(spec: ChartSpec) {
         const v = p.data.value[1];
         const cat = normaliseCategory(r.category) ?? (aqi ? aqiCategory(v) : null);
         const lines = [`<b>${p.seriesName}</b>`, `${aqi ? "AQI" : spec.y.label}: <b>${aqi && typeof v === "number" ? Math.round(v) : fmt(v, 0)}</b>${cat ? ` (${CATEGORY_STYLE[cat].label})` : ""}`];
-        if (r.bulletin_date) lines.push(`Bulletin date: ${r.bulletin_date}`);
-        if (r.reporting_period) lines.push(`Period: ${r.reporting_period}`);
+        if (r.bulletin_date) lines.push(`Bulletin date: ${readable(String(r.bulletin_date))}`);
+        if (r.reporting_period) lines.push(`Period: ${readable(String(r.reporting_period))}`);
         return lines.join("<br/>");
       },
     },
     series,
   };
+}
+
+function shortDate(iso: string): string {
+  return readable(iso).replace(/ \d{4}$/, "");
 }
 
 function dedupeBands(bands: NonNullable<ChartSpec["bands"]>) {
@@ -243,8 +270,10 @@ function barOption(spec: ChartSpec) {
 
 // ------------------------------------------------------------------ weather scatter
 function scatterOption(spec: ChartSpec) {
+  const fitted = spec.series.some((s) => s.type === "line");
   return {
     ...base(spec),
+    grid: { ...base(spec).grid, right: fitted ? 84 : 24 },
     legend: { show: false },
     xAxis: { type: "value", name: spec.x.label ?? spec.x.field, nameLocation: "middle", nameGap: 30, ...axisCommon },
     yAxis: { type: "value", name: yAxisName(spec), nameLocation: "middle", nameGap: 44, min: 0, ...axisCommon },
@@ -252,7 +281,12 @@ function scatterOption(spec: ChartSpec) {
       ...base(spec).tooltip, trigger: "item",
       formatter: (p: { value: [number, number] }) => `${spec.x.label ?? spec.x.field}: ${fmt(p.value[0], 2)}<br/>${yAxisName(spec)}: <b>${fmt(p.value[1])}</b>`,
     },
-    series: spec.series.map((s) => ({ name: s.name, type: "scatter", data: s.data, symbolSize: 6, itemStyle: { color: C.accent, opacity: 0.65 } })),
+    // days as dots; a fitted line (calculated in Python, Theil-Sen) when the backend sends one
+    series: spec.series.map((s) => s.type === "line"
+      ? { name: s.name, type: "line", data: s.data, showSymbol: false, silent: true, z: 4,
+          lineStyle: { color: C.text, width: 2, type: "dashed" },
+          endLabel: { show: true, formatter: "fitted line", color: C.sub, fontSize: 11 } }
+      : { name: s.name, type: "scatter", data: s.data, symbolSize: 6, itemStyle: { color: C.accent, opacity: 0.6 } }),
   };
 }
 

@@ -515,3 +515,100 @@ def test_saved_demo_answer_replays_its_llm_text(store):
         a = dict(ev)["answer"]
         assert a["text"] == saved["answer"] and a["headline"] == (saved.get("headline") or saved["answer"])
         assert a["method"] and a["cached"]
+
+
+def test_latest_city_values_for_the_home_page(store):
+    with TestClient(make(store)) as c:
+        r = c.get("/api/latest")
+        assert r.status_code == 200
+        d = r.json()
+        assert d["data_type"] == "measured" and d["pollutant"] == "pm25" and d["units"] == "µg/m³"
+        assert {x["city"] for x in d["cities"]} == {"Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"}
+        vals = [x["value"] for x in d["cities"]]
+        assert vals == sorted(vals, reverse=True)                       # highest first
+        for x in d["cities"]:
+            assert len(x["series"]) == 7 and x["series"][-1] == {"date": d["date"], "value": x["value"]}
+            assert x["series"][0]["date"] == d["start"]
+            assert 0 < x["stations_reporting"] <= x["stations_total"]
+            assert 5 < x["lat"] < 35 and 68 < x["lon"] < 98
+        # same values as the city table: latest date every city has a valid value
+        cd = store.tables["city_daily"]
+        delhi = cd[(cd.city == "Delhi") & (cd.pollutant == "pm25") & (cd.local_date.astype(str) == d["date"])]
+        assert round(float(delhi.city_mean.iloc[0]), 1) == next(x["value"] for x in d["cities"] if x["city"] == "Delhi")
+        assert c.get("/api/latest", params={"pollutant": "pm10"}).json()["pollutant"] == "pm10"
+        assert c.get("/api/latest", params={"pollutant": "no2"}).status_code == 422
+        assert c.get("/api/latest").json() == d                         # cached, unchanged
+
+
+def test_explore_station_days_for_the_map(store):
+    with TestClient(make(store)) as c:
+        d = c.get("/api/explore").json()
+        assert d["data_type"] == "measured" and d["pollutant"] == "pm25" and d["min_valid_hours"] == 16
+        assert len(d["dates"]) == 30 and d["dates"][-1] == c.get("/api/latest").json()["date"]
+        assert set(d["cities"]) == {"Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"}
+        assert {s["tier"] for s in d["stations"]} <= {"primary", "low_cost", "supporting_single_station"}
+        sd = store.tables["station_daily"]
+        for s in d["stations"][:20]:
+            assert len(s["values"]) == len(s["valid_hours"]) == 30 and 5 < s["lat"] < 35 and 68 < s["lon"] < 98
+            for day, v, h in zip(d["dates"], s["values"], s["valid_hours"]):
+                if v is not None:
+                    assert h >= 16                                   # a value needs >= 16 valid hours
+                    row = sd[(sd.location_id == s["id"]) & (sd.pollutant == "pm25") & (sd.local_date.astype(str) == day)]
+                    assert round(float(row.daily_mean.max()), 1) == v
+                elif h is not None:
+                    assert h < 16                                    # "not enough data", never a made-up value
+        delhi = d["cities"]["Delhi"]
+        assert delhi["values"][-1] == next(x["value"] for x in c.get("/api/latest").json()["cities"] if x["city"] == "Delhi")
+        assert c.get("/api/explore", params={"pollutant": "pm10"}).json()["pollutant"] == "pm10"
+        assert c.get("/api/explore", params={"pollutant": "so2"}).status_code == 422
+
+
+def test_city_page_data(store):
+    with TestClient(make(store)) as c:
+        d = c.get("/api/city/delhi").json()
+        latest = c.get("/api/latest").json()
+        assert d["city"] == "Delhi" and d["date"] == latest["date"]
+        assert d["hero"]["pm25"] == next(x["value"] for x in latest["cities"] if x["city"] == "Delhi")
+        t = d["trend30"]
+        assert len(t["pm25"]) == len(t["pm10"]) == 30 and t["pm25"][-1]["value"] == d["hero"]["pm25"]
+        assert any(x["value"] is None for x in t["pm25"])                    # gaps stay gaps, never filled
+        assert d["calendar"]["start"] >= "2025-02-01"                        # never bridges the old-sensor gap
+        years = {y["year"]: y for y in d["diwali"]["years"]}
+        assert years[2026]["level"] == 321.5 and [b["aqi"] for b in years[2026]["bulletins"]] == [344.0, 299.0]
+        assert all(len(y.get("change_range_pct", [0, 0])) == 2 for y in years.values())   # percentages only as ranges
+        assert d["diwali"]["pm_context"] and all(p["warnings"] for p in d["diwali"]["pm_context"])
+        assert all(u["reason"] for u in d["unusual"]["days"])
+        assert "association" not in d["weather"]["rainfall"]["statement"] or "not a cause" in d["weather"]["rainfall"]["statement"]
+        assert d["weather"]["rainfall"]["chart"]["series"][-1]["type"] == "line"      # fitted line from Python
+        assert {s["tier"] for s in d["stations"]} <= {"primary", "low_cost", "supporting_single_station"}
+        assert c.get("/api/city/mumbai").json()["diwali"]["pm_context"] is None      # Delhi only
+        assert c.get("/api/city/london").status_code == 400
+
+
+def test_compare_page_data(store):
+    with TestClient(make(store)) as c:
+        per = c.get("/api/compare/periods").json()
+        p30 = next(p for p in per["presets"] if p["id"] == "30d")
+        resp = c.get("/api/compare", params={"cities": "Delhi,Mumbai", "metric": "pm25", "start": p30["start"], "end": p30["end"]})
+        assert resp.status_code == 200, resp.text
+        d = resp.json()
+        assert len(d["dates"]) == 30 and set(d["lines"]) == {"Delhi", "Mumbai"} and d["units"] == "µg/m³"
+        top = d["cities"][0]
+        assert top["city"] == "Delhi" and top["range95"][0] < top["mean"] < top["range95"][1]
+        assert top["trend"]["status"] in ("increasing", "decreasing", "no clear trend", "not enough data")
+        a = c.get("/api/compare", params={"cities": "Delhi,Mumbai,Chennai", "metric": "aqi",
+                                           "start": "2025-12-01", "end": "2026-02-28"}).json()
+        assert a["units"] == "AQI (index)" and a["data_type"] == "official AQI"
+        assert ["Chennai", "Mumbai"] in a["too_close_to_call"]
+        bad = c.get("/api/compare", params={"cities": "Delhi", "metric": "pm25", "start": p30["start"], "end": p30["end"]})
+        assert bad.status_code == 400
+        assert c.get("/api/compare", params={"cities": "Delhi,Mumbai", "start": "2020-01-01", "end": "2020-02-01"}).status_code == 400
+
+
+def test_accuracy_reports_first_pass_scores_and_crosscheck(store):
+    with TestClient(make(store)) as c:
+        d = c.get("/api/accuracy").json()
+        assert d["answer_wording_since"] and "main" in d["sets"]
+        mp = d["sets"]["main"]["main_first_pass"]
+        assert mp["kind"] == "first" and mp["complete"]                     # only complete first passes are headline
+        assert set(d["crosscheck"]["by_city"]) == {"Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"}

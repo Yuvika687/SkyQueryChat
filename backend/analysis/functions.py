@@ -16,6 +16,7 @@ from backend.pipeline import config as C
 from .aqi import category
 from .result import AQI_COLOURS, AnalysisResult, ChartSpec, r
 from .store import Store
+from . import stats as ST
 
 SRC_OPENAQ = "OpenAQ archive (CPCB/AirNow/AirGradient)"
 SRC_BULLETIN = "CPCB daily AQI bulletin (via UrbanEmissions)"
@@ -162,6 +163,14 @@ def city_trend(s: Store, city: str, pollutant: str, start: date, end: date, freq
                                    "peer_outlier_over_25pct": _is_major(cd, v.at[imax, "local_date"])},
                    "lowest_day": {"date": v.at[imin, "local_date"].date(), "value": r(v.at[imin, "city_mean"]),
                                   "peer_outlier_over_25pct": _is_major(cd, v.at[imin, "local_date"])}}
+    tr = ST.trend(list(v["local_date"].dt.date), list(v["city_mean"])) if not v.empty else \
+        {"status": "not enough data", "n_days": 0, "min_days": ST.MIN_TREND_DAYS}
+    if "slope_per_month" in tr:
+        tr["slope_per_month"] = r(tr["slope_per_month"], 2)
+        tr["p_value"] = r(tr["p_value"], 3) if tr["p_value"] >= 0.001 else "< 0.001"
+    summary["trend"] = tr
+    if (end - start).days > 120 and tr.get("status") in ("increasing", "decreasing"):
+        tr["note"] = "covers more than one season, so the trend mixes seasonal change with any longer-term change"
     q = _quality(s, [city], start, end)
     warns = _common_warnings(start, end, q, _data_end(s)) + _peer_warning(cd)
     low = [p["period"] for p in periods if p["coverage"] is not None and p["coverage"] < 0.7]
@@ -180,7 +189,8 @@ def city_trend(s: Store, city: str, pollutant: str, start: date, end: date, freq
         stations={"count": int(len(st)), "location_ids": st["location_id"].tolist(), "tier": "primary reference"},
         coverage=_coverage_block(cd, start, end), quality=q,
         method="City value per day = equal-weight mean of valid primary station-days (>= 16 valid IST hours; "
-               ">= max(3, 50%) stations). Period value = mean of days with a city value.",
+               ">= max(3, 50%) stations). Period value = mean of days with a city value. Trend: Mann-Kendall test "
+               "with Sen's slope on the daily values (direction only when p < 0.05; at least 20 days).",
         warnings=warns, values={"freq": freq, "periods": periods, "summary": summary}, chart=chart)
 
 
@@ -194,15 +204,28 @@ def compare_cities(s: Store, cities: list[str], pollutant: str, start: date, end
     valid = {c: set(f.loc[f["meets_rule"], "local_date"]) for c, f in frames.items()}
     common = set.intersection(*valid.values()) if valid else set()
     rows = []
+    days = (end - start).days + 1
     for c, f in frames.items():
         v = f[f["meets_rule"]]
         cm = v[v["local_date"].isin(common)]
+        ci = ST.block_bootstrap_ci(list(pd.to_datetime(cm["local_date"]).dt.date), list(cm["city_mean"])) if len(cm) else None
         rows.append({"city": c, "mean_common_days": r(cm["city_mean"].mean()),
                      "median_common_days": r(cm["city_mean"].median()),
-                     "mean_all_valid_days": r(v["city_mean"].mean()), "n_valid_days": int(len(v))})
+                     "range95_low": r(ci[0]) if ci else None, "range95_high": r(ci[1]) if ci else None,
+                     "mean_all_valid_days": r(v["city_mean"].mean()), "n_valid_days": int(len(v)),
+                     "coverage_pct": r(100 * len(v) / days, 1)})
     ranked = sorted(rows, key=lambda x: (x["mean_common_days"] is None, -(x["mean_common_days"] or 0)))
     for i, row in enumerate(ranked, 1):
         row["rank_highest_first"] = i if row["mean_common_days"] is not None else None
+    # neighbours in the ranking whose 95% ranges overlap heavily are "too close to call"
+    close = []
+    for a, b in zip(ranked, ranked[1:]):
+        if None in (a["range95_low"], b["range95_low"]):
+            continue
+        if ST.ranges_overlap_heavily((a["range95_low"], a["range95_high"]), (b["range95_low"], b["range95_high"])):
+            close.append([a["city"], b["city"]])
+            a.setdefault("too_close_to_call_with", []).append(b["city"])
+            b.setdefault("too_close_to_call_with", []).append(a["city"])
     q = _quality(s, cities, start, end)
     warns = _common_warnings(start, end, q, _data_end(s))
     for c, f in frames.items():
@@ -210,12 +233,14 @@ def compare_cities(s: Store, cities: list[str], pollutant: str, start: date, end
     if len(common) < 30:
         warns.append(f"Only {len(common)} day(s) have values for every city; comparison is weak.")
     n_st = {c: int(len(_primary_stations(s, c))) for c in cities}
-    chart = ChartSpec(type="bar", title=f"{POLLUTANT_NAMES[pollutant]}: mean on common days",
-                      x={"field": "city", "type": "category"},
-                      y={"field": "mean_common_days", "label": f"{POLLUTANT_NAMES[pollutant]} ({PM_UNITS})"},
-                      series=[{"name": "mean (common days)", "data": [[x["city"], x["mean_common_days"]] for x in ranked]}],
+    # one line per city on a date axis; days without a city value stay gaps
+    chart = ChartSpec(type="line", title=f"{POLLUTANT_NAMES[pollutant]} by day: {', '.join(cities)}",
+                      x={"field": "date", "type": "time"},
+                      y={"field": "city_mean", "label": f"{POLLUTANT_NAMES[pollutant]} ({PM_UNITS})"},
+                      series=[{"name": c, "data": [[str(d), r(x)] for d, x in zip(f.loc[f["meets_rule"], "local_date"],
+                                                                               f.loc[f["meets_rule"], "city_mean"])]}
+                              for c, f in frames.items()],
                       units=PM_UNITS)
-    days = (end - start).days + 1
     return AnalysisResult(
         kind="compare_cities", title=f"{POLLUTANT_NAMES[pollutant]} across {', '.join(cities)}", metric=pollutant,
         units=PM_UNITS, data_type="measured", source=SRC_OPENAQ, date_range={"start": str(start), "end": str(end)},
@@ -223,8 +248,10 @@ def compare_cities(s: Store, cities: list[str], pollutant: str, start: date, end
         coverage={"days_in_period": days, "common_days": len(common),
                   "valid_days_by_city": {x["city"]: x["n_valid_days"] for x in rows}},
         quality=q, method="Ranking uses only days on which every city has a valid city value, so cities are "
-                          "compared over the same dates. All-valid-day means are shown for context.",
-        warnings=warns, values={"cities": ranked, "common_days": len(common)}, chart=chart)
+                          "compared over the same dates. 95% range: weekly block bootstrap of those daily values "
+                          "(neighbouring days are correlated). Neighbours whose ranges overlap by at least half are "
+                          "too close to call.",
+        warnings=warns, values={"cities": ranked, "common_days": len(common), "too_close_to_call": close}, chart=chart)
 
 
 # ----------------------------------------------------------------------------- 3. Diwali AQI
@@ -557,6 +584,7 @@ def weather_relationship(s: Store, city: str, pollutant: str, variable: str, sta
              "This is an association, not evidence that weather causes the change. Season, emissions and "
              "other weather conditions move together."]
     rho = _spearman(j["city_mean"], j["x"]) if len(j) else np.nan
+    ci = ST.spearman_ci(float(rho), len(j)) if len(j) else None
     bins = []
     if len(j) >= 20:
         if variable == "precipitation_sum_mm":
@@ -567,6 +595,8 @@ def weather_relationship(s: Store, city: str, pollutant: str, variable: str, sta
             for lab, g in j.groupby("q", observed=True):
                 bins.append({"group": f"{name} {lab} ({r(g['x'].min())}-{r(g['x'].max())} {wunit})",
                              "n_days": int(len(g)), "mean_pm": r(g["city_mean"].mean())})
+            if variable == "wind_speed_mean_kmh" and len(bins) >= 2:     # plain-language ends of the range
+                bins[0]["label"], bins[-1]["label"] = "calm days (lowest 25% of wind)", "windy days (highest 25% of wind)"
     else:
         warns.append(f"Only {len(j)} matched days; too few for a reliable association.")
     direction = None if np.isnan(rho) else ("lower" if rho < 0 else "higher")
@@ -577,11 +607,16 @@ def weather_relationship(s: Store, city: str, pollutant: str, variable: str, sta
         f"not a cause.")
     q = _quality(s, [city], start, end)
     warns += _common_warnings(start, end, q, _data_end(s)) + _peer_warning(cd)
+    series = [{"name": "days", "data": [[r(a, 2), r(b)] for a, b in zip(j["x"], j["city_mean"])]}]
+    if len(j) >= 20 and j["x"].nunique() > 2:                      # Theil-Sen line, calculated here (not drawn by eye)
+        slope, icpt = ST.sens_slope(list(j["x"]), list(j["city_mean"]))
+        x0, x1 = float(j["x"].min()), float(j["x"].max())
+        series.append({"name": "fitted line (Theil-Sen)", "type": "line",
+                       "data": [[r(x0, 2), r(icpt + slope * x0)], [r(x1, 2), r(icpt + slope * x1)]]})
     chart = ChartSpec(type="scatter", title=f"{city}: {POLLUTANT_NAMES[pollutant]} vs {name}",
                       x={"field": variable, "label": f"{name} ({wunit})"},
                       y={"field": "city_mean", "label": f"{POLLUTANT_NAMES[pollutant]} ({PM_UNITS})"},
-                      series=[{"name": "days", "data": [[r(a, 2), r(b)] for a, b in zip(j["x"], j["city_mean"])]}],
-                      units=PM_UNITS)
+                      series=series, units=PM_UNITS)
     return AnalysisResult(
         kind="weather_relationship", title=f"{POLLUTANT_NAMES[pollutant]} and {name} in {city}", metric=pollutant,
         units=f"{PM_UNITS}; {name} in {wunit}", data_type="measured PM + modelled weather (reanalysis)",
@@ -594,6 +629,7 @@ def weather_relationship(s: Store, city: str, pollutant: str, variable: str, sta
         quality=q, method="Spearman rank correlation between daily city PM and the daily weather value; "
                           "days grouped into quartiles (or dry/rain) to show average PM per group.",
         warnings=warns, values={"spearman_rho": r(rho, 3), "strength": None if np.isnan(rho) else _strength(rho),
+                                "rho_range95_low": r(ci[0], 3) if ci else None, "rho_range95_high": r(ci[1], 3) if ci else None,
                                 "n_days": int(len(j)), "groups": bins, "statement": statement}, chart=chart)
 
 
@@ -660,3 +696,82 @@ def aqi_calendar_chart(s: Store, city: str, year: int) -> ChartSpec:
                      units="index (0-500)", bands=bands, colour_scale="cpcb_aqi",
                      notes=["Bulletin date X covers 16:00 IST on X-1 to 16:00 IST on X.",
                             f"AQI category colours: {AQI_COLOURS}"])
+
+
+# ----------------------------------------------------------------------------- home: latest available values
+def latest_city_values(s: Store, pollutant: str = "pm25", days: int = 7) -> dict:
+    """Each city's measured city value on the latest date every city has one, plus the `days` days up to it.
+    Read-only, no LLM. A day without a valid city value (fewer stations than the rule needs) is None, so the
+    sparkline shows a gap. Map position = mean coordinates of the city's primary stations."""
+    _check(pollutant=pollutant)
+    cd = s.q("SELECT city, local_date, city_mean, n_valid_stations, n_primary_stations, meets_rule "
+             "FROM city_daily WHERE pollutant=?", [pollutant])
+    cd["local_date"] = pd.to_datetime(cd["local_date"]).dt.date
+    ok = cd[cd.meets_rule]
+    end = min(ok[ok.city == c].local_date.max() for c in C.CITIES)
+    week = [end - timedelta(days=i) for i in range(days - 1, -1, -1)]
+    st = s.q("SELECT city, location_id, AVG(lat) AS lat, AVG(lon) AS lon FROM stations WHERE tier='primary' "
+             "GROUP BY city, location_id")
+    cities = []
+    for c in C.CITIES:
+        x = ok[ok.city == c].set_index("local_date")
+        row = x.loc[end]
+        pos = st[st.city == c]
+        cities.append({
+            "city": c, "value": r(float(row.city_mean)), "stations_reporting": int(row.n_valid_stations),
+            "stations_total": int(row.n_primary_stations), "primary_stations": int(len(pos)),
+            "lat": round(float(pos.lat.mean()), 4), "lon": round(float(pos.lon.mean()), 4),
+            "series": [{"date": str(d), "value": r(float(x.loc[d, "city_mean"])) if d in x.index else None} for d in week]})
+    return {"date": str(end), "start": str(week[0]), "pollutant": pollutant, "units": PM_UNITS,
+            "data_type": "measured", "source": SRC_OPENAQ,
+            "method": "24-hour city average of primary reference stations (IST day); a day counts only when enough "
+                      "stations have at least 16 valid hours.",
+            "cities": sorted(cities, key=lambda v: -v["value"])}
+
+
+# ----------------------------------------------------------------------------- explore: stations over 30 days
+TIER_LABEL = {"primary": "Reference monitor", "supporting_single_station": "Reference monitor (US consulate, supporting)",
+              "low_cost": "Low-cost sensor"}
+
+
+def explore_data(s: Store, pollutant: str = "pm25", days: int = 30) -> dict:
+    """Every monitoring station with data in the latest `days` available days: metadata plus each day's
+    24-hour mean and valid hours. A station-day needs >= 16 valid hours for a value (otherwise `v` is None and
+    `h` says how many hours there were); no row at all means no data that day. Read-only, no LLM.
+    City values per day use the same rule as everywhere else (None when too few stations)."""
+    _check(pollutant=pollutant)
+    end = date.fromisoformat(latest_city_values(s, pollutant)["date"])
+    dates = [end - timedelta(days=i) for i in range(days - 1, -1, -1)]
+    sd = s.q("SELECT location_id, local_date, valid_hours, is_valid_day, daily_mean FROM station_daily "
+             "WHERE pollutant=? AND local_date BETWEEN ? AND ?", [pollutant, dates[0], end])
+    sd["local_date"] = pd.to_datetime(sd["local_date"]).dt.date
+    # one sensor per location and pollutant; if a location ever had two, keep its fullest day
+    sd = sd.sort_values("valid_hours", ascending=False).drop_duplicates(["location_id", "local_date"])
+    meta = s.q("SELECT location_id, ANY_VALUE(city) AS city, ANY_VALUE(tier) AS tier, ANY_VALUE(station_name) AS name, "
+               "ANY_VALUE(provider) AS provider, AVG(lat) AS lat, AVG(lon) AS lon, MIN(km_from_centre) AS km, "
+               "MAX(location_last_utc) AS last_utc FROM stations GROUP BY location_id")
+    meta = meta[meta.location_id.isin(sd.location_id.unique())].sort_values(["city", "km"])
+    idx = {d: i for i, d in enumerate(dates)}
+    stations = []
+    for m in meta.itertuples():
+        v: list = [None] * days
+        h: list = [None] * days
+        for x in sd[sd.location_id == m.location_id].itertuples():
+            i = idx[x.local_date]
+            h[i] = int(x.valid_hours)
+            v[i] = r(float(x.daily_mean)) if x.is_valid_day and pd.notna(x.daily_mean) else None
+        stations.append({"id": int(m.location_id), "city": m.city, "name": m.name, "provider": m.provider,
+                         "tier": m.tier, "type": TIER_LABEL.get(m.tier, m.tier), "lat": round(float(m.lat), 5),
+                         "lon": round(float(m.lon), 5), "km_from_centre": r(float(m.km)), "last_reading_utc": m.last_utc,
+                         "values": v, "valid_hours": h})
+    cd = s.q("SELECT city, local_date, city_mean, meets_rule, n_valid_stations FROM city_daily "
+             "WHERE pollutant=? AND local_date BETWEEN ? AND ?", [pollutant, dates[0], end])
+    cd["local_date"] = pd.to_datetime(cd["local_date"]).dt.date
+    cities = {}
+    for c in C.CITIES:
+        x = cd[cd.city == c].set_index("local_date")
+        cities[c] = {"values": [r(float(x.loc[d, "city_mean"])) if d in x.index and bool(x.loc[d, "meets_rule"]) else None for d in dates],
+                     "stations_reporting": [int(x.loc[d, "n_valid_stations"]) if d in x.index else 0 for d in dates]}
+    return {"pollutant": pollutant, "units": PM_UNITS, "data_type": "measured", "source": SRC_OPENAQ,
+            "dates": [str(d) for d in dates], "min_valid_hours": C.MIN_VALID_HOURS_PER_DAY, "cities": cities,
+            "stations": stations}

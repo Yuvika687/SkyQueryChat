@@ -1361,3 +1361,49 @@ official AQI (all within 20%); over all days since 20 Feb 2025 it is +6.5 (r = 0
 - Startup to a healthy `/api/health` at 0.1 CPU: 25 s on a native arm64 build, 72 s under amd64 emulation. On top of
   Render's own wake-up, a cold visitor may wait well over a minute, so the frontend now waits up to 150 s and says
   "Starting the analysis service. This can take a minute or two."
+
+# Part 15 — Readable answers and evaluation reruns (2026-11-13)
+
+## 15.1 What changed
+- The answer instructions ask for readable dates ("9 Nov 2026", "13 Oct – 11 Nov 2026") and "4 PM" times, no "date(s)"
+  or "noting that", no bracketed definitions, and an answer field that keeps every value the question asks for plus its
+  key caveat ("associated with" for weather, "lower bound (values above 999 µg/m³ are blank)" for 2024/2025 Delhi PM,
+  "not comparable" for 2026 Delhi PM, the six city names when a city is unsupported, both ends of a percent range).
+  The fixed prompt is 670 characters longer (about 170 tokens per model request).
+- The number checker checks readable dates: every day in "9 Nov 2026", "9–10 Nov 2026", "13 Oct – 11 Nov 2026" or
+  "Nov 9, 2026" must be a date in a tool result (or written by the user). Labels such as "PM2.5 November" are not dates.
+- The scorer (`scripts/run_eval.py`) matches readable dates against expectations written as ISO dates. Nothing else in
+  the scoring changed.
+
+## 15.2 Reruns (kind "rerun"; published first-pass scores unchanged)
+Run with the shared limiter, Gemini 3.5 Flash Lite only, within the free daily quota.
+
+| Run | Instructions | Result | Failed turns |
+| --- | --- | --- | --- |
+| 20261113-1602 main (full) | first wording | 44/51 | T1, D3, D5, D7, W1, W5, X1 |
+| 20261113-1615 holdout (full) | first wording | 8/11 | H05, H07, H09 |
+| 20261113-1618 holdout2 (full) | first wording | 10/11 | N01 (provider quota error, no answer) |
+| 20261113-1622 diwali2026 (full) | first wording | 7/9 | E04, E06 |
+| 20261113-1628 holdout (full) | caveat wording | 9/11 | H07, H09 |
+| 20261113-1631 diwali2026 (full) | caveat wording | 9/9 | none |
+| 20261113-1633 main (T1 D3 D5 D7 W1 W5 X1) | caveat wording | 6/7 | D7 |
+| 20261113-1635 holdout2 (N01) | caveat wording | 1/1 | none |
+| holdout (H07 H09) | final wording | 2/2 | none |
+| main (D7, twice) | final wording | 0/1, 0/1 | D7 (caveat in the explanation, not the headline; also failed in the published run) |
+
+The first wording ("briefly") made headlines drop caveats the scorer looks for; the caveat wording fixed that.
+Not rerun with the final wording because of the daily quota: the 44 main turns that passed, holdout2's other 10 turns.
+
+# Part 16 — Statistics, city pages and Compare (2026-11-13)
+
+- **Statistics:** Mann-Kendall with Sen's slope, weekly block-bootstrap 95% ranges, and Spearman with a Fisher-z range.
+  Each is checked against scipy in `tests/test_stats.py`.
+- **Statistics set (`evals/analysis.json`, 8 questions):**
+  - **First complete run 20261113-1711:** 5/8. A02 hit the step limit, A06 said "no clear trend" when the test said
+    "not enough data", and A07 was a model timeout.
+  - **Fixes:** the trend-wording check and clearer tool fields.
+  - **Second complete run 20261113-1808:** 8/8, using 21 requests and 56,883 tokens.
+- **Other sets:** not re-run in full with the current wording. Gemini 3.5 Flash-Lite had about 309 requests used
+  today (cap 400 = 80% of 500), and the main set needs about 125.
+- **Memory (Linux amd64 container, 512 MB, 0.1 CPU):** 267 MiB idle; 305 MiB peak after `/api/latest`, both explore
+  payloads, all six `/api/city` pages and three `/api/compare` requests. No out-of-memory events.
