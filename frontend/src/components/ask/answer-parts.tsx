@@ -2,7 +2,15 @@
 
 import { useMemo, useRef, useState } from "react";
 import { AlertTriangle, CalendarRange, Check, ChevronDown, Copy, Download, FileImage, Gauge, Info, MapPin } from "lucide-react";
-import { EChart, type EChartHandle } from "@/components/chart/echart";
+import dynamic from "next/dynamic";
+import type { EChartHandle } from "@/components/chart/echart";
+import { Skeleton } from "@/components/ds/states";
+
+// ECharts loads in its own chunk, only when an answer has a chart.
+const EChart = dynamic(() => import("@/components/chart/echart").then((m) => m.EChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-full min-h-48 w-full" />,
+});
 import { CATEGORY_STYLE, DATA_TYPE_LABEL, normaliseCategory } from "@/lib/categories";
 import { buildOption, eventKey, isAQI } from "@/lib/chart-options";
 import { chartTable, download, slug, toCSV } from "@/lib/chart-data";

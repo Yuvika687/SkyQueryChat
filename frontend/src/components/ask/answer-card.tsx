@@ -76,14 +76,14 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
         className={cn(a.status === "answered" ? "font-display text-[26px] leading-[1.22] sm:text-[30px]" : "text-[16px] leading-7")} />
 
       {keys.length > 0 && (
-        <dl className={cn("grid gap-3", keys.length >= 3 ? "sm:grid-cols-3" : keys.length === 2 ? "sm:grid-cols-2" : "")}>
+        <ul aria-label="Key numbers" className={cn("grid gap-3", keys.length >= 3 ? "sm:grid-cols-3" : keys.length === 2 ? "sm:grid-cols-2" : "")}>
           {keys.map((k) => {
             const t = targets.find((x) => x.kind === "card" && `${x.card.dataset_id}.${x.card.field}` === k.key) ?? null;
             const scale = k.unit === "AQI" ? "aqi" : /µg/.test(k.unit) ? (/pm10/i.test(a.resolved_query?.pollutant ?? "") ? "pm10" : "pm25") : null;
             return (
-              <div key={k.key} className="rounded-2xl border border-line bg-white/[0.025] px-4 py-3">
-                <dt className="text-[12px] text-subtle">{k.label}</dt>
-                <dd className="mt-1 flex items-baseline gap-1.5">
+              <li key={k.key} className="rounded-2xl border border-line bg-white/[0.025] px-4 py-3">
+                <p className="text-[12px] text-subtle">{k.label}</p>
+                <p className="mt-1 flex items-baseline gap-1.5">
                   {t ? (
                     <button type="button" onClick={() => onProof(t)} aria-pressed={activeProof === t.id} title="See where this number came from"
                       className={cn("num rounded-md px-0.5 text-[26px] leading-8 font-medium underline decoration-teal decoration-dashed decoration-[1.5px] underline-offset-[6px] hover:bg-teal/15",
@@ -93,13 +93,13 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
                   ) : <span className="num text-[26px] leading-8 font-medium">{k.value}</span>}
                   <span className="text-[12px] text-subtle">{k.unit}</span>
                   {k.category && <CategoryBadge category={k.category} size="sm" className="ml-auto" label="Category" />}
-                </dd>
+                </p>
                 {scale && <ScaleBar value={k.exact} scale={scale} className="mt-3" />}
                 {k.sub && <p className="mt-2 text-[12px] text-faint">{k.sub}</p>}
-              </div>
+              </li>
             );
           })}
-        </dl>
+        </ul>
       )}
 
       {explanation && <NumberText text={explanation} targets={targets} onProof={onProof} active={activeProof} className="text-[15px] leading-7 text-subtle" />}

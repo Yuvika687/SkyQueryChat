@@ -59,7 +59,8 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
           dragRotate: false, pitchWithRotate: false, touchPitch: false, fadeDuration: 0, minZoom: 3, maxZoom: 14,
         });
         m.touchZoomRotate.disableRotation();
-        m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+        // phones pinch to zoom; the buttons would sit under the bottom sheet and be too small to tap
+        if (window.matchMedia("(min-width: 768px)").matches) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
         map.current = m;
         m.on("load", async () => {
           if (cancelled) return;
