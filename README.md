@@ -75,7 +75,7 @@ plain pandas and scipy. Reruns are kept apart and never replace these numbers.
 | Set | Questions | First pass | Numbers traced to data | Run date | Answer wording |
 |---|---|---:|---:|---|---|
 | Main | trends, comparisons, Diwali, weather, unusual days, trick questions | **47 / 51** | 100% | 5 Nov 2026 | earlier wording |
-| Unseen (holdout 2) | never used for tuning | **10 / 11** | 100% | 6 Nov 2026 | earlier wording |
+| Unseen (holdout 2) | never used for tuning | **11 / 11** | 100% | 13 Nov 2026 | current wording |
 | First unseen (retired) | used once | **11 / 11** | 100% | 5 Nov 2026 | earlier wording |
 | Diwali 2026 | festival bulletins and caveats | **9 / 9** | 100% | 12 Nov 2026 | earlier wording |
 | Statistics | 95% ranges, too close to call, trends, weather | **8 / 8** | 100% | 13 Nov 2026 | current wording |
@@ -83,8 +83,9 @@ plain pandas and scipy. Reruns are kept apart and never replace these numbers.
 The current wording (readable dates, caveats kept in the answer) dates from 13 Nov 2026. The statistics set is new:
 its first complete run scored 5/8, and one failure showed a real problem (an answer said "no clear trend" when the test
 said "not enough data"). A trend-wording check was added, and the second complete run, shown above, scored 8/8.
-The other sets have not been re-run in full with the current wording yet (the free daily quota is shared with
-visitors). Runs are in `evals/runs/`,
+Holdout 2 was re-run in full with the current wording (11/11; its earlier first pass, 10/11 on 6 Nov 2026, used the
+earlier wording). Main and Diwali 2026 have not been re-run in full with the current wording yet, because the free
+daily AI quota is shared with visitors. Runs are in `evals/runs/`,
 and the scoreboard is `evals/scoreboard.json`.
 
 ## Tech stack

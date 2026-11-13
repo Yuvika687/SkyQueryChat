@@ -1407,3 +1407,12 @@ Not rerun with the final wording because of the daily quota: the 44 main turns t
   today (cap 400 = 80% of 500), and the main set needs about 125.
 - **Memory (Linux amd64 container, 512 MB, 0.1 CPU):** 267 MiB idle; 305 MiB peak after `/api/latest`, both explore
   payloads, all six `/api/city` pages and three `/api/compare` requests. No out-of-memory events.
+- **Holdout 2, current wording (20261113-1837_holdout2_first):** a complete first pass scored 11/11 (the previous
+  first pass was 10/11 on 6 Nov 2026 with the earlier wording). It used 25 requests and 66,433 tokens, all on Gemini
+  3.5 Flash-Lite. The run used a local-only limit override set to the requests still left today, plus `--max-tokens
+  70000`.
+- **Quota at that point:** about 341 of 400 requests (80% of 500) had been used today. The own daily token budget
+  (800,000) was slightly exceeded, at about 826,000 tokens, when the non-evaluation questions were counted. The
+  provider sets no daily token limit for this model.
+- **Not run:** Main (about 115 requests and 262,000 tokens) and Diwali 2026 (about 21 requests and 47,000 tokens) did
+  not fit, so they wait for the quota reset (midnight Pacific, 13:30 IST).
