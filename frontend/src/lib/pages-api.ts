@@ -8,7 +8,11 @@ export const cityName = (slug: string) => slug.charAt(0).toUpperCase() + slug.sl
 export const citySlug = (city: string) => city.toLowerCase();
 
 export interface DayValue { date: string; value: number | null; stations: number }
-export interface Trend { status: "increasing" | "decreasing" | "no clear trend" | "not enough data"; n_days: number; per_month: number | null; p_value: string | null }
+export interface Trend {
+  status: "increasing" | "decreasing" | "no clear trend" | "not enough data"; n_days: number; per_month: number | null; p_value: string | null;
+  /** Periods under 90 days: total change along the fitted line over the period (the figure to show). */
+  change_over_period?: number | null; period_days?: number | null; note?: string | null;
+}
 
 export interface CityPage {
   city: string; date: string; units: string; source: string;

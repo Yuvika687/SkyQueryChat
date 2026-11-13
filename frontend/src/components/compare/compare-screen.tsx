@@ -15,7 +15,7 @@ import { CITIES, CITY_COLOURS } from "@/lib/categories";
 import { buildOption } from "@/lib/chart-options";
 import { fmtDate, fmtRange } from "@/lib/format";
 import { getCompare, getPeriods, type CompareData, type Metric, type Periods } from "@/lib/pages-api";
-import { trendText } from "@/lib/trend-text";
+import { SHORT_NOTE, trendText } from "@/lib/trend-text";
 import type { ChartSpec } from "@/lib/types";
 import { useBackendData } from "@/lib/use-backend-data";
 import { cn } from "@/lib/utils";
@@ -179,7 +179,8 @@ function Results({ d, label }: { d: CompareData; label: string }) {
         {close.length > 0 && (
           <p className="mt-3 text-[13px] text-subtle"><strong className="text-foreground">Too close to call:</strong> {close.map(([a, b]) => `${a} and ${b}`).join("; ")}. Their 95% ranges overlap heavily, so their order could easily swap.</p>
         )}
-        <p className="mt-3 text-[12px] text-faint">{d.method} Source: {d.source}.</p>
+        {d.cities.some((c) => c.trend.note) && <p className="mt-3 text-[12.5px] text-subtle">{SHORT_NOTE}</p>}
+        <p className="mt-2 text-[12px] text-faint">{d.method} Source: {d.source}.</p>
       </Section>
       <p className="text-center text-[12.5px] text-faint">
         Want the story behind these numbers? <Link href={askHref(question)} className="font-medium text-teal hover:underline">Ask the AI analyst <ArrowRight className="inline size-3.5" aria-hidden /></Link>

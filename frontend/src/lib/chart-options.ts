@@ -28,6 +28,9 @@ export const ZOOM_MIN_POINTS = 62;
 // Figures keep their calculated precision (PM to one decimal, so 73 shows as 73.0); AQI uses d = 0.
 const fmt = (v: unknown, d = 1) => (typeof v === "number" ? v.toFixed(d) : v == null ? "no data" : String(v));
 
+/** Time-axis labels always carry the month ("13 Oct", "1 Nov"); the year is added only at a year boundary. */
+const TIME_LABELS = { year: "{d} {MMM} {yyyy}", month: "{d} {MMM}", day: "{d} {MMM}", hour: "{d} {MMM}", minute: "{d} {MMM}", second: "{d} {MMM}", millisecond: "{d} {MMM}", none: "{d} {MMM}" };
+
 function base(spec: ChartSpec) {
   return {
     backgroundColor: "transparent",
@@ -151,7 +154,8 @@ function lineOption(spec: ChartSpec, dataType: DataType | null) {
   return {
     ...base(spec),
     grid: { ...base(spec).grid, right: refs.length ? 72 : 24, bottom: zoom ? 56 : 24 },
-    xAxis: { type: time ? "time" : "category", name: "", ...axisCommon, splitLine: { show: false } },
+    xAxis: { type: time ? "time" : "category", name: "", ...axisCommon, splitLine: { show: false },
+      ...(time ? { axisLabel: { ...axisCommon.axisLabel, formatter: TIME_LABELS } } : {}) },
     yAxis: { type: "value", name: yAxisName(spec), nameLocation: "middle", nameGap: 44, min: 0, ...axisCommon },
     dataZoom: zoom ? [{ type: "inside" }, { type: "slider", height: 18, bottom: 8, borderColor: C.line, textStyle: { color: C.sub } }] : [],
     tooltip: { ...base(spec).tooltip, valueFormatter: (v: unknown) => `${fmt(v, isAQI(spec) ? 0 : 1)} ${spec.units}` },

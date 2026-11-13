@@ -43,7 +43,11 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
                    "no clear trend": " (p >= 0.05)"}.get(t.get("status"), "")
             f["trend"] = Field(f"{t.get('status')}{why}" if t.get("status") else None,
                                f"{city} {P} trend (Mann-Kendall, {per})")
-            if "slope_per_month" in t:
+            if "change_over_period" in t:          # short period: the total change, never a per-month rate
+                f["trend_change_over_period"] = Field(t["change_over_period"],
+                    f"{city} {P} total change over these {t['period_days']} days (Sen's slope)", u)
+                f["trend_p_value"] = Field(t["p_value"], "trend p-value", "")
+            elif "slope_per_month" in t:
                 f["trend_per_month"] = Field(t["slope_per_month"], f"{city} {P} change per month (Sen's slope)", u)
                 f["trend_p_value"] = Field(t["p_value"], "trend p-value", "")
             if t.get("note"):

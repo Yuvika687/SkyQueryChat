@@ -163,10 +163,12 @@ def city_trend(s: Store, city: str, pollutant: str, start: date, end: date, freq
                                    "peer_outlier_over_25pct": _is_major(cd, v.at[imax, "local_date"])},
                    "lowest_day": {"date": v.at[imin, "local_date"].date(), "value": r(v.at[imin, "city_mean"]),
                                   "peer_outlier_over_25pct": _is_major(cd, v.at[imin, "local_date"])}}
-    tr = ST.trend(list(v["local_date"].dt.date), list(v["city_mean"])) if not v.empty else \
+    tr = ST.trend(list(v["local_date"].dt.date), list(v["city_mean"]), start, end) if not v.empty else \
         {"status": "not enough data", "n_days": 0, "min_days": ST.MIN_TREND_DAYS}
     if "slope_per_month" in tr:
         tr["slope_per_month"] = r(tr["slope_per_month"], 2)
+        if "change_over_period" in tr:
+            tr["change_over_period"] = r(tr["change_over_period"], 1)
         tr["p_value"] = r(tr["p_value"], 3) if tr["p_value"] >= 0.001 else "< 0.001"
     summary["trend"] = tr
     if (end - start).days > 120 and tr.get("status") in ("increasing", "decreasing"):

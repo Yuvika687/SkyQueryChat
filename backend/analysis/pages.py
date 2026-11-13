@@ -37,6 +37,8 @@ def _trend_out(t: dict) -> dict:
     p = t.get("p_value")
     return {"status": t["status"], "n_days": t["n_days"],
             "per_month": r(t["slope_per_month"], 1) if "slope_per_month" in t else None,
+            "change_over_period": r(t["change_over_period"], 1) if "change_over_period" in t else None,
+            "period_days": t.get("period_days"), "note": t.get("note"),
             "p_value": None if p is None else ("< 0.001" if p < 0.001 else f"{p:.3f}")}
 
 
@@ -65,7 +67,7 @@ def city_page(s: Store, city: str, latest: dict | None = None, explore: dict | N
 
     trend = {p: _series(_city_days(s, city, p, start30, end), start30, end) for p in ("pm25", "pm10")}
     t30 = ST.trend([date.fromisoformat(x["date"]) for x in trend["pm25"] if x["value"] is not None],
-                   [x["value"] for x in trend["pm25"] if x["value"] is not None])
+                   [x["value"] for x in trend["pm25"] if x["value"] is not None], start30, end)
 
     # calendar: every day with PM2.5 data since the new sensors began (the 2022-2025 gap is never bridged)
     allc = _city_days(s, city, "pm25", DATA_START, end)
@@ -189,7 +191,7 @@ def compare_page(s: Store, cities: list[str], metric: str, start: date, end: dat
     res["lines"] = {c: [r(raw[c][d]) if d in raw[c] else None for d in dates] for c in cities}
     for row in res["cities"]:
         pts = sorted(raw[row["city"]].items())
-        t = ST.trend([d for d, _ in pts], [x for _, x in pts])
+        t = ST.trend([d for d, _ in pts], [x for _, x in pts], start, end)
         row["trend"] = _trend_out(t)
         row["low_coverage"] = (row["coverage_pct"] or 0) < 50
     res.update({"metric": metric, "start": str(start), "end": str(end), "days": days,

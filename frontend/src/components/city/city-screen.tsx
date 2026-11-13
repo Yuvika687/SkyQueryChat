@@ -97,7 +97,7 @@ function Trend30({ d, className }: { d: CityPage; className?: string }) {
       line={<>Daily city average, {fmtSpan(d.trend30.start, d.trend30.end)}. {gaps ? `${gaps} days without enough stations are left as gaps.` : "Every day has a value."}</>}
       action={<Segmented label="Pollutant" value={pol} onChange={setPol} options={[{ value: "pm25", label: "PM2.5" }, { value: "pm10", label: "PM10" }]} />}>
       <LazyChart option={option} height={300} ariaLabel={`${d.city} ${pol === "pm25" ? "PM2.5" : "PM10"} by day, ${fmtSpan(d.trend30.start, d.trend30.end)}`} />
-      <p className="mt-3 text-[13px] text-subtle"><strong className="font-semibold text-foreground">PM2.5 trend: {t.short}.</strong> {t.detail}. Mann-Kendall test with Sen&apos;s slope.</p>
+      <p className="mt-3 text-[13px] text-subtle"><strong className="font-semibold text-foreground">PM2.5 trend: {t.short}.</strong> {cap(t.detail)}. Mann-Kendall test with Sen&apos;s slope.{d.trend30.trend.note ? ` ${d.trend30.trend.note}` : ""}</p>
     </Section>
   );
 }

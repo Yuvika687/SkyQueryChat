@@ -292,6 +292,23 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
                   f"used today: {first.get('used_today')}). Not running.", flush=True)
             return None
     chain = [e.label for e in M.model_chain()]
+    # Count all AI use already made today (earlier evaluation runs + visitors on the live server) and refuse to start
+    # when this run would pass the public daily caps (80% of the provider limit, minus the demo reserve).
+    if set_name != "groq":
+        from backend.agent import eval_guard as G
+        turns = sum(len(q["turns"]) for q in qs)
+        need_req, need_tok = G.estimate(RUNS, set_name, turns)
+        try:
+            live = G.live_usage(os.environ.get("SKYQ_LIVE_API", "https://skyquerychat-api.onrender.com"))
+        except Exception as e:  # noqa: BLE001 - any failure means we cannot see visitor use: do not start
+            print(f"Not starting: today's visitor usage could not be read from the live server ({e}).")
+            return None
+        local = G.local_usage(RUNS, G.last_reset())
+        pl = G.plan(M.QUOTA, chain, local, live, need_req, need_tok)
+        print("\n".join(pl.lines), flush=True)
+        if not pl.ok:
+            return None
+        G.seed(M.QUOTA, pl.used)
     if resume:
         rdir = Path(resume)
         meta = json.loads((rdir / "meta.json").read_text())

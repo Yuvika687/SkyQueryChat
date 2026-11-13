@@ -12,12 +12,13 @@ import { CREDIT_ITEMS } from "@/lib/map-base";
 import type { EvalSummary, Scoreboard } from "@/lib/types";
 import { useApp } from "./app-context";
 
-const SETS: { key: string; name: string; note: string }[] = [
+const SETS: { key: string; name: string; note: string; history?: string }[] = [
   { key: "main", name: "Main question set", note: "trends, comparisons, Diwali, weather, unusual days and trick questions" },
   { key: "holdout2", name: "Unseen questions", note: "kept apart and never used to tune the app" },
   { key: "holdout", name: "First unseen set", note: "retired after it was used once" },
   { key: "diwali2026", name: "Diwali 2026 questions", note: "added after the Diwali 2026 bulletins arrived" },
-  { key: "analysis", name: "Statistics questions", note: "95% ranges, “too close to call”, trends and weather associations" },
+  { key: "analysis", name: "Statistics questions", note: "95% ranges, “too close to call”, trends and weather associations",
+    history: "after fixing a trend-wording bug found in a first run of 5/8" },
 ];
 
 // Limits a visitor should know about (the API also lists internal engineering notes).
@@ -129,8 +130,9 @@ export function DataPanel({ open, onOpenChange }: { open: boolean; onOpenChange:
                     <li key={s.key} className="rounded-xl border border-line bg-white/[0.02] px-3.5 py-3">
                       <div className="flex items-baseline justify-between gap-3">
                         <p className="font-medium">{s.name}</p>
-                        <p className="num text-base font-semibold">{o.pass} of {o.turns}</p>
+                        <p className="num text-base font-semibold">{o.pass}/{o.turns}</p>
                       </div>
+                      {s.history && <p className="text-[12.5px] text-subtle">{o.pass}/{o.turns} ({s.history})</p>}
                       <p className="text-[12.5px] text-faint">{s.note}</p>
                       <p className="mt-1.5 text-[12.5px] text-subtle">
                         {o.pass_pct}% passed

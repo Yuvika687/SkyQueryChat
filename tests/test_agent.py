@@ -719,3 +719,19 @@ def test_trend_wording_must_match_the_trend_result():
     assert trend_conflicts("There was no clear trend.", ["decreasing"])
     assert not trend_conflicts("PM2.5 fell, a decreasing trend of 14.3 µg/m³ per month.", ["decreasing"])
     assert not trend_conflicts("anything", ["decreasing", "no clear trend"])      # mixed results: not judged here
+
+
+def test_short_period_trend_wording_passes_the_checker():
+    """A real 30-day trend result: the total change, the days and the p-value written as an analyst would."""
+    from datetime import date
+    from backend.analysis import functions as F
+    from backend.analysis.store import Store
+    store = Store.from_dir()
+    from backend.agent.verify import allowed_numbers, check_numbers, trend_conflicts
+    r = F.city_trend(store, "Delhi", "pm25", date(2026, 10, 13), date(2026, 11, 11), "D").to_dict()
+    t = r["values"]["summary"]["trend"]
+    assert t["period_days"] == 30 and "change_over_period" in t
+    text = (f"Rising: about +{t['change_over_period']} µg/m³ over these 30 days (p {t['p_value']}). "
+            "Short periods include seasonal change.")
+    assert check_numbers([text], allowed_numbers([r])) == []
+    assert trend_conflicts(text, [t["status"]]) == []

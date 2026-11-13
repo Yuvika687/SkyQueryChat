@@ -160,6 +160,18 @@ class ProviderQuota:
         return {"req_day": len(day), "tok_day": sum(e[1] for e in day),
                 "req_min": len(minute), "tok_min": sum(e[1] for e in minute), "minute": minute}
 
+    def seed(self, requests: int, tokens: int, now: float | None = None) -> None:
+        """Count use made elsewhere today (other processes, the live server) as if it happened at the start of the
+        quota day: it counts toward the daily caps but not toward the per-minute window."""
+        if requests <= 0 and tokens <= 0:
+            return
+        now = self.clock() if now is None else now
+        t = self._day_start(now) + 1
+        if t > now - 61:                       # first minute of the day: keep it inside the day
+            t = max(self._day_start(now) + 0.001, now - 61)
+        ev = [[t, tokens if i == 0 else 0, 0] for i in range(max(1, requests))]
+        self.events = deque(sorted([*ev, *self.events], key=lambda e: e[0]))
+
     # ------------------------------------------------------------------ admission
     def _day_ok(self, u: dict, caps: dict, need_req: int, need_tok: int) -> str | None:
         if self.clock() < self.exhausted_until:

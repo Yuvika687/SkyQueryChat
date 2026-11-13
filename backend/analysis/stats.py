@@ -16,6 +16,8 @@ import numpy as np
 
 MIN_TREND_DAYS = 20
 DAYS_PER_MONTH = 365.25 / 12
+SHORT_PERIOD_DAYS = 90          # below this, a trend is reported as the total change over the period
+SHORT_NOTE = "Short periods include seasonal change."
 
 
 def _norm_cdf(z: float) -> float:
@@ -46,8 +48,10 @@ def sens_slope(days: list[float], values: list[float]) -> tuple[float, float]:
     return slope, float(np.median(y) - slope * np.median(t))
 
 
-def trend(dates: list[date], values: list[float]) -> dict:
-    """Mann-Kendall + Sen's slope on daily values with a value. Direction only when p < 0.05."""
+def trend(dates: list[date], values: list[float], start: date | None = None, end: date | None = None) -> dict:
+    """Mann-Kendall + Sen's slope on daily values with a value. Direction only when p < 0.05.
+    With the period (start, end): periods under 90 days also get the total change over the period (slope per day x
+    (days in period - 1), i.e. along the fitted line from the first to the last day), which is the figure to report."""
     pairs = [(d, v) for d, v in zip(dates, values) if v is not None and not (isinstance(v, float) and math.isnan(v))]
     n = len(pairs)
     if n < MIN_TREND_DAYS:
@@ -63,8 +67,15 @@ def trend(dates: list[date], values: list[float]) -> dict:
         status = "no clear trend"
     else:
         status = "increasing" if mk["s"] > 0 else "decreasing"
-    return {"status": status, "n_days": n, "slope_per_month": per_month, "p_value": mk["p"], "mk_s": mk["s"],
-            "method": "Mann-Kendall test with Sen's slope on daily city values (days without a value are left out)"}
+    out = {"status": status, "n_days": n, "slope_per_month": per_month, "p_value": mk["p"], "mk_s": mk["s"],
+           "method": "Mann-Kendall test with Sen's slope on daily city values (days without a value are left out)"}
+    if start and end:
+        days = (end - start).days + 1
+        out["period_days"] = days
+        if days < SHORT_PERIOD_DAYS:
+            out["change_over_period"] = slope * (days - 1)
+            out["note"] = SHORT_NOTE
+    return out
 
 
 def block_bootstrap_ci(dates: list[date], values: list[float], reps: int = 2000, seed: int = 7,

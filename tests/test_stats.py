@@ -81,3 +81,13 @@ def test_too_close_to_call():
     assert S.ranges_overlap_heavily((100, 140), (110, 150))           # overlap 30 of width 40
     assert not S.ranges_overlap_heavily((100, 120), (118, 150))       # overlap 2 of width 20
     assert not S.ranges_overlap_heavily((100, 110), (120, 130))
+
+
+def test_short_periods_report_the_total_change():
+    d0 = date(2026, 10, 13)
+    dates = [d0 + timedelta(days=i) for i in range(30)]
+    t = S.trend(dates, [50 + 4.0 * i for i in range(30)], d0, d0 + timedelta(days=29))
+    assert t["period_days"] == 30 and t["change_over_period"] == pytest.approx(4.0 * 29)
+    assert t["note"] == "Short periods include seasonal change."
+    long = S.trend(dates, [50 + 4.0 * i for i in range(30)], d0, d0 + timedelta(days=119))
+    assert "change_over_period" not in long and long["period_days"] == 120

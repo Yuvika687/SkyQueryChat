@@ -9,7 +9,9 @@ test("data & accuracy panel", async ({ page }) => {
     await expect(panel.getByRole("heading", { name: h })).toBeVisible();
   }
   await expect(panel.getByText("Main question set")).toBeVisible();
-  await expect(panel.getByText(/\d+ of \d+/).first()).toBeVisible();
+  await expect(panel.getByText(/^\d+\/\d+$/).first()).toBeVisible();
+  await expect(panel.getByText("8/8 (after fixing a trend-wording bug found in a first run of 5/8)")).toBeVisible();
+  await expect(panel.getByText(/Survey of India/)).toBeVisible();
   await expect(panel.getByText("GODL-India")).toBeVisible();
   const text = await panel.innerText();
   expect(text).not.toMatch(/combined|rerun|\d{4}-\d{2}-\d{2}|\blive\b/i);   // first-pass only, readable dates
