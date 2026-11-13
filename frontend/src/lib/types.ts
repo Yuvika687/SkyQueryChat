@@ -197,3 +197,31 @@ export interface EvalSummary {
 export interface Scoreboard {
   sets: Record<string, { main_first_pass: { run: string; started: string; summary: { overall?: EvalSummary } & Partial<EvalSummary> } | null }>;
 }
+
+/** GET /api/explore: every station's 24-hour means over the latest 30 available days (measured, read-only). */
+export interface ExploreStation {
+  id: number;
+  city: string;
+  name: string;
+  provider: string;
+  tier: "primary" | "low_cost" | "supporting_single_station" | string;
+  type: string;
+  lat: number;
+  lon: number;
+  km_from_centre: number;
+  last_reading_utc: string | null;
+  /** 24-hour mean per day; null when the day had fewer than 16 valid hours or no readings. */
+  values: (number | null)[];
+  /** Valid hours per day; null when the station sent no readings that day. */
+  valid_hours: (number | null)[];
+}
+export interface ExploreData {
+  pollutant: "pm25" | "pm10";
+  units: string;
+  data_type: string;
+  source: string;
+  dates: string[];
+  min_valid_hours: number;
+  cities: Record<string, { values: (number | null)[]; stations_reporting: number[] }>;
+  stations: ExploreStation[];
+}

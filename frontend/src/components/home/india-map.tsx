@@ -14,19 +14,16 @@ import { fmtDate } from "@/lib/format";
 import type { LatestCity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CategoryBadge, categoryOf } from "@/components/ds/data-display";
+import { INDIA_BOUNDS, THEME, WORKER_URL, addIndiaLayers, hasWebGL, loadBaseStyle, loadBoundary, type IndiaGeo } from "@/lib/map-base";
 
-const STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
-const BOUNDARY_URL = "/geo/india-official.geojson";
-const WORKER_URL = "/maplibre/maplibre-gl-worker.mjs"; // copied from the package at build time
-const BOUNDS: [[number, number], [number, number]] = [[66.2, 5.6], [99.0, 37.6]];
-const THEME = { land: "#0C1426", water: "#050912", waterLine: "#0A1222", mask: "#050912", indiaFill: "#101B33", outline: "#5E7AB0" };
+const BOUNDS = INDIA_BOUNDS;
 
 type Side = "left" | "right" | "top";
 /** Label sides chosen so labels never overlap: Bengaluru and Chennai sit on opposite sides. */
 const SIDE_DESKTOP: Record<string, Side> = { Mumbai: "left", Bengaluru: "left" };
 const SIDE_PHONE: Record<string, Side> = { Mumbai: "top", Bengaluru: "left" };
 
-type Geo = { type: "FeatureCollection"; features: { geometry: { type: "MultiPolygon"; coordinates: number[][][][] } }[] };
+type Geo = IndiaGeo;
 type Project = (lon: number, lat: number) => [number, number];
 
 export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; date: string; className?: string }) {
@@ -37,6 +34,36 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
   const [mode, setMode] = useState<"loading" | "basemap" | "outline">("loading");
   const [phone, setPhone] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [cardAt, setCardAt] = useState<[number, number]>([16, 16]);
+
+  /** Opens a city's card at the first spot (beside, above or below its marker) that stays inside the map and
+   * covers no other city's label or marker. */
+  const openCard = useCallback((name: string | null) => {
+    setOpen(name);
+    const w = wrap.current, at = name ? pos[name] : null;
+    if (!w || !at) return;
+    const box = w.getBoundingClientRect();
+    const W = 240, H = phone ? 176 : 136, g = 16;
+    const obstacles = cities.filter((c) => c.city !== name && pos[c.city]).flatMap((c) => {
+      const [x, y] = pos[c.city];
+      const tag = w.querySelector<HTMLElement>(`[data-tag="${c.city}"]`)?.getBoundingClientRect();
+      const r = [{ x: x - 16, y: y - 16, w: 32, h: 32 }];
+      if (tag) r.push({ x: tag.left - box.left, y: tag.top - box.top, w: tag.width, h: tag.height });
+      return r;
+    });
+    const overlap = (a: { x: number; y: number; w: number; h: number }, b: typeof a) =>
+      Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    const tries: [number, number][] = [[g, g], [g, -g - H], [-g - W, g], [-g - W, -g - H], [-W / 2, g + 6], [-W / 2, -g - 6 - H], [g, -H / 2], [-g - W, -H / 2]];
+    let best = tries[0], score = Infinity;
+    for (const [dx, dy] of tries) {
+      const r = { x: at[0] + dx, y: at[1] + dy, w: W, h: H };
+      const outside = r.x < 4 || r.y < 4 || r.x + W > box.width - 4 || r.y + H > box.height - 24;
+      const sc = obstacles.reduce((a, o) => a + overlap(r, o), 0) + (outside ? 1e6 : 0);
+      if (sc < score) { score = sc; best = [dx, dy]; }
+      if (sc === 0) break;
+    }
+    setCardAt(best);
+  }, [cities, pos, phone]);
 
   const place = useCallback(() => {
     const p = project.current;
@@ -57,30 +84,16 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
     if (!el) return;
     let cancelled = false;
     let map: import("maplibre-gl").Map | null = null;
-    const pad = () => (el.clientWidth < 500 ? 18 : { top: 48, bottom: 56, left: 48, right: 48 });
+    const pad = () => (el.clientWidth < 500 ? { top: 44, bottom: 30, left: 14, right: 14 } : { top: 56, bottom: 34, left: 40, right: 40 });
 
     async function start() {
-      const geo: Geo = await (await fetch(BOUNDARY_URL)).json();
+      const geo: Geo = await loadBoundary();
       if (cancelled || !el) return;
       try {
-        const gl = document.createElement("canvas");
-        if (!(gl.getContext("webgl2") || gl.getContext("webgl"))) throw new Error("no webgl");
-        const [maplibregl, style] = await Promise.all([
-          import("maplibre-gl"),
-          fetch(STYLE_URL).then((r) => { if (!r.ok) throw new Error("style"); return r.json(); }),
-        ]);
+        if (!hasWebGL()) throw new Error("no webgl");
+        const [maplibregl, style] = await Promise.all([import("maplibre-gl"), loadBaseStyle()]);
         if (cancelled) return;
         maplibregl.setWorkerUrl(WORKER_URL);
-        type Layer = { id: string; type: string; paint?: Record<string, unknown> };
-        style.layers = (style.layers as Layer[])
-          .filter((l) => l.type === "background" || l.id === "water" || l.id === "waterway" || l.id.startsWith("landcover") || l.id.startsWith("landuse"))
-          .map((l) => {
-            if (l.type === "background") l.paint = { "background-color": THEME.land };
-            else if (l.id === "water") l.paint = { "fill-color": THEME.water };
-            else if (l.id === "waterway") l.paint = { "line-color": THEME.waterLine, "line-width": 0.6 };
-            else l.paint = { ...(l.paint ?? {}), "fill-opacity": 0.12 };
-            return l;
-          });
         const m = new maplibregl.Map({
           container: el, style, bounds: BOUNDS, fitBoundsOptions: { padding: pad() }, interactive: false,
           attributionControl: false, fadeDuration: 0,
@@ -88,14 +101,7 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
         map = m;
         m.on("load", () => {
           if (cancelled) return;
-          const map = m;
-          const holes = geo.features[0].geometry.coordinates.map((poly) => poly[0]);
-          map.addSource("india", { type: "geojson", data: geo as unknown as GeoJSON.FeatureCollection });
-          map.addSource("mask", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "Polygon",
-            coordinates: [[[-179, -80], [179, -80], [179, 80], [-179, 80], [-179, -80]], ...holes] } } });
-          map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": THEME.mask, "fill-opacity": 0.72 } });
-          map.addLayer({ id: "india-fill", type: "fill", source: "india", paint: { "fill-color": THEME.indiaFill, "fill-opacity": 0.9 } });
-          map.addLayer({ id: "india-line", type: "line", source: "india", paint: { "line-color": THEME.outline, "line-width": 1 } });
+          addIndiaLayers(m, geo);
           project.current = (lon, lat) => { const p = m.project([lon, lat]); return [p.x, p.y]; };
           place();
           m.once("idle", () => !cancelled && setMode("basemap"));
@@ -161,7 +167,7 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
           const side = (phone ? SIDE_PHONE : SIDE_DESKTOP)[c.city] ?? "right";
           return (
             <CityMarker key={c.city} city={c} date={date} x={at[0]} y={at[1]} side={side} phone={phone}
-              open={open === c.city} onOpen={(v) => setOpen(v ? c.city : null)} />
+              open={open === c.city} cardAt={cardAt} onOpen={(v) => openCard(v ? c.city : null)} />
           );
         })}
       </ul>
@@ -169,24 +175,20 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
   );
 }
 
-function CityMarker({ city, date, x, y, side, phone, open, onOpen }: {
-  city: LatestCity; date: string; x: number; y: number; side: Side; phone: boolean; open: boolean; onOpen: (v: boolean) => void;
+function CityMarker({ city, date, x, y, side, phone, open, cardAt, onOpen }: {
+  city: LatestCity; date: string; x: number; y: number; side: Side; phone: boolean; open: boolean;
+  cardAt: [number, number]; onOpen: (v: boolean) => void;
 }) {
   const router = useRouter();
   const cat = categoryOf(city.value, "pm25");
   const colour = cat ? CATEGORY_STYLE[cat].bg : CATEGORY_STYLE.None.bg;
   const href = `/explore?city=${encodeURIComponent(city.city)}`;
-  const south = city.lat < 20;
   const tag = {
     right: "left-4 top-1/2 -translate-y-1/2",
     left: "right-4 top-1/2 -translate-y-1/2",
     top: "bottom-4 left-1/2 -translate-x-1/2",
   }[side];
-  const card = cn(
-    "absolute z-20 w-60 rounded-2xl border border-line-strong bg-[#0d1528]/[0.97] p-4 text-left shadow-float backdrop-blur-xl",
-    side === "left" ? "right-4" : side === "top" ? "left-1/2 -translate-x-1/2" : "left-4",
-    south || side === "top" ? "bottom-7" : "top-7",
-  );
+  const card = "absolute z-20 w-60 rounded-2xl border border-line-strong bg-[#0d1528]/[0.97] p-4 text-left shadow-float backdrop-blur-xl";
   const label = `${city.city}: ${city.value} µg/m³ PM2.5, ${cat ?? "no category"}`;
   return (
     <li className={cn("absolute", open ? "z-30" : "z-10")} style={{ left: x, top: y }}>
@@ -208,7 +210,8 @@ function CityMarker({ city, date, x, y, side, phone, open, onOpen }: {
         >
           <span className="size-3 rounded-full" style={{ background: colour, boxShadow: `0 0 0 2px rgb(6 10 20 / 0.9), 0 0 16px ${colour}` }} />
         </button>
-        <span aria-hidden className={cn(
+        <span aria-hidden data-tag={city.city} className={cn(
+          open && "invisible", // the open card replaces the small label
           "pointer-events-none absolute grid grid-cols-[auto_auto] items-baseline gap-x-2 rounded-[10px] border border-line-strong bg-[#080d1a]/90 whitespace-nowrap",
           phone ? "px-2 py-1" : "px-2.5 pt-1 pb-1.5",
           tag,
@@ -218,7 +221,7 @@ function CityMarker({ city, date, x, y, side, phone, open, onOpen }: {
           {!phone && <span className="text-[11.5px] text-subtle">µg/m³ · {cat}</span>}
         </span>
         {open && (
-          <div className={card} role="dialog" aria-label={`${city.city} details`}>
+          <div className={card} style={{ left: cardAt[0], top: cardAt[1] }} role="dialog" aria-label={`${city.city} details`}>
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-semibold">{city.city}</p>
               <CategoryBadge category={cat} size="sm" label="PM2.5 category" />

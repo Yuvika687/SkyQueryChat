@@ -32,16 +32,17 @@ export function HomeScreen() {
   const retry = () => void (backend === "down" ? recheckBackend() : reloadLatest());
 
   return (
-    <div className="mx-auto w-full max-w-[1360px] px-4 pt-[84px] pb-28 sm:px-8 md:pt-[96px] md:pb-10">
+    <div className="mx-auto w-full max-w-[1360px] px-4 pt-[84px] pb-[calc(104px+env(safe-area-inset-bottom))] sm:px-8 md:pt-[96px] md:pb-10">
       {/* ------------------------------------------------------------ hero */}
-      <section aria-labelledby="home-title" className="grid items-center gap-8 lg:min-h-[calc(100dvh-140px)] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10">
-        <FadeIn className="relative z-10">
-          <p className="inline-flex h-8 items-center gap-2 rounded-full border border-line-strong bg-white/[0.02] px-3 text-[13px] text-subtle">
+      <section aria-labelledby="home-title" className="grid grid-cols-[minmax(0,1fr)] items-center gap-6 lg:min-h-[calc(100dvh-140px)] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10">
+        <FadeIn className="relative z-10 min-w-0">
+          {/* the nav chip shows this on wide screens */}
+          <p className="inline-flex h-8 items-center gap-2 rounded-full border border-line-strong bg-white/[0.02] px-3 text-[13px] text-subtle lg:hidden">
             <span aria-hidden className="size-1.5 rounded-full bg-teal" />
             Latest available:{" "}
             {latest ? <strong className="font-semibold text-foreground">{fmtDate(latest.date)}</strong> : <span aria-hidden className="inline-block h-3.5 w-20 animate-pulse rounded bg-raised/70" />}
           </p>
-          <h1 id="home-title" className="mt-5 mb-4 font-display text-[52px] leading-[0.98] tracking-[-0.02em] sm:text-[72px] xl:text-[84px]">
+          <h1 id="home-title" className="mt-5 mb-4 font-display lg:mt-0 text-[52px] leading-[0.98] tracking-[-0.02em] sm:text-[72px] xl:text-[84px]">
             Ask India&apos;s air <em className="text-[#BFF7EE]">anything</em>
           </h1>
           <p className="max-w-[470px] text-base text-subtle sm:text-[17px] sm:leading-7">
@@ -56,7 +57,7 @@ export function HomeScreen() {
         </FadeIn>
 
         <FadeIn delay={0.08}>
-          <div className="relative h-[440px] overflow-hidden rounded-3xl border border-line bg-[#050912] shadow-float sm:h-[560px] lg:h-[min(680px,calc(100dvh-150px))]">
+          <div className="relative aspect-[10/11] overflow-hidden rounded-3xl border border-line bg-[#050912] shadow-float sm:aspect-auto sm:h-[600px] lg:h-[min(660px,calc(100dvh-150px))]">
             {latest ? (
               <IndiaMap cities={latest.cities} date={latest.date} className="absolute inset-0" />
             ) : (
@@ -80,7 +81,7 @@ export function HomeScreen() {
       </section>
 
       {/* ------------------------------------------------------------ cities */}
-      <section aria-labelledby="cities-title" className="mt-14 lg:mt-6">
+      <section aria-labelledby="cities-title" className="mt-10 lg:mt-6">
         <div className="mb-5 flex flex-col gap-1.5 sm:flex-row sm:items-baseline sm:justify-between">
           <h2 id="cities-title" className="font-display text-[32px] leading-tight sm:text-[38px]">Six cities, highest first</h2>
           {latest && (
@@ -100,7 +101,7 @@ export function HomeScreen() {
                   </FadeIn>
                 ))
               : Array.from({ length: 6 }, (_, i) => (
-                  <li key={i}><Skeleton className="h-[204px] rounded-2xl" /></li>
+                  <li key={i}><Skeleton className="h-[76px] rounded-2xl md:h-[204px]" /></li>
                 ))}
           </ol>
         )}
@@ -112,12 +113,12 @@ export function HomeScreen() {
         <ul className="mt-5 grid gap-4 md:grid-cols-3">
           {WAYS.map((w) => (
             <li key={w.href}>
-              <Link href={w.href} className="group flex h-full flex-col gap-1.5 rounded-2xl border-t border-line-strong px-1 pt-5 pb-3 text-subtle">
-                <span className="flex items-center gap-2 font-display text-[28px] leading-none text-foreground">
-                  {w.name}
-                  <ArrowRight className="size-5 text-teal transition-transform group-hover:translate-x-0.5" aria-hidden />
+              <Link href={w.href} className="glass group flex h-full items-center gap-4 rounded-2xl p-5 text-subtle shadow-card transition-colors hover:border-line-strong">
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="font-display text-[28px] leading-none text-foreground">{w.name}</span>
+                  <span>{w.line}</span>
                 </span>
-                <span>{w.line}</span>
+                <ArrowRight className="size-5 shrink-0 text-teal transition-transform group-hover:translate-x-0.5" aria-hidden />
               </Link>
             </li>
           ))}

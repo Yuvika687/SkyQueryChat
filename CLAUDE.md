@@ -389,6 +389,29 @@ Rules:
 - "Very poor" chips use dark text (#1A0404): white on #EF4444 is only 3.8:1.
 - Explore and Compare are placeholder pages that say they are being built and offer an Ask question.
 
+### Home polish and Explore (branch `redesign`, 2026-11-13)
+
+- Home: the "Latest available" badge shows only below the `lg` width (the nav chip shows it on wide screens). The map
+  card picks the first spot that covers no other city's label or marker, and that city's own label hides while it is
+  open. Phones: suggested questions are one sideways-scrolling row, city cards are compact (two rows), the page has
+  bottom padding for the tab bar.
+- `GET /api/explore?pollutant=pm25|pm10` (read-only, cached per pollutant): the latest 30 available days (ending on
+  the `/api/latest` date) for every station with data in that window: metadata (provider, tier, monitor type, lat/lon,
+  km from centre, last reading UTC) plus each day's 24-hour mean and valid hours. A value needs >= 16 valid hours;
+  otherwise `values[i]` is null and `valid_hours[i]` says how many hours there were (the map shows grey "not enough
+  data"); no row at all = no readings. City values per day use the normal city rule. About 50 KB per pollutant.
+- Explore (`/explore`): MapLibre map (shared setup in `src/lib/map-base.ts`), city markers then station markers (DOM
+  buttons inside MapLibre markers, painted outside React components), left panel (ranking, then the city's station
+  list = accessible alternative to the map), right station panel, date slider over 30 days with play (0.8 s per day;
+  no autoplay with reduced motion), PM2.5/PM10 toggle, low-cost sensor toggle (real AirGradient sensors exist), legend.
+  View in the address: `?city=&station=&pollutant=&date=`. Phones: bottom sheet (peek/half/full; drag or tap the handle).
+  Logic in `src/lib/explore.ts` (tests in `explore.test.ts`); Playwright: `e2e/explore.spec.ts`, `e2e/explore-phone.spec.ts`.
+- "Ask about this station" opens a city question for the 30-day window (the analyst works on city averages, which
+  include the station); the panel says so.
+- Memory (Linux container, 512 MB, 0.1 CPU, both explore payloads built): peak 284 MiB. The first `/api/explore`
+  request takes about 8 s at 0.1 CPU under emulation (0.06 s natively), then it is cached.
+- The MapLibre worker copy runs as `predev` and `prebuild` (package.json), so `npm run build` on Vercel includes it.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

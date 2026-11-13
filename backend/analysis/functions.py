@@ -691,3 +691,51 @@ def latest_city_values(s: Store, pollutant: str = "pm25", days: int = 7) -> dict
             "method": "24-hour city average of primary reference stations (IST day); a day counts only when enough "
                       "stations have at least 16 valid hours.",
             "cities": sorted(cities, key=lambda v: -v["value"])}
+
+
+# ----------------------------------------------------------------------------- explore: stations over 30 days
+TIER_LABEL = {"primary": "Reference monitor", "supporting_single_station": "Reference monitor (US consulate, supporting)",
+              "low_cost": "Low-cost sensor"}
+
+
+def explore_data(s: Store, pollutant: str = "pm25", days: int = 30) -> dict:
+    """Every monitoring station with data in the latest `days` available days: metadata plus each day's
+    24-hour mean and valid hours. A station-day needs >= 16 valid hours for a value (otherwise `v` is None and
+    `h` says how many hours there were); no row at all means no data that day. Read-only, no LLM.
+    City values per day use the same rule as everywhere else (None when too few stations)."""
+    _check(pollutant=pollutant)
+    end = date.fromisoformat(latest_city_values(s, pollutant)["date"])
+    dates = [end - timedelta(days=i) for i in range(days - 1, -1, -1)]
+    sd = s.q("SELECT location_id, local_date, valid_hours, is_valid_day, daily_mean FROM station_daily "
+             "WHERE pollutant=? AND local_date BETWEEN ? AND ?", [pollutant, dates[0], end])
+    sd["local_date"] = pd.to_datetime(sd["local_date"]).dt.date
+    # one sensor per location and pollutant; if a location ever had two, keep its fullest day
+    sd = sd.sort_values("valid_hours", ascending=False).drop_duplicates(["location_id", "local_date"])
+    meta = s.q("SELECT location_id, ANY_VALUE(city) AS city, ANY_VALUE(tier) AS tier, ANY_VALUE(station_name) AS name, "
+               "ANY_VALUE(provider) AS provider, AVG(lat) AS lat, AVG(lon) AS lon, MIN(km_from_centre) AS km, "
+               "MAX(location_last_utc) AS last_utc FROM stations GROUP BY location_id")
+    meta = meta[meta.location_id.isin(sd.location_id.unique())].sort_values(["city", "km"])
+    idx = {d: i for i, d in enumerate(dates)}
+    stations = []
+    for m in meta.itertuples():
+        v: list = [None] * days
+        h: list = [None] * days
+        for x in sd[sd.location_id == m.location_id].itertuples():
+            i = idx[x.local_date]
+            h[i] = int(x.valid_hours)
+            v[i] = r(float(x.daily_mean)) if x.is_valid_day and pd.notna(x.daily_mean) else None
+        stations.append({"id": int(m.location_id), "city": m.city, "name": m.name, "provider": m.provider,
+                         "tier": m.tier, "type": TIER_LABEL.get(m.tier, m.tier), "lat": round(float(m.lat), 5),
+                         "lon": round(float(m.lon), 5), "km_from_centre": r(float(m.km)), "last_reading_utc": m.last_utc,
+                         "values": v, "valid_hours": h})
+    cd = s.q("SELECT city, local_date, city_mean, meets_rule, n_valid_stations FROM city_daily "
+             "WHERE pollutant=? AND local_date BETWEEN ? AND ?", [pollutant, dates[0], end])
+    cd["local_date"] = pd.to_datetime(cd["local_date"]).dt.date
+    cities = {}
+    for c in C.CITIES:
+        x = cd[cd.city == c].set_index("local_date")
+        cities[c] = {"values": [r(float(x.loc[d, "city_mean"])) if d in x.index and bool(x.loc[d, "meets_rule"]) else None for d in dates],
+                     "stations_reporting": [int(x.loc[d, "n_valid_stations"]) if d in x.index else 0 for d in dates]}
+    return {"pollutant": pollutant, "units": PM_UNITS, "data_type": "measured", "source": SRC_OPENAQ,
+            "dates": [str(d) for d in dates], "min_valid_hours": C.MIN_VALID_HOURS_PER_DAY, "cities": cities,
+            "stations": stations}

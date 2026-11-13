@@ -55,14 +55,15 @@ export function AskBox({ placeholder, hint, suggestions = [], className }: {
       </form>
       {hint && <p className="mt-2.5 px-1 text-[13px] text-faint">{hint}</p>}
       {suggestions.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-2" aria-label="Suggested questions">
+        /* Phones: one row that scrolls sideways; wider screens wrap. */
+        <ul className="-mx-4 mt-3 flex snap-x gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0" aria-label="Suggested questions">
           {suggestions.map((s) => (
-            <li key={s}>
+            <li key={s} className="shrink-0 snap-start md:shrink">
               <button
                 type="button"
                 onClick={() => go(s)}
                 className={cn(
-                  "rounded-full border border-line bg-white/[0.03] px-3 py-1.5 text-left text-[13px] text-subtle transition-colors",
+                  "rounded-full border border-line bg-white/[0.03] px-3 py-1.5 text-left text-[13px] whitespace-nowrap text-subtle transition-colors md:whitespace-normal",
                   "hover:border-teal/50 hover:text-foreground",
                 )}
               >

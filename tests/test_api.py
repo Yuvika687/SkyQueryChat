@@ -538,3 +538,26 @@ def test_latest_city_values_for_the_home_page(store):
         assert c.get("/api/latest", params={"pollutant": "pm10"}).json()["pollutant"] == "pm10"
         assert c.get("/api/latest", params={"pollutant": "no2"}).status_code == 422
         assert c.get("/api/latest").json() == d                         # cached, unchanged
+
+
+def test_explore_station_days_for_the_map(store):
+    with TestClient(make(store)) as c:
+        d = c.get("/api/explore").json()
+        assert d["data_type"] == "measured" and d["pollutant"] == "pm25" and d["min_valid_hours"] == 16
+        assert len(d["dates"]) == 30 and d["dates"][-1] == c.get("/api/latest").json()["date"]
+        assert set(d["cities"]) == {"Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"}
+        assert {s["tier"] for s in d["stations"]} <= {"primary", "low_cost", "supporting_single_station"}
+        sd = store.tables["station_daily"]
+        for s in d["stations"][:20]:
+            assert len(s["values"]) == len(s["valid_hours"]) == 30 and 5 < s["lat"] < 35 and 68 < s["lon"] < 98
+            for day, v, h in zip(d["dates"], s["values"], s["valid_hours"]):
+                if v is not None:
+                    assert h >= 16                                   # a value needs >= 16 valid hours
+                    row = sd[(sd.location_id == s["id"]) & (sd.pollutant == "pm25") & (sd.local_date.astype(str) == day)]
+                    assert round(float(row.daily_mean.max()), 1) == v
+                elif h is not None:
+                    assert h < 16                                    # "not enough data", never a made-up value
+        delhi = d["cities"]["Delhi"]
+        assert delhi["values"][-1] == next(x["value"] for x in c.get("/api/latest").json()["cities"] if x["city"] == "Delhi")
+        assert c.get("/api/explore", params={"pollutant": "pm10"}).json()["pollutant"] == "pm10"
+        assert c.get("/api/explore", params={"pollutant": "so2"}).status_code == 422

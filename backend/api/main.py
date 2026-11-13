@@ -306,6 +306,15 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
             cache[pollutant] = F.latest_city_values(S(), pollutant)
         return cache[pollutant]
 
+    @app.get("/api/explore")
+    async def explore(pollutant: str = Query("pm25", pattern="^pm(25|10)$")):
+        """Explore map: every station's daily values over the latest 30 available days. Read-only, no LLM,
+        computed once per pollutant and kept (the app tables never change while the server runs)."""
+        cache = state.setdefault("explore", {})
+        if pollutant not in cache:
+            cache[pollutant] = F.explore_data(S(), pollutant)
+        return cache[pollutant]
+
     @app.get("/api/diwali/{city}")
     async def diwali(city: str, years: str = Query("2024,2025", pattern=r"^\d{4}(,\d{4}){0,2}$")):
         return F.diwali_aqi(S(), _city(city), tuple(int(y) for y in years.split(","))).to_dict()
