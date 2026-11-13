@@ -145,7 +145,6 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
               ))}
             </div>
           )}
-          <Attribution />
         </div>
         {/* Screen readers hear each new step as it starts or ends, and when the answer is ready. */}
         <p className="sr-only" aria-live="polite">{announcement(latest)}</p>
@@ -212,11 +211,3 @@ function BackendBanner() {
   return null;
 }
 
-function Attribution() {
-  return (
-    <footer className="mx-auto w-full max-w-[760px] px-4 pt-2 pb-6 text-[11px] leading-4 text-subtle">
-      Station data: CPCB via <a className="underline hover:text-teal" href="https://openaq.org" target="_blank" rel="noreferrer">OpenAQ</a>. Official AQI: CPCB daily bulletins, parsed by UrbanEmissions.info. Weather data by{" "}
-      <a className="underline hover:text-teal" href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo.com</a> (CC BY 4.0), reanalysis from the Copernicus Climate Change Service.
-    </footer>
-  );
-}

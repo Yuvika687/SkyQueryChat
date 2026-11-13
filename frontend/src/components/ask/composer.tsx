@@ -81,7 +81,11 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ bu
           )}
         </div>
         <p className="flex justify-between gap-2 px-1 text-xs leading-4 text-subtle">
-          <span>Answers use the data available and may contain gaps.</span>
+          <span>
+            Answers use the data available and may contain gaps. Sources: CPCB via{" "}
+            <a className="underline underline-offset-2 hover:text-teal" href="https://openaq.org" target="_blank" rel="noreferrer">OpenAQ</a>, CPCB bulletins, weather by{" "}
+            <a className="underline underline-offset-2 hover:text-teal" href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo.com</a> (CC BY 4.0) and Copernicus C3S.
+          </span>
           {text.length > MAX - 60 && <span className="font-mono">{text.length}/{MAX}</span>}
         </p>
       </form>

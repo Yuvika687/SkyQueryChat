@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, CalendarHeart, GitCompareArrows, LineChart, Sparkles, Wind } from "lucide-react";
+import { ArrowUpRight, CalendarHeart, CloudRain, GitCompareArrows, LineChart, Sparkles, Wind } from "lucide-react";
 
 // Exact questions from docs/ui-design-spec.md (Ask screen, empty state).
 export const SUGGESTED = [
@@ -9,6 +9,7 @@ export const SUGGESTED = [
   { q: "Show PM2.5 levels in Kolkata for the last 30 days", icon: LineChart },
   { q: "Which days were unusually polluted in Delhi?", icon: Sparkles },
   { q: "How did wind speed relate to PM2.5 in Hyderabad?", icon: Wind },
+  { q: "Is rain associated with lower PM2.5 in Mumbai?", icon: CloudRain },
 ];
 
 export function EmptyState({ onAsk, disabled }: { onAsk: (q: string) => void; disabled?: boolean }) {
@@ -27,7 +28,7 @@ export function EmptyState({ onAsk, disabled }: { onAsk: (q: string) => void; di
               type="button"
               disabled={disabled}
               onClick={() => onAsk(q)}
-              className="group flex min-h-[76px] w-full items-start gap-3 rounded-xl border border-line bg-surface p-4 text-left text-sm transition-colors hover:border-teal hover:bg-raised disabled:opacity-60"
+              className="group sq-lift flex h-full min-h-[76px] w-full items-start gap-3 rounded-xl border border-line bg-surface p-4 text-left text-sm transition-colors hover:border-teal hover:bg-raised disabled:opacity-60"
             >
               <Icon className="mt-0.5 size-5 shrink-0 text-teal" aria-hidden />
               <span className="flex-1">{q}</span>
