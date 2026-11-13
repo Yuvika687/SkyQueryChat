@@ -122,7 +122,7 @@ export function proofFor(target: Target, t: Turn): Proof {
   const ev = evidenceFor(t);
   const spec = t.chart;
   const n = t.answer?.verification?.numbers_checked;
-  const check = `Copied exactly from the analysis result.${n ? ` All ${n} numbers in this answer were checked.` : ""}`;
+  const check = `Copied exactly from the analysis result.${n ? (n === 1 ? " The 1 number in this answer was checked." : ` All ${n} numbers in this answer were checked.`) : ""}`;
   const aqiType = ev.dataTypeKey === "official_aqi";
   const facts: [string, string][] = [
     ["Data type", aqiType ? "Official AQI: an index of several pollutants, not a concentration" : ev.dataType === "Measured" ? "Measured at monitoring stations (µg/m³)" : ev.dataType ?? "—"],

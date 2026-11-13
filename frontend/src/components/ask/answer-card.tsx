@@ -54,7 +54,7 @@ export function answerAsText(turn: Turn): string {
   if (a.method !== undefined && a.explanation) parts.push(readable(a.explanation));
   for (const w of a.required_warnings ?? []) parts.push(`Note: ${readable(w.text)}`);
   const facts = [ev.dataType && `Data: ${ev.dataType}`, ev.period && `Period: ${readable(ev.period)}`, ev.source && `Source: ${readable(ev.source)}`,
-    a.verification?.numbers_checked ? `${a.verification.numbers_checked} numbers checked against the analysis` : null].filter(Boolean);
+    a.verification?.numbers_checked ? `${a.verification.numbers_checked} ${a.verification.numbers_checked === 1 ? "number" : "numbers"} checked against the analysis` : null].filter(Boolean);
   parts.push(facts.join(" · "));
   return parts.join("\n\n") + "\n";
 }
@@ -86,7 +86,7 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
         {ev.period && <span>{ev.period}</span>}
         {checked ? (
           <span className="inline-flex h-6 items-center gap-1 rounded-full bg-teal/10 px-2.5 font-medium text-teal">
-            <Check className="size-3.5" aria-hidden />{checked} numbers checked
+            <Check className="size-3.5" aria-hidden />{checked} {checked === 1 ? "number" : "numbers"} checked
           </span>
         ) : null}
         {a.status === "answered" && (

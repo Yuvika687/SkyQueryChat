@@ -27,7 +27,7 @@ export function EvidencePanel({ turn, className }: { turn: Turn; className?: str
   const rows: [string, string | null][] = [
     ["Data", ev.dataType], ["Period", ev.period], ["Stations", ev.stationsDetail ?? ev.stations],
     ["Coverage", ev.coverageDetail ?? ev.coverageText], ["Source", ev.source],
-    ["Checked", a.verification?.numbers_checked ? `All ${a.verification.numbers_checked} numbers match the analysis` : null],
+    ["Checked", a.verification?.numbers_checked ? (a.verification.numbers_checked === 1 ? "The 1 number matches the analysis" : `All ${a.verification.numbers_checked} numbers match the analysis`) : null],
   ];
   return (
     <div className={cn("flex min-h-0 min-w-0 flex-col", className)}>

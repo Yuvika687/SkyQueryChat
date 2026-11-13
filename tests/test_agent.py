@@ -735,3 +735,29 @@ def test_short_period_trend_wording_passes_the_checker():
             "Short periods include seasonal change.")
     assert check_numbers([text], allowed_numbers([r])) == []
     assert trend_conflicts(text, [t["status"]]) == []
+
+
+@real
+def test_an_answer_that_only_states_a_plan_is_sent_back(session_factory):
+    """Seen live: the headline was the plan sentence ("I will check the trend ..."). It must go back for correction."""
+    def tool(m, info):
+        return [ToolCallPart("city_trend", {"city": "Mumbai", "pollutant": "PM2.5", "period": "last 30 days"})]
+
+    def plan_only(m, info):
+        return final(info, status="answered", answer="I will check the trend in Mumbai's PM2.5 over the last 30 days.")
+
+    def real_answer(m, info):
+        p = last_payload(m, "city_trend")
+        return final(info, status="answered", cards=[f"{p['id']}.mean"],
+                     answer=f"Mumbai's PM2.5 averaged {p['fields']['mean']} µg/m³ over the latest 30 days available.")
+    out, _ = run(core.build_agent(scripted([tool, plan_only, real_answer])[0]), session_factory(),
+                 "Is there a trend in Mumbai's PM2.5?")
+    assert out.status == "answered" and not out.answer.startswith("I will") and out.verification["retries"] == 1
+
+
+def test_plan_like_wording():
+    from backend.agent.core import PLAN_LIKE
+    for t in ("I will check the trend.", "I'll look at the data", "Let me compare the cities", "First, I need the data"):
+        assert PLAN_LIKE.search(t)
+    for t in ("Mumbai's PM2.5 showed no clear trend.", "In the week before Diwali, AQI rose.", "It is too close to call."):
+        assert not PLAN_LIKE.search(t)
