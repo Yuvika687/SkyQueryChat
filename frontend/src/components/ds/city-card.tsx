@@ -17,9 +17,9 @@ export function CityCard({ city, rank, date, pollutantLabel = "PM2.5" }: {
   const rankText = String(rank).padStart(2, "0");
   return (
     <Link
-      href={`/explore?city=${encodeURIComponent(city.city)}`}
+      href={`/city/${city.city.toLowerCase()}`}
       className="glass group flex h-full flex-col rounded-2xl px-4 py-3 shadow-card transition-colors hover:border-line-strong md:p-5"
-      aria-label={`${city.city}: ${city.value} µg/m³ ${pollutantLabel}, ${cat ?? "no category"}, ${fmtDate(date)}, ${city.stations_reporting} of ${city.stations_total} stations reporting. Open in Explore.`}
+      aria-label={`${city.city}: ${city.value} µg/m³ ${pollutantLabel}, ${cat ?? "no category"}, ${fmtDate(date)}, ${city.stations_reporting} of ${city.stations_total} stations reporting. Open the city page.`}
     >
       {/* phone: two rows */}
       <div className="flex items-center gap-2.5 md:hidden">

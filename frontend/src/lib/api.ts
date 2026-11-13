@@ -15,7 +15,7 @@ const FRIENDLY: Record<string, string> = {
   backend_waking: "The analysis service didn't start in time. Please try again.",
 };
 
-async function getJSON<T>(path: string, timeoutMs = 8000, signal?: AbortSignal): Promise<T> {
+export async function getJSON<T>(path: string, timeoutMs = 8000, signal?: AbortSignal): Promise<T> {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
   const onAbort = () => ctl.abort();

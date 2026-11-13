@@ -2,7 +2,7 @@
 
 // Explore side-panel pieces: controls, date player, legend, city ranking, station list and station panel.
 import Link from "next/link";
-import { ArrowLeft, MessageSquare, Pause, Play, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, MessageSquare, Pause, Play, X } from "lucide-react";
 import { CATEGORY_STYLE, pmCategory, type Category } from "@/lib/categories";
 import {
   LEGEND_RANGES, POLLUTANT_LABEL, dayStatus, fmtLastReading, monitorType, rankCities, rankStations, stationQuestion, statusColour,
@@ -179,6 +179,9 @@ export function StationList({ city, stations, day, date, pollutant, selected, on
         )}
       </div>
       <p className="mb-2 text-[12px] text-faint">{withValue} of {stations.length} stations have a 24-hour value on {fmtDate(date)}.</p>
+      <Link href={`/city/${city.toLowerCase()}`} className="mb-3 inline-flex min-h-9 items-center gap-1.5 rounded-full text-[13px] font-medium text-teal hover:underline">
+        Open city page<ArrowRight className="size-3.5" aria-hidden />
+      </Link>
       <ol className="flex flex-col gap-0.5" aria-label={`${city} stations`}>
         {ranked.map((s) => {
           const st = dayStatus(s, day, pollutant);

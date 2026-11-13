@@ -29,7 +29,7 @@ from pydantic import BaseModel, Field, field_validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.agent import core, models as M, resolver as R
-from backend.analysis import functions as F
+from backend.analysis import functions as F, pages as PG
 from backend.analysis.store import Store, read_tables
 from backend.agent.quota import QuotaManager
 from .protect import AnswerCache, RateLimiter, load_demo, normalise
@@ -314,6 +314,42 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         if pollutant not in cache:
             cache[pollutant] = F.explore_data(S(), pollutant)
         return cache[pollutant]
+
+    @app.get("/api/city/{city}")
+    async def city_page(city: str):
+        """City page: latest value, 30 days, calendar, Diwali AQI, unusual days, weather association, stations.
+        Read-only, no LLM, computed once per city and kept."""
+        c = _city(city)
+        cache = state.setdefault("city", {})
+        if c not in cache:
+            cache[c] = await asyncio.to_thread(PG.city_page, S(), c)
+        return cache[c]
+
+    @app.get("/api/compare/periods")
+    async def compare_periods():
+        """Compare page presets, limited to dates that exist in the data."""
+        if "periods" not in state:
+            state["periods"] = PG.periods(S())
+        return state["periods"]
+
+    @app.get("/api/compare")
+    async def compare(cities: str = Query(..., max_length=80), metric: str = Query("pm25", pattern="^(pm25|pm10|aqi)$"),
+                      start: date = Query(...), end: date = Query(...)):
+        """Compare page: daily lines on matching dates, ranking with 95% ranges, trends. Read-only, no LLM."""
+        cs = list(dict.fromkeys(_city(c.strip()) for c in cities.split(",") if c.strip()))
+        if not 2 <= len(cs) <= 6:
+            raise ValueError("Pick between 2 and 6 cities.")
+        lo = date(2025, 2, 18) if metric != "aqi" else date(2024, 1, 1)
+        hi = date.fromisoformat((await latest(pollutant="pm25"))["date"])
+        if start > end or start < lo or end > hi or (end - start).days > 400:
+            raise ValueError(f"Pick dates between {lo} and {hi}, at most 400 days apart.")
+        key = (tuple(cs), metric, start, end)
+        cache = state.setdefault("compare", {})
+        if key not in cache:
+            if len(cache) > 200:                    # bounded: shareable links make many keys possible
+                cache.clear()
+            cache[key] = await asyncio.to_thread(PG.compare_page, S(), cs, metric, start, end)
+        return cache[key]
 
     @app.get("/api/diwali/{city}")
     async def diwali(city: str, years: str = Query("2024,2025", pattern=r"^\d{4}(,\d{4}){0,2}$")):
