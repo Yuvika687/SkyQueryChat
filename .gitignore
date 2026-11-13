@@ -25,3 +25,6 @@ data/raw/*
 .DS_Store
 .vscode/
 .idea/
+
+# Local work checklist
+.progress.md

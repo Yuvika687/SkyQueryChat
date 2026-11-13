@@ -123,7 +123,7 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
         type: "Feature" as const,
         geometry: { type: "Point" as const, coordinates: [s.lon, s.lat] },
         properties: {
-          id: s.id, color: statusColour(st).bg, low: s.tier === "low_cost", value, rank: st.kind === "value" ? st.value : -1,
+          id: s.id, color: statusColour(st).bg, low: s.tier === "low_cost", value, hasValue: st.kind === "value", rank: st.kind === "value" ? st.value : -1,
           active: s.id === active || s.id === highlight, selected: s.id === station,
           name: `${shortName(s.name)}  ${st.kind === "value" ? value : "not enough data"}`,
         },
@@ -190,11 +190,18 @@ function addStationLayers(m: MLMap) {
   m.addLayer({ id: "st-diamond", type: "symbol", source: "stations", filter: ["get", "low"],
     layout: { "icon-image": "diamond", "icon-size": ["case", ["get", "active"], 1.2, 0.75], "icon-allow-overlap": true, "icon-ignore-placement": true },
     paint: { "icon-color": ["get", "color"], "icon-halo-color": ["case", ["get", "selected"], "#2DD4BF", "rgba(234,240,251,0.9)"], "icon-halo-width": 1.5 } });
-  // value labels only where they fit (MapLibre collision); higher values are placed first
-  m.addLayer({ id: "st-label", type: "symbol", source: "stations", filter: ["!", ["get", "active"]],
-    layout: { "text-field": ["get", "value"], "text-font": FONT, "text-size": 11.5, "text-offset": [0, -0.9],
-      "text-anchor": "bottom", "text-allow-overlap": false, "text-padding": 3, "symbol-sort-key": ["-", 0, ["get", "rank"]] },
+  // Value labels only where they fit (MapLibre collision), never on a dot: an invisible marker under every dot
+  // (layer "st-block", placed first because it sits above the labels) reserves that space. A label tries the
+  // spots around its own dot and is dropped if none is free. Grey stations (no 24-hour value) get no label;
+  // their status is in the hover label and the station panel. Higher values are placed first.
+  m.addLayer({ id: "st-label", type: "symbol", source: "stations", filter: ["all", ["!", ["get", "active"]], ["get", "hasValue"]],
+    layout: { "text-field": ["get", "value"], "text-font": FONT, "text-size": 11.5,
+      "text-variable-anchor": ["bottom", "top", "left", "right"], "text-radial-offset": 0.85, "text-justify": "auto",
+      "text-allow-overlap": false, "text-padding": 2, "symbol-sort-key": ["-", 0, ["get", "rank"]] },
     paint: { "text-color": "#EAF0FB", "text-halo-color": "rgba(6,10,20,0.95)", "text-halo-width": 1.6 } });
+  m.addImage("block", { width: 24, height: 24, data: new Uint8Array(24 * 24 * 4) }, { pixelRatio: 2 });
+  m.addLayer({ id: "st-block", type: "symbol", source: "stations",
+    layout: { "icon-image": "block", "icon-allow-overlap": true, "icon-ignore-placement": false, "icon-padding": 0 } });
   // the hovered or selected station is always labelled, with its name
   m.addLayer({ id: "st-active-label", type: "symbol", source: "stations", filter: ["get", "active"],
     layout: { "text-field": ["get", "name"], "text-font": FONT, "text-size": 13, "text-offset": [0, -1.3],
