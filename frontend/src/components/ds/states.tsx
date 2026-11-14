@@ -59,8 +59,9 @@ export function FadeIn({ children, delay = 0, className, as = "div" }: {
   const reduce = useReducedMotion();
   const M = motion[as];
   if (reduce) {
-    const Tag = as;
-    return <Tag className={className}>{children}</Tag>;
+    // Same element as the server render (which cannot know the setting), shown at once. A plain element here would not
+    // match the server's hidden starting style, and React would keep that style, leaving the content invisible.
+    return <M className={className} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0 }}>{children}</M>;
   }
   return (
     <M

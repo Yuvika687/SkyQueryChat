@@ -72,9 +72,9 @@ export function DataPanel({ open, onOpenChange }: { open: boolean; onOpenChange:
         </SheetHeader>
         <div className="flex flex-col gap-6 px-5 py-5 pb-[calc(24px+env(safe-area-inset-bottom))] text-sm">
           <Section title="Latest available">
-            <p className="text-[13.5px]">
+            <div className="text-[13.5px]">
               {latest ? <><strong className="font-semibold">{fmtDate(latest.date)}</strong> <span className="text-subtle">is the latest day every city has a PM2.5 value.</span></> : <Skeleton className="h-5 w-48" />}
-            </p>
+            </div>
             {w.measured_start && (
               <ul className="mt-2 flex flex-col gap-1 text-[13px] text-subtle">
                 <li>Measured PM: {fmtRange(w.measured_start, w.measured_end)}</li>
