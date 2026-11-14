@@ -1,5 +1,5 @@
 {
- "built_utc": "2026-11-12T07:42:20+00:00",
+ "built_utc": "2026-11-14T07:19:36+00:00",
  "cities": [
   "Delhi",
   "Mumbai",
@@ -10,19 +10,19 @@
  ],
  "openaq_requested": [
   "2025-02-18",
-  "2026-11-11"
+  "2026-11-13"
  ],
- "openaq_data_end": "2026-11-11",
+ "openaq_data_end": "2026-11-13",
  "not_yet_published": [],
- "openaq_archive_end": "2026-11-08",
+ "openaq_archive_end": "2026-11-10",
  "openaq_api_topup": {
   "dates": [
-   "2026-11-09",
-   "2026-11-10",
-   "2026-11-11"
+   "2026-11-11",
+   "2026-11-12",
+   "2026-11-13"
   ],
-  "location_days": 288,
-  "requests": 0,
+  "location_days": 289,
+  "requests": 204,
   "note": "API readings are used only for location-days the archive had not published; a later refresh replaces them with archive files."
  },
  "bulletins": {
@@ -44,9 +44,11 @@
    "2026-11-08",
    "2026-11-09",
    "2026-11-10",
-   "2026-11-11"
+   "2026-11-11",
+   "2026-11-12",
+   "2026-11-13"
   ],
-  "end": "2026-11-11"
+  "end": "2026-11-13"
  },
  "rules": {
   "valid_hour_fraction": 0.75,
@@ -60,12 +62,12 @@
  },
  "rows": {
   "stations": 204,
-  "station_hourly": 3541676,
-  "station_daily": 160299,
-  "city_daily": 6936,
-  "city_daily_aqi": 24128,
+  "station_hourly": 3550164,
+  "station_daily": 160670,
+  "city_daily": 6960,
+  "city_daily_aqi": 24140,
   "network_gaps": 1423,
-  "date_quality": 5155,
+  "date_quality": 5169,
   "recurring_gap_hours": 192,
   "diwali": 54,
   "data_status_reasons": 6,
