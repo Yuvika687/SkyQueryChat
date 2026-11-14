@@ -18,7 +18,9 @@ export function EmptyState({ onAsk, disabled }: { onAsk: (q: string) => void; di
       <div>
         <h2 id="empty-title" className="text-[24px] leading-8 font-semibold">What do you want to know about the air?</h2>
         <p className="mt-2 text-sm text-subtle">
-          PM2.5 and PM10 for Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad. Every answer shows its data type, period, stations, coverage and source.
+          PM2.5 (fine particles) and PM10 (coarse particles) in µg/m³ (micrograms per cubic metre), and the official AQI (Air Quality Index) from
+          CPCB (Central Pollution Control Board) bulletins, for Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad. Every answer shows its
+          data type, period, stations, coverage and source.
         </p>
       </div>
       <ul className="grid gap-3 sm:grid-cols-2">

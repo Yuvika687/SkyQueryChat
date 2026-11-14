@@ -27,8 +27,8 @@ describe("OfficialAqiChip", () => {
   });
 
   it("uses plain abbreviations inside links (no nested buttons)", () => {
-    render(<a href="/city/delhi"><OfficialAqiChip aqi={DELHI} plain /></a>);
-    expect(screen.queryByRole("button")).toBeNull();
+    render(<button type="button"><OfficialAqiChip aqi={DELHI} plain /></button>);
+    expect(screen.getAllByRole("button")).toHaveLength(1);
     expect(screen.getByTitle("Air Quality Index")).toHaveTextContent("AQI");
   });
 

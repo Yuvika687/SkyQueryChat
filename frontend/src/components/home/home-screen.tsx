@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useApp } from "@/components/shell/app-context";
 import { useOpenDataPanel } from "@/components/shell/app-shell";
 import { AskBox } from "@/components/ds/ask-box";
+import { Term } from "@/components/ds/term";
 import { CityCard } from "@/components/ds/city-card";
 import { ErrorState, FadeIn, Skeleton, WakeUpState } from "@/components/ds/states";
 import { fmtDate, fmtSpan } from "@/lib/format";
@@ -46,7 +47,8 @@ export function HomeScreen() {
             Ask India&apos;s air <em className="text-[#BFF7EE]">anything</em>
           </h1>
           <p className="max-w-[470px] text-base text-subtle sm:text-[17px] sm:leading-7">
-            See the latest available air quality for six Indian cities, then ask about any of it in plain words.
+            The latest PM2.5 (fine particles) for six Indian cities, beside the official AQI (Air Quality Index) from the CPCB
+            (Central Pollution Control Board). Ask about any of it, PM10 (coarse particles) too, in plain words.
           </p>
           <AskBox
             className="mt-7"
@@ -59,7 +61,7 @@ export function HomeScreen() {
         <FadeIn delay={0.08}>
           {/* no box: the map sits on the page, with a soft glow behind India and edges that fade out (CSS mask) */}
           <p className="mb-2 text-xs text-subtle sm:text-center lg:text-left">
-            <strong className="font-semibold text-foreground">PM2.5{latest ? `, ${fmtDate(latest.date)}` : ""}</strong> · 24-hour city average, µg/m³
+            <strong className="font-semibold text-foreground"><Term k="pm25" />{latest ? `, ${fmtDate(latest.date)}` : ""}</strong> · 24-hour city average, µg/m³ (micrograms per cubic metre)
           </p>
           <div className="relative aspect-[10/11] sm:aspect-auto sm:h-[600px] lg:h-[min(640px,calc(100dvh-170px))]">
             <div aria-hidden className="pointer-events-none absolute inset-y-[-6%] inset-x-0 lg:inset-x-[-6%] bg-[radial-gradient(ellipse_52%_50%_at_50%_50%,rgba(45,212,191,0.13),rgba(30,64,120,0.10)_45%,transparent_72%)]" />
@@ -87,7 +89,8 @@ export function HomeScreen() {
           <h2 id="cities-title" className="font-display text-[32px] leading-tight sm:text-[38px]">Six cities, highest first</h2>
           {latest && (
             <p className="text-[13px] text-faint">
-              PM2.5 24-hour city average for {fmtDate(latest.date)}, in µg/m³. Small line: daily values, {fmtSpan(latest.start, latest.date)}.
+              <Term k="pm25" /> 24-hour city average for {fmtDate(latest.date)}, in <Term k="ugm3" />. Small line: daily values, {fmtSpan(latest.start, latest.date)}.
+              Official <Term k="aqi" />: <Term k="cpcb" /> 4 PM bulletin for the same date.
             </p>
           )}
         </div>

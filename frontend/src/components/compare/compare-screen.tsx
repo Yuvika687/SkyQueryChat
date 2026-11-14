@@ -57,7 +57,7 @@ export function CompareScreen() {
       <header className="mb-6">
         <h1 className="font-display text-[48px] leading-none sm:text-[64px]">Compare</h1>
         <p className="mt-3 text-[16px] text-subtle">Put cities side by side over the same dates.</p>
-        <p className="mt-1 text-[13.5px] text-faint">Pick cities, a pollutant and a period.</p>
+        <p className="mt-1 text-[13.5px] text-faint">Pick cities, a pollutant and a period. Numbers are PM2.5 (fine particles) or PM10 (coarse particles) in µg/m³ (micrograms per cubic metre); the official AQI (Air Quality Index) comes from CPCB (Central Pollution Control Board) bulletins.</p>
       </header>
       <DataGate state={periods} what="Compare page">
         {(per) => <CompareBody sel={sel} per={per} update={update} />}

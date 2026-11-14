@@ -157,6 +157,7 @@ export function ExploreScreen() {
       <h1 className="font-display text-[34px] leading-none md:text-[40px]">Explore</h1>
       <p className="mt-1.5 text-[14px] text-foreground">See every monitoring station in the six cities.</p>
       <p className="mt-0.5 text-[12.5px] text-faint">Click a city, then a station. Press play to watch the last 30 days.</p>
+      <p className="mt-1 max-w-[380px] text-[11.5px] leading-4 text-faint">Numbers are PM2.5 (fine particles) or PM10 (coarse particles) in µg/m³ (micrograms per cubic metre); the official AQI (Air Quality Index) comes from CPCB (Central Pollution Control Board) bulletins.</p>
     </div>
   );
   const controls = data && (

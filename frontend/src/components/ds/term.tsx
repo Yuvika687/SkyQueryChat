@@ -71,7 +71,8 @@ function TermTip({ full, children, className }: { full: string; children: React.
         aria-expanded={open}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => { if (!pinned) setOpen(false); }}
-        onFocus={() => setOpen(true)}
+        // keyboard focus only: dialogs that move focus here on open (a mouse click) should not pop the tooltip
+        onFocus={(e) => { if (safeMatches(e.currentTarget, ":focus-visible")) setOpen(true); }}
         onBlur={() => { setOpen(false); setPinned(false); }}
         onClick={() => { const next = !pinned; setPinned(next); setOpen(next); }}
         className={cn(
@@ -96,4 +97,8 @@ function TermTip({ full, children, className }: { full: string; children: React.
       )}
     </>
   );
+}
+
+function safeMatches(el: Element, sel: string): boolean {
+  try { return el.matches(sel); } catch { return true; }   // older engines without :focus-visible: keep focus opening it
 }

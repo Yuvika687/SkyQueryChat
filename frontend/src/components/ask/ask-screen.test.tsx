@@ -68,7 +68,7 @@ describe("Ask screen", () => {
     expect(screen.getByRole("button", { name: /Compare Delhi and Mumbai over the last 30 days/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Diwali 2025 than Diwali 2024/ })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(6);
-    expect(screen.getByText(/Answers use the data available and may contain gaps\. Sources: CPCB via/)).toBeInTheDocument();
+    expect(screen.getByText(/Answers use the data available and may contain gaps\. Sources:/)).toHaveTextContent(/Sources: CPCB.*via OpenAQ/);
     expect(screen.getByRole("link", { name: "Open-Meteo.com" })).toHaveAttribute("href", "https://open-meteo.com/");
   });
 

@@ -34,6 +34,7 @@ export function CityScreen({ slug, city }: { slug: string; city: string }) {
         <h1 className="mt-1 font-display text-[48px] leading-none sm:text-[64px]">{city}</h1>
         <p className="mt-3 text-[16px] text-subtle">Everything about {city}&apos;s air, from real monitoring data.</p>
         <p className="mt-1 text-[13.5px] text-faint">Scroll for the last 30 days, a calendar, Diwali and the stations; each section says where its numbers come from.</p>
+        <p className="mt-1 text-[12.5px] text-faint">Numbers are PM2.5 (fine particles) or PM10 (coarse particles) in µg/m³ (micrograms per cubic metre); the official AQI (Air Quality Index) comes from CPCB (Central Pollution Control Board) bulletins.</p>
       </header>
       <DataGate state={state} what={`${city} page`}>
         {(d) => <><PageTools d={d} /><CityBody d={d} /></>}
@@ -90,11 +91,11 @@ function Hero({ d, className }: { d: CityPage; className?: string }) {
     <section aria-labelledby="hero-title" className={cn("glass relative flex flex-col overflow-hidden rounded-2xl p-5 shadow-card sm:p-6", className)}>
       <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-teal/10 blur-3xl" />
       <h2 id="hero-title" className="text-[13px] text-subtle">
-        PM2.5 (fine particles) · 24-hour city average · latest available, <strong className="font-semibold text-foreground">{fmtDate(h.date)}</strong>
+        <Term k="pm25" /> · 24-hour city average · latest available, <strong className="font-semibold text-foreground">{fmtDate(h.date)}</strong>
       </h2>
       <p className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-2">
         <StatNumber value={h.pm25} className="text-[64px] leading-none font-medium tracking-tight" />
-        <span className="text-[15px] text-subtle">µg/m³ (micrograms per cubic metre)</span>
+        <span className="text-[15px] text-subtle"><Term k="ugm3" /></span>
         <CategoryBadge category={cat} label="PM2.5 category" className="ml-auto" />
       </p>
       <p className="mt-1 text-[12.5px] text-faint"><Term k="pm25" /> concentration (<Term k="ugm3" />), not <Term k="aqi" /></p>
@@ -108,7 +109,7 @@ function Hero({ d, className }: { d: CityPage; className?: string }) {
         </p>
       )}
       <dl className="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-4 text-[13px]">
-        <div><dt className="text-faint">PM10 (coarse particles)</dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.pm10.toFixed(1)} <span className="text-[12px] font-normal text-subtle">µg/m³</span></dd></div>
+        <div><dt className="text-faint"><Term k="pm10" /></dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.pm10.toFixed(1)} <span className="text-[12px] font-normal text-subtle">µg/m³</span></dd></div>
         <div><dt className="text-faint">Stations reporting</dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.stations_reporting} <span className="text-[12px] font-normal text-subtle">of {h.stations_total}</span></dd></div>
         <div><dt className="text-faint">Among six cities</dt><dd className="mt-0.5 text-[17px] font-semibold">{h.rank_of_six === 1 ? "Highest" : h.rank_of_six === 6 ? "Lowest" : `${ordinal(h.rank_of_six)} highest`}</dd></div>
       </dl>
@@ -162,7 +163,7 @@ function Calendar({ d, className }: { d: CityPage; className?: string }) {
   const [i, setI] = useState(months.length - 1);
   if (!months.length) {
     return (
-      <Section id="cal" title="Calendar" className={className} line="Daily PM2.5 for each month with data.">
+      <Section id="cal" title="Calendar" className={className} line={<>Daily <Term k="pm25" /> for each month with data.</>}>
         <EmptyNote title="No daily PM2.5 values yet" hint="Months appear here once enough stations report a full day." />
       </Section>
     );
@@ -174,7 +175,7 @@ function Calendar({ d, className }: { d: CityPage; className?: string }) {
   const withData = days.filter((x) => x.value != null).length;
   return (
     <Section id="cal" title="Calendar" className={className}
-      line="Daily PM2.5 for each month with data. Grey days had too few stations for a city value."
+      line={<>Daily <Term k="pm25" /> for each month with data. Grey days had too few stations for a city value.</>}
       action={
         <div className="flex items-center gap-1">
           <button type="button" aria-label="Previous month" disabled={i === 0} onClick={() => setI(i - 1)}
@@ -231,7 +232,7 @@ function Calendar({ d, className }: { d: CityPage; className?: string }) {
 function Diwali({ d, className }: { d: CityPage; className?: string }) {
   return (
     <Section id="diwali" title="Diwali" className={className}
-      line="Official AQI from CPCB's 4 PM bulletins. Diwali night shows in the next day's bulletin, so the festival level is the mean of the two bulletins after Diwali.">
+      line={<>Official <Term k="aqi" /> from <Term k="cpcb" />&apos;s 4 PM bulletins. Diwali night shows in the next day&apos;s bulletin, so the festival level is the mean of the two bulletins after Diwali.</>}>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {d.diwali.years.map((y) => {
           const cat = normaliseCategory(y.category);
@@ -269,7 +270,7 @@ function Diwali({ d, className }: { d: CityPage; className?: string }) {
           );
         })}
       </div>
-      <p className="mt-3 text-[12px] text-faint">AQI is an index of several pollutants, not a PM2.5 or PM10 concentration. Source: {d.diwali.source}. The rise is timing only, not proof of what caused it.</p>
+      <p className="mt-3 text-[12px] text-faint"><Term k="aqi" /> is an index of several pollutants, not a <Term k="pm25" /> or <Term k="pm10" /> concentration. Source: {d.diwali.source}. The rise is timing only, not proof of what caused it.</p>
       {d.diwali.pm_context && (
         <div className="mt-4 rounded-xl border border-warn/30 bg-warn/[0.06] p-4">
           <h3 className="text-[14px] font-semibold">Delhi measured PM2.5 around Diwali (supporting context only)</h3>
@@ -297,7 +298,7 @@ function Unusual({ d, className }: { d: CityPage; className?: string }) {
   const days = d.unusual.days;
   return (
     <Section id="unusual" title="Unusual days" className={className}
-      line={`Days far from the 15-day median of their neighbours (PM2.5; ${d.unusual.tested} days tested). The 12 most recent are shown.`}>
+      line={<>Days far from the 15-day median of their neighbours (<Term k="pm25" />; {d.unusual.tested} days tested). The 12 most recent are shown.</>}>
       {days.length === 0 ? <p className="text-[13px] text-subtle">No unusual days were flagged.</p> : (
         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {days.map((u) => {
@@ -361,7 +362,7 @@ const fmtSigned = (v: number) => (v < 0 ? `−${Math.abs(v).toFixed(2)}` : v.toF
 function Stations({ d, className }: { d: CityPage; className?: string }) {
   return (
     <Section id="stations" title="Stations" className={className}
-      line="Every station with PM2.5 data in the last 30 days. Coverage is the share of those days with a 24-hour value. Open one to see it on the map.">
+      line={<>Every station with <Term k="pm25" /> data in the last 30 days. Coverage is the share of those days with a 24-hour value. Open one to see it on the map.</>}>
       {d.stations.length === 0 && <EmptyNote title="No station reported PM2.5 in the last 30 days" hint="Try the calendar for earlier months." />}
       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {d.stations.map((s) => (
