@@ -29,7 +29,7 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv(ROOT / ".env")
 logging.basicConfig(level=logging.WARNING)
 
-from backend.agent import core, models as M, verify as V  # noqa: E402
+from backend.agent import core, models as M, resolver as R, verify as V  # noqa: E402
 from backend.analysis.store import Store  # noqa: E402
 from evals import references as REF  # noqa: E402
 
@@ -318,13 +318,16 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
         rdir = RUNS / f"{time.strftime('%Y%m%d-%H%M')}_{set_name}_{kind}"
         rdir.mkdir(parents=True, exist_ok=True)
         meta = {"set": set_name, "kind": kind, "started": time.strftime("%Y-%m-%d %H:%M"), "model_chain": chain,
+                "data": str(REF.APP.relative_to(ROOT)) if REF.APP.is_relative_to(ROOT) else str(REF.APP),
+                "data_end": str(REF.DATA_END),
                 "commit": _commit(), "ids": sorted(ids) if ids else "all", "complete": False}
     (rdir / "meta.json").write_text(json.dumps(meta, indent=1))
     # Evaluations pace themselves; let the shared limiter queue for a full minute window instead of
     # failing fast (20 s suits live visitors, not a single-model test such as the Groq set).
     M.QUOTA.cfg.max_queue_wait_s = 90
     agent = core.build_agent()
-    store = Store.from_dir()
+    store = Store.from_dir(REF.APP)                 # the frozen evaluation copy (evals/data), same as the references
+    R.set_windows_from_store(store)                 # "all data" and "latest" questions follow that copy's end dates
     refs = REF.references()
     used, stopped = 0, None
     print(f"{rdir.name}: {len(qs)} question(s); chain {chain}", flush=True)
