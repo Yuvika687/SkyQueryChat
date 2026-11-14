@@ -552,7 +552,8 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
     hourly, logs, blank_hours = [h_oa], [log_oa], None
     if "Delhi" in cities:
         h_oc, log_oc, blank_hours = opencity_step(
-            st[(st.city == "Delhi") & (st.tier == "primary")], opencity_dir, proven_hi, progress=progress)
+            st[(st.city == "Delhi") & (st.tier == "primary")], opencity_dir, proven_hi,
+            cache_dir=out_dir / "opencity_cache", progress=progress)    # beside this build's output (tests use a temp dir)
         hourly.append(h_oc)
         logs.append(log_oc)
     hourly = pd.concat(hourly, ignore_index=True)
