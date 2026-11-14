@@ -18,7 +18,7 @@ import uuid
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query, Request
@@ -28,13 +28,19 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from backend.agent import core, models as M, resolver as R
+import sys
+
+from backend.agent import resolver as R
+from backend.agent.errors import ERROR_TEXT
 from backend.analysis import functions as F, pages as PG
 from backend.analysis.store import Store, read_tables
-from backend.agent.quota import QuotaManager
 from .protect import AnswerCache, RateLimiter, load_demo, normalise
 from .settings import Settings, is_production
 from .sse import PING, sse
+
+if TYPE_CHECKING:
+    from backend.agent import core
+    from backend.agent.quota import QuotaManager
 
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
@@ -55,10 +61,10 @@ MESSAGES = {
     "ai_busy": "The live AI is busy with other visitors right now. Please try again in about a minute.",
     "model_unavailable": "The AI models are unavailable right now. Cached answers and data pages still work.",
     "timeout": "The answer took too long and was stopped. Please try a narrower question.",
-    "model_timeout": core.ERROR_TEXT["timeout"],
-    "verification_failed": core.ERROR_TEXT["verification"],
-    "format": core.ERROR_TEXT["format"],
-    "too_many_steps": core.ERROR_TEXT["limit"],
+    "model_timeout": ERROR_TEXT["timeout"],
+    "verification_failed": ERROR_TEXT["verification"],
+    "format": ERROR_TEXT["format"],
+    "too_many_steps": ERROR_TEXT["limit"],
     "internal": "Something went wrong. Please try again.",
 }
 
@@ -95,12 +101,31 @@ class LockedStore(Store):
             return super().q(sql, params)
 
 
+def _agent():
+    """The agent stack (Pydantic AI and the model SDKs) is the slowest import, about 40% of start-up. It is loaded on
+    first use, or in the background once the data is ready, so the data endpoints answer sooner after a cold start."""
+    from backend.agent import core
+    return core
+
+
+def _models():
+    from backend.agent import models
+    return models
+
+
+class _SharedQuota:
+    """The process-wide quota manager, imported on first use (see _agent)."""
+
+    def __getattr__(self, name):
+        return getattr(_models().QUOTA, name)
+
+
 class Sessions:
     def __init__(self, store: Store, ttl_s: int, max_n: int):
         self.store, self.ttl, self.max = store, ttl_s, max_n
-        self.items: dict[str, tuple[float, core.Session]] = {}
+        self.items: dict[str, tuple[float, "core.Session"]] = {}
 
-    def get(self, sid: str | None) -> tuple[str, core.Session]:
+    def get(self, sid: str | None) -> tuple[str, "core.Session"]:
         now = time.monotonic()
         for k in [k for k, (t, _) in self.items.items() if now - t > self.ttl]:
             self.items.pop(k, None)
@@ -108,7 +133,7 @@ class Sessions:
             s = self.items[sid][1]
         else:
             sid = uuid.uuid4().hex
-            s = core.new_session(self.store)
+            s = _agent().new_session(self.store)
             if len(self.items) >= self.max:
                 self.items.pop(min(self.items, key=lambda k: self.items[k][0]))
         self.items[sid] = (now, s)
@@ -122,19 +147,44 @@ def _err(code: str, message: str, rid: str, status: int, headers: dict | None = 
 
 def create_app(agent_factory: Callable | None = None, store: Store | None = None,
                settings: Settings | None = None, demo: dict | None = None,
-               quota: QuotaManager | None = None) -> FastAPI:
+               quota: "QuotaManager | None" = None) -> FastAPI:
     st = settings or Settings()
-    qm = quota or M.QUOTA
+    qm = quota or _SharedQuota()
     state: dict = {"started": time.time(), "agent": None, "agent_error": False}
+
+    ready = threading.Event()
+
+    def _attach(s: Store) -> None:
+        R.set_windows_from_store(s)
+        state["sessions"] = Sessions(s, st.session_ttl_s, st.max_sessions)
+        state["store"] = s
+        ready.set()
+
+    def _load_and_warm() -> None:
+        """Cold start: the port opens right after the imports; the data loads here, in the background, and the Home and
+        Explore results are built straight after, so the first visitor does not pay for them. The app tables never change
+        while the server runs, so these cached results are safe to keep."""
+        try:
+            _attach(LockedStore(read_tables()))                  # one load, one DuckDB connection
+        except Exception as e:                                   # health stays "starting"; requests get a clear 503
+            log.warning("data load failed: %s", type(e).__name__)
+            state["load_error"] = True
+            ready.set()
+            return
+        try:
+            lat = state.setdefault("latest", {})
+            if "pm25" not in lat:                                # Home's data, the first thing a visitor asks for
+                lat["pm25"] = F.latest_city_values(state["store"], "pm25")
+            _agent()                                             # then the agent stack, so the first question is quick
+        except Exception as e:                                   # warming is only a speed-up; endpoints compute on demand
+            log.warning("warm-up skipped: %s", type(e).__name__)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         if store is None:
-            state["store"] = LockedStore(read_tables())       # one load, one DuckDB connection
+            threading.Thread(target=_load_and_warm, name="load-data", daemon=True).start()
         else:
-            state["store"] = store
-        core._set_windows(state["store"])
-        state["sessions"] = Sessions(state["store"], st.session_ttl_s, st.max_sessions)
+            _attach(store)
         yield
 
     app = FastAPI(title="SkyQueryChat API", version="0.3", lifespan=lifespan, docs_url="/api/docs",
@@ -153,6 +203,14 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         rid = rid if RID.match(rid) else uuid.uuid4().hex
         request.state.request_id = rid
         t0 = time.perf_counter()
+        # while the data loads after a cold start, requests wait for it (health answers at once)
+        if not ready.is_set() and request.url.path != "/api/health" and request.method != "OPTIONS":
+            await asyncio.to_thread(ready.wait, 150)
+        if request.url.path != "/api/health" and request.method != "OPTIONS" and ("store" not in state):
+            resp = _err("starting", "The analysis service is still starting. Please try again in a moment.", rid, 503,
+                        {"Retry-After": "5"})
+            resp.headers["X-Request-ID"] = rid
+            return resp
         try:
             resp = await call_next(request)
         except Exception as e:                       # never leak tracebacks
@@ -189,13 +247,15 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
     def get_agent():
         if state["agent"] is None and not state["agent_error"]:
             try:
-                state["agent"] = (agent_factory or core.build_agent)()
+                state["agent"] = (agent_factory or _agent().build_agent)()
             except Exception as e:
                 log.warning("agent unavailable: %s", type(e).__name__)
                 state["agent_error"] = True
         return state["agent"]
 
     def _quota_brief() -> dict:
+        if quota is None and "backend.agent.models" not in sys.modules:
+            return {"state": "not_started", "models": {}}       # no AI used yet; never import the agent stack for health
         full = qm.status()
         return {"state": qm.plan()["state"] if qm.chain else "not_started",
                 "models": {k: {"state": v["state"], "remaining_today": v["remaining_today"]}
@@ -204,6 +264,11 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
     # ------------------------------------------------------------------ health and metadata
     @app.get("/api/health")
     async def health():
+        """Very light: reads no data and calls no AI. 503 "starting" until the data has loaded after a cold start, so
+        Render's health check (and the frontend) only treat the service as ready when it can answer."""
+        if "store" not in state:
+            return JSONResponse({"status": "starting", "uptime_s": round(time.time() - state["started"], 1),
+                                 "data_loaded": False}, status_code=503, headers={"Retry-After": "5"})
         return {"status": "ok", "uptime_s": round(time.time() - state["started"], 1),
                 "data_loaded": "store" in state, "ai_configured": st.ai_configured,
                 "ai_quota": _quota_brief(),
@@ -406,7 +471,7 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         kinds = [e.detail.get("kind") for e in deps.events if e.type == "error"]
         k = kinds[-1] if kinds else "other"
         if k == "model":
-            recent = M.FALLBACK_LOG[-len(qm.chain or [1]):]
+            recent = _models().FALLBACK_LOG[-len(qm.chain or [1]):]
             if recent and all(x.get("rate_limited") and not x.get("per_day") for x in recent):
                 return "ai_busy"
             return "ai_limit" if recent and any(x.get("rate_limited") for x in recent) else "model_unavailable"
@@ -493,7 +558,7 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
             notice_eid = 1
         queue: asyncio.Queue = asyncio.Queue()
         done_marker = object()
-        task = asyncio.create_task(core.ask(agent, sess, body.message, on_event=queue.put_nowait,
+        task = asyncio.create_task(_agent().ask(agent, sess, body.message, on_event=queue.put_nowait,
                                             max_tokens=st.tokens_per_question, demo=is_demo))
         task.add_done_callback(lambda _t: queue.put_nowait(done_marker))
         loop = asyncio.get_running_loop()

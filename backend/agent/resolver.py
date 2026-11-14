@@ -42,6 +42,18 @@ def set_data_windows(measured_end: date, aqi_end: date, weather_end: date) -> No
     DATA.update(measured_end=measured_end, aqi_end=aqi_end, weather_end=weather_end)
 
 
+def set_windows_from_store(store) -> None:
+    """The latest available dates come from the data itself (never fixed in code)."""
+    import pandas as pd
+    try:
+        m = store.q("SELECT MAX(local_date) d FROM date_quality WHERE severity <> 'not_yet_published' AND source LIKE 'OpenAQ%'")["d"].iat[0]
+        a = store.q("SELECT MAX(bulletin_date) d FROM city_daily_aqi")["d"].iat[0]
+        w = store.q("SELECT MAX(local_date) d FROM weather_daily")["d"].iat[0]
+        set_data_windows(pd.Timestamp(m).date(), pd.Timestamp(a).date(), pd.Timestamp(w).date())
+    except Exception:       # synthetic test stores may lack tables; keep defaults
+        pass
+
+
 def resolve_city(text: str) -> dict:
     t = re.sub(r"[^a-z ]", " ", text.lower()).strip()
     t = re.sub(r"\s+", " ", t)

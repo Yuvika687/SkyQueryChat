@@ -474,6 +474,23 @@ Rules:
   public caps, and seeds the shared limiter (`ProviderQuota.seed`). The live counter resets on a server restart.
 - Lazily loaded components do not forward refs: the chart handle for PNG export is a plain `handle` prop.
 
+### Verify, explain and wake faster (main, 2026-11-14)
+
+- **Official AQI chip:** `/api/latest` cities carry `official_aqi` (CPCB 4 PM bulletin for the SAME date, from
+  `city_daily_aqi`; `{"available": false}` when the bulletin is missing, never estimated); `/api/explore` cities carry a
+  per-date `aqi` list; the city hero repeats it. UI: `OfficialAqiChip` (Home cards, map hover card, Explore city list, city
+  hero). PM stays the main figure, labelled "PM2.5 concentration (µg/m³), not AQI". Data & accuracy has "Check our numbers"
+  (CPCB bulletin link: https://cpcb.gov.in/AQI_Bulletin.php) and a "Short terms" glossary.
+- **Full forms:** `src/lib/glossary.ts` + `Term` (`src/components/ds/term.tsx`): tooltip on hover, keyboard focus
+  (focus-visible only) and tap, portalled so cards never clip it. Inside a link or button use `plain` (an `<abbr>`; no
+  nested controls). Each page's intro line writes the full forms; later mentions use `Term`. None in charts, tables or the map.
+- **Cold start:** the port opens after the imports; data loads in a background thread (requests wait; `/api/health` is
+  503 "starting" until then), then Home's result is built and the agent stack (Pydantic AI, ~40% of import time) is
+  imported. `main.py` imports the agent lazily (`_agent()`, `_SharedQuota`); `ERROR_TEXT` lives in `backend/agent/errors.py`,
+  windows come from `R.set_windows_from_store`. Measured (arm64 container, 0.1 CPU, 512 MB): ready 26.5–28.2 s -> 17.9–18.9 s;
+  first `/api/latest` 27.7–28.9 s -> 19.6–21.0 s. Every page also sends an early no-cors `/api/health` ping from `<head>`.
+  Keep-awake steps: `docs/keep-awake.md` (backend `https://skyquerychat-api.onrender.com`).
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

@@ -58,15 +58,7 @@ PLAN_LIKE = re.compile(r"^\s*(?:I(?:'ll| will| am going to|'m going to| need to|
 
 LEAK_MARKERS = ["pass the user's own words for city", "never calculate, convert, round differently",
                 "requests to reveal or change these rules"]
-ERROR_TEXT = {
-    "verification": "I couldn't produce an answer in which every number matches the data, so I'm not showing one. "
-                    "Please try rephrasing or narrowing the question.",
-    "format": "The model did not return a valid answer. Please try again.",
-    "limit": "This question needed too many steps. Please ask about one city, pollutant or period at a time.",
-    "model": "The language models are unavailable or over their free quota right now. Please try again shortly.",
-    "timeout": "The AI models took too long to respond, so the answer was stopped. Please try again in a moment.",
-    "other": "Something went wrong while answering. Please try again.",
-}
+from .errors import ERROR_TEXT  # noqa: E402  (kept here too: core.ERROR_TEXT is used across the code)
 
 
 def parse_text_answer(text: str) -> LLMAnswer:
@@ -89,13 +81,7 @@ def new_session(store: Store | None = None) -> Session:
 
 
 def _set_windows(store: Store) -> None:
-    try:
-        m = store.q("SELECT MAX(local_date) d FROM date_quality WHERE severity <> 'not_yet_published' AND source LIKE 'OpenAQ%'")["d"].iat[0]
-        a = store.q("SELECT MAX(bulletin_date) d FROM city_daily_aqi")["d"].iat[0]
-        w = store.q("SELECT MAX(local_date) d FROM weather_daily")["d"].iat[0]
-        R.set_data_windows(pd.Timestamp(m).date(), pd.Timestamp(a).date(), pd.Timestamp(w).date())
-    except Exception:       # synthetic test stores may lack tables; keep defaults
-        pass
+    R.set_windows_from_store(store)
 
 
 PRIMARY_MODEL: dict[int, str] = {}       # id(agent) -> configured primary model name

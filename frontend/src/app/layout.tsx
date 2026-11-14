@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Inter } from "next/font/google";
 import { Providers } from "@/components/shell/providers";
+import { API_BASE_URL } from "@/lib/env";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -24,9 +25,18 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#060A14", colorScheme: "dark" };
 
+// Early wake-up ping: Render's free backend sleeps after 15 idle minutes and takes 30-60 s to wake. This tiny inline
+// script runs while the HTML is still being read, before the app's JavaScript loads, so the backend starts waking at
+// once. The response is not read (no-cors); the app's own health check follows as usual.
+const WAKE_PING = `try{fetch(${JSON.stringify(`${API_BASE_URL}/api/health`)},{mode:"no-cors",cache:"no-store",keepalive:true}).catch(function(){})}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en-IN" className={`dark ${inter.variable} ${serif.variable} antialiased`}>
+      <head>
+        <link rel="preconnect" href={API_BASE_URL} crossOrigin="anonymous" />
+        <script id="wake-ping" dangerouslySetInnerHTML={{ __html: WAKE_PING }} />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

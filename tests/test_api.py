@@ -656,3 +656,35 @@ def test_official_aqi_missing_bulletin_is_never_estimated(store):
     t = F.official_aqi_by_date(store, [date(2026, 11, 11)])
     assert F.official_aqi_entry(t, "Delhi", date(2026, 11, 12)) == {"available": False, "date": "2026-11-12"}
     assert F.official_aqi_entry({}, "Delhi", date(2026, 11, 11)) == {"available": False, "date": "2026-11-11"}
+
+
+def test_health_answers_at_once_during_a_cold_start_and_loads_no_data(store, monkeypatch):
+    """The port opens before the data has loaded: /api/health answers immediately with 503 "starting" (no data, no AI),
+    data requests wait for the load, then health is 200 and the Home result is already built."""
+    import threading
+    import time as _t
+    from backend.api import main as API
+    gate = threading.Event()
+    calls = {"n": 0}
+
+    def slow_tables():
+        calls["n"] += 1
+        gate.wait(10)
+        return store.tables
+
+    monkeypatch.setattr(API, "read_tables", slow_tables)
+    built = {"agent": 0}
+    app = API.create_app(agent_factory=lambda: built.__setitem__("agent", built["agent"] + 1), quota=_quota(),
+                         settings=Settings(allowed_origins=["http://localhost:3000"]), demo={})
+    with TestClient(app) as c:
+        t0 = _t.perf_counter()
+        r = c.get("/api/health")
+        assert r.status_code == 503 and r.json()["status"] == "starting" and r.json()["data_loaded"] is False
+        assert _t.perf_counter() - t0 < 1.0
+        assert r.headers.get("Retry-After") == "5"
+        gate.set()
+        r = c.get("/api/latest")                       # waits for the background load, then answers
+        assert r.status_code == 200 and len(r.json()["cities"]) == 6
+        h = c.get("/api/health")
+        assert h.status_code == 200 and h.json()["status"] == "ok" and h.json()["data_loaded"] is True
+        assert calls["n"] == 1 and built["agent"] == 0   # one data load; health never builds the AI agent
