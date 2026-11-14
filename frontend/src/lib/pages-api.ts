@@ -1,6 +1,6 @@
 // Types and fetchers for the city pages and the Compare page (read-only endpoints, no AI).
 import { getJSON } from "./api";
-import type { ChartSpec } from "./types";
+import type { ChartSpec, OfficialAqi } from "./types";
 
 export const CITY_SLUGS = ["delhi", "mumbai", "kolkata", "chennai", "bengaluru", "hyderabad"] as const;
 export type CitySlug = (typeof CITY_SLUGS)[number];
@@ -17,7 +17,7 @@ export interface Trend {
 export interface CityPage {
   city: string; date: string; units: string; source: string;
   hero: { pm25: number; pm10: number; stations_reporting: number; stations_total: number; rank_of_six: number; date: string;
-    change?: number | null; previous?: { date: string; value: number } | null };
+    change?: number | null; previous?: { date: string; value: number } | null; official_aqi?: OfficialAqi | null };
   trend30: { start: string; end: string; pm25: DayValue[]; pm10: DayValue[]; trend: Trend };
   calendar: { start: string; end: string; days: DayValue[] };
   diwali: {

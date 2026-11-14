@@ -14,6 +14,8 @@ import { fmtDate } from "@/lib/format";
 import type { LatestCity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CategoryBadge, categoryOf } from "@/components/ds/data-display";
+import { OfficialAqiChip, officialAqiText } from "@/components/ds/official-aqi";
+import { Term } from "@/components/ds/term";
 import { CREDITS_HTML, INDIA_BOUNDS, THEME, WORKER_URL, addCredits, addIndiaLayers, hasWebGL, loadBaseStyle, loadBoundary, type IndiaGeo } from "@/lib/map-base";
 
 const BOUNDS = INDIA_BOUNDS;
@@ -43,7 +45,7 @@ export function IndiaMap({ cities, date, className }: { cities: LatestCity[]; da
     const w = wrap.current, at = name ? pos[name] : null;
     if (!w || !at) return;
     const box = w.getBoundingClientRect();
-    const W = 240, H = phone ? 176 : 136, g = 16;
+    const W = 256, H = phone ? 232 : 192, g = 16;
     const obstacles = cities.filter((c) => c.city !== name && pos[c.city]).flatMap((c) => {
       const [x, y] = pos[c.city];
       const tag = w.querySelector<HTMLElement>(`[data-tag="${c.city}"]`)?.getBoundingClientRect();
@@ -213,8 +215,8 @@ function CityMarker({ city, date, x, y, side, phone, open, cardAt, onOpen }: {
     left: "right-4 top-1/2 -translate-y-1/2",
     top: "bottom-4 left-1/2 -translate-x-1/2",
   }[side];
-  const card = "absolute z-20 w-60 rounded-2xl border border-line-strong bg-[#0d1528]/[0.97] p-4 text-left shadow-float backdrop-blur-xl";
-  const label = `${city.city}: ${city.value} µg/m³ PM2.5, ${cat ?? "no category"}`;
+  const card = "absolute z-20 w-64 rounded-2xl border border-line-strong bg-[#0d1528]/[0.97] p-4 text-left shadow-float backdrop-blur-xl";
+  const label = `${city.city}: ${city.value} µg/m³ PM2.5, ${cat ?? "no category"}${city.official_aqi ? `. ${officialAqiText(city.official_aqi)}` : ""}`;
   return (
     <li className={cn("absolute", open ? "z-30" : "z-10")} style={{ left: x, top: y }}>
       <div
@@ -253,8 +255,10 @@ function CityMarker({ city, date, x, y, side, phone, open, cardAt, onOpen }: {
             </div>
             <p className="mt-1.5 flex items-baseline gap-1.5">
               <span className="num text-2xl font-medium">{city.value.toFixed(1)}</span>
-              <span className="text-xs text-subtle">µg/m³ PM2.5</span>
+              <span className="text-xs text-subtle">µg/m³</span>
             </p>
+            <p className="text-[11px] text-faint"><Term k="pm25" /> concentration, not <Term k="aqi" /></p>
+            <OfficialAqiChip aqi={city.official_aqi} size="sm" className="mt-2" />
             <p className="mt-1 text-xs text-subtle">{city.stations_reporting} of {city.stations_total} stations reporting</p>
             <p className="text-xs text-faint">24-hour average, {fmtDate(date)}</p>
             {phone && (

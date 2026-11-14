@@ -44,8 +44,9 @@ export function rankStations(list: ExploreStation[], i: number): ExploreStation[
   });
 }
 
-export function rankCities(d: ExploreData, i: number): { city: string; value: number | null; stations: number }[] {
-  return CITIES.map((c) => ({ city: c, value: d.cities[c]?.values[i] ?? null, stations: d.cities[c]?.stations_reporting[i] ?? 0 }))
+export function rankCities(d: ExploreData, i: number): { city: string; value: number | null; stations: number; aqi: { aqi: number; category: string } | null }[] {
+  return CITIES.map((c) => ({ city: c, value: d.cities[c]?.values[i] ?? null, stations: d.cities[c]?.stations_reporting[i] ?? 0,
+    aqi: d.cities[c]?.aqi?.[i] ?? null }))
     .sort((a, b) => (b.value ?? -1) - (a.value ?? -1));
 }
 

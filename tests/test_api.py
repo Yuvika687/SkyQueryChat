@@ -624,3 +624,35 @@ def test_day_over_day_change_only_against_a_valid_previous_day(store):
                 assert x["previous"] == prev and x["change"] == round(x["value"] - prev["value"], 1)
         h = c.get("/api/city/delhi").json()["hero"]
         assert "change" in h and "previous" in h
+
+
+def test_official_aqi_chip_comes_from_the_stored_bulletin(store):
+    """Home, Explore and city pages show the official CPCB AQI for the same date, read from the stored bulletin."""
+    with TestClient(make(store)) as c:
+        d = c.get("/api/latest").json()
+        aqi = store.tables["city_daily_aqi"]
+        for x in d["cities"]:
+            o = x["official_aqi"]
+            assert o["date"] == d["date"]
+            row = aqi[(aqi.city == x["city"]) & (aqi.bulletin_date.astype(str) == d["date"])]
+            if len(row):
+                assert o["available"] and o["aqi"] == int(round(float(row.aqi.iloc[0])))
+                assert o["category"] == row.aqi_category.iloc[0] and "cpcb" in o["source"].lower()
+                assert o["period_end"].startswith(f"{d['date']}T16:00")        # the 4 PM bulletin of that date
+            else:
+                assert o == {"available": False, "date": d["date"]}
+        ex = c.get("/api/explore").json()
+        for city, v in ex["cities"].items():
+            assert len(v["aqi"]) == 30
+            last = next(x for x in d["cities"] if x["city"] == city)["official_aqi"]
+            assert (v["aqi"][-1] or {}).get("aqi") == last.get("aqi")
+        hero = c.get("/api/city/delhi").json()["hero"]
+        assert hero["official_aqi"] == next(x for x in d["cities"] if x["city"] == "Delhi")["official_aqi"]
+
+
+def test_official_aqi_missing_bulletin_is_never_estimated(store):
+    from datetime import date
+    from backend.analysis import functions as F
+    t = F.official_aqi_by_date(store, [date(2026, 11, 11)])
+    assert F.official_aqi_entry(t, "Delhi", date(2026, 11, 12)) == {"available": False, "date": "2026-11-12"}
+    assert F.official_aqi_entry({}, "Delhi", date(2026, 11, 11)) == {"available": False, "date": "2026-11-11"}

@@ -16,6 +16,8 @@ import type { ExploreData, ExploreStation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { askHref } from "@/components/ds/ask-box";
 import { CategoryBadge, ScaleBar } from "@/components/ds/data-display";
+import { OfficialAqiChip } from "@/components/ds/official-aqi";
+import { Term } from "@/components/ds/term";
 
 const ORDER: Category[] = ["Good", "Satisfactory", "Moderate", "Poor", "Very poor", "Severe"];
 
@@ -194,24 +196,32 @@ export function CityRanking({ data, day, onCity }: { data: ExploreData; day: num
               <button
                 type="button"
                 onClick={() => onCity(c.city)}
-                className="flex min-h-11 w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left hover:bg-white/[0.04]"
+                className="flex min-h-11 w-full flex-col gap-1 rounded-xl px-2.5 py-2 text-left hover:bg-white/[0.04]"
               >
-                <span className="num w-5 text-xs text-faint" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
-                <span className="flex-1 font-medium">{c.city}</span>
-                {c.value != null ? (
-                  <>
-                    <span className="num text-[15px] font-semibold">{c.value.toFixed(1)}</span>
-                    <CategoryBadge category={cat} size="sm" />
-                  </>
-                ) : (
-                  <span className="text-xs text-faint">No city value</span>
-                )}
+                <span className="flex w-full items-center gap-3">
+                  <span className="num w-5 text-xs text-faint" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
+                  <span className="flex-1 font-medium">{c.city}</span>
+                  {c.value != null ? (
+                    <>
+                      <span className="num text-[15px] font-semibold">{c.value.toFixed(1)}<span className="sr-only"> µg/m³ {POLLUTANT_LABEL[pol]}</span></span>
+                      <CategoryBadge category={cat} size="sm" />
+                    </>
+                  ) : (
+                    <span className="text-xs text-faint">No city value</span>
+                  )}
+                </span>
+                <span className="pl-8">
+                  <OfficialAqiChip aqi={{ available: !!c.aqi, date: data.dates[day], aqi: c.aqi?.aqi, category: c.aqi?.category }} size="sm" plain showSource={false} />
+                </span>
               </button>
             </li>
           );
         })}
       </ol>
-      <p className="mt-2 text-[11.5px] text-faint">24-hour city average in µg/m³ on {fmtDate(data.dates[day])}. Choose a city to see its stations.</p>
+      <p className="mt-2 text-[11.5px] text-faint">
+        Big number: <Term k={pol} /> concentration (<Term k="ugm3" />), not <Term k="aqi" />, 24-hour city average on {fmtDate(data.dates[day])}.
+        Official AQI: <Term k="cpcb" /> 4 PM bulletin for the same date. Choose a city to see its stations.
+      </p>
     </div>
   );
 }

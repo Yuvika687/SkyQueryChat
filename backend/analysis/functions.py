@@ -701,6 +701,32 @@ def aqi_calendar_chart(s: Store, city: str, year: int) -> ChartSpec:
 
 
 # ----------------------------------------------------------------------------- home: latest available values
+def official_aqi_by_date(s: Store, dates: list[date]) -> dict[str, dict[date, dict]]:
+    """Official CPCB AQI from our stored 4 PM bulletins, keyed by city and bulletin date. Read-only, never estimated:
+    a date without a stored bulletin is simply absent (the UI says "bulletin not available")."""
+    if not dates:
+        return {}
+    q = s.q("SELECT city, bulletin_date, aqi, aqi_category, period_start_ist, period_end_ist, source FROM city_daily_aqi "
+            "WHERE bulletin_date BETWEEN ? AND ? AND aqi IS NOT NULL", [min(dates), max(dates)])
+    out: dict[str, dict[date, dict]] = {}
+    want = set(dates)
+    for x in q.itertuples():
+        d = pd.to_datetime(x.bulletin_date).date()
+        if d not in want:
+            continue
+        out.setdefault(x.city, {})[d] = {
+            "date": str(d), "aqi": int(round(float(x.aqi))), "category": x.aqi_category,
+            "period_start": pd.Timestamp(x.period_start_ist).isoformat(), "period_end": pd.Timestamp(x.period_end_ist).isoformat(),
+            "source": x.source}
+    return out
+
+
+def official_aqi_entry(table: dict[str, dict[date, dict]], city: str, d: date) -> dict:
+    """The chip payload: the bulletin row, or an explicit 'not available' marker for that date."""
+    row = table.get(city, {}).get(d)
+    return {"available": True, **row} if row else {"available": False, "date": str(d)}
+
+
 def latest_city_values(s: Store, pollutant: str = "pm25", days: int = 7) -> dict:
     """Each city's measured city value on the latest date every city has one, plus the `days` days up to it.
     Read-only, no LLM. A day without a valid city value (fewer stations than the rule needs) is None, so the
@@ -714,6 +740,7 @@ def latest_city_values(s: Store, pollutant: str = "pm25", days: int = 7) -> dict
     week = [end - timedelta(days=i) for i in range(days - 1, -1, -1)]
     st = s.q("SELECT city, location_id, AVG(lat) AS lat, AVG(lon) AS lon FROM stations WHERE tier='primary' "
              "GROUP BY city, location_id")
+    aqi = official_aqi_by_date(s, [end])
     cities = []
     for c in C.CITIES:
         x = ok[ok.city == c].set_index("local_date")
@@ -724,6 +751,8 @@ def latest_city_values(s: Store, pollutant: str = "pm25", days: int = 7) -> dict
             "stations_total": int(row.n_primary_stations), "primary_stations": int(len(pos)),
             "lat": round(float(pos.lat.mean()), 4), "lon": round(float(pos.lon.mean()), 4),
             "series": [{"date": str(d), "value": r(float(x.loc[d, "city_mean"])) if d in x.index else None} for d in week],
+            # official CPCB AQI for the same date, from its 4 PM bulletin (a separate metric, never mixed with PM)
+            "official_aqi": official_aqi_entry(aqi, c, end),
             # change versus the previous calendar day, only when that day has a valid city value (never a gap-bridging)
             **({"previous": {"date": str(week[-2]), "value": r(float(x.loc[week[-2], "city_mean"]))},
                 # from the values as shown (one decimal), so the change always matches the two figures on screen
@@ -774,11 +803,15 @@ def explore_data(s: Store, pollutant: str = "pm25", days: int = 30) -> dict:
     cd = s.q("SELECT city, local_date, city_mean, meets_rule, n_valid_stations FROM city_daily "
              "WHERE pollutant=? AND local_date BETWEEN ? AND ?", [pollutant, dates[0], end])
     cd["local_date"] = pd.to_datetime(cd["local_date"]).dt.date
+    aqi = official_aqi_by_date(s, dates)
     cities = {}
     for c in C.CITIES:
         x = cd[cd.city == c].set_index("local_date")
         cities[c] = {"values": [r(float(x.loc[d, "city_mean"])) if d in x.index and bool(x.loc[d, "meets_rule"]) else None for d in dates],
-                     "stations_reporting": [int(x.loc[d, "n_valid_stations"]) if d in x.index else 0 for d in dates]}
+                     "stations_reporting": [int(x.loc[d, "n_valid_stations"]) if d in x.index else 0 for d in dates],
+                     # official AQI per date (None = no stored bulletin for that date); compact: value and category only
+                     "aqi": [{"aqi": a["aqi"], "category": a["category"]} if (a := aqi.get(c, {}).get(d)) else None
+                             for d in dates]}
     return {"pollutant": pollutant, "units": PM_UNITS, "data_type": "measured", "source": SRC_OPENAQ,
             "dates": [str(d) for d in dates], "min_valid_hours": C.MIN_VALID_HOURS_PER_DAY, "cities": cities,
             "stations": stations}

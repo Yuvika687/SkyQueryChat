@@ -11,6 +11,19 @@ import { fmtDate, fmtRange } from "@/lib/format";
 import { CREDIT_ITEMS } from "@/lib/map-base";
 import type { EvalSummary, Scoreboard } from "@/lib/types";
 import { useApp } from "./app-context";
+import { Term } from "@/components/ds/term";
+import { GLOSSARY, GLOSSARY_ORDER } from "@/lib/glossary";
+
+/** CPCB's daily AQI bulletin page (the 4 PM city table), so anyone can compare our official AQI with the source. */
+export const CPCB_BULLETIN = "https://cpcb.gov.in/AQI_Bulletin.php";
+
+/** "76.2–97.5%": the lowest and highest share of days within 20% across the cities (stored figures, not recomputed). */
+export function ccRange(cc: Record<string, { within_20pct: number }>): string {
+  const v = Object.values(cc).map((x) => x.within_20pct).filter((x) => Number.isFinite(x));
+  if (!v.length) return "";
+  const lo = Math.min(...v), hi = Math.max(...v);
+  return lo === hi ? `${lo}%` : `${lo}–${hi}%`;
+}
 
 const SETS: { key: string; name: string; note: string; history?: string }[] = [
   { key: "main", name: "Main question set", note: "trends, comparisons, Diwali, weather, unusual days and trick questions" },
@@ -69,6 +82,27 @@ export function DataPanel({ open, onOpenChange }: { open: boolean; onOpenChange:
                 {w.weather_end && <li>Weather: {fmtRange(w.weather_start, w.weather_end)}</li>}
               </ul>
             )}
+          </Section>
+
+          <Section title="Check our numbers">
+            <ul data-testid="check-numbers" className="flex list-disc flex-col gap-1 pl-4 text-[13px] text-subtle marker:text-faint">
+              <li><Term k="aqi" /> is a 0–500 index; <Term k="pm25" /> and <Term k="pm10" /> are concentrations in <Term k="ugm3" />, so the numbers differ.</li>
+              <li><Term k="cpcb" />&apos;s AQI covers 4 PM to 4 PM; our PM values are midnight-to-midnight averages of stations with at least 16 valid hours.</li>
+              <li>Our latest date is {latest ? <strong className="font-semibold text-foreground">{fmtDate(latest.date)}</strong> : "loading"}; news sites and Google show today.</li>
+              <li>Compare with <a className="underline underline-offset-2 hover:text-teal" href={CPCB_BULLETIN} target="_blank" rel="noreferrer">CPCB&apos;s daily AQI bulletin</a> (the 4 PM city table).</li>
+              {cc && <li>Our cross-check: an AQI estimated from our PM data was within 20% of CPCB&apos;s on {ccRange(cc)} of days, depending on the city.</li>}
+            </ul>
+          </Section>
+
+          <Section title="Short terms">
+            <dl className="flex flex-col gap-1.5 text-[13px]">
+              {GLOSSARY_ORDER.map((k) => (
+                <div key={k} className="grid grid-cols-[64px_minmax(0,1fr)] gap-2">
+                  <dt className="font-semibold">{GLOSSARY[k].short}</dt>
+                  <dd className="text-subtle"><span className="text-foreground">{GLOSSARY[k].full}.</span> {GLOSSARY[k].meaning}</dd>
+                </div>
+              ))}
+            </dl>
           </Section>
 
           <Section title="Sources and licences">

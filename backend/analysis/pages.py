@@ -137,6 +137,7 @@ def city_page(s: Store, city: str, latest: dict | None = None, explore: dict | N
         "hero": {"pm25": hero["value"], "pm10": next(c["value"] for c in latest["pm10"]["cities"] if c["city"] == city),
                  "stations_reporting": hero["stations_reporting"], "stations_total": hero["stations_total"],
                  "previous": hero.get("previous"), "change": hero.get("change"),
+                 "official_aqi": hero.get("official_aqi"),
                  "rank_of_six": rank, "date": str(end)},
         "trend30": {"start": str(start30), "end": str(end), **trend,
                     "trend": _trend_out(t30)},

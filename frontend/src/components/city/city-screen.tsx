@@ -9,6 +9,8 @@ import { LazyChart } from "@/components/chart/lazy-chart";
 import { askHref } from "@/components/ds/ask-box";
 import { CategoryBadge, ScaleBar, StatNumber, categoryOf } from "@/components/ds/data-display";
 import { DayChange } from "@/components/ds/day-change";
+import { OfficialAqiChip } from "@/components/ds/official-aqi";
+import { Term } from "@/components/ds/term";
 import { copyText, download, toCSV, useToast } from "@/components/ds/toast";
 import { HEALTH_SOURCE, healthNote } from "@/lib/health";
 import { DataGate } from "@/components/ds/data-state";
@@ -88,13 +90,15 @@ function Hero({ d, className }: { d: CityPage; className?: string }) {
     <section aria-labelledby="hero-title" className={cn("glass relative flex flex-col overflow-hidden rounded-2xl p-5 shadow-card sm:p-6", className)}>
       <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-teal/10 blur-3xl" />
       <h2 id="hero-title" className="text-[13px] text-subtle">
-        PM2.5 · 24-hour city average · latest available, <strong className="font-semibold text-foreground">{fmtDate(h.date)}</strong>
+        PM2.5 (fine particles) · 24-hour city average · latest available, <strong className="font-semibold text-foreground">{fmtDate(h.date)}</strong>
       </h2>
       <p className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-2">
         <StatNumber value={h.pm25} className="text-[64px] leading-none font-medium tracking-tight" />
-        <span className="text-[15px] text-subtle">µg/m³</span>
+        <span className="text-[15px] text-subtle">µg/m³ (micrograms per cubic metre)</span>
         <CategoryBadge category={cat} label="PM2.5 category" className="ml-auto" />
       </p>
+      <p className="mt-1 text-[12.5px] text-faint"><Term k="pm25" /> concentration (<Term k="ugm3" />), not <Term k="aqi" /></p>
+      <OfficialAqiChip aqi={h.official_aqi} className="mt-3 self-start" />
       <DayChange change={h.change} previous={h.previous} className="mt-2 text-[13px]" />
       <ScaleBar value={h.pm25} scale="pm25" className="mt-4" />
       {healthNote(cat) && (
@@ -104,7 +108,7 @@ function Hero({ d, className }: { d: CityPage; className?: string }) {
         </p>
       )}
       <dl className="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-4 text-[13px]">
-        <div><dt className="text-faint">PM10</dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.pm10.toFixed(1)} <span className="text-[12px] font-normal text-subtle">µg/m³</span></dd></div>
+        <div><dt className="text-faint">PM10 (coarse particles)</dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.pm10.toFixed(1)} <span className="text-[12px] font-normal text-subtle">µg/m³</span></dd></div>
         <div><dt className="text-faint">Stations reporting</dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.stations_reporting} <span className="text-[12px] font-normal text-subtle">of {h.stations_total}</span></dd></div>
         <div><dt className="text-faint">Among six cities</dt><dd className="mt-0.5 text-[17px] font-semibold">{h.rank_of_six === 1 ? "Highest" : h.rank_of_six === 6 ? "Lowest" : `${ordinal(h.rank_of_six)} highest`}</dd></div>
       </dl>

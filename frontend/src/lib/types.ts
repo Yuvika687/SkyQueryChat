@@ -163,6 +163,17 @@ export interface Meta {
   demo_questions: string[];
 }
 
+/** Official CPCB AQI for one date, from our stored 4 PM bulletin (a separate metric from PM). */
+export interface OfficialAqi {
+  available: boolean;
+  date: string;
+  aqi?: number;
+  category?: string;
+  period_start?: string;
+  period_end?: string;
+  source?: string;
+}
+
 /** GET /api/latest: each city's latest available value and its last 7 days (measured, read-only). */
 export interface LatestCity {
   city: string;
@@ -176,6 +187,8 @@ export interface LatestCity {
   /** Change versus the previous calendar day, only when that day has a value (calculated in Python). */
   change?: number | null;
   previous?: { date: string; value: number } | null;
+  /** Official AQI for the same date (CPCB 4 PM bulletin); `available: false` when the bulletin is missing. */
+  official_aqi?: OfficialAqi;
 }
 export interface Latest {
   date: string;
@@ -227,6 +240,8 @@ export interface ExploreData {
   source: string;
   dates: string[];
   min_valid_hours: number;
-  cities: Record<string, { values: (number | null)[]; stations_reporting: number[] }>;
+  cities: Record<string, { values: (number | null)[]; stations_reporting: number[];
+    /** Official AQI per date (null = no stored bulletin for that date). */
+    aqi?: ({ aqi: number; category: string } | null)[] }>;
   stations: ExploreStation[];
 }
