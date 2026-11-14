@@ -8,13 +8,16 @@ that an agent answer is checked against a second implementation. Each reference 
 from __future__ import annotations
 
 import json
+import os
 from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-APP = Path(__file__).resolve().parents[1] / "data" / "app"
+# Frozen copy of the app tables (evals/data/), so scores stay reproducible while data/app refreshes daily.
+# SKYQ_EVAL_DATA may point at another copy (for example data/app) for a clearly labelled one-off check.
+APP = Path(os.environ.get("SKYQ_EVAL_DATA") or Path(__file__).resolve().parent / "data")
 EVENTS = json.loads((Path(__file__).resolve().parents[1] / "backend" / "config" / "events.json").read_text())
 CITIES = ["Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"]
 

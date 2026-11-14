@@ -88,3 +88,36 @@ def test_each_diwali_baseline_is_the_mean_of_that_citys_own_bulletins():
         assert len(rows) == r.n_days and rows.aqi.mean() == pytest.approx(r.baseline_aqi), (r.city, r.year, r.window)
     w = b[(b.year == 2026) & (b.window == "W2_d7_d1")].set_index("city").baseline_aqi
     assert w["Bengaluru"] == pytest.approx(w["Hyderabad"]) and w["Bengaluru"] == pytest.approx(452 / 7)
+
+
+def test_opencity_step_uses_the_cache_when_raw_files_are_absent_and_never_drops_data(tmp_path):
+    st = pd.DataFrame({"location_id": [1, 2]})
+    with pytest.raises(RuntimeError, match="no cache"):
+        build.opencity_step(st, tmp_path / "none", pd.DataFrame(), cache_dir=tmp_path / "cache", progress=False)
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    parts = {"hourly": pd.DataFrame({"v": [1.0]}), "log": pd.DataFrame({"r": ["x"]}), "blank_hours": pd.DataFrame({"n": [2]})}
+    for n, df in parts.items():
+        df.to_parquet(cache / f"{n}.parquet")
+    h, log, blanks = build.opencity_step(st, tmp_path / "none", pd.DataFrame(), cache_dir=cache, progress=False)
+    assert h.equals(parts["hourly"]) and log.equals(parts["log"]) and blanks.equals(parts["blank_hours"])
+
+
+def test_refresh_checks_reject_changed_history_backwards_dates_and_oversize(tmp_path, monkeypatch):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("refresh_data", Path(__file__).resolve().parents[1] / "scripts" / "refresh_data.py")
+    R = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(R)
+    old = {"city_daily": pd.DataFrame({"city": ["Delhi"] * 2, "pollutant": ["pm25"] * 2,
+                                       "local_date": [date(2026, 11, 1), date(2026, 11, 2)],
+                                       "city_mean": [100.0, 110.0], "meets_rule": [True, True]})}
+    new = old["city_daily"].copy()
+    assert R._unchanged(old["city_daily"], new, ["city", "pollutant", "local_date"], ["city_mean", "meets_rule"],
+                        date(2026, 11, 2), "local_date") == 0
+    new.loc[0, "city_mean"] = 99.0
+    assert R._unchanged(old["city_daily"], new, ["city", "pollutant", "local_date"], ["city_mean", "meets_rule"],
+                        date(2026, 11, 2), "local_date") == 1
+    # API top-up days after the previous archive end may change (archive files replace them)
+    assert R._unchanged(old["city_daily"], new.assign(city_mean=[100.0, 1.0]), ["city", "pollutant", "local_date"],
+                        ["city_mean", "meets_rule"], date(2026, 11, 1), "local_date") == 0
+    assert R.SIZE_LIMIT_MB >= 5

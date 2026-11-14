@@ -1,0 +1,91 @@
+# Daily data refresh: runs the existing pipeline (OpenAQ station data, CPCB daily bulletins, Open-Meteo weather, with
+# every validation and cleaning rule), rebuilds data/app, runs the backend tests and, only if everything passes and the
+# data changed, commits "Refresh data through <date>" to main. That push redeploys Render and Vercel. If any step fails,
+# nothing is committed, the run shows as failed, and the site keeps the last good data.
+name: Refresh data
+
+on:
+  schedule:
+    - cron: "0 2 * * *"          # 02:00 UTC = 7:30 AM IST, every day
+  workflow_dispatch: {}            # "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write                  # to push the data commit
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300           # the first run downloads the whole OpenAQ archive history; later runs reuse the cache
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install
+        run: pip install -r requirements-dev.txt
+
+      # Raw downloads (never committed): OpenAQ archive files, CPCB bulletin PDFs and OpenAQ API top-up files.
+      - name: Restore raw download cache
+        id: raw
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/raw/openaq_archive
+            data/raw/bulletins/cpcb_pdfs
+            data/raw/openaq_api
+          key: raw-${{ github.run_id }}
+          restore-keys: raw-
+
+      - name: Download the UrbanEmissions bulletin table
+        run: |
+          mkdir -p data/raw/bulletins
+          curl -fsSL --retry 3 --retry-delay 10 -o data/raw/bulletins/aqi-bulletins.parquet \
+            https://raw.githubusercontent.com/urbanemissionsinfo/AQI_bulletins/main/data/Processed/aqi-bulletins.parquet
+
+      - name: Refresh data (pipeline and checks)
+        id: refresh
+        env:
+          OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: |
+          if [ -z "$OPENAQ_API_KEY" ]; then echo "::error::Add the OPENAQ_API_KEY repository secret (Settings > Secrets and variables > Actions)"; exit 1; fi
+          python scripts/refresh_data.py
+
+      - name: Save raw download cache
+        if: always() && steps.raw.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/raw/openaq_archive
+            data/raw/bulletins/cpcb_pdfs
+            data/raw/openaq_api
+          key: raw-${{ github.run_id }}
+
+      - name: Backend tests
+        if: steps.refresh.outputs.changed == 'true'
+        run: python -m pytest -q -p no:warnings
+
+      - name: Commit and push
+        if: steps.refresh.outputs.changed == 'true'
+        env:
+          DATA_END: ${{ steps.refresh.outputs.data_end }}
+        run: |
+          label=$(date -d "$DATA_END" '+%-d %b %Y')
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/app data/processed docs/crosscheck_bulletins.json
+          git commit -m "Refresh data through $label"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Nothing new
+        if: steps.refresh.outputs.changed != 'true'
+        run: echo "No new data since the last refresh; nothing to commit."

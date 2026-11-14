@@ -490,6 +490,15 @@ Rules:
   windows come from `R.set_windows_from_store`. Measured (arm64 container, 0.1 CPU, 512 MB): ready 26.5–28.2 s -> 17.9–18.9 s;
   first `/api/latest` 27.7–28.9 s -> 19.6–21.0 s. Every page also sends an early no-cors `/api/health` ping from `<head>`.
   Keep-awake steps: `docs/keep-awake.md` (backend `https://skyquerychat-api.onrender.com`).
+- **Daily refresh:** `.github/workflows/refresh-data.yml` (02:00 UTC = 7:30 AM IST, plus manual) runs
+  `scripts/refresh_data.py` (build --api-topup -> weather --append -> derive -> CPCB cross-check -> checks: ends never move
+  back, published values unchanged, data/app < 8 MB), then the backend tests, then commits "Refresh data through <date>".
+  Secret: `OPENAQ_API_KEY` only. Raw downloads live in the Actions cache. Delhi OpenCity output is cached in
+  `data/processed/opencity_cache/` (`build.opencity_step`; the site blocks automated downloads). Details: `docs/data-refresh.md`.
+- **Frozen evaluation data:** `evals/data/` (tables to 11 Nov 2026); `evals/references.py` and `scripts/run_eval.py` read
+  it (env `SKYQ_EVAL_DATA` overrides; run meta records `data` and `data_end`).
+- **Saved answers with no fixed period** (relative words or "no period stated") get a `saved_older` notice naming their data
+  end once newer data exists (`saved_data_end` in `backend/api/main.py`). `/api/limits` builds the `data_end` text from the data.
 
 ## 6. UI requirements
 

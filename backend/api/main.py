@@ -55,7 +55,26 @@ NOTICES = {
            "pause later; demo questions and the data pages always work.",
     "fallback": "The main AI model is at its shared limit, so this answer uses a backup model.",
     "cached_fallback": "Live AI is at its limit, so this is a saved answer to the same question.",
+    "saved_older": "This is a saved answer that used data up to {end}. Newer data is available now (to {now}); ask "
+                   "with a period, or rephrase, for a fresh answer.",
 }
+# Saved answers to questions with no fixed period ("last 30 days", or no period at all = all data) go out of date when the
+# data is refreshed. They are still served, but with a notice naming the data end they used.
+RELATIVE_Q = re.compile(r"\b(last|latest|recent|past|this (week|month|year)|today|yesterday|now|current)\b", re.I)
+RELATIVE_A = re.compile(r"no period stated|latest|relative to", re.I)
+
+
+def saved_data_end(saved: dict) -> date | None:
+    """The data end a saved answer used, when its period depends on the data end; None for fixed periods."""
+    rq = (saved.get("final") or {}).get("resolved_query") or {}
+    end = rq.get("end_date")
+    relative = RELATIVE_Q.search(saved.get("question", "")) or any(RELATIVE_A.search(a or "") for a in rq.get("assumptions") or [])
+    if not relative or not end:
+        return None
+    try:
+        return date.fromisoformat(str(end)[:10])
+    except ValueError:
+        return None
 MESSAGES = {
     "ai_limit": AI_LIMIT_MSG,
     "ai_busy": "The live AI is busy with other visitors right now. Please try again in about a minute.",
@@ -138,6 +157,10 @@ class Sessions:
                 self.items.pop(min(self.items, key=lambda k: self.items[k][0]))
         self.items[sid] = (now, s)
         return sid, s
+
+
+def _readable(d: date) -> str:
+    return f"{d.day} {d:%b %Y}"
 
 
 def _err(code: str, message: str, rid: str, status: int, headers: dict | None = None) -> JSONResponse:
@@ -296,7 +319,15 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
 
     @app.get("/api/limits")
     async def limits():
-        return json.loads((ROOT / "backend" / "config" / "known_limits.json").read_text())
+        out = json.loads((ROOT / "backend" / "config" / "known_limits.json").read_text())
+        # the data end dates always come from the loaded data, never from fixed text
+        d = R.DATA
+        for x in out.get("limits", []):
+            if x.get("id") == "data_end":
+                x["detail"] = (f"Measured PM ends {d['measured_end']}; official AQI bulletins end {d['aqi_end']}; "
+                               f"weather ends {d['weather_end']}. Recent days the OpenAQ archive has not published yet come "
+                               "from the OpenAQ API and are replaced by archive files on a later refresh.")
+        return out
 
     # ------------------------------------------------------------------ read-only data
     def _city(c: str) -> str:
@@ -505,7 +536,14 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         return bool(st.demo_token and tok and hmac.compare_digest(tok, st.demo_token))
 
     def _notice(code: str, eid: int, **extra) -> str:
-        return sse("notice", {"code": code, "message": NOTICES[code], **extra}, eid)
+        return sse("notice", {"code": code, "message": NOTICES[code].format(**extra) if extra else NOTICES[code], **extra}, eid)
+
+    def _older_notice(saved: dict, eid: int) -> list[str]:
+        end, now = saved_data_end(saved), R.DATA["measured_end"]
+        if end is None or end >= now:
+            return []
+        return [sse("notice", {"code": "saved_older", "message": NOTICES["saved_older"].format(
+            end=_readable(end), now=_readable(now)), "data_end": str(end)}, eid)]
 
     async def _stream(body: ChatRequest, request: Request):
         rid = request.state.request_id
@@ -519,6 +557,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
             hit = (demos[normalise(body.message)], "demo")
         if hit[0] is not None:
             sess.context.update(hit[0].get("context", {}))
+            for x in _older_notice(hit[0], 1):
+                yield x
             async for chunk in _replay(hit[0], rid, sid, hit[1], t0):
                 yield chunk
             return
@@ -546,6 +586,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
             saved = cache.get(body.message) or demos.get(normalise(body.message))
             if saved is not None:
                 yield _notice("cached_fallback", 1)
+                for x in _older_notice(saved, 1):
+                    yield x
                 async for chunk in _replay(saved, rid, sid, "cache", t0):
                     yield chunk
                 return

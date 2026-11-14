@@ -87,7 +87,6 @@ function TermTip({ full, children, className }: { full: string; children: React.
         <span
           id={id}
           role="tooltip"
-          aria-hidden // the full form is already in the button's accessible name
           className="pointer-events-none fixed z-[100] w-max max-w-[260px] rounded-lg border border-line-strong bg-raised px-2.5 py-1.5 text-center text-xs leading-snug font-normal text-foreground shadow-float"
           style={{ left: pos.left, top: pos.top, transform: `translate(-50%, ${pos.below ? "0" : "-100%"})` }}
         >

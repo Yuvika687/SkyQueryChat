@@ -293,6 +293,36 @@ def process_opencity(st_delhi_primary: pd.DataFrame, opencity_dir: Path, proven_
             pd.concat(blanks, ignore_index=True))
 
 
+# Delhi OpenCity files cover 2024-2025 only and never change, but they are 417 MB and their site blocks automated
+# downloads, so the daily refresh cannot fetch them. The output of the step above (same code, same fixed inputs) is kept
+# in data/processed/opencity_cache/ and used whenever the raw files are absent. It is rewritten whenever they are present.
+OPENCITY_CACHE = C.PROCESSED / "opencity_cache"
+_OC_PARTS = ("hourly", "log", "blank_hours")
+
+
+def opencity_step(st_delhi_primary: pd.DataFrame, opencity_dir: Path, proven_hi: pd.DataFrame,
+                  cache_dir: Path = OPENCITY_CACHE, progress: bool = True):
+    """process_opencity from the raw files when all of them are present (and refresh the cache), else the cached
+    output. Never silently drops Delhi's 2024-2025 supporting data: no files and no cache is an error."""
+    ids = sorted(st_delhi_primary["location_id"].unique())
+    have = [lid for lid in ids if (opencity_dir / f"{lid}.csv").exists()]
+    cached = all((cache_dir / f"{n}.parquet").exists() for n in _OC_PARTS)
+    if have and (len(have) == len(ids) or not cached):
+        out = process_opencity(st_delhi_primary, opencity_dir, proven_hi)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        for n, df in zip(_OC_PARTS, out):
+            _write(df, cache_dir / f"{n}.parquet")
+        (cache_dir / "manifest.json").write_text(json.dumps(
+            {"built_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "files": [f"{lid}.csv" for lid in have],
+             "rows": {n: int(len(df)) for n, df in zip(_OC_PARTS, out)}}, indent=1))
+        return out
+    if not cached:
+        raise RuntimeError(f"OpenCity files are missing in {opencity_dir} and there is no cache in {cache_dir}")
+    if progress:
+        print(f"  opencity: raw files not present; using the cached output in {cache_dir}", flush=True)
+    return tuple(pd.read_parquet(cache_dir / f"{n}.parquet") for n in _OC_PARTS)
+
+
 # --------------------------------------------------------------------------- quality
 def build_quality(hourly: pd.DataFrame, active: pd.DataFrame, source: str, scope: str,
                   start: pd.Timestamp, end: pd.Timestamp):
@@ -521,8 +551,8 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
     h_oa, log_oa, other, proven_hi = process_openaq(st, paths, start, data_end)
     hourly, logs, blank_hours = [h_oa], [log_oa], None
     if "Delhi" in cities:
-        h_oc, log_oc, blank_hours = process_opencity(
-            st[(st.city == "Delhi") & (st.tier == "primary")], opencity_dir, proven_hi)
+        h_oc, log_oc, blank_hours = opencity_step(
+            st[(st.city == "Delhi") & (st.tier == "primary")], opencity_dir, proven_hi, progress=progress)
         hourly.append(h_oc)
         logs.append(log_oc)
     hourly = pd.concat(hourly, ignore_index=True)

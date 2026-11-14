@@ -688,3 +688,30 @@ def test_health_answers_at_once_during_a_cold_start_and_loads_no_data(store, mon
         h = c.get("/api/health")
         assert h.status_code == 200 and h.json()["status"] == "ok" and h.json()["data_loaded"] is True
         assert calls["n"] == 1 and built["agent"] == 0   # one data load; health never builds the AI agent
+
+
+def test_saved_answers_with_no_fixed_period_say_which_data_they_used(store):
+    from backend.agent import resolver as R
+    from backend.api.main import saved_data_end
+    rel = {"question": "Is rain associated with lower PM10 in Mumbai?", "final": {"resolved_query": {
+        "start_date": "2025-02-18", "end_date": "2026-10-30",
+        "assumptions": ["no period stated: used all measured data (2025-02-18 to 2026-10-30)"]}}}
+    fixed = {"question": "How bad was Delhi's air on Diwali 2025?", "final": {"resolved_query": {
+        "start_date": "2025-10-06", "end_date": "2025-10-24", "assumptions": []}}}
+    assert str(saved_data_end(rel)) == "2026-10-30" and saved_data_end(fixed) is None
+    last = {"question": "Show PM2.5 levels in Kolkata for the last 30 days", "final": {"resolved_query": {"end_date": "2026-11-11"}}}
+    assert str(saved_data_end(last)) == "2026-11-11"
+    demo = {"is rain associated with lower pm10 in mumbai": {**rel, "steps": [], "final": {
+        **rel["final"], "status": "answered", "answer": "x", "cards": [], "chart": None}}}
+    with TestClient(make(store, demo=demo)) as c:
+        ev = parse(c.post("/api/chat", json={"message": rel["question"]}).text)
+        notes = [d for e, d in ev if e == "notice"]
+        assert notes and notes[0]["code"] == "saved_older" and "30 Oct 2026" in notes[0]["message"]
+        assert f"{R.DATA['measured_end'].day} {R.DATA['measured_end']:%b %Y}" in notes[0]["message"]
+
+
+def test_data_end_limit_comes_from_the_data(store):
+    from backend.agent import resolver as R
+    with TestClient(make(store)) as c:
+        lim = next(x for x in c.get("/api/limits").json()["limits"] if x["id"] == "data_end")
+        assert str(R.DATA["measured_end"]) in lim["detail"] and str(R.DATA["aqi_end"]) in lim["detail"]

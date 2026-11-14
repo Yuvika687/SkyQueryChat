@@ -42,22 +42,22 @@ describe("Term", () => {
     const user = userEvent.setup();
     render(<p>Value in <Term k="pm25" /></p>);
     const btn = screen.getByRole("button", { name: /^PM2\.5\s*\(Particulate Matter, 2\.5 micrometres or smaller\)$/ });
-    expect(screen.queryByRole("tooltip", { hidden: true })).toBeNull();
+    expect(screen.queryByRole("tooltip")).toBeNull();
 
     await user.hover(btn);
-    expect(screen.getByRole("tooltip", { hidden: true })).toHaveTextContent(GLOSSARY.pm25.full);
+    expect(screen.getByRole("tooltip")).toHaveTextContent(GLOSSARY.pm25.full);
     await user.unhover(btn);
-    expect(screen.queryByRole("tooltip", { hidden: true })).toBeNull();
+    expect(screen.queryByRole("tooltip")).toBeNull();
 
     await user.tab();
     expect(btn).toHaveFocus();
-    expect(screen.getByRole("tooltip", { hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("tooltip", { hidden: true })).toBeNull();
+    expect(screen.queryByRole("tooltip")).toBeNull();
     btn.blur();
 
     fireEvent.click(btn);                                              // tap
-    expect(screen.getByRole("tooltip", { hidden: true })).toHaveTextContent(GLOSSARY.pm25.full);
+    expect(screen.getByRole("tooltip")).toHaveTextContent(GLOSSARY.pm25.full);
     expect(btn).toHaveAttribute("aria-expanded", "true");
   });
 
