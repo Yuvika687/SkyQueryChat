@@ -1,0 +1,16 @@
+{
+ "set": "diwali2026",
+ "kind": "first",
+ "started": "2026-11-14 15:42",
+ "model_chain": [
+  "google:gemini-3.5-flash-lite",
+  "google:gemini-3.1-flash-lite",
+  "google:gemini-3.8-flash"
+ ],
+ "data": "evals/data",
+ "data_end": "2026-11-11",
+ "commit": "cf2273d",
+ "ids": "all",
+ "complete": true,
+ "stopped": null
+}

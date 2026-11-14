@@ -3,94 +3,116 @@
  "sets": {
   "main": {
    "main_first_pass": {
-    "run": "20261105-1348_main_first",
-    "started": "2026-11-05 13:48",
+    "run": "20261114-1332_main_first",
+    "started": "2026-11-14 13:32",
     "model_chain": [
      "google:gemini-3.5-flash-lite",
+     "google:gemini-3.1-flash-lite",
      "google:gemini-3.8-flash"
     ],
     "kind": "first",
     "complete": true,
-    "commit": "f89f15a",
+    "commit": "cf2273d",
     "summary": {
      "overall": {
       "turns": 51,
       "pass": 47,
       "pass_pct": 92.2,
-      "tool_choice_pct": 97.7,
+      "tool_choice_pct": 100.0,
       "tool_choice_n": 43,
       "numbers_traceable_pct": 100.0,
-      "answered": 38,
-      "reference_checks_pct": 95.5,
-      "reference_checks_n": 22,
+      "answered": 40,
+      "reference_checks_pct": 91.7,
+      "reference_checks_n": 24,
       "reference_failures": [
-       "chennai_pm25_2026_max"
+       "jul2026_cleanest",
+       "kolkata_diwali2024_category"
       ],
       "refusals_correct_pct": 92.9,
       "refusals_n": 14,
+      "resolved_checks_pct": 97.4,
+      "resolved_checks_n": 38,
+      "resolved_failures": [
+       "C6.1: no resolved_query"
+      ],
+      "pass_lenient_wording_SEPARATE": 47,
       "errors": [
-       "T5.1"
+       "C6.1",
+       "X3.1"
       ],
       "failed": [
-       "T4.1",
-       "T5.1",
+       "C6.1",
+       "D6.1",
        "D7.1",
-       "M1.1"
+       "X3.1"
       ],
-      "verifier_retries": 7,
-      "tokens_median": 3602,
-      "tokens_mean": 4237,
-      "tokens_max": 7993,
-      "tokens_total": 211867
+      "verifier_retries": 11,
+      "tokens_median": 5266,
+      "tokens_mean": 6769,
+      "tokens_max": 14421,
+      "tokens_total": 331657
      },
      "by_model": {
       "gemini-3.5-flash-lite": {
-       "turns": 50,
+       "turns": 49,
        "pass": 47,
-       "pass_pct": 94.0,
+       "pass_pct": 95.9,
        "tool_choice_pct": 100.0,
        "tool_choice_n": 42,
        "numbers_traceable_pct": 100.0,
-       "answered": 38,
-       "reference_checks_pct": 100.0,
-       "reference_checks_n": 21,
-       "reference_failures": [],
-       "refusals_correct_pct": 92.9,
-       "refusals_n": 14,
+       "answered": 40,
+       "reference_checks_pct": 95.7,
+       "reference_checks_n": 23,
+       "reference_failures": [
+        "kolkata_diwali2024_category"
+       ],
+       "refusals_correct_pct": 100.0,
+       "refusals_n": 13,
+       "resolved_checks_pct": 100.0,
+       "resolved_checks_n": 37,
+       "resolved_failures": [],
+       "pass_lenient_wording_SEPARATE": 47,
        "errors": [],
        "failed": [
-        "T4.1",
-        "D7.1",
-        "M1.1"
+        "D6.1",
+        "D7.1"
        ],
-       "verifier_retries": 7,
-       "tokens_median": 3602,
-       "tokens_mean": 4237,
-       "tokens_max": 7993,
-       "tokens_total": 211867
+       "verifier_retries": 10,
+       "tokens_median": 5266,
+       "tokens_mean": 6769,
+       "tokens_max": 14421,
+       "tokens_total": 331657
       },
       "no answer (model error)": {
-       "turns": 1,
+       "turns": 2,
        "pass": 0,
        "pass_pct": 0.0,
-       "tool_choice_pct": 0.0,
+       "tool_choice_pct": 100.0,
        "tool_choice_n": 1,
        "numbers_traceable_pct": null,
        "answered": 0,
        "reference_checks_pct": 0.0,
        "reference_checks_n": 1,
        "reference_failures": [
-        "chennai_pm25_2026_max"
+        "jul2026_cleanest"
        ],
-       "refusals_correct_pct": null,
-       "refusals_n": 0,
+       "refusals_correct_pct": 0.0,
+       "refusals_n": 1,
+       "resolved_checks_pct": 0.0,
+       "resolved_checks_n": 1,
+       "resolved_failures": [
+        "C6.1: no resolved_query"
+       ],
+       "pass_lenient_wording_SEPARATE": 0,
        "errors": [
-        "T5.1"
+        "C6.1",
+        "X3.1"
        ],
        "failed": [
-        "T5.1"
+        "C6.1",
+        "X3.1"
        ],
-       "verifier_retries": 0,
+       "verifier_retries": 1,
        "tokens_median": null,
        "tokens_mean": null,
        "tokens_max": null,
@@ -98,15 +120,15 @@
       }
      },
      "by_category": {
-      "comparison": "6/6",
-      "diwali": "6/7",
+      "comparison": "5/6",
+      "diwali": "5/7",
       "follow_up": "8/8",
-      "missing_data": "4/5",
+      "missing_data": "5/5",
       "trap_causal": "1/1",
       "trap_code": "1/1",
       "trap_injection": "2/2",
-      "trap_pm_percent": "1/1",
-      "trend": "5/7",
+      "trap_pm_percent": "0/1",
+      "trend": "7/7",
       "unsupported": "4/4",
       "unusual_days": "5/5",
       "weather": "4/4"
@@ -1516,8 +1538,8 @@
   },
   "diwali2026": {
    "main_first_pass": {
-    "run": "20261112-1507_diwali2026_first",
-    "started": "2026-11-12 15:07",
+    "run": "20261114-1542_diwali2026_first",
+    "started": "2026-11-14 15:42",
     "model_chain": [
      "google:gemini-3.5-flash-lite",
      "google:gemini-3.1-flash-lite",
@@ -1525,7 +1547,7 @@
     ],
     "kind": "first",
     "complete": true,
-    "commit": "6cea8e7",
+    "commit": "cf2273d",
     "summary": {
      "overall": {
       "turns": 9,
@@ -1546,11 +1568,11 @@
       "pass_lenient_wording_SEPARATE": 9,
       "errors": [],
       "failed": [],
-      "verifier_retries": 3,
-      "tokens_median": 6272,
-      "tokens_mean": 5989,
-      "tokens_max": 9013,
-      "tokens_total": 53901
+      "verifier_retries": 4,
+      "tokens_median": 6591,
+      "tokens_mean": 6488,
+      "tokens_max": 8101,
+      "tokens_total": 58390
      },
      "by_model": {
       "gemini-3.5-flash-lite": {
@@ -1572,11 +1594,11 @@
        "pass_lenient_wording_SEPARATE": 9,
        "errors": [],
        "failed": [],
-       "verifier_retries": 3,
-       "tokens_median": 6272,
-       "tokens_mean": 5989,
-       "tokens_max": 9013,
-       "tokens_total": 53901
+       "verifier_retries": 4,
+       "tokens_median": 6591,
+       "tokens_mean": 6488,
+       "tokens_max": 8101,
+       "tokens_total": 58390
       }
      },
      "by_category": {

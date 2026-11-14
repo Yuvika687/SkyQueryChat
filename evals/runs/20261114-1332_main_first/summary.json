@@ -1,0 +1,121 @@
+{
+ "overall": {
+  "turns": 51,
+  "pass": 47,
+  "pass_pct": 92.2,
+  "tool_choice_pct": 100.0,
+  "tool_choice_n": 43,
+  "numbers_traceable_pct": 100.0,
+  "answered": 40,
+  "reference_checks_pct": 91.7,
+  "reference_checks_n": 24,
+  "reference_failures": [
+   "jul2026_cleanest",
+   "kolkata_diwali2024_category"
+  ],
+  "refusals_correct_pct": 92.9,
+  "refusals_n": 14,
+  "resolved_checks_pct": 97.4,
+  "resolved_checks_n": 38,
+  "resolved_failures": [
+   "C6.1: no resolved_query"
+  ],
+  "pass_lenient_wording_SEPARATE": 47,
+  "errors": [
+   "C6.1",
+   "X3.1"
+  ],
+  "failed": [
+   "C6.1",
+   "D6.1",
+   "D7.1",
+   "X3.1"
+  ],
+  "verifier_retries": 11,
+  "tokens_median": 5266,
+  "tokens_mean": 6769,
+  "tokens_max": 14421,
+  "tokens_total": 331657
+ },
+ "by_model": {
+  "gemini-3.5-flash-lite": {
+   "turns": 49,
+   "pass": 47,
+   "pass_pct": 95.9,
+   "tool_choice_pct": 100.0,
+   "tool_choice_n": 42,
+   "numbers_traceable_pct": 100.0,
+   "answered": 40,
+   "reference_checks_pct": 95.7,
+   "reference_checks_n": 23,
+   "reference_failures": [
+    "kolkata_diwali2024_category"
+   ],
+   "refusals_correct_pct": 100.0,
+   "refusals_n": 13,
+   "resolved_checks_pct": 100.0,
+   "resolved_checks_n": 37,
+   "resolved_failures": [],
+   "pass_lenient_wording_SEPARATE": 47,
+   "errors": [],
+   "failed": [
+    "D6.1",
+    "D7.1"
+   ],
+   "verifier_retries": 10,
+   "tokens_median": 5266,
+   "tokens_mean": 6769,
+   "tokens_max": 14421,
+   "tokens_total": 331657
+  },
+  "no answer (model error)": {
+   "turns": 2,
+   "pass": 0,
+   "pass_pct": 0.0,
+   "tool_choice_pct": 100.0,
+   "tool_choice_n": 1,
+   "numbers_traceable_pct": null,
+   "answered": 0,
+   "reference_checks_pct": 0.0,
+   "reference_checks_n": 1,
+   "reference_failures": [
+    "jul2026_cleanest"
+   ],
+   "refusals_correct_pct": 0.0,
+   "refusals_n": 1,
+   "resolved_checks_pct": 0.0,
+   "resolved_checks_n": 1,
+   "resolved_failures": [
+    "C6.1: no resolved_query"
+   ],
+   "pass_lenient_wording_SEPARATE": 0,
+   "errors": [
+    "C6.1",
+    "X3.1"
+   ],
+   "failed": [
+    "C6.1",
+    "X3.1"
+   ],
+   "verifier_retries": 1,
+   "tokens_median": null,
+   "tokens_mean": null,
+   "tokens_max": null,
+   "tokens_total": 0
+  }
+ },
+ "by_category": {
+  "comparison": "5/6",
+  "diwali": "5/7",
+  "follow_up": "8/8",
+  "missing_data": "5/5",
+  "trap_causal": "1/1",
+  "trap_code": "1/1",
+  "trap_injection": "2/2",
+  "trap_pm_percent": "0/1",
+  "trend": "7/7",
+  "unsupported": "4/4",
+  "unusual_days": "5/5",
+  "weather": "4/4"
+ }
+}
