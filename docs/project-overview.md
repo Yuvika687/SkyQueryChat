@@ -1,6 +1,6 @@
 # SkyQueryChat: project overview
 
-Status as of 16 Nov 2026. Every figure below is read from the repository (configuration, data manifests, the evaluation
+Status as of 16 Nov 2026 (evening). Every figure below is read from the repository (configuration, data manifests, the evaluation
 scoreboard and test runs). Live site: <https://sky-query-chat.vercel.app>.
 
 ## 1. Summary
@@ -45,14 +45,14 @@ flowchart LR
 
 | Source | What it provides | Type | Coverage in the app |
 |---|---|---|---|
-| OpenAQ S3 archive, plus the OpenAQ API for days the archive has not yet published | Hourly PM2.5 and PM10 from CPCB reference stations (and some low-cost sensors, kept in a separate tier) | Measured | 18 Feb 2025 to 13 Nov 2026 (archive to 10 Nov, API for later days) |
-| CPCB daily AQI bulletins (UrbanEmissions' parsed table, then CPCB's own PDFs for later dates) | Official city AQI, category and prominent pollutant, 4 PM to 4 PM | Official AQI | to 13 Nov 2026 |
-| Open-Meteo Historical Weather API (Copernicus C3S reanalysis) | Daily temperature, humidity, wind and rain per city | Modelled | 18 Feb 2025 to 13 Nov 2026 |
+| OpenAQ S3 archive, plus the OpenAQ API for days the archive has not yet published | Hourly PM2.5 and PM10 from CPCB reference stations (and some low-cost sensors, kept in a separate tier) | Measured | 18 Feb 2025 to 15 Nov 2026 (archive to 10 Nov, API for later days) |
+| CPCB daily AQI bulletins (UrbanEmissions' parsed table, then CPCB's own PDFs for later dates) | Official city AQI, category and prominent pollutant, 4 PM to 4 PM | Official AQI | to 15 Nov 2026 |
+| Open-Meteo Historical Weather API (Copernicus C3S reanalysis) | Daily temperature, humidity, wind and rain per city | Modelled | 18 Feb 2025 to 15 Nov 2026 |
 | OpenCity (CPCB data) | Delhi PM around Diwali 2024 and 2025 | Measured, supporting only | fixed files; values above 999 µg/m³ are blank |
 
 Stations in the app tables: Delhi 37 primary reference stations, Mumbai 22, Hyderabad 9, Kolkata 7, Chennai 6 and
 Bengaluru 6 (87 in total), plus 15 low-cost sensors and 9 supporting single stations kept out of city averages. The app
-tables in `data/app` are 3.2 MB.
+tables in `data/app` are about 3.3 MB.
 
 **Cleaning and validation rules** (`backend/pipeline/transform.py`, `quality.py`, `derive.py`):
 
@@ -66,12 +66,14 @@ tables in `data/app` are 3.2 MB.
 - Missing data is never filled in. Hours when much of the station network is silent are recorded as gaps, and each
   city-date gets a quality level (none, minor, moderate, severe).
 
-**Daily refresh:** `.github/workflows/refresh-data.yml` (02:00 UTC daily, plus manual runs) runs
-`scripts/refresh_data.py`, which rebuilds the tables, checks that end dates never move back, that published values do not
-change and that `data/app` stays under 8 MB, runs the backend tests and commits "Refresh data through <date>". **It has
-not yet completed successfully on GitHub**: the last three runs (14–16 Nov) failed because the build needs files that
-exist only on the owner's machine. A fix (incremental build, cached OpenCity outputs) is written and tested locally but
-not yet committed. The current data was refreshed by running the same script locally.
+**Daily refresh:** `.github/workflows/refresh-data.yml` (02:00 UTC daily, plus manual runs, 30-minute job limit) runs
+`scripts/refresh_data.py`. The build is incremental: it continues from the committed `data/processed` tables and
+downloads only the days from their OpenAQ archive end, so it never fetches the full history and needs no file that exists
+only on a local machine (the Delhi OpenCity results come from a small committed cache). It then checks that end dates
+never move back, that published values do not change and that `data/app` stays under 8 MB, runs the backend tests, and
+commits "Refresh data through <date>" only when data changed (build times alone do not count). A source that cannot be
+reached keeps its previous data and is reported as a warning. First green run: 16 Nov 2026, 11.6 minutes in total (7.7
+for the refresh and checks, 3 for the tests), committing "Refresh data through 15 Nov 2026".
 
 ## 4. AI agent
 
@@ -141,28 +143,32 @@ The statistics are written with numpy only (`backend/analysis/stats.py`); tests 
 
 ## 8. Quality
 
-**Tests** (run 16 Nov 2026): 305 backend tests pass; 73 frontend unit tests pass; lint, typecheck and production build
-pass. Playwright browser tests: 120 tests, of which 104 passed and 16 are skipped by screen size, with zero serious or
-critical axe accessibility issues on every page at three sizes (last full run 14 Nov 2026, before the latest Ask redesign).
+**Tests** (run 16 Nov 2026, after the Ask redesign): 317 backend tests pass (on GitHub Actions 315 pass and 2 are
+skipped: a local-file check and the memory check, whose runner figure is not representative of Render); 73 frontend unit
+tests pass; lint, typecheck and production build pass. Playwright: 120 browser tests, 104 passed and 16 skipped by screen
+size, with zero serious or critical axe accessibility issues on every page at three sizes.
 
 **Evaluations** (`evals/scoreboard.json`): first-pass runs only, scored against reference values computed separately in
 plain pandas and scipy, on a frozen copy of the data (`evals/data`, to 11 Nov 2026). Reruns are kept apart.
 
 | Set | First pass | Numbers traced | Run | Answer wording |
 |---|---:|---:|---|---|
-| Main (51 turns) | 47 / 51 (92.2%) | 100% | 14 Nov 2026 | current |
-| Holdout 2, unseen (11) | 11 / 11 | 100% | 13 Nov 2026 | current |
+| Main (51 turns) | 47 / 51 (92.2%) | 100% | 14 Nov 2026 | earlier |
+| Holdout 2, unseen (11) | 11 / 11 | 100% | 13 Nov 2026 | earlier |
 | Holdout 1, retired (11) | 11 / 11 | 100% | 5 Nov 2026 | earlier |
-| Diwali 2026 (9) | 9 / 9 | 100% | 14 Nov 2026 | current |
-| Analysis and comparisons (12) | 10 / 12 (83.3%) | 100% | 16 Nov 2026 | current |
-| Conversation (14 turns) | 12 / 14 (85.7%) | 100% | 16 Nov 2026 | current |
+| Diwali 2026 (9) | 9 / 9 | 100% | 14 Nov 2026 | earlier |
+| Statistics and comparisons (12) | 11 / 12 (91.7%) | 100% | 16 Nov 2026 | current |
+| Conversation (15 turns) | 14 / 15 (93.3%) | 100% | 16 Nov 2026 | current |
 
-Known failures: in the analysis set, the six-city winter comparison ended in an error (fixed after the run, not
-rescored) and one reference still expects a per-month trend where the app now reports a total change; in the
-conversation set, one knowledge question was labelled "about" and "delhi?" was answered instead of clarified.
+The current answer wording dates from 16 Nov 2026. The two latest sets were run twice as first runs on 16 Nov; the
+earlier runs (10/12 and 12/14, before the comparison and clarify fixes) stay on record in `evals/runs/`. Remaining
+failures: in the statistics set, the "last 30 days" Mumbai trend was answered by the code-written fallback, which omitted
+"no clear trend"; in the conversation set, "delhi?" was analysed instead of clarified (fixed after the run and checked by
+hand three times; not rescored). **Code-written fallback headlines:** 1 of 12 answered turns (8.3%) in the statistics
+set, 0 of 11 in the conversation set, 1 of 40 in the main set.
 
-**Lighthouse** (desktop, 13 Nov 2026): Home 99 / 100 / 100 / 100 and Ask 100 / 100 / 100 / 100 (performance,
-accessibility, best practices, SEO). Not re-measured after the latest Ask redesign.
+**Lighthouse** (desktop, production build, 16 Nov 2026, after the Ask redesign, two runs each): Home 99 / 100 / 100 / 100
+and Ask 99 / 100 / 100 / 100 (performance, accessibility, best practices, SEO).
 
 ## 9. Deployment and operations
 
@@ -170,7 +176,7 @@ accessibility, best practices, SEO). Not re-measured after the latest Ask redesi
 - **Backend:** Render free web service (0.1 CPU, 512 MB, Singapore) from `render.yaml`, health check `/api/health`. It
   sleeps after 15 minutes idle; start-up takes about 18–19 s at 0.1 CPU after Render's own wake-up. Every page sends an
   early wake-up ping, and `docs/keep-awake.md` describes a free UptimeRobot monitor that keeps it awake.
-- **Data refresh:** GitHub Actions workflow described in section 3 (currently failing; fix pending).
+- **Data refresh:** GitHub Actions workflow described in section 3; green since 16 Nov 2026.
 - **Secrets** (names only; values are set in each service's dashboard and never committed): `GEMINI_API_KEY` and
   `DEMO_ACCESS_TOKEN` on Render; `DEMO_ACCESS_TOKEN` on Vercel (server-side only); `OPENAQ_API_KEY` as a GitHub Actions
   secret and in local `.env`; `GROQ_API_KEY` optional and unused in production. Non-secret settings include
@@ -179,7 +185,8 @@ accessibility, best practices, SEO). Not re-measured after the latest Ask redesi
 ## 10. Limitations
 
 - The AI runs on free Gemini quotas shared by all visitors; when they run out, Ask says so (other pages still work).
-- The daily data refresh does not yet run successfully on GitHub; data is refreshed manually until the fix is committed.
+- The daily refresh can only add days the sources have published; OpenAQ's archive lags a few days (the API fills the
+  gap), and the refresh has run green once so far.
 - About 30% of city-days have network-wide gaps in the OpenAQ archive; they are labelled, not filled.
 - Measured data starts on 18 Feb 2025 (OpenAQ has no CPCB data from Nov 2022 to then); recent days appear only once a
   source publishes them.

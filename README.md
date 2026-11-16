@@ -4,7 +4,7 @@
 
 <br>
 
-[![Live demo](https://img.shields.io/badge/Live_demo-sky--query--chat.vercel.app-2DD4BF?style=flat-square&logo=vercel&logoColor=white)](https://sky-query-chat.vercel.app) ![Next.js](https://img.shields.io/badge/Next.js-16.4-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688?style=flat-square&logo=fastapi&logoColor=white) ![Gemini](https://img.shields.io/badge/Gemini-3.5_Flash--Lite-8E75B2?style=flat-square&logo=googlegemini&logoColor=white) ![MapLibre](https://img.shields.io/badge/MapLibre_GL-6.16-396CB2?style=flat-square&logo=maplibre&logoColor=white) ![Lighthouse](https://img.shields.io/badge/Lighthouse-99%E2%80%93100-F44B21?style=flat-square&logo=lighthouse&logoColor=white) ![Tests](https://img.shields.io/badge/Tests-285_backend-22C55E?style=flat-square&logo=pytest&logoColor=white)
+[![Live demo](https://img.shields.io/badge/Live_demo-sky--query--chat.vercel.app-2DD4BF?style=flat-square&logo=vercel&logoColor=white)](https://sky-query-chat.vercel.app) ![Next.js](https://img.shields.io/badge/Next.js-16.4-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688?style=flat-square&logo=fastapi&logoColor=white) ![Gemini](https://img.shields.io/badge/Gemini-3.5_Flash--Lite-8E75B2?style=flat-square&logo=googlegemini&logoColor=white) ![MapLibre](https://img.shields.io/badge/MapLibre_GL-6.16-396CB2?style=flat-square&logo=maplibre&logoColor=white) ![Lighthouse](https://img.shields.io/badge/Lighthouse-99%E2%80%93100-F44B21?style=flat-square&logo=lighthouse&logoColor=white) ![Tests](https://img.shields.io/badge/Tests-317_backend-22C55E?style=flat-square&logo=pytest&logoColor=white)
 
 **[Live site](https://sky-query-chat.vercel.app)** · **[How it works](#how-the-agent-works)** · **[Evaluation](#evaluation)**
 
@@ -141,13 +141,17 @@ plain pandas and scipy. Reruns are kept apart.
 
 | Set | First pass | Numbers traced | Run date | Wording |
 |---|---:|---:|---|---|
-| Main (51 questions) | **47 / 51** | 100% | 14 Nov 2026 | current |
-| Unseen (holdout 2) | **11 / 11** | 100% | 13 Nov 2026 | current |
+| Main (51 questions) | **47 / 51** | 100% | 14 Nov 2026 | earlier |
+| Unseen (holdout 2) | **11 / 11** | 100% | 13 Nov 2026 | earlier |
 | First unseen (retired) | **11 / 11** | 100% | 5 Nov 2026 | earlier |
-| Diwali 2026 | **9 / 9** | 100% | 14 Nov 2026 | current |
-| Statistics | **8 / 8** \* | 100% | 13 Nov 2026 | current |
+| Diwali 2026 | **9 / 9** | 100% | 14 Nov 2026 | earlier |
+| Statistics and comparisons (12) | **11 / 12** | 100% | 16 Nov 2026 | current |
+| Conversation (15 turns) | **14 / 15** | 100% | 16 Nov 2026 | current |
 
-\* After fixing a trend-wording bug found in a first run of 5/8. The current answer wording dates from 13 Nov 2026.
+The current answer wording dates from 16 Nov 2026 (comparison answers lead with the higher city, difference, ratio and
+period). In the latest runs, Gemini wrote every headline except one in the statistics set, where the checked
+code-written fallback was used (8.3% of answered turns; 0% in the conversation set). Earlier first runs of the same two
+sets (10/12 and 12/14) stay on record in `evals/runs/`.
 Evaluations run on a frozen copy of the data (`evals/data/`, to 11 Nov 2026), so scores stay reproducible while the site's
 data refreshes daily. Runs are in `evals/runs/`; the scoreboard is
 `evals/scoreboard.json`.
@@ -167,7 +171,7 @@ data refreshes daily. Runs are in `evals/runs/`; the scoreboard is
 | Frontend | Next.js 16, TypeScript, Tailwind CSS 4, shadcn/ui, Apache ECharts, MapLibre GL, Framer Motion (Vercel) |
 | Backend | Python 3.13, FastAPI with Server-Sent Events, pandas, DuckDB, Parquet (Render) |
 | Agent | Pydantic AI with Gemini 3.5 Flash-Lite, then 3.1 Flash Lite and 3.8 Flash; one shared quota limiter |
-| Tests | 285 backend tests, 68 frontend unit tests, 120 Playwright tests (104 run, 16 size-specific skips) with axe accessibility checks |
+| Tests | 317 backend tests, 73 frontend unit tests, 120 Playwright tests (104 run, 16 size-specific skips) with axe accessibility checks (zero serious or critical issues), all on 16 Nov 2026 |
 
 ## Run locally
 

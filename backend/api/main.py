@@ -455,7 +455,7 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
 
     # The answer wording the live app uses (readable dates, caveats kept in the answer) dates from this day.
     # A first-pass run that started earlier was measured with an earlier wording; the panel says so.
-    ANSWER_WORDING_SINCE = "2026-11-13"
+    ANSWER_WORDING_SINCE = "2026-11-16"     # comparison headline shape, no "noting", bare names clarified
 
     @app.get("/api/accuracy")
     async def accuracy():
