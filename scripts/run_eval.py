@@ -165,6 +165,10 @@ def summarise(rows: list[dict]) -> dict:
             "errors": [f"{r['id']}.{r['turn']}" for r in rs if r["final"]["status"] == "error"],
             "failed": [f"{r['id']}.{r['turn']}" for r in rs if not r["checks"]["pass"]],
             "verifier_retries": sum(r["final"]["verification"].get("retries", 0) for r in rs),
+            # answers whose headline was written by code (lead.py) because the model's answers failed the checks or the
+            # token cap stopped the run; share of answered turns
+            "code_fallback_n": sum(r["final"]["verification"].get("answer_source") == "code_fallback" for r in ans),
+            "code_fallback_pct": pct(sum(r["final"]["verification"].get("answer_source") == "code_fallback" for r in ans), len(ans)),
             "tokens_median": toks_sorted[len(toks_sorted) // 2] if toks else None,
             "tokens_mean": round(sum(toks) / len(toks)) if toks else None, "tokens_max": max(toks) if toks else None,
             "tokens_total": sum(toks),

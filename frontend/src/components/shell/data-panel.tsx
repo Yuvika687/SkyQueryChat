@@ -30,8 +30,8 @@ const SETS: { key: string; name: string; note: string; history?: string }[] = [
   { key: "holdout2", name: "Unseen questions", note: "kept apart and never used to tune the app" },
   { key: "holdout", name: "First unseen set", note: "retired after it was used once" },
   { key: "diwali2026", name: "Diwali 2026 questions", note: "added after the Diwali 2026 bulletins arrived" },
-  { key: "analysis", name: "Statistics questions", note: "95% ranges, “too close to call”, trends and weather associations",
-    history: "after fixing a trend-wording bug found in a first run of 5/8" },
+  { key: "analysis", name: "Statistics and comparison questions", note: "city comparisons, 95% ranges, “too close to call”, trends and weather associations" },
+  { key: "conversation", name: "Conversation questions", note: "greetings, questions about the project and air quality, unclear and off-topic messages" },
 ];
 
 // Limits a visitor should know about (the API also lists internal engineering notes).

@@ -215,9 +215,11 @@ def trend_ref(city, pol, a, b):
     from scipy import stats as SS
     x = _days(city, pol, a, b).sort_values("local_date")
     t = np.array([(v - x.local_date.iat[0]).days for v in x.local_date], dtype=float)
-    slope = SS.theilslopes(x.city_mean.to_numpy(), t).slope * 365.25 / 12
+    per_day = SS.theilslopes(x.city_mean.to_numpy(), t).slope
     p = SS.kendalltau(t, x.city_mean.to_numpy()).pvalue
-    return {"n": len(x), "slope_per_month": round(float(slope), 1), "p": float(p)}
+    # periods under 90 days are reported as the total change over the period: slope per day x (days in period - 1)
+    return {"n": len(x), "slope_per_month": round(float(per_day * 365.25 / 12), 1),
+            "change_over_period": round(float(per_day * (b - a).days), 1), "p": float(p)}
 
 
 def wind_ends(city, pol, a, b):
@@ -251,7 +253,8 @@ def analysis_refs() -> dict:
         "an_dec_chennai_hyd": {"numbers": [dec["Chennai"], dec["Hyderabad"]]},
         "an_winter_top_two": {"numbers": [w_rank["Delhi"], w_rank["Kolkata"]]},
         "an_mar_delhi_bengaluru": {"numbers": [mar["Delhi"], mar["Bengaluru"]]},
-        "an_chennai_trend": {"any_of": [[ch["slope_per_month"]], [abs(ch["slope_per_month"])]], "tol": 0.15,
+        # March-April 2026 is under 90 days, so the app reports the total change over the period (since 13 Nov 2026)
+        "an_chennai_trend": {"any_of": [[ch["change_over_period"]], [abs(ch["change_over_period"])]], "tol": 0.15,
                              "_p": ch["p"]},
         "an_delhi_wind": {"any_of": [[calm, windy], [spearman("Delhi", "pm25", "wind_speed_mean_kmh", d(2025, 2, 18), DATA_END)]]},
         "an_mumbai_rain": {"any_of": [[dry, rain], [spearman("Mumbai", "pm25", "precipitation_sum_mm", d(2025, 2, 18), DATA_END)]]},

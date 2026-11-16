@@ -299,3 +299,12 @@ def unit_mismatches(texts: list[str], by_unit: dict[str, set[float]], user_numbe
             if v not in by_unit.get(unit, set()) and v not in user_numbers:
                 bad.append(f"{num} {word}")
     return bad
+
+
+# ----------------------------------------------------------------------------- wording the answer must not use
+BANNED_WORDING = re.compile(r"\bnot(?:ing|ed that|es that)\b", re.I)     # "noting", "noting that", "noted that"
+
+
+def banned_wording(text: str) -> list[str]:
+    """Filler wording the answer must not use, in any form ('noting', 'noting that', 'noted that')."""
+    return [m.group(0) for m in BANNED_WORDING.finditer(text or "")]

@@ -1,5 +1,5 @@
 {
- "_about": "Conversation set (added 2026-11-16): the model chooses the message kind itself (greeting, about, knowledge, data, clarify, off_topic). Conversation kinds must use no tools; knowledge and project answers may quote only numbers from backend/config/knowledge.json or the data dates (the scorer re-checks them). The last question checks that a short follow-up keeps the earlier context. Separate from the main set, so published scores keep the same question list.",
+ "_about": "Conversation set (added 2026-11-16): the model chooses the message kind itself (greeting, about, knowledge, data, clarify, off_topic). Conversation kinds must use no tools; knowledge and project answers may quote only numbers from backend/config/knowledge.json or the data dates (the scorer re-checks them). The last question checks that a short follow-up keeps the earlier context. V08 accepts 'knowledge' or 'about' (both are right for a definition); V14 added 2026-11-16 (a bare city name). Separate from the main set, so published scores keep the same question list.",
  "questions": [
   {"id": "V01", "category": "greeting", "turns": ["hi"],
    "expect": [{"kind": ["greeting"], "status": ["answered"], "no_tools": true}]},
@@ -17,8 +17,10 @@
    "expect": [{"kind": ["knowledge"], "status": ["answered"], "no_tools": true, "must_include": ["Poor"],
                "must_include_any": ["prolonged exposure"]}]},
   {"id": "V08", "category": "knowledge", "turns": ["PM2.5 vs PM10?"],
-   "expect": [{"kind": ["knowledge"], "status": ["answered"], "no_tools": true, "must_include": ["PM10"]}]},
+   "expect": [{"kind": ["knowledge", "about"], "status": ["answered"], "no_tools": true, "must_include": ["PM10"]}]},
   {"id": "V09", "category": "clarify", "turns": ["delhi?"],
+   "expect": [{"kind": ["clarify"], "status": ["clarify"], "no_tools": true}]},
+  {"id": "V14", "category": "clarify", "turns": ["mumbai"],
    "expect": [{"kind": ["clarify"], "status": ["clarify"], "no_tools": true}]},
   {"id": "V10", "category": "off_topic", "turns": ["write me a poem"],
    "expect": [{"kind": ["off_topic"], "status": ["refused"], "no_tools": true, "must_include": ["can't help"]}]},

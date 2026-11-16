@@ -17,9 +17,10 @@ from backend.agent import core, verify as V
 from backend.agent.fields import Field
 from backend.analysis import functions as F
 
-APP = Path(__file__).resolve().parents[1] / "data" / "app"
-pytestmark = pytest.mark.skipif(not (APP / "city_daily.parquet").exists(), reason="app tables not built")
-ALL = (date(2025, 2, 18), date(2026, 11, 13))
+# the frozen evaluation tables (to 11 Nov 2026), so these exact-value tests do not move when data/app is refreshed
+APP = Path(__file__).resolve().parents[1] / "evals" / "data"
+pytestmark = pytest.mark.skipif(not (APP / "city_daily.parquet").exists(), reason="frozen tables missing")
+ALL = (date(2025, 2, 18), date(2026, 11, 11))
 
 
 @pytest.fixture(scope="module")
@@ -89,8 +90,8 @@ def test_the_bad_answer_is_sent_back_and_the_fallback_now_reads_correctly(store)
     problems = " ".join(p for f in deps.verification_failures for p in f["problems"])
     assert "568 cities" in problems                                       # the checker caught the wrong unit word
     assert out.verification["answer_source"] == "code_fallback"
-    assert out.answer == ("Delhi's PM2.5 was higher than Hyderabad's across all the measured data (18 Feb 2025 – 13 Nov "
-                          "2026): 82.8 against 32.8 µg/m³, 50.0 µg/m³ higher (2.5 times Hyderabad's level), on the 526 "
+    assert out.answer == ("Delhi's PM2.5 was higher than Hyderabad's across all the measured data (18 Feb 2025 – 11 Nov "
+                          "2026): 82.3 against 32.8 µg/m³, 49.5 µg/m³ higher (2.5 times Hyderabad's level), on the 524 "
                           "days with data for both cities.")
     assert not re.search(r"\b(?:AM|PM)\b|00:00|568", out.answer)
 
@@ -108,8 +109,8 @@ def test_token_cap_after_the_data_is_computed_gives_the_code_lead_not_an_error(s
 def test_range_cards_become_the_citys_own_card_and_only_levels_are_levels(store):
     def ans(m):
         ds = compare_payload(m)["id"]
-        return text(answer="Delhi's PM2.5 was 2.5 times Hyderabad's over all available data (18 Feb 2025 – 13 Nov 2026): "
-                           "82.8 against 32.8 µg/m³, 50.0 µg/m³ higher, on 526 common days.",
+        return text(answer="Delhi's PM2.5 was 2.5 times Hyderabad's over all available data (18 Feb 2025 – 11 Nov 2026): "
+                           "82.3 against 32.8 µg/m³, 49.5 µg/m³ higher, on 524 common days.",
                     cards=[f"{ds}.Delhi_range_low", f"{ds}.Hyderabad_range_high", f"{ds}.difference_Delhi_minus_Hyderabad",
                            f"{ds}.ratio_Delhi_to_Hyderabad"])
     out, deps = ask(store, "compare delhi and hyderabad", [[ToolCallPart("compare_cities", {"cities": ["Delhi", "Hyderabad"]})], ans])
@@ -130,3 +131,17 @@ def test_six_city_fallback_leads_with_the_top_two_and_short_years_are_the_users_
     assert out.verification["answer_source"] == "code_fallback"
     assert [c.field for c in out.cards][:2] == ["Delhi_mean", "Kolkata_mean"]
     assert out.answer.startswith("Delhi had the highest PM2.5 of the six cities")
+
+
+def test_a_data_answer_with_noting_is_rewritten(store):
+    def answer(noting):
+        def go(m):
+            ds = compare_payload(m)["id"]
+            extra = ", noting severe network-wide gaps on some days" if noting else ""
+            return text(answer=f"Delhi's PM2.5 was 2.5 times Hyderabad's over all available data (18 Feb 2025 – 11 Nov 2026): "
+                               f"82.3 against 32.8 µg/m³, 49.5 µg/m³ higher, on 524 common days{extra}.", cards=[f"{ds}.Delhi_mean"])
+        return go
+    out, deps = ask(store, "compare delhi and hyderabad",
+                    [[ToolCallPart("compare_cities", {"cities": ["Delhi", "Hyderabad"]})], answer(True), answer(False)])
+    assert "noting" not in out.answer.lower() and out.verification["answer_source"] == "llm"
+    assert out.verification["retries"] == 1 and "noting" in " ".join(out.verification["corrections"]).lower()

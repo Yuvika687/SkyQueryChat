@@ -153,3 +153,35 @@ def test_every_number_in_the_facts_file_is_allowed_and_its_note_is_not():
         assert v in allowed
     assert 1e9 + 20261113 not in allowed                                   # the file's check date is not a fact
     assert "Minimal Impact" in K.digest() and "Severe 401–500 (PM2.5 >250, PM10 >430)" in K.digest()
+
+
+@pytest.mark.parametrize("q,city", [("delhi?", "Delhi"), ("mumbai", "Mumbai")])
+def test_a_bare_city_gets_one_clarifying_question_with_chips_and_no_analysis(session_factory, q, city):
+    chips = [f"How did {city}'s PM2.5 change over the last 30 days?", f"Compare {city} and Delhi PM2.5 in October 2026.",
+             f"What was {city}'s official AQI around Diwali 2026?"]
+    model, seen = scripted([[TextPart(json.dumps({
+        "kind": "clarify", "status": "clarify", "follow_ups": chips,
+        "answer": f"What would you like to know about {city}: PM2.5 levels, a trend, a comparison or Diwali AQI?"}))]])
+    out, deps = ask(model, session_factory(), q)
+    assert seen["requests"] == 1 and not deps.tools_called                 # no analysis was run
+    assert out.kind == "clarify" and out.status == "clarify" and out.clarifying_question.endswith("?")
+    assert out.follow_ups == chips and out.cards == [] and out.chart is None
+
+
+def test_the_instructions_and_schema_make_a_bare_name_a_clarify_kind():
+    from backend.agent.schemas import LLMAnswer
+    assert '"delhi?", "mumbai"' in core.INSTRUCTIONS and "no tools and no analysis" in core.INSTRUCTIONS
+    assert "is clarify, not data" in LLMAnswer.model_fields["kind"].description
+    assert "only if the city is missing" in core.INSTRUCTIONS               # data questions keep their own rule
+
+
+@pytest.mark.parametrize("kind,text", [
+    ("greeting", "Hello, noting that I cover six cities: I'm SkyQueryChat."),
+    ("knowledge", "PM10 includes PM2.5, noting the size limit of 10 micrometres."),
+])
+def test_noting_in_any_form_is_sent_back_to_be_rewritten(session_factory, kind, text):
+    clean = text.replace("noting that ", "").replace(", noting the size limit of 10 micrometres", "")
+    model, seen = scripted([reply(kind=kind, status="answered", answer=text), reply(kind=kind, status="answered", answer=clean)])
+    out, deps = ask(model, session_factory(), "hi")
+    assert seen["requests"] == 2 and out.answer == clean
+    assert any("Do not write ['noting']" in p for f in deps.verification_failures for p in f["problems"])

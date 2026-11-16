@@ -15,7 +15,9 @@ CONVERSATION_KINDS = ("greeting", "about", "knowledge", "clarify", "off_topic") 
 
 
 class LLMAnswer(BaseModel):
-    kind: MessageKind = Field(default="data", description="message kind (see instructions)")
+    kind: MessageKind = Field(default="data", description=(
+        "message kind (see instructions); a bare city, pollutant or period with no question and no earlier context "
+        "(e.g. 'delhi?', 'mumbai') is clarify, not data"))
     status: Literal["answered", "clarify", "refused", "unavailable"]
     answer: str = Field(description="headline: 1-2 sentences, finding first; numbers exactly as in tool fields")
     explanation: str = Field(default="", description="1-3 sentences: what it means, pattern, caveats")
