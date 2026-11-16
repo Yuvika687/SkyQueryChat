@@ -1,0 +1,68 @@
+{
+ "overall": {
+  "turns": 12,
+  "pass": 11,
+  "pass_pct": 91.7,
+  "tool_choice_pct": 100.0,
+  "tool_choice_n": 12,
+  "numbers_traceable_pct": 100.0,
+  "answered": 12,
+  "reference_checks_pct": 100.0,
+  "reference_checks_n": 9,
+  "reference_failures": [],
+  "refusals_correct_pct": null,
+  "refusals_n": 0,
+  "resolved_checks_pct": 100.0,
+  "resolved_checks_n": 12,
+  "resolved_failures": [],
+  "pass_lenient_wording_SEPARATE": 11,
+  "errors": [],
+  "failed": [
+   "A05.1"
+  ],
+  "verifier_retries": 5,
+  "code_fallback_n": 1,
+  "code_fallback_pct": 8.3,
+  "tokens_median": 8348,
+  "tokens_mean": 9334,
+  "tokens_max": 12107,
+  "tokens_total": 112012
+ },
+ "by_model": {
+  "gemini-3.5-flash-lite": {
+   "turns": 12,
+   "pass": 11,
+   "pass_pct": 91.7,
+   "tool_choice_pct": 100.0,
+   "tool_choice_n": 12,
+   "numbers_traceable_pct": 100.0,
+   "answered": 12,
+   "reference_checks_pct": 100.0,
+   "reference_checks_n": 9,
+   "reference_failures": [],
+   "refusals_correct_pct": null,
+   "refusals_n": 0,
+   "resolved_checks_pct": 100.0,
+   "resolved_checks_n": 12,
+   "resolved_failures": [],
+   "pass_lenient_wording_SEPARATE": 11,
+   "errors": [],
+   "failed": [
+    "A05.1"
+   ],
+   "verifier_retries": 5,
+   "code_fallback_n": 1,
+   "code_fallback_pct": 8.3,
+   "tokens_median": 8348,
+   "tokens_mean": 9334,
+   "tokens_max": 12107,
+   "tokens_total": 112012
+  }
+ },
+ "by_category": {
+  "comparison": "6/6",
+  "too_close": "1/1",
+  "trend": "2/3",
+  "weather": "2/2"
+ }
+}

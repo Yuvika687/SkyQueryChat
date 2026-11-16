@@ -149,7 +149,9 @@ def city_trend(ctx: RunContext[RunDeps], city: str, pollutant: str | None = None
     (Mann-Kendall + Sen's slope on daily values: increasing/decreasing/"no clear trend"/"not enough data",
     change per month, p-value).
     pollutant defaults to PM2.5; period defaults to all data; freq defaults to daily for up to 92 days,
-    weekly up to a year, else monthly."""
+    weekly up to a year, else monthly.
+    Not for a bare city name with nothing asked ("delhi?"): that is a clarify reply, no tool.
+    """
     def go():
         a = []
         s, e, n = _period(period, a)
