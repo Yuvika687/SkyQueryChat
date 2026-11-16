@@ -84,3 +84,16 @@ tests for the six dots and the all-cities layer. Screenshots of every page at 14
   evaluation runs had used 601k of the 680k-token safety cap. Run after midnight Pacific time:
   `python scripts/run_eval.py --set conversation`.
 - After deploying, ask "AQI in Lucknow" on the live site and confirm the daily refresh workflow runs green.
+
+## 7. Follow-up on the same day: backup key, answer fixes and a livelier interface
+
+- **Backup Gemini key:** set `GEMINI_API_KEY_2` on Render (ideally a key from a different Google project). When the first
+  key's models run out, the app uses the same models on the backup key. Checked: the first key's `gemini-3.5-flash-lite`
+  had used its daily quota, which is why answers fell back and some failed.
+- **Fixes in answers:** Diwali 2026 can be named as 8 Nov (it was rejected before); a new question no longer shows
+  numbers from an earlier question in its tiles and Data tab; a repeated tile (Diwali 2025 twice) is gone.
+- **Compare:** official AQI for any of 329 bulletin cities (search box), 2026 periods (2026 so far, summer, monsoon,
+  post-monsoon, Diwali 2026) as chips.
+- **Look and feel (same colours and fonts):** animated India map on Home with every bulletin city as a coloured dot,
+  "Across India" section, word-by-word headline, live counters, sliding tab highlights, glowing cards, a moving border on
+  the Ask box, a softer Ask start screen, AQI charts coloured by category. Explore's city panel keeps its title in view.

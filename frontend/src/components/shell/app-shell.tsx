@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { BarChart3, Compass, GitCompareArrows, Home, MessageSquare, Search } from "lucide-react";
 import { fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -36,8 +37,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:rounded-lg focus:bg-teal focus:px-3 focus:py-2 focus:text-teal-ink">
         Skip to content
       </a>
+      {/* decoration only: slow colour fields and star dust behind every page */}
+      <div aria-hidden className="sq-aurora"><i /><b /></div>
       <TopBar onData={() => setDataOpen(true)} />
-      <main id="main">{children}</main>
+      <main id="main" className="relative z-[1]">{children}</main>
       <TabBar />
       <DataPanel open={dataOpen} onOpenChange={setDataOpen} />
     </div>
@@ -48,8 +51,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 export function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2.5 rounded-full text-[15px] font-semibold tracking-tight">
-      <span aria-hidden className="size-[18px] rounded-full shadow-glow"
-        style={{ background: "radial-gradient(circle at 35% 35%, #8FF5E6, #2DD4BF 45%, #0E5E55 100%)" }} />
+      <span aria-hidden className="relative grid size-[18px] place-items-center">
+        <span className="sq-live absolute inset-0 rounded-full text-teal/60" />
+        <span className="size-[18px] rounded-full shadow-glow"
+          style={{ background: "radial-gradient(circle at 35% 35%, #8FF5E6, #2DD4BF 45%, #0E5E55 100%)" }} />
+      </span>
       SkyQueryChat
     </Link>
   );
@@ -77,7 +83,7 @@ function TopBar({ onData }: { onData: () => void }) {
       <div aria-hidden className="pointer-events-none fixed inset-x-0 top-[72px] -z-10 h-4 bg-gradient-to-b from-background to-transparent" />
       <nav
         aria-label="Main"
-        className="flex h-12 w-full max-w-[1120px] items-center gap-3 rounded-full border border-line bg-[#0a1120] pr-2 pl-4 shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] backdrop-blur-xl backdrop-saturate-150"
+        className="isolate flex h-12 w-full max-w-[1120px] items-center gap-3 rounded-full border border-line bg-[#0a1120] pr-2 pl-4 shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] backdrop-blur-xl backdrop-saturate-150"
       >
         <Logo />
         <ul className="mx-auto hidden items-center gap-1 md:flex">
@@ -89,10 +95,14 @@ function TopBar({ onData }: { onData: () => void }) {
                   href={n.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "inline-flex h-8 items-center rounded-full px-3.5 text-sm transition-colors",
-                    active ? "bg-white/[0.08] text-foreground" : "text-subtle hover:text-foreground",
+                    "relative inline-flex h-8 items-center rounded-full px-3.5 text-sm transition-colors",
+                    active ? "text-foreground" : "text-subtle hover:text-foreground",
                   )}
                 >
+                  {active && (
+                    <motion.span layoutId="nav-pill" aria-hidden transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      className="absolute inset-0 -z-10 rounded-full bg-gradient-to-b from-white/[0.11] to-white/[0.05] shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_0_18px_-4px_rgb(45_212_191/0.45)]" />
+                  )}
                   {n.label}
                 </Link>
               </li>
@@ -127,10 +137,14 @@ function TabBar() {
                 href={n.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-full flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-medium",
-                  active ? "bg-teal/10 text-teal" : "text-subtle",
+                  "relative isolate flex h-full flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-medium transition-colors",
+                  active ? "text-teal" : "text-subtle",
                 )}
               >
+                {active && (
+                  <motion.span layoutId="tab-pill" aria-hidden transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                    className="absolute inset-0 -z-10 rounded-xl bg-teal/10 shadow-[inset_0_0_0_1px_rgb(45_212_191/0.25)]" />
+                )}
                 <n.icon className="size-5" aria-hidden />
                 {n.label}
               </Link>

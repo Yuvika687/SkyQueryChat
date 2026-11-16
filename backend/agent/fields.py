@@ -118,6 +118,8 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
             if y["status"] != "ok":
                 f[f"{yr}_status"] = Field(y.get("message", "not available"), f"Diwali {yr}")
                 continue
+            if y.get("diwali_date"):     # the festival day itself, so the answer may name it (the D+1 bulletin reports that night)
+                f[f"{yr}_diwali_date"] = Field(y["diwali_date"], f"Diwali {yr} date (festival night; its AQI is in the next day's bulletin)")
             f[f"{yr}_festival_aqi"] = Field(y["festival_level_aqi"], f"{city} official AQI, Diwali {yr} (mean of festival bulletins)", u)
             f[f"{yr}_category"] = Field(y["festival_level_category"], f"AQI category, Diwali {yr}")
             for b in y["festival_bulletins"]:

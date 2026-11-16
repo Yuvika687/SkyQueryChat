@@ -310,6 +310,11 @@ class QuotaManager:
         return cls(limits, qc, default, **kw)
 
     def get(self, key: str) -> ProviderQuota:
+        if key not in self.models and "@" in key and key.split("@", 1)[0] in self.models:
+            # A model on the backup key: same provider limits as the main key's entry, but its own counters.
+            src = self.models[key.split("@", 1)[0]].limit
+            self.models[key] = ProviderQuota(ProviderLimit(**{**src.__dict__, "key": key}), self.cfg, self.clock,
+                                             self.sleep)
         if key not in self.models:
             base = self.default or ProviderLimit(key=key, rpm=5, tpm=50_000, rpd=20, daily_token_budget=50_000,
                                                 source="built-in conservative default")
@@ -402,6 +407,12 @@ class LimitedModel(_wrapper_base()):
                                           timeout=self.timeout_s)
         except asyncio.TimeoutError:
             raise ModelTimeout(self.quota_key.split(":", 1)[-1], self.timeout_s) from None
+        except Exception as exc:          # tag which limiter (main or backup key) the provider error belongs to
+            try:
+                exc.sq_quota_key = self.quota_key
+            except Exception:
+                pass
+            raise
         u = getattr(resp, "usage", None)
         pq.settle(ev, (getattr(u, "input_tokens", 0) or 0) + (getattr(u, "output_tokens", 0) or 0) if u else None)
         return resp

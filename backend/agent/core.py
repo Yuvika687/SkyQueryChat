@@ -358,13 +358,19 @@ def _compose(deps: RunDeps, out: LLMAnswer, model_name: str | None, usage,
     out = _normalise_kind(out)
     talk = out.kind in CONVERSATION_KINDS
     card_refs = [_parse_card(c) for c in out.cards]
+    run_charts = [d for d in deps.run_datasets if (s.datasets.get(d) or {}).get("chart")]
+    if out.chart and run_charts and out.chart not in deps.run_datasets:    # chart from this question's data
+        out = out.model_copy(update={"chart": run_charts[-1]})
+    if deps.run_datasets:       # a new question shows its own numbers: cards from earlier turns' datasets are dropped
+        card_refs = [r for r in card_refs if r[0] in deps.run_datasets] or card_refs
     ids = [] if talk else [d for d in dict.fromkeys([*(d for d, _ in card_refs), *([out.chart] if out.chart else []),
                                                      *deps.run_datasets]) if d in s.datasets]
-    cards = []
-    for ds, name in _city_cards(card_refs)[:4]:
+    cards, shown = [], set()
+    for ds, name in _city_cards(card_refs):
         f, full = s.fields.get(ds, {}).get(name), s.datasets[ds]
-        if f is None:
+        if f is None or (f.label, f.value) in shown or len(cards) == 4:     # the same figure only once
             continue
+        shown.add((f.label, f.value))
         m = re.fullmatch(r"([A-Z][A-Za-z]+)_mean", name)
         lo, hi = (s.fields[ds].get(f"{m.group(1)}_range_{x}") for x in ("low", "high")) if m else (None, None)
         cards.append(Card(label=f.label, value=float(f.value), unit=f.unit, dataset_id=ds, field=name,

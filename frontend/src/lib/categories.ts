@@ -59,6 +59,14 @@ export const CITY_COLOURS: Record<string, string> = {
   Delhi: "#2DD4BF", Mumbai: "#60A5FA", Kolkata: "#F59E0B", Chennai: "#F472B6", Bengaluru: "#A78BFA", Hyderabad: "#D4A373",
 };
 export const CITIES = Object.keys(CITY_COLOURS);
+/** Line colours for other bulletin cities on Compare (distinct from the six metros' colours; not data meaning). */
+export const EXTRA_COLOURS = ["#F87171", "#FDE047", "#E879F9", "#38BDF8", "#A3E635", "#FB7185"];
+/** A city's line colour: its own for the six metros, otherwise by its position among the other selected cities. */
+export function cityColour(city: string, selected: string[]): string {
+  if (CITY_COLOURS[city]) return CITY_COLOURS[city];
+  const others = selected.filter((c) => !CITY_COLOURS[c]);
+  return EXTRA_COLOURS[Math.max(0, others.indexOf(city)) % EXTRA_COLOURS.length];
+}
 
 /** Reference lines (24-hour). India PM10 24-h standard is 100 µg/m³ (NAAQS 2009; CPCB AQI breakpoint table). */
 export const REFERENCE_LINES = {

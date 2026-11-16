@@ -588,6 +588,28 @@ Rules:
 - **Windows:** all text files are read/written as UTF-8; `copy-maplibre-worker.mjs` uses `fileURLToPath`.
 - Screenshots: `node frontend/scripts/capture-screens.mjs` -> `docs/screenshots/current/`. Deploy guide: `DEPLOY.md`.
 
+### Backup Gemini key, answer fixes and animated UI (main, 2026-11-17)
+
+- **Backup key:** optional env `GEMINI_API_KEY_2` (or `GEMINI_API_KEY_BACKUP`), best from another Google project (free quotas
+  are per project per model). `models.build_model` appends the same Gemini models on that key after the main key's models,
+  with their own quota counters (`<label>@backup`; limits copied from the main entry). Provider errors are tagged with the
+  limiter that raised them (`sq_quota_key`), so a 429 on one key never blocks the other. `ai_configured` is true with either key.
+- **Found 2026-11-17:** the main key's `gemini-3.5-flash-lite` daily quota was used up (provider 429 "per day"), so live
+  answers ran on `gemini-3.1-flash-lite`; that is why some questions hit the limits.
+- **Answers:** `diwali_aqi` gives `<year>_diwali_date`, so "Diwali was on 8 Nov 2026" passes the checker (it was rejected,
+  which pushed the model to call 9 Nov "Diwali"). A new question's cards and chart come only from datasets made in that
+  run (earlier turns' cards no longer appear), and the same figure is shown once (code and `keyNumbers`).
+- **Compare:** official AQI accepts any bulletin city (`/api/compare` resolves through `official_aqi.bulletin_cities`;
+  values from `city_aqi_all`); PM2.5/PM10 stay six-metro. Presets add 2026 so far, Summer, Monsoon and Post-monsoon 2026;
+  the period is chosen with chips grouped Recent / 2026 / 2025. Other cities get `EXTRA_COLOURS` (`cityColour`).
+- **Home map** is now an animated SVG (no MapLibre on Home): the official outline draws itself, faint grid and light sweep
+  clipped to India, about 300 bulletin cities as dots in their own official AQI category colour (GeoNames positions), the
+  six metros with ripple markers. "Across India" section: cities per category, highest and lowest AQI (latest bulletin).
+- **Motion:** `globals.css` "motion and atmosphere" block (aurora background, shimmer headline, `sq-glow` cards, `sq-shine`
+  buttons, `sq-ring` Ask box, map animations); framer-motion sliding pills in the nav, tab bar, `Segmented` and the
+  Explore layer switch. Every animation ends visible and is off with reduced motion.
+- Explore city panel: header sticks while scrolling and the panel resets per city.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

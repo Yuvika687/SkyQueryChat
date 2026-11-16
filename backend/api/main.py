@@ -468,10 +468,22 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         return state["periods"]
 
     @app.get("/api/compare")
-    async def compare(cities: str = Query(..., max_length=80), metric: str = Query("pm25", pattern="^(pm25|pm10|aqi)$"),
+    async def compare(cities: str = Query(..., max_length=240), metric: str = Query("pm25", pattern="^(pm25|pm10|aqi)$"),
                       start: date = Query(...), end: date = Query(...)):
-        """Compare page: daily lines on matching dates, ranking with 95% ranges, trends. Read-only, no LLM."""
-        cs = list(dict.fromkeys(_city(c.strip()) for c in cities.split(",") if c.strip()))
+        """Compare page: daily lines on matching dates, ranking with 95% ranges, trends. Read-only, no LLM.
+        Official AQI also accepts any city in CPCB's daily bulletin; PM2.5/PM10 only the six metros."""
+        def one(c: str) -> str:
+            if metric != "aqi":
+                return _city(c)
+            r = R.resolve_city(c)
+            if r.get("city"):
+                return r["city"]
+            from backend.analysis import official_aqi as OA
+            b = OA.bulletin_cities(S()).resolve(c)
+            if not b.get("city"):
+                raise ValueError(b["message"])
+            return b["city"]
+        cs = list(dict.fromkeys(one(c.strip()) for c in cities.split(",") if c.strip()))
         if not 2 <= len(cs) <= 6:
             raise ValueError("Pick between 2 and 6 cities.")
         lo = date(2025, 2, 18) if metric != "aqi" else date(2024, 1, 1)
