@@ -18,6 +18,9 @@
   <sub>Home: the latest available 24-hour PM2.5 for Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad.</sub>
 </p>
 
+For a full description of the architecture, data, agent, methods and results, see the
+[project overview](docs/project-overview.md).
+
 ## Why it's different
 
 <table>
