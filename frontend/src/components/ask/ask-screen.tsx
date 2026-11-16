@@ -130,7 +130,7 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
           {chat.turns.length === 0 ? (
             <EmptyState onAsk={ask} disabled={chat.busy} />
           ) : (
-            <div className="mx-auto flex w-full max-w-[780px] min-w-0 flex-col gap-10 px-4 py-6">
+            <div className="mx-auto flex w-full max-w-[780px] min-w-0 flex-col gap-10 px-4 pt-6 pb-24 sm:px-6">
               {chat.turns.map((t, i) => (
                 <TurnView
                   key={t.id}

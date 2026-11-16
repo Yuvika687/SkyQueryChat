@@ -13,6 +13,23 @@ export interface KeyNumber {
   sub: string | null; // subtle date or qualifier
   category: Category | null;
   dataType: DataType;
+  /** Only a level (a concentration or AQI) gets a category badge and scale bar. */
+  role: NonNullable<Card["role"]>;
+  /** "95% range 70.0–96.1" for a city mean in a comparison */
+  range: string | null;
+}
+
+/** The card's role; older saved answers carry none, so it is inferred from the field name and unit. */
+export function cardRole(c: Card): NonNullable<Card["role"]> {
+  if (c.role) return c.role;
+  const f = c.field;
+  if (/^difference_|^trend_change|^trend_per/.test(f)) return "difference";
+  if (/^ratio_/.test(f) || c.unit === "×") return "ratio";
+  if (/(^|_)n_|_count$|_days$|^days/.test(f) || /^(days|stations|cities|station-days|hours)$/.test(c.unit)) return "count";
+  if (c.unit === "%") return "share";
+  if (/_rank$/.test(f)) return "rank";
+  if (/rho|p_value|_range_(low|high)$/.test(f) || !/µg|ug|index/i.test(c.unit)) return "statistic";
+  return "level";
 }
 
 const PN: Record<string, string> = { pm25: "PM2.5", pm10: "PM10" };
@@ -27,6 +44,7 @@ export function fmtAqi(v: number): string {
 }
 
 export function fmtNumber(c: Card): string {
+  if (cardRole(c) === "ratio") return `${c.value.toFixed(1)}×`;
   if (isAqiCard(c)) return fmtAqi(c.value);
   if (/µg|ug/.test(c.unit)) return c.value.toFixed(1); // concentrations always to one decimal, as calculated
   if (Number.isInteger(c.value)) return c.value.toLocaleString("en-IN");
@@ -59,12 +77,14 @@ function shortLabel(c: Card, sameCity: string | null): { label: string; sub: str
   if (f === "rho") return { label: "Spearman ρ", sub: null };
   if ((m = f.match(/^q(\d)_mean$/))) return { label: c.label.split(", ").slice(1).join(", ") || `Group ${m[1]}`, sub: "mean" };
   if (/^day\d+_value$/.test(f)) return { label: /low/.test(c.label) ? "Unusually low" : "Unusually high", sub: datesIn(c.label) };
-  if (f === "unusual_count") return { label: "Unusual days", sub: null };
-  if (f === "high_count") return { label: "Unusually high", sub: "days" };
-  if (f === "low_count") return { label: "Unusually low", sub: "days" };
+  if ((m = f.match(/^difference_([A-Za-z]+)_minus_([A-Za-z]+)$/))) return { label: "Difference", sub: `${m[1]} minus ${m[2]}` };
+  if ((m = f.match(/^ratio_([A-Za-z]+)_to_([A-Za-z]+)$/))) return { label: "Ratio", sub: `${m[1]} ÷ ${m[2]}` };
+  if (f === "unusual_count" || f === "n_unusual_days") return { label: "Unusual days", sub: null };
+  if (f === "high_count" || f === "n_unusually_high_days") return { label: "Unusually high", sub: "days" };
+  if (f === "low_count" || f === "n_unusually_low_days") return { label: "Unusually low", sub: "days" };
   if ((m = f.match(/^(pm25|pm10)_share_pct$/))) return { label: `${PN[m[1]]} coverage`, sub: "share of days" };
-  if ((m = f.match(/^(pm25|pm10)_days_with_value$/))) return { label: `${PN[m[1]]} days`, sub: "with a city value" };
-  if (f === "days_in_period") return { label: "Days in period", sub: null };
+  if ((m = f.match(/^(pm25|pm10)_(?:n_)?days_with_value$/))) return { label: `${PN[m[1]]} days`, sub: "with a city value" };
+  if (f === "days_in_period" || f === "n_days_in_period") return { label: "Days in period", sub: null };
   if ((m = f.match(/^(pm25|pm10)_festival_lower_bound$/))) return { label: `${PN[m[1]]} festival`, sub: "lower bound" };
   if ((m = f.match(/^(pm25|pm10)_baseline_lower_bound$/))) return { label: `${PN[m[1]]} baseline`, sub: "lower bound" };
   // fallback: drop the city prefix (already in the answer) and move dates to the subtle line
@@ -82,6 +102,8 @@ export function keyNumbers(cards: Card[], max = 3): KeyNumber[] {
   return usable.slice(0, max).map((c) => {
     const { label, sub } = shortLabel(c, sameCity);
     const aqi = isAqiCard(c);
+    const role = cardRole(c);
+    const r = c.range95 && c.range95.length === 2 ? c.range95 : null;
     return {
       key: `${c.dataset_id}.${c.field}`,
       label,
@@ -89,8 +111,10 @@ export function keyNumbers(cards: Card[], max = 3): KeyNumber[] {
       exact: c.value,
       unit: aqi ? "AQI" : c.unit,
       sub,
-      category: aqi ? aqiCategory(c.value) : null,
+      category: aqi && role === "level" ? aqiCategory(c.value) : null,
       dataType: c.data_type,
+      role,
+      range: r ? `95% range ${r[0].toFixed(1)}–${r[1].toFixed(1)}` : null,
     };
   });
 }

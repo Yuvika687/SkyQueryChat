@@ -1,5 +1,8 @@
 """Named result fields. Tools send the model only {field: value}; code keeps the label and unit so
-metric cards are built from tool results, never from model-written numbers."""
+metric cards are built from tool results, never from model-written numbers.
+
+Every count is named n_<thing> and carries its unit ("days", "stations", "cities", "station-days", "hours"), so a
+number can only be written with the unit word it counts (verify.unit_mismatches checks it)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -52,25 +55,36 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
                 f["trend_p_value"] = Field(t["p_value"], "trend p-value", "")
             if t.get("note"):
                 f["trend_note"] = Field(t["note"], "trend caveat")
-        f["days_with_data"] = Field(cov.get("days_with_city_value"), f"{city} days with a city value", "days")
-        f["days_in_period"] = Field(cov.get("days_in_period"), "days in period", "days")
+        f["n_days_with_data"] = Field(cov.get("days_with_city_value"), f"{city} days with a city value", "days")
+        f["n_days_in_period"] = Field(cov.get("days_in_period"), "days in period", "days")
         sh = cov.get("share_of_days_with_city_value")
         f["coverage_pct"] = Field(round(sh * 100, 1) if sh is not None else None, f"{city} share of days with data", "%")
-        f["stations"] = Field((d.get("stations") or {}).get("count"), f"{city} primary stations", "stations")
+        f["n_stations"] = Field((d.get("stations") or {}).get("count"), f"{city} primary stations", "stations")
         periods = v.get("periods", [])
         if len(periods) <= 24:
             for p in periods:
                 f[f"mean_{p['period']}"] = Field(p["mean"], f"{city} {P} mean, {p['period']}", u)
     elif k == "compare_cities":
+        f["n_cities"] = Field(len(v["cities"]), "cities compared", "cities")
+        f["n_common_days"] = Field(v["common_days"], "days with data for every city (the means use these days)", "days")
+        for x in v.get("comparisons") or []:
+            a, b = x["higher"], x["lower"]
+            f[f"difference_{a}_minus_{b}"] = Field(x["difference"], f"{a} minus {b}, mean {P} (common days)", u)
+            if x.get("ratio") is not None:
+                f[f"ratio_{a}_to_{b}"] = Field(x["ratio"], f"{a} as a multiple of {b}, mean {P} (common days)", "×")
         for c in v["cities"]:
             f[f"{c['city']}_mean"] = Field(c["mean_common_days"], f"{c['city']} mean {P} (common days), {per}", u)
             f[f"{c['city']}_rank"] = Field(c["rank_highest_first"], f"{c['city']} rank (1 = highest {P})", "")
-            f[f"{c['city']}_valid_days"] = Field(c["n_valid_days"], f"{c['city']} days with data", "days")
+            f[f"{c['city']}_n_valid_days"] = Field(c["n_valid_days"], f"{c['city']} days with data", "days")
             if c.get("range95_low") is not None:
                 f[f"{c['city']}_range_low"] = Field(c["range95_low"], f"{c['city']} 95% range, low", u)
                 f[f"{c['city']}_range_high"] = Field(c["range95_high"], f"{c['city']} 95% range, high", u)
+            for side in ("highest", "lowest"):
+                day = c.get(f"{side}_day")
+                if day:
+                    f[f"{c['city']}_{side}_day_value"] = Field(day["value"], f"{c['city']} {side} daily {P} ({day['date']})", u)
+                    f[f"{c['city']}_{side}_day_date"] = Field(day["date"], f"date of {c['city']}'s {side} day")
             f[f"{c['city']}_coverage_pct"] = Field(c.get("coverage_pct"), f"{c['city']} share of days with data", "%")
-        f["common_days"] = Field(v["common_days"], "days with data for every city", "days")
         tc = v.get("too_close_to_call") or []
         f["too_close_to_call"] = Field("; ".join(" and ".join(p) for p in tc) or "none",
                                        "too close to call (95% ranges overlap heavily; say so instead of ranking them)")
@@ -110,7 +124,7 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
                 f[f"{p['pollutant']}_baseline_mean"] = Field(p["baseline_mean"], f"Delhi {n} baseline days (OpenAQ)", "µg/m³")
             else:
                 f[f"{p['pollutant']}_baseline"] = Field("not available (OpenAQ outage on baseline days)", f"Delhi {n} baseline")
-            f[f"{p['pollutant']}_hours_above_999"] = Field(p["hours_above_999_festival_nights"],
+            f[f"{p['pollutant']}_n_station_hours_above_999"] = Field(p["hours_above_999_festival_nights"],
                                                            f"Delhi {n} station-hours above 999, festival nights", "hours")
         f["comparable_with_2024_2025"] = Field("no (different source and station panel)", "comparison with earlier years")
     elif k == "delhi_pm_context":
@@ -123,11 +137,11 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
             f["status"] = Field("not available", "Delhi measured PM, Diwali")
     elif k == "unusual_days":
         days = sorted(v.get("unusual_days", []), key=lambda x: -abs(x.get("robust_z") or 0))
-        f["days_tested"] = Field(v.get("n_days_tested"), "days tested", "days")
-        f["unusual_count"] = Field(len(days), f"{city} unusual {P} days", "days")
-        f["high_count"] = Field(sum(x["direction"] == "unusually high" for x in days), "unusually high days", "days")
-        f["low_count"] = Field(sum(x["direction"] == "unusually low" for x in days), "unusually low days", "days")
-        f["window_days"] = Field(v.get("window_days"), "rolling median window", "days")
+        f["n_days_tested"] = Field(v.get("n_days_tested"), "days tested", "days")
+        f["n_unusual_days"] = Field(len(days), f"{city} unusual {P} days", "days")
+        f["n_unusually_high_days"] = Field(sum(x["direction"] == "unusually high" for x in days), "unusually high days", "days")
+        f["n_unusually_low_days"] = Field(sum(x["direction"] == "unusually low" for x in days), "unusually low days", "days")
+        f["n_window_days"] = Field(v.get("window_days"), "rolling median window", "days")
         f["threshold"] = Field(v.get("threshold"), "threshold (x typical spread)", "")
         for i, x in enumerate(days[:6], 1):
             f[f"day{i}"] = Field(f"{x['date']} {x['direction'].split()[1]} {x['value']} (median {x['rolling_median']})"
@@ -140,11 +154,11 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
             f["rho_range_low"] = Field(v["rho_range95_low"], "Spearman rho 95% range, low", "")
             f["rho_range_high"] = Field(v["rho_range95_high"], "Spearman rho 95% range, high", "")
         f["strength"] = Field(v.get("strength"), "association strength")
-        f["days"] = Field(v.get("n_days"), "matched days", "days")
+        f["n_days"] = Field(v.get("n_days"), "matched days", "days")
         for i, g in enumerate(v.get("groups", []), 1):
             key = "dry" if g["group"].startswith("dry") else "rain" if g["group"].startswith("rain") else f"q{i}"
             f[f"{key}_mean"] = Field(g["mean_pm"], f"{city} mean {P}, {g['group']}", "µg/m³")
-            f[f"{key}_days"] = Field(g["n_days"], f"days, {g['group']}", "days")
+            f[f"{key}_n_days"] = Field(g["n_days"], f"days, {g['group']}", "days")
             if key.startswith("q"):
                 f[f"{key}_group"] = Field(g.get("label") or g["group"], f"group {i}")
         f["statement"] = Field(v.get("statement"), "association statement")
@@ -152,15 +166,15 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
     elif k == "coverage_summary":
         for p in v["pollutants"]:
             n = p["pollutant"]
-            f[f"{n}_days_with_value"] = Field(p["days_with_city_value"], f"{city} {PN[n]} days with a city value", "days")
+            f[f"{n}_n_days_with_value"] = Field(p["days_with_city_value"], f"{city} {PN[n]} days with a city value", "days")
             sh = p["share_of_days_with_city_value"]
             f[f"{n}_share_pct"] = Field(round(sh * 100, 1) if sh is not None else None, f"{city} {PN[n]} share of days", "%")
-            f[f"{n}_flagged_hours_excluded"] = Field(p["flagged_hours_excluded"], f"{PN[n]} flagged hours excluded", "hours")
-            f[f"{n}_impossible_days_excluded"] = Field(p["impossible_pm25_gt_pm10_station_days"], "impossible station-days excluded", "station-days")
-            f[f"{n}_peer_outlier_days"] = Field(p["peer_outlier_station_days_flagged"], "peer-outlier station-days (flagged)", "station-days")
-        f["primary_stations"] = Field((d["stations"].get("by_tier") or {}).get("primary"), f"{city} primary stations", "stations")
-        f["severe_days"] = Field(d["quality"].get("n_severe_dates"), "days with severe network gaps", "days")
-        f["days_in_period"] = Field(cov.get("days_in_period"), "days in period", "days")
+            f[f"{n}_n_flagged_hours_excluded"] = Field(p["flagged_hours_excluded"], f"{PN[n]} flagged hours excluded", "hours")
+            f[f"{n}_n_impossible_station_days_excluded"] = Field(p["impossible_pm25_gt_pm10_station_days"], "impossible station-days excluded", "station-days")
+            f[f"{n}_n_peer_outlier_station_days"] = Field(p["peer_outlier_station_days_flagged"], "peer-outlier station-days (flagged)", "station-days")
+        f["n_primary_stations"] = Field((d["stations"].get("by_tier") or {}).get("primary"), f"{city} primary stations", "stations")
+        f["n_severe_days"] = Field(d["quality"].get("n_severe_dates"), "days with severe network gaps", "days")
+        f["n_days_in_period"] = Field(cov.get("days_in_period"), "days in period", "days")
     return {k2: x for k2, x in f.items() if x.value is not None}
 
 

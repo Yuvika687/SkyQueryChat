@@ -221,7 +221,7 @@ def test_code_fallback_adds_the_cards_its_lead_needs(session_factory):
     out, deps = run(core.build_agent(scripted([t, bad])[0]), session_factory(), "How complete is Chennai 2025?")
     assert out.verification["answer_source"] == "code_fallback"
     assert out.answer.startswith("Chennai had a valid city value for PM2.5 on ")
-    assert [c.field for c in out.cards] == ["days_in_period", "pm25_share_pct", "pm10_share_pct"]
+    assert [c.field for c in out.cards] == ["n_days_in_period", "pm25_share_pct", "pm10_share_pct"]
 
 
 @real
@@ -402,6 +402,15 @@ def test_test_model_smoke_runs_all_tools_without_crashing(session_factory):
 def test_per_question_token_limit(session_factory):
     def loop(m, info):
         return ModelResponse(parts=[ToolCallPart("city_trend", {"city": "Delhi", "period": "2025"})])
+    out, _ = asyncio.run(core.ask(core.build_agent(FunctionModel(loop)), session_factory(), "Delhi?", max_tokens=300))
+    # the data was already computed when the cap stopped the run: the checked code-written lead is shown, not an error
+    assert out.status == "answered" and out.verification["answer_source"] == "code_fallback"
+    assert out.answer.startswith("Delhi's")
+
+
+def test_per_question_token_limit_without_data_is_a_clear_error(session_factory):
+    def loop(m, info):
+        return ModelResponse(parts=[ToolCallPart("check_request", {"cities": ["Delhi"]})])
     out, _ = asyncio.run(core.ask(core.build_agent(FunctionModel(loop)), session_factory(), "Delhi?", max_tokens=300))
     assert out.status == "error" and "too many steps" in out.answer
 

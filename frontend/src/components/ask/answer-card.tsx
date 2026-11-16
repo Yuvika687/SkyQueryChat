@@ -5,18 +5,37 @@
 import { ArrowUpRight, Check, Copy, Link2 } from "lucide-react";
 import { useMemo } from "react";
 import { CategoryBadge, ScaleBar } from "@/components/ds/data-display";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { copyText, useToast } from "@/components/ds/toast";
 import type { Turn } from "@/lib/chat-state";
 import { evidenceFor } from "@/lib/evidence";
 import { followUps } from "@/lib/followups";
 import { readable } from "@/lib/format";
 import { keyNumbers } from "@/lib/key-numbers";
+import type { ComparisonSummary } from "@/lib/types";
 import { segments, targetsFor, type Target } from "@/lib/proof";
 import { cn } from "@/lib/utils";
 
 const TYPE_LABEL: Record<string, string> = {
   measured: "Measured PM", official_aqi: "Official AQI", modelled: "Weather association", mixed: "Measured PM + weather",
 };
+
+/** A clickable number. Its hint is a tooltip anchored to the number itself (a native title tooltip could appear far
+ * from it, over the navigation). */
+function ProofButton({ label, pressed, onClick, className, children }: {
+  label?: string; pressed: boolean; onClick: () => void; className: string; children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={<button type="button" onClick={onClick} aria-haspopup="dialog" aria-pressed={pressed} aria-label={label} className={className} />}
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6}>See where this number came from</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export function NumberText({ text, targets, onProof, active, className }: {
   text: string; targets: Target[]; onProof: (t: Target) => void; active: string | null; className?: string;
@@ -26,18 +45,15 @@ export function NumberText({ text, targets, onProof, active, className }: {
     <p className={className}>
       {segs.map((s, i) =>
         s.target ? (
-          <button
+          <ProofButton
             key={i}
-            type="button"
             onClick={() => onProof(s.target!)}
-            aria-haspopup="dialog"
-            aria-pressed={active === s.target.id}
-            title="See where this number came from"
+            pressed={active === s.target.id}
             className={cn("num rounded-[5px] px-0.5 font-semibold text-foreground underline decoration-teal decoration-dashed decoration-[1.5px] underline-offset-4",
               "hover:bg-teal/15 hover:decoration-solid", active === s.target.id && "bg-teal/20 decoration-solid")}
           >
             {s.text}
-          </button>
+          </ProofButton>
         ) : (
           <span key={i}>{s.text}</span>
         ),
@@ -69,7 +85,8 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
   const a = turn.answer!;
   const ev = evidenceFor(turn);
   const targets = useMemo(() => targetsFor(turn), [turn]);
-  const keys = keyNumbers(turn.cards);
+  // the comparison card already shows each city's mean, range, the difference and ratio
+  const keys = keyNumbers(a.comparison ? turn.cards.filter((c) => !/^[A-Z][A-Za-z]+_mean$|^difference_|^ratio_/.test(c.field)) : turn.cards);
   const typeKey = (a.data_types.length > 1 ? "mixed" : a.data_types[0]) ?? null;
   const checked = a.verification?.numbers_checked;
   const lead = a.headline || a.text;
@@ -103,8 +120,13 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
         )}
       </div>
 
+      {a.comparison && <ComparisonCard c={a.comparison} />}
+
+      {/* short headlines keep the display serif; long ones switch to the sans at a readable size */}
       <NumberText text={lead} targets={targets} onProof={onProof} active={activeProof}
-        className={cn(a.status === "answered" ? "font-display text-[26px] leading-[1.22] sm:text-[30px]" : "text-[16px] leading-7")} />
+        className={cn(a.status !== "answered" ? "text-[16px] leading-7"
+          : lead.length > 120 ? "text-[19px] leading-[1.5] font-medium sm:text-[21px]"
+            : "font-display text-[26px] leading-[1.22] sm:text-[30px]")} />
 
       {keys.length > 0 && (
         <ul aria-label="Key numbers" className={cn("grid gap-3", keys.length >= 3 ? "sm:grid-cols-3" : keys.length === 2 ? "sm:grid-cols-2" : "")}>
@@ -116,16 +138,17 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
                 <p className="text-[12px] text-subtle">{k.label}</p>
                 <p className="mt-1 flex items-baseline gap-1.5">
                   {t ? (
-                    <button type="button" onClick={() => onProof(t)} aria-pressed={activeProof === t.id} title="See where this number came from"
+                    <ProofButton onClick={() => onProof(t)} pressed={activeProof === t.id}
                       className={cn("num rounded-md px-0.5 text-[26px] leading-8 font-medium underline decoration-teal decoration-dashed decoration-[1.5px] underline-offset-[6px] hover:bg-teal/15",
                         activeProof === t.id && "bg-teal/20")}>
                       {k.value}
-                    </button>
+                    </ProofButton>
                   ) : <span className="num text-[26px] leading-8 font-medium">{k.value}</span>}
-                  <span className="text-[12px] text-subtle">{k.unit}</span>
+                  {k.role !== "ratio" && <span className="text-[12px] text-subtle">{k.unit}</span>}
                   {k.category && <CategoryBadge category={k.category} size="sm" className="ml-auto" label="Category" />}
                 </p>
-                {scale && <ScaleBar value={k.exact} scale={scale} className="mt-3" />}
+                {k.range && <p className="num mt-1 text-[12px] text-subtle">({k.range})</p>}
+                {scale && k.role === "level" && <ScaleBar value={k.exact} scale={scale} className="mt-3" />}
                 {k.sub && <p className="mt-2 text-[12px] text-faint">{k.sub}</p>}
               </li>
             );
@@ -157,5 +180,33 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy }: {
         </div>
       )}
     </div>
+  );
+}
+
+/** "Delhi is 2.5× Hyderabad · +50.0 µg/m³ · 526 common days", then each city's mean side by side. Every figure is
+ * from the comparison tool's result (code-built summary). */
+function ComparisonCard({ c }: { c: ComparisonSummary }) {
+  const unit = /µg/.test(c.units) ? "µg/m³" : c.units;
+  const head = c.too_close_to_call
+    ? `${c.higher} and ${c.lower} are too close to call`
+    : c.higher && c.lower && c.ratio != null ? `${c.higher} is ${c.ratio.toFixed(1)}× ${c.lower}` : null;
+  const facts = [
+    head,
+    !c.too_close_to_call && c.difference != null ? `+${c.difference.toFixed(1)} ${unit}` : null,
+    c.n_common_days != null ? `${c.n_common_days} common days` : null,
+  ].filter(Boolean);
+  return (
+    <section aria-label="Comparison" className="rounded-2xl border border-teal/30 bg-teal/[0.06] px-4 py-3.5">
+      {facts.length > 0 && <p className="text-[15px] font-semibold text-foreground">{facts.join(" · ")}</p>}
+      <ul className={cn("mt-3 grid gap-3", c.cities.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3")}>
+        {c.cities.map((x) => (
+          <li key={x.city} className="rounded-xl border border-line bg-white/[0.03] px-3 py-2.5">
+            <p className="text-[12px] text-subtle">{x.city}</p>
+            <p className="mt-0.5"><span className="num text-[22px] font-medium">{x.mean.toFixed(1)}</span> <span className="text-[12px] text-subtle">{unit}</span></p>
+            {x.range95 && <p className="num text-[12px] text-faint">(95% range {x.range95[0].toFixed(1)}–{x.range95[1].toFixed(1)})</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

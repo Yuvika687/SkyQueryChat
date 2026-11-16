@@ -494,7 +494,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
                                "follow_ups": f.get("follow_ups", []),
                                "clarifying_question": f["clarifying_question"], "data_types": f["data_types"],
                                "resolved_query": f.get("resolved_query"), "required_warnings": f.get("required_warnings", []),
-                               "model": f.get("model"), "verification": f["verification"]}, eid),
+                               "model": f.get("model"), "comparison": f.get("comparison"),
+                               "verification": f["verification"]}, eid),
                 sse("cards", f["cards"], eid + 1), sse("chart", f["chart"], eid + 2),
                 sse("sources", {"sources": f["sources"], "coverage": f["coverage"]}, eid + 3),
                 sse("warnings", f["warnings"], eid + 4)]
@@ -518,7 +519,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         yield sse("step", {"seq": eid, "type": "answer", "title": f"served from {source}", "detail": {"cached": True}}, eid)
         f = payload["final"]
         new = "method" in f                         # saved before answers were LLM-written: explanation was code text
-        yield sse("answer", {"status": f["status"], "text": f["answer"], "headline": f.get("headline") or f["answer"],
+        yield sse("answer", {"status": f["status"], "kind": f.get("kind", "data"), "comparison": f.get("comparison"),
+                             "text": f["answer"], "headline": f.get("headline") or f["answer"],
                              "explanation": f.get("explanation", "") if new else "",
                              "method": f.get("method", "") if new else f.get("explanation", ""),
                              "follow_ups": f.get("follow_ups", []),

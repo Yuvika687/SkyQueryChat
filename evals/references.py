@@ -57,6 +57,15 @@ def compare(cities, pol, a, b):
     return dict(sorted(means.items(), key=lambda kv: -kv[1])), {c: len(f) for c, f in frames.items()}
 
 
+def compare_diff(cities, pol, a, b):
+    """Higher-minus-lower difference and ratio of the common-day means, from exact (unrounded) means."""
+    frames = {c: _days(c, pol, a, b) for c in cities}
+    common = set.intersection(*(set(f.local_date) for f in frames.values()))
+    exact = sorted(((c, float(f[f.local_date.isin(common)].city_mean.mean())) for c, f in frames.items()), key=lambda x: -x[1])
+    (_, hi), (_, lo) = exact[0], exact[1]
+    return round(hi - lo, 1), round(hi / lo, 1), len(common)
+
+
 def diwali(city, year):
     D = date.fromisoformat(EVENTS["diwali"][str(year)]["date"]) if isinstance(EVENTS["diwali"][str(year)], dict) \
         else date.fromisoformat(EVENTS["diwali"][str(year)])
@@ -229,7 +238,17 @@ def analysis_refs() -> dict:
     ch = trend_ref("Chennai", "pm25", d(2026, 3, 1), d(2026, 4, 30))
     calm, windy = wind_ends("Delhi", "pm25", d(2025, 2, 18), DATA_END)
     dry, rain = rain_groups("Mumbai", "pm25", d(2025, 2, 18), DATA_END)
+    allm = compare(["Delhi", "Hyderabad"], "pm25", d(2025, 2, 18), DATA_END)[0]
+    all_diff, all_ratio, _ = compare_diff(["Delhi", "Hyderabad"], "pm25", d(2025, 2, 18), DATA_END)
+    jan = compare(["Kolkata", "Bengaluru"], "pm25", d(2026, 1, 1), d(2026, 1, 31))[0]
+    jan_diff, jan_ratio, _ = compare_diff(["Kolkata", "Bengaluru"], "pm25", d(2026, 1, 1), d(2026, 1, 31))
+    nov10 = compare(["Delhi", "Mumbai"], "pm10", d(2025, 11, 1), d(2025, 11, 30))[0]
+    dec = compare(["Hyderabad", "Chennai"], "pm25", d(2025, 12, 1), d(2025, 12, 31))[0]
     return {
+        "an_all_delhi_hyd": {"numbers": [allm["Delhi"], allm["Hyderabad"], all_diff], "tol": 0.11, "_ratio": all_ratio},
+        "an_jan_kol_ben": {"numbers": [jan["Kolkata"], jan["Bengaluru"], jan_diff], "tol": 0.11, "_ratio": jan_ratio},
+        "an_nov_pm10_delhi_mumbai": {"numbers": [nov10["Delhi"], nov10["Mumbai"]]},
+        "an_dec_chennai_hyd": {"numbers": [dec["Chennai"], dec["Hyderabad"]]},
         "an_winter_top_two": {"numbers": [w_rank["Delhi"], w_rank["Kolkata"]]},
         "an_mar_delhi_bengaluru": {"numbers": [mar["Delhi"], mar["Bengaluru"]]},
         "an_chennai_trend": {"any_of": [[ch["slope_per_month"]], [abs(ch["slope_per_month"])]], "tol": 0.15,

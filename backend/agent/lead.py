@@ -112,15 +112,55 @@ def _pairs(series: dict) -> list[tuple[str, float]]:
 
 
 def _pollutant(f: dict) -> str:
-    p = ((f.get("resolved_query") or {}).get("pollutant") or "").lower()
+    """The lead analysis's pollutant (the first item), not the mix of every tool the run called."""
+    rq = f.get("resolved_query") or {}
+    items = rq.get("items") or []
+    p = ((items[0].get("pollutant") if items else None) or rq.get("pollutant") or "").lower()
     return "PM10" if "pm10" in p else "PM2.5" if "pm2" in p or "pm25" in p else ""
 
 
 # ------------------------------------------------------------------ per analysis
 def _compare(f: dict, allowed: set[float]) -> str | None:
+    """Comparison lead from the city-mean, difference and ratio cards (never from the chart's daily points):
+    which city is higher, by how much, over which period and how many common days, or "too close to call"."""
     chart = f.get("chart") or {}
-    bars = sorted(_pairs((chart.get("series") or [{}])[0]), key=lambda x: -x[1])
-    if len(bars) < 2:
+    if chart.get("type") == "bar":           # older saved answers: one bar per city mean
+        return _compare_bars(f, allowed)
+    means = [(m.group(1), float(c["value"])) for c in f.get("cards", [])
+             if (m := re.fullmatch(r"([A-Z][A-Za-z]+)_mean", c.get("field", "")))]
+    means.sort(key=lambda x: -x[1])
+    if len(means) < 2:
+        return None
+    pol, per = _pollutant(f), period_phrase(f.get("resolved_query"), allowed)
+    cov = next(iter((f.get("coverage") or {}).values()), None) or {}
+    n_cities = len(cov.get("valid_days_by_city") or {}) or len(means)
+    n = cov.get("common_days")
+    both = "both cities" if n_cities == 2 else "every city"
+    days = f"on the {n} days with data for {both}" if n else f"on the days with data for {both}"
+    (a, va), (b, vb) = means[0], means[1]
+    close = [set(x) for x in cov.get("too_close_to_call") or []]
+    if {a, b} in close:
+        return (f"{a} and {b} are too close to call for {pol} {per}: {pm(va)} and {pm(vb)} µg/m³ {days}, "
+                f"and their 95% ranges overlap heavily.")
+    diff = _card(f, rf"difference_{a}_minus_{b}")
+    ratio = _card(f, rf"ratio_{a}_to_{b}")
+    by = ""
+    if diff:
+        by = f", {pm(diff['value'])} µg/m³ higher" + (f" ({ratio['value']:g} times {b}'s level)" if ratio else "")
+    if n_cities == 2:
+        return f"{a}'s {pol} was higher than {b}'s {per}: {pm(va)} against {pm(vb)} µg/m³{by}, {days}."
+    if len(means) < n_cities:                 # not every city's mean is on a card: the highest and the next one
+        return (f"{a} had the highest {pol} of the {count_word(n_cities)} cities {per} at {pm(va)} µg/m³, ahead of {b} at "
+                f"{pm(vb)} µg/m³{by}, {days}.")
+    (low, vl) = means[-1]
+    return (f"{a} had the highest {pol} of the {count_word(n_cities)} cities {per} at {pm(va)} µg/m³ and {low} the "
+            f"lowest at {pm(vl)} µg/m³, {days}.")
+
+
+def _compare_bars(f: dict, allowed: set[float]) -> str | None:
+    """Older saved answers, whose comparison chart is a bar of each city's mean (city names on the axis)."""
+    bars = sorted(_pairs(((f.get("chart") or {}).get("series") or [{}])[0]), key=lambda x: -x[1])
+    if len(bars) < 2 or any(re.match(r"\d{4}-\d{2}-\d{2}", name) for name, _ in bars):
         return None
     pol, per = _pollutant(f), period_phrase(f.get("resolved_query"), allowed)
     cov = next(iter((f.get("coverage") or {}).values()), None) or {}
@@ -215,7 +255,7 @@ def _diwali(f: dict, allowed: set[float]) -> str | None:
 def _unusual(f: dict, allowed: set[float]) -> str | None:
     rq = f.get("resolved_query") or {}
     city, pol, per = rq.get("city"), _pollutant(f), period_phrase(rq, allowed)
-    n = _card(f, "unusual_count")
+    n = _card(f, "n_unusual_days|unusual_count")      # older saved answers use the old name
     if not city or not n:
         return None
     count = int(n["value"])
@@ -260,7 +300,7 @@ def _coverage(f: dict, allowed: set[float]) -> str | None:
     city, per = rq.get("city"), period_phrase(rq, allowed)
     cov = next(iter((f.get("coverage") or {}).values()), None) or {}
     rows = {r.get("pollutant"): r for r in cov.get("by_pollutant") or []}
-    days = _card(f, "days_in_period")
+    days = _card(f, "n_days_in_period|days_in_period")
     if not city or not rows or not days:
         return None
     parts = []

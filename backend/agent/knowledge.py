@@ -26,30 +26,25 @@ def _rng(x) -> str:
 
 @lru_cache(maxsize=1)
 def digest() -> str:
+    """Compact facts for the prompt (about 2,000 characters)."""
     k = load()
-    a, q = k["assistant"], k["aqi"]
+    a, q, s = k["assistant"], k["aqi"], k["standards_24h"]
     cats = []
     for c in q["categories"]:
-        pm25 = _rng(c["pm25_24h_ugm3"]) if "pm25_24h_ugm3" in c else f"above {c['pm25_24h_ugm3_above']}"
-        pm10 = _rng(c["pm10_24h_ugm3"]) if "pm10_24h_ugm3" in c else f"above {c['pm10_24h_ugm3_above']}"
-        cats.append(f"{c['category']}: AQI {_rng(c['aqi'])}, PM2.5 {pm25}, PM10 {pm10} µg/m³ (24 h); "
-                    f"CPCB health statement: \"{c['health_statement']}\"")
-    s = k["standards_24h"]
-    lines = [
-        f"About you: {a['name']}, {a['role']}: {', '.join(a['cities'])}; pollutants {' and '.join(a['pollutants'])}.",
-        "You can answer: " + "; ".join(a["abilities"]) + ".",
-        "How answers work: " + a["how_answers_work"],
-        "You cannot: " + "; ".join(a["cannot_do"]) + ".",
+        pm25 = _rng(c["pm25_24h_ugm3"]) if "pm25_24h_ugm3" in c else f">{c['pm25_24h_ugm3_above']}"
+        pm10 = _rng(c["pm10_24h_ugm3"]) if "pm10_24h_ugm3" in c else f">{c['pm10_24h_ugm3_above']}"
+        cats.append(f"{c['category']} {_rng(c['aqi'])} (PM2.5 {pm25}, PM10 {pm10}): \"{c['health_statement']}\"")
+    return "\n".join([
+        f"You: {a['name']}, {a['role']} ({', '.join(a['cities'])}); PM2.5 and PM10. Can do: " + "; ".join(a["abilities"])
+        + ". " + a["how_answers_work"] + " Cannot: " + "; ".join(a["cannot_do"]) + ".",
         "AQI: " + q["what"] + " " + q["bulletin"],
-        "CPCB categories: " + " | ".join(cats) + f" (source: {q['health_source']}).",
-        "Glossary: " + " ".join(f"{t}: {v}" for t, v in k["glossary"].items()),
-        f"24-hour standards: India NAAQS PM2.5 {s['india_naaqs']['pm25_ugm3']}, PM10 {s['india_naaqs']['pm10_ugm3']} µg/m³; "
-        f"WHO guideline PM2.5 {s['who_guideline']['pm25_ugm3']}, PM10 {s['who_guideline']['pm10_ugm3']} µg/m³.",
-        "Sources: " + " ".join(f"{x['name']} ({x['type']}): {x['what']}." for x in k["sources"]),
-        "Method: " + " ".join(k["method"]),
-        "Known limits: " + " ".join(k["known_limits"]),
-    ]
-    return "\n".join(lines)
+        "CPCB categories, AQI (24-h PM µg/m³) and CPCB health statement: " + "; ".join(cats) + ".",
+        "Terms: " + " ".join(f"{t}: {v.split(':')[0]}." for t, v in k["glossary"].items()),
+        f"24-h standards: India PM2.5 {s['india_naaqs']['pm25_ugm3']}, PM10 {s['india_naaqs']['pm10_ugm3']}; WHO PM2.5 "
+        f"{s['who_guideline']['pm25_ugm3']}, PM10 {s['who_guideline']['pm10_ugm3']} µg/m³.",
+        "Sources: " + "; ".join(f"{x['name']} ({x['type']})" for x in k["sources"]) + ".",
+        "Limits: " + " ".join(k["known_limits"][:4]),
+    ])
 
 
 def allowed(windows: dict | None = None) -> set[float]:

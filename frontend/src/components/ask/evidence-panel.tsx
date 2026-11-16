@@ -99,7 +99,7 @@ export function ProofView({ proof, onBack, backLabel = "Back to evidence" }: { p
       </div>
       <p className="flex items-baseline gap-2">
         <span className="num text-[44px] leading-none font-medium">{proof.value}</span>
-        <span className="text-sm text-subtle">{proof.unit}</span>
+        {!proof.value.endsWith(proof.unit) && <span className="text-sm text-subtle">{proof.unit}</span>}
         {proof.category && <CategoryBadge category={proof.category} className="ml-auto" label="Category" />}
       </p>
       {proof.scale && <ScaleBar value={proof.raw} scale={proof.scale} />}

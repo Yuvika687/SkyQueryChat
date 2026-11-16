@@ -25,7 +25,6 @@ export function AskPage() {
           <p className="mt-0.5 text-[12.5px] text-faint">Click any highlighted number to see where it came from.</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <AskContextLabel />
           <button type="button" onClick={() => openChat(null)} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 text-[13px] text-subtle hover:border-teal/60 hover:text-foreground">
             <Plus className="size-4" aria-hidden />
             New chat
@@ -35,6 +34,7 @@ export function AskPage() {
             <span className="sr-only sm:not-sr-only">Recent chats</span>
           </button>
         </div>
+        <AskContextLabel />
       </header>
       <div className="flex min-h-0 flex-1 border-t border-line">
         <AskScreen initialQuestion={q} onInitialSent={() => router.replace("/ask", { scroll: false })} />
@@ -58,11 +58,11 @@ function AskContextLabel() {
   if (!askContext || !askContext.cities.length) return null;
   const cities = askContext.cities.length === 6 ? "All six cities" : askContext.cities.join(", ");
   return (
-    <p className="hidden min-w-0 items-center gap-1.5 truncate text-[13px] text-subtle lg:flex" aria-label="Current conversation">
+    <p className="flex w-full min-w-0 basis-full flex-wrap items-center gap-x-1.5 text-[13px] text-subtle" aria-label="Current conversation">
       <MapPin className="size-3.5 shrink-0" aria-hidden />
-      <span className="truncate text-foreground">{cities}</span>
+      <span className="text-foreground">{cities}</span>
       {askContext.pollutant && <span className="shrink-0">· {askContext.pollutant}</span>}
-      {askContext.period && <span className="truncate">· {askContext.period}</span>}
+      {askContext.period && <span>· {askContext.period}</span>}
     </p>
   );
 }

@@ -5,10 +5,10 @@ import { buildOption, withGaps } from "./chart-options";
 import { applyEvent, newTurn } from "./chat-state";
 import { evidenceFor } from "./evidence";
 import { followUps } from "./followups";
-import { keyNumbers } from "./key-numbers";
+import { cardRole, keyNumbers } from "./key-numbers";
 import { buildTimeline, summarise } from "./timeline";
 import { fixtureEvents } from "@/test/fixtures";
-import type { ChartSpec, StepEvent } from "./types";
+import type { Card, ChartSpec, StepEvent } from "./types";
 
 const turnFrom = (name: string, q = "q") => fixtureEvents(name).reduce(applyEvent, newTurn(q));
 
@@ -214,5 +214,31 @@ describe("key numbers", () => {
     const half = keyNumbers([{ ...t.cards[0], value: 188.5 }])[0];
     expect(half.value).toBe("188.5");                     // (a + b) / 2: not rounded into a different number
     expect(half.exact).toBe(188.5);
+  });
+});
+
+describe("comparison cards", () => {
+  const card = (field: string, value: number, unit: string, extra: Partial<Card> = {}): Card => ({
+    label: field, value, unit, dataset_id: "ds1", field, data_type: "measured", source: "OpenAQ", warnings: [], ...extra,
+  });
+  it("gives only levels a role that can carry a scale bar, and puts the 95% range inside the city's card", () => {
+    const k = keyNumbers([
+      card("Delhi_mean", 82.8, "µg/m³", { role: "level", range95: [70, 95.3] }),
+      card("difference_Delhi_minus_Hyderabad", 50, "µg/m³", { role: "difference" }),
+      card("ratio_Delhi_to_Hyderabad", 2.5, "×", { role: "ratio" }),
+    ]);
+    expect(k.map((x) => x.role)).toEqual(["level", "difference", "ratio"]);
+    expect(k[0].range).toBe("95% range 70.0–95.3");
+    expect(k[2].value).toBe("2.5×");
+    expect(k[1].label).toBe("Difference");
+  });
+  it("infers roles for older saved answers without one", () => {
+    expect(cardRole(card("Delhi_range_low", 70, "µg/m³"))).toBe("statistic");
+    expect(cardRole(card("common_days", 526, "days"))).toBe("count");
+    expect(cardRole(card("mean", 82.8, "µg/m³"))).toBe("level");
+  });
+  it("breaks a weekly line only where a whole week is missing", () => {
+    const out = withGaps([["2026-01-05", 1], ["2026-01-12", 2], ["2026-01-26", 3]]);
+    expect(out).toEqual([["2026-01-05", 1], ["2026-01-12", 2], ["2026-01-19", null], ["2026-01-26", 3]]);
   });
 });

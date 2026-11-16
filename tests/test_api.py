@@ -715,3 +715,19 @@ def test_data_end_limit_comes_from_the_data(store):
     with TestClient(make(store)) as c:
         lim = next(x for x in c.get("/api/limits").json()["limits"] if x["id"] == "data_end")
         assert str(R.DATA["measured_end"]) in lim["detail"] and str(R.DATA["aqi_end"]) in lim["detail"]
+
+
+def test_a_cached_greeting_replays_as_a_greeting_and_comparisons_keep_their_card(store):
+    import json as _json
+    from pydantic_ai.messages import ModelResponse, TextPart
+    from pydantic_ai.models.function import FunctionModel
+
+    def hello(messages, info):
+        return ModelResponse(parts=[TextPart(_json.dumps({"kind": "greeting", "status": "answered", "answer": "Hi! I'm SkyQueryChat.",
+                                                          "follow_ups": ["Compare Delhi and Mumbai PM2.5 in October 2026."]}))])
+    with TestClient(make(store, model=FunctionModel(hello))) as c:
+        _, first = chat(c, "hi")
+        _, again = chat(c, "hi")
+    a, b = dict(first)["answer"], dict(again)["answer"]
+    assert a["kind"] == "greeting" and dict(again)["done"]["cached"] is True
+    assert b["kind"] == "greeting" and "comparison" in b

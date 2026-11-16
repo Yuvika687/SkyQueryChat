@@ -521,6 +521,39 @@ Rules:
 - Evaluation: `evals/conversation.json` (13 questions, 14 turns; `kind` and `no_tools` expectations); the scorer
   re-checks conversation numbers against the facts file.
 
+### Comparison answers and Ask design (main, 2026-11-16)
+
+- **Bad answer fixed** ("12 AM, 14 Dec 2025 had the highest PM2.5 of the 568 cities"): it was the code-written last-resort
+  lead, not the model. `lead._compare` read the daily line chart as one bar per city (568 points -> "568 cities", dates as
+  names) and the chart wrote dates as timestamps. Now: the lead reads the city-mean, difference and ratio cards (older
+  saved answers with a bar chart keep the old path, `_compare_bars`); every daily date is ISO (`functions._iso`).
+- **Why the run reached the fallback:** comparisons over all data needed 4 requests (needless check_request and
+  data_coverage calls, a retry for "999" quoted from the caveat rule) and passed the 12,000-token cap. Now: tool
+  descriptions say when check_request/data_coverage are needed, the prompt says a comparison needs compare_cities alone,
+  the facts digest is shorter (about 2,700 characters, first request only), "above 999 µg/m³" is a stated limit (not a
+  value) for the checker, and a token cap hit after data was computed gives the checked code lead instead of an error.
+- **compare_cities** adds per pair (highest city vs each other): `difference` and `ratio` from exact means (Python), and
+  per city the highest/lowest day with date. Fields: `difference_<A>_minus_<B>` (µg/m³), `ratio_<A>_to_<B>` (×),
+  `<City>_highest_day_value/_date`, `n_cities`, `n_common_days`, `<City>_n_valid_days`.
+- **Counts:** every count field is `n_*` with a unit (days, stations, cities, station-days, hours). `verify.unit_mismatches`
+  rejects a number written with the wrong unit word ("568 cities"); counts in tool notes and the user's own numbers count.
+  The gap note now says "N days" (not "date(s)").
+- **No period given:** all available data (existing design), and the answer must say "over all available data" with the
+  tool's dates. Comparison headline shape: higher city, ratio, both means, difference, period, common days, or "too close
+  to call".
+- **Cards:** `Card.role` (level | difference | ratio | count | share | rank | statistic; inferred for older saved answers
+  in `key-numbers.ts`); only levels get a category badge and scale bar. A city's 95% range is `Card.range95`, shown inside
+  that city's card ("(95% range 70.0–95.3)"); range cards become the city's mean card. `FinalAnswer.comparison` (code-built
+  from the result) drives the comparison card ("Delhi is 2.5× Hyderabad · +50.0 µg/m³ · 526 common days", both cities side
+  by side); the key numbers then skip the city means, difference and ratio. Cached replays carry `kind` and `comparison`.
+- **Charts:** `ChartSpec.views` (calculated in Python): comparisons over 90 days open on weekly means (Monday weeks with at
+  least 4 valid days) with a Daily view; weekly/monthly trends add a Daily view. `withGaps` steps by 7 days for weekly
+  series. Taller charts (300/340 px). Hyderabad's line is #D4A373 (was near-white).
+- **Ask layout:** long headlines (> 120 characters) use the sans at 19–21 px, short ones keep the serif (max 30 px); the
+  context line has its own row under the page heading; the conversation has bottom padding above the composer; number
+  hints use the anchored Tooltip (`ProofButton`), not a native title; chat bubbles use the answer-card glass style; a blank
+  step text falls back to a plain default.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

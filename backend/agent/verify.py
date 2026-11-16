@@ -25,7 +25,8 @@ STRIP = [
     re.compile(r"\bW[1-4]\b"), re.compile(r"\bCC BY 4\.0\b"), re.compile(r"\bC3S\b"),
     re.compile(r"\b(?:gpt|gemini|llama)[\w.\-/]*", re.I),
     re.compile(r"\bds\d+\b"),                                      # dataset ids
-    re.compile(r"\b95\s?%\s?(?=(?:confidence\s)?(?:range|interval|CI)\b)", re.I),  # "95% range": the method, not a value
+    re.compile(r"\b95\s?%\s?(?=(?:confidence\s)?(?:ranges?|intervals?|CIs?)\b)", re.I),  # "95% range": the method, not a value
+    re.compile(r"\b(?:above|over)\s999\s?µg/m³"),       # OpenCity's documented blanking limit, a caveat, not a value
 ]
 
 MONTHS = {m: i + 1 for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"])}
@@ -195,6 +196,8 @@ def user_safe_numbers(question: str) -> set[float]:
     """Numbers from the user's question that may be echoed: years and small counts (e.g. 'top 5')."""
     nums, dates = extract_numbers(question)
     out = {v for _, v, dec, pct in nums if not pct and dec == 0 and (2000 <= v <= 2100 or 0 < v <= 12)}
+    for _, yy in re.findall(r"\b(20\d\d)\s?[-–/]\s?(\d\d)\b", question):   # "winter 2025-26": the short year
+        out.add(float(yy))
     for y, m, d in dates:
         out.update({float(y), float(int(m)), float(int(d)), _code(int(y), int(m), int(d))})
     for _, ds in readable_dates(question)[0]:          # dates the user wrote may be echoed back
@@ -247,4 +250,52 @@ def trend_conflicts(text: str, statuses: list[str]) -> list[str]:
         bad.append('the trend result is "no clear trend" (p >= 0.05): do not describe it as rising or falling')
     elif s in ("increasing", "decreasing") and _CLAIM_NONE.search(text):
         bad.append(f'the trend result is "{s}" (p < 0.05): do not say there is no clear trend')
+    return bad
+
+
+# ----------------------------------------------------------------------------- counts must keep their unit
+UNIT_WORD = re.compile(r"(?<![\w.,])(\d{1,3}(?:,\d{3})+|\d+)\s+(station-days|station-hours|stations?|cities|city|days?|hours?)\b(?!-)",
+                       re.I)
+WORD_UNIT = {"station-days": "station-days", "station-hours": "hours", "station": "stations", "stations": "stations",
+             "city": "cities", "cities": "cities", "day": "days", "days": "days", "hour": "hours", "hours": "hours"}
+
+
+def unit_numbers(fields: Iterable[Any]) -> dict[str, set[float]]:
+    """Count values by unit, from result fields that carry a count unit (fields.Field: value, unit)."""
+    out: dict[str, set[float]] = {}
+    for f in fields:
+        unit, v = getattr(f, "unit", ""), getattr(f, "value", None)
+        if unit in WORD_UNIT.values() and isinstance(v, (int, float)) and not isinstance(v, bool):
+            out.setdefault(unit, set()).add(float(v))
+    return out
+
+
+NOTE_COUNT = re.compile(r"(?<![\w.,])(\d+)\s+(date\(s\)|dates?|days?|stations?|cities|city|hours?)\b", re.I)
+
+
+def note_counts(payloads: Iterable[Any]) -> dict[str, set[float]]:
+    """Counts written in tool notes ('7 date(s) have severe network-wide data gaps'), which the model may repeat."""
+    out: dict[str, set[float]] = {}
+    for p in payloads:
+        for note in (p or {}).get("notes") or []:
+            for num, word in NOTE_COUNT.findall(str(note)):
+                w = word.lower()
+                unit = "days" if w.startswith(("date", "day")) else WORD_UNIT.get(w, w)
+                out.setdefault(unit, set()).add(float(num))
+    return out
+
+
+def unit_mismatches(texts: list[str], by_unit: dict[str, set[float]], user_numbers: set[float] = frozenset()) -> list[str]:
+    """'568 cities' when no cities field is 568 (e.g. a day count written as cities). A number written with a count
+    word must be a field with that unit, or a number the user wrote ('last 30 days')."""
+    bad = []
+    for text in texts:
+        if not text:
+            continue
+        _, plain = readable_dates(text)                        # '13 Nov' is a date, not a count of something
+        for num, word in UNIT_WORD.findall(plain):
+            v = float(num.replace(",", ""))
+            unit = WORD_UNIT[word.lower()]
+            if v not in by_unit.get(unit, set()) and v not in user_numbers:
+                bad.append(f"{num} {word}")
     return bad

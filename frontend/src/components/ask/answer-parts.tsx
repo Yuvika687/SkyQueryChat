@@ -75,13 +75,19 @@ export function CategoryChip({ category, prefix }: { category: string; prefix?: 
 
 // ------------------------------------------------------------------ chart + table + actions
 /** compact: inside the evidence panel, where the Data tab already holds the table. */
-export function ChartPanel({ spec, dataType, answerText, compact }: { spec: ChartSpec; dataType: DataType | null; answerText: string; compact?: boolean }) {
+export function ChartPanel({ spec: base, dataType, answerText, compact }: { spec: ChartSpec; dataType: DataType | null; answerText: string; compact?: boolean }) {
   const [view, setView] = useState<"chart" | "table">("chart");
+  // weekly (or monthly) means first, daily values one click away: every view is calculated in the backend
+  const views = base.views ?? [];
+  const [viewKey, setViewKey] = useState<string | null>(null);
+  const picked = views.find((v) => v.key === viewKey) ?? views[0];
+  const spec = useMemo<ChartSpec>(() => (picked ? { ...base, x: picked.x, series: picked.series,
+    title: picked.key === "daily" ? base.title.replace(/\b(by week|weekly mean|monthly mean)\b/i, (m) => (/by week/i.test(m) ? "by day" : "daily values")) : base.title } : base), [base, picked]);
   const toast = useToast();
   const chartRef = useRef<EChartHandle | null>(null);
   const option = useMemo(() => buildOption(spec, dataType), [spec, dataType]);
   const table = useMemo(() => chartTable(spec), [spec]);
-  const height = spec.type === "calendar_heatmap" ? 230 : spec.type === "bar" ? Math.max(160, (spec.series[0]?.data.length ?? 4) * 36 + 56) : compact ? 250 : 280;
+  const height = spec.type === "calendar_heatmap" ? 230 : spec.type === "bar" ? Math.max(160, (spec.series[0]?.data.length ?? 4) * 36 + 56) : compact ? 300 : 340;
   const name = slug(spec.title);
   const aqi = isAQI(spec);
   const key = eventKey(spec);
@@ -125,6 +131,16 @@ export function ChartPanel({ spec, dataType, answerText, compact }: { spec: Char
           <IconAction icon={Download} label="Download data" onClick={csv} />
         </div>
       </div>
+      {views.length > 1 && view === "chart" && (
+        <div role="group" aria-label="Chart detail" className="flex w-fit rounded-lg bg-surface p-0.5">
+          {views.map((v) => (
+            <button key={v.key} type="button" aria-pressed={picked?.key === v.key} onClick={() => setViewKey(v.key)}
+              className={cn("h-7 rounded-md px-2.5 text-xs font-medium", picked?.key === v.key ? "bg-raised text-teal" : "text-subtle hover:text-foreground")}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      )}
       {key && view === "chart" && <p className="text-xs leading-4 text-subtle">{key}</p>}
       <div className={cn("-mx-1", view !== "chart" && "hidden")}>
         <EChart handle={chartRef} option={option} height={height} ariaLabel={`${spec.title}. Open the data table for the values.`} />

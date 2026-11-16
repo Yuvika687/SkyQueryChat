@@ -56,7 +56,7 @@ export function normaliseCategory(name: unknown): Category | null {
 }
 
 export const CITY_COLOURS: Record<string, string> = {
-  Delhi: "#2DD4BF", Mumbai: "#60A5FA", Kolkata: "#F59E0B", Chennai: "#F472B6", Bengaluru: "#A78BFA", Hyderabad: "#E2E8F0",
+  Delhi: "#2DD4BF", Mumbai: "#60A5FA", Kolkata: "#F59E0B", Chennai: "#F472B6", Bengaluru: "#A78BFA", Hyderabad: "#D4A373",
 };
 export const CITIES = Object.keys(CITY_COLOURS);
 

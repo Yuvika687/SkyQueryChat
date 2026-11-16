@@ -127,7 +127,8 @@ def _noted(res, notes: list[str]):
 # ----------------------------------------------------------------------------- tools
 def check_request(ctx: RunContext[RunDeps], cities: list[str] | None = None, pollutant: str | None = None,
                   period: str | None = None, event: str | None = None) -> dict:
-    """Check unclear or unsupported cities, pollutant, period or event, and data availability."""
+    """Only when a city, pollutant, period or event may be unsupported or unclear. Not needed otherwise: the analysis
+    tools resolve misspellings ("hydrabad") and periods themselves."""
     deps = ctx.deps
     deps.tools_called.append("check_request")
     deps.event("tool_call", "check_request", args={"cities": cities, "pollutant": pollutant, "period": period, "event": event})
@@ -244,7 +245,8 @@ def weather_association(ctx: RunContext[RunDeps], city: str, weather: WeatherVar
 
 
 def data_coverage(ctx: RunContext[RunDeps], city: str, period: str | None = None) -> dict:
-    """Stations, coverage, exclusions and data-quality severity for a city. Period defaults to all data."""
+    """Only when the user asks about data coverage or quality: stations, coverage, exclusions and data-quality severity
+    for a city. Period defaults to all data. Other tools already report their own coverage."""
     def go():
         a = []
         s, e, n = _period(period, a)

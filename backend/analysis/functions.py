@@ -22,6 +22,24 @@ SRC_OPENAQ = "OpenAQ archive (CPCB/AirNow/AirGradient)"
 SRC_BULLETIN = "CPCB daily AQI bulletin (via UrbanEmissions)"
 PM_UNITS = "µg/m³"
 POLLUTANT_NAMES = {"pm25": "PM2.5", "pm10": "PM10"}
+
+
+WEEK_MIN_DAYS = 4          # a weekly chart point needs at least this many valid days in its Monday-Sunday week
+
+
+def weekly_points(dates, values) -> list[list]:
+    """Weekly means of valid daily values for charts: [week's Monday, mean]; weeks with fewer than WEEK_MIN_DAYS valid
+    days are left out (a gap), never filled."""
+    x = pd.DataFrame({"d": pd.to_datetime(list(dates)), "v": list(values)}).dropna()
+    if x.empty:
+        return []
+    g = x.groupby(x["d"].dt.to_period("W-SUN"))["v"].agg(["mean", "size"])
+    return [[p.start_time.date().isoformat(), r(m)] for p, (m, n) in g.iterrows() if n >= WEEK_MIN_DAYS]
+
+
+def _iso(d) -> str:
+    """A daily value's date as 'yyyy-mm-dd' (never a timestamp with a time of day)."""
+    return pd.Timestamp(d).date().isoformat()
 WEATHER_VARS = {"temperature_mean_c": ("temperature", "°C"), "relative_humidity_mean_pct": ("relative humidity", "%"),
                 "wind_speed_mean_kmh": ("wind speed", "km/h"), "precipitation_sum_mm": ("rainfall", "mm")}
 DATA_START = date(2025, 2, 18)
@@ -96,8 +114,9 @@ def _common_warnings(start: date, end: date, quality: dict, data_end: date | Non
     if data_end and end > data_end:
         w.append(f"Data after {data_end} is not yet published by the source.")
     if quality.get("n_severe_dates"):
-        w.append(f"{quality['n_severe_dates']} date(s) in this period have severe network-wide data gaps; "
-                 "values on those dates are less reliable.")
+        n = quality["n_severe_dates"]
+        w.append(f"{n} {'day' if n == 1 else 'days'} in this period {'has' if n == 1 else 'have'} severe network-wide "
+                 f"data gaps; values on {'that day are' if n == 1 else 'those days are'} less reliable.")
     return w
 
 
@@ -181,10 +200,17 @@ def city_trend(s: Store, city: str, pollutant: str, start: date, end: date, freq
     if v.empty:
         warns.append("No valid city values in this period.")
     st = _primary_stations(s, city)
+    x_axis = {"field": "period", "type": "time" if freq == "D" else "category"}
+    main = [{"name": city, "data": [[p["period"], p["mean"]] for p in periods]}]
+    views = []
+    if freq != "D" and not v.empty:          # weekly or monthly means first, the daily values one click away
+        label = {"W": "Weekly", "M": "Monthly"}[freq]
+        views = [{"key": label.lower(), "label": label, "x": x_axis, "series": main},
+                 {"key": "daily", "label": "Daily", "x": {"field": "date", "type": "time"},
+                  "series": [{"name": city, "data": [[_iso(d), r(x)] for d, x in zip(v["local_date"], v["city_mean"])]}]}]
     chart = ChartSpec(type="line", title=f"{city} {POLLUTANT_NAMES[pollutant]} ({ {'D': 'daily', 'W': 'weekly', 'M': 'monthly'}[freq]} mean)",
-                      x={"field": "period", "type": "time" if freq == "D" else "category"},
-                      y={"field": "mean", "label": f"{POLLUTANT_NAMES[pollutant]} ({PM_UNITS})"},
-                      series=[{"name": city, "data": [[p["period"], p["mean"]] for p in periods]}], units=PM_UNITS)
+                      x=x_axis, y={"field": "mean", "label": f"{POLLUTANT_NAMES[pollutant]} ({PM_UNITS})"},
+                      series=main, units=PM_UNITS, views=views)
     return AnalysisResult(
         kind="city_trend", title=f"{POLLUTANT_NAMES[pollutant]} trend in {city}", metric=pollutant, units=PM_UNITS,
         data_type="measured", source=SRC_OPENAQ, date_range={"start": str(start), "end": str(end)},
@@ -211,7 +237,12 @@ def compare_cities(s: Store, cities: list[str], pollutant: str, start: date, end
         v = f[f["meets_rule"]]
         cm = v[v["local_date"].isin(common)]
         ci = ST.block_bootstrap_ci(list(pd.to_datetime(cm["local_date"]).dt.date), list(cm["city_mean"])) if len(cm) else None
+        hi = v.loc[v["city_mean"].idxmax()] if len(v) else None
+        lo = v.loc[v["city_mean"].idxmin()] if len(v) else None
         rows.append({"city": c, "mean_common_days": r(cm["city_mean"].mean()),
+                     "_mean_exact": float(cm["city_mean"].mean()) if len(cm) else None,
+                     "highest_day": {"date": _iso(hi["local_date"]), "value": r(hi["city_mean"])} if hi is not None else None,
+                     "lowest_day": {"date": _iso(lo["local_date"]), "value": r(lo["city_mean"])} if lo is not None else None,
                      "median_common_days": r(cm["city_mean"].median()),
                      "range95_low": r(ci[0]) if ci else None, "range95_high": r(ci[1]) if ci else None,
                      "mean_all_valid_days": r(v["city_mean"].mean()), "n_valid_days": int(len(v)),
@@ -219,6 +250,17 @@ def compare_cities(s: Store, cities: list[str], pollutant: str, start: date, end
     ranked = sorted(rows, key=lambda x: (x["mean_common_days"] is None, -(x["mean_common_days"] or 0)))
     for i, row in enumerate(ranked, 1):
         row["rank_highest_first"] = i if row["mean_common_days"] is not None else None
+    # the highest city against each other city, on the same common days (difference and ratio from exact means)
+    comparisons = []
+    top = ranked[0] if ranked and ranked[0]["_mean_exact"] is not None else None
+    for o in ranked[1:]:
+        if top is None or o["_mean_exact"] is None:
+            continue
+        comparisons.append({"higher": top["city"], "lower": o["city"],
+                            "difference": r(top["_mean_exact"] - o["_mean_exact"]),
+                            "ratio": r(top["_mean_exact"] / o["_mean_exact"], 1) if o["_mean_exact"] > 0 else None})
+    for row in rows:
+        row.pop("_mean_exact")
     # neighbours in the ranking whose 95% ranges overlap heavily are "too close to call"
     close = []
     for a, b in zip(ranked, ranked[1:]):
@@ -235,25 +277,34 @@ def compare_cities(s: Store, cities: list[str], pollutant: str, start: date, end
     if len(common) < 30:
         warns.append(f"Only {len(common)} day(s) have values for every city; comparison is weak.")
     n_st = {c: int(len(_primary_stations(s, c))) for c in cities}
-    # one line per city on a date axis; days without a city value stay gaps
-    chart = ChartSpec(type="line", title=f"{POLLUTANT_NAMES[pollutant]} by day: {', '.join(cities)}",
-                      x={"field": "date", "type": "time"},
-                      y={"field": "city_mean", "label": f"{POLLUTANT_NAMES[pollutant]} ({PM_UNITS})"},
-                      series=[{"name": c, "data": [[str(d), r(x)] for d, x in zip(f.loc[f["meets_rule"], "local_date"],
-                                                                               f.loc[f["meets_rule"], "city_mean"])]}
-                              for c, f in frames.items()],
-                      units=PM_UNITS)
+    # one line per city on a date axis; days without a city value stay gaps. Over 90 days the chart opens on weekly
+    # means (calculated here), with the daily view one click away.
+    daily = [{"name": c, "data": [[_iso(d), r(x)] for d, x in zip(f.loc[f["meets_rule"], "local_date"],
+                                                                f.loc[f["meets_rule"], "city_mean"])]}
+             for c, f in frames.items()]
+    x_axis = {"field": "date", "type": "time"}
+    views = []
+    if days > 90:
+        weekly = [{"name": c, "data": weekly_points(f.loc[f["meets_rule"], "local_date"], f.loc[f["meets_rule"], "city_mean"])}
+                  for c, f in frames.items()]
+        views = [{"key": "weekly", "label": "Weekly", "x": x_axis, "series": weekly},
+                 {"key": "daily", "label": "Daily", "x": x_axis, "series": daily}]
+    chart = ChartSpec(type="line", title=f"{POLLUTANT_NAMES[pollutant]} by {'week' if views else 'day'}: {', '.join(cities)}",
+                      x=x_axis, y={"field": "city_mean", "label": f"{POLLUTANT_NAMES[pollutant]} ({PM_UNITS})"},
+                      series=views[0]["series"] if views else daily, units=PM_UNITS, views=views,
+                      notes=[f"Weekly means of valid days (weeks with at least {WEEK_MIN_DAYS} valid days)."] if views else [])
     return AnalysisResult(
         kind="compare_cities", title=f"{POLLUTANT_NAMES[pollutant]} across {', '.join(cities)}", metric=pollutant,
         units=PM_UNITS, data_type="measured", source=SRC_OPENAQ, date_range={"start": str(start), "end": str(end)},
         stations={"count_by_city": n_st, "tier": "primary reference"},
         coverage={"days_in_period": days, "common_days": len(common),
-                  "valid_days_by_city": {x["city"]: x["n_valid_days"] for x in rows}},
+                  "valid_days_by_city": {x["city"]: x["n_valid_days"] for x in rows}, "too_close_to_call": close},
         quality=q, method="Ranking uses only days on which every city has a valid city value, so cities are "
                           "compared over the same dates. 95% range: weekly block bootstrap of those daily values "
                           "(neighbouring days are correlated). Neighbours whose ranges overlap by at least half are "
                           "too close to call.",
-        warnings=warns, values={"cities": ranked, "common_days": len(common), "too_close_to_call": close}, chart=chart)
+        warnings=warns, values={"cities": ranked, "common_days": len(common), "too_close_to_call": close,
+                                "comparisons": comparisons}, chart=chart)
 
 
 # ----------------------------------------------------------------------------- 3. Diwali AQI

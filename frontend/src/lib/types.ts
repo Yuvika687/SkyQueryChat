@@ -26,6 +26,23 @@ export interface Card {
   data_type: DataType;
   source: string;
   warnings: string[];
+  /** What the number is (absent in older saved answers). Only "level" gets a category badge and scale bar. */
+  role?: "level" | "difference" | "ratio" | "count" | "share" | "rank" | "statistic";
+  /** [low, high] 95% range of a city mean in a comparison, shown inside that city's card. */
+  range95?: number[] | null;
+}
+
+/** Code-built summary of a comparison answer (from the tool result). */
+export interface ComparisonSummary {
+  pollutant: string | null;
+  units: string;
+  n_common_days: number | null;
+  higher: string | null;
+  lower: string | null;
+  difference: number | null;
+  ratio: number | null;
+  too_close_to_call: boolean;
+  cities: { city: string; mean: number; range95: number[] | null }[];
 }
 
 export interface SourceRef {
@@ -70,6 +87,8 @@ export interface ChartSpec {
   bands?: { label: string; start: number | string; end: number | string }[];
   colour_scale?: string | null;
   notes?: string[];
+  /** Other views of the same data, calculated in the backend; the first one is what `series` shows. */
+  views?: { key: string; label: string; x: ChartSpec["x"]; series: ChartSeries[] }[];
 }
 
 /** Chosen by the model: conversation kinds show as a plain chat reply; "data" is the full analysis flow. */
@@ -93,6 +112,7 @@ export interface AnswerEvent {
   resolved_query: ResolvedQuery | null;
   required_warnings: RequiredWarning[];
   model: string | null;
+  comparison?: ComparisonSummary | null;
   verification: {
     passed?: boolean;
     retries?: number;

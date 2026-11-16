@@ -135,7 +135,7 @@ function ChatReply({ turn, busy, onAsk }: { turn: Turn; busy: boolean; onAsk: (q
   const chips = (a.follow_ups ?? []).filter((q) => q.trim()).slice(0, 3);
   return (
     <div className="flex flex-col gap-3" data-kind={a.kind}>
-      <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-line bg-white/[0.04] px-4 py-3 text-[15px] leading-7">
+      <div className="glass max-w-[85%] rounded-3xl rounded-bl-lg p-5 text-[15px] leading-7 shadow-card sm:px-6">
         <p>{readable(text)}</p>
         {more && <p className="mt-2 text-subtle">{readable(more)}</p>}
       </div>

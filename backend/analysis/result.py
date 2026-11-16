@@ -26,6 +26,8 @@ class ChartSpec:
     bands: list[dict[str, Any]] = field(default_factory=list)   # e.g. festival periods
     colour_scale: str | None = None            # "cpcb_aqi" when colours carry AQI meaning
     notes: list[str] = field(default_factory=list)
+    # other views of the same data, calculated here ({"key", "label", "x", "series"}); the first is what `series` shows
+    views: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass

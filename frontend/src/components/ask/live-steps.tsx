@@ -45,7 +45,9 @@ export function shownSteps(events: StepEvent[], answered: boolean): ShownStep[] 
     }
   }
   if (answered) out.push({ key: "write", icon: "write", text: "Wrote the answer" });
-  return out;
+  // never an empty numbered entry: a step whose text came out blank gets its plain default
+  const DEFAULT = { plan: "Planned the analysis", tool: "Ran an analysis", check: "Checked every number", fix: "Corrected the answer", write: "Wrote the answer" };
+  return out.map((s) => (s.text.trim() ? s : { ...s, text: DEFAULT[s.icon] }));
 }
 
 const ICONS = { plan: Search, tool: Wrench, check: ShieldCheck, fix: RotateCcw, write: PenLine };

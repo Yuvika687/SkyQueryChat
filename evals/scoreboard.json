@@ -1763,8 +1763,8 @@
   },
   "analysis": {
    "main_first_pass": {
-    "run": "20261113-1808_analysis_first",
-    "started": "2026-11-13 18:08",
+    "run": "20261116-2101_analysis_first",
+    "started": "2026-11-16 21:01",
     "model_chain": [
      "google:gemini-3.5-flash-lite",
      "google:gemini-3.1-flash-lite",
@@ -1772,65 +1772,221 @@
     ],
     "kind": "first",
     "complete": true,
-    "commit": "be4cdb1",
+    "commit": "fccbe08",
     "summary": {
      "overall": {
-      "turns": 8,
-      "pass": 8,
-      "pass_pct": 100.0,
+      "turns": 12,
+      "pass": 10,
+      "pass_pct": 83.3,
       "tool_choice_pct": 100.0,
-      "tool_choice_n": 8,
+      "tool_choice_n": 12,
       "numbers_traceable_pct": 100.0,
-      "answered": 8,
-      "reference_checks_pct": 100.0,
-      "reference_checks_n": 5,
-      "reference_failures": [],
+      "answered": 11,
+      "reference_checks_pct": 77.8,
+      "reference_checks_n": 9,
+      "reference_failures": [
+       "an_winter_top_two",
+       "an_chennai_trend"
+      ],
       "refusals_correct_pct": null,
       "refusals_n": 0,
-      "resolved_checks_pct": 100.0,
-      "resolved_checks_n": 8,
-      "resolved_failures": [],
-      "pass_lenient_wording_SEPARATE": 8,
-      "errors": [],
-      "failed": [],
-      "verifier_retries": 4,
-      "tokens_median": 5224,
-      "tokens_mean": 7110,
-      "tokens_max": 11480,
-      "tokens_total": 56883
+      "resolved_checks_pct": 91.7,
+      "resolved_checks_n": 12,
+      "resolved_failures": [
+       "A01.1: no resolved_query"
+      ],
+      "pass_lenient_wording_SEPARATE": 10,
+      "errors": [
+       "A01.1"
+      ],
+      "failed": [
+       "A01.1",
+       "A04.1"
+      ],
+      "verifier_retries": 5,
+      "tokens_median": 7383,
+      "tokens_mean": 8780,
+      "tokens_max": 15202,
+      "tokens_total": 96581
      },
      "by_model": {
+      "no answer (model error)": {
+       "turns": 1,
+       "pass": 0,
+       "pass_pct": 0.0,
+       "tool_choice_pct": 100.0,
+       "tool_choice_n": 1,
+       "numbers_traceable_pct": null,
+       "answered": 0,
+       "reference_checks_pct": 0.0,
+       "reference_checks_n": 1,
+       "reference_failures": [
+        "an_winter_top_two"
+       ],
+       "refusals_correct_pct": null,
+       "refusals_n": 0,
+       "resolved_checks_pct": 0.0,
+       "resolved_checks_n": 1,
+       "resolved_failures": [
+        "A01.1: no resolved_query"
+       ],
+       "pass_lenient_wording_SEPARATE": 0,
+       "errors": [
+        "A01.1"
+       ],
+       "failed": [
+        "A01.1"
+       ],
+       "verifier_retries": 1,
+       "tokens_median": null,
+       "tokens_mean": null,
+       "tokens_max": null,
+       "tokens_total": 0
+      },
+      "gemini-3.1-flash-lite": {
+       "turns": 3,
+       "pass": 3,
+       "pass_pct": 100.0,
+       "tool_choice_pct": 100.0,
+       "tool_choice_n": 3,
+       "numbers_traceable_pct": 100.0,
+       "answered": 3,
+       "reference_checks_pct": 100.0,
+       "reference_checks_n": 2,
+       "reference_failures": [],
+       "refusals_correct_pct": null,
+       "refusals_n": 0,
+       "resolved_checks_pct": 100.0,
+       "resolved_checks_n": 3,
+       "resolved_failures": [],
+       "pass_lenient_wording_SEPARATE": 3,
+       "errors": [],
+       "failed": [],
+       "verifier_retries": 2,
+       "tokens_median": 7437,
+       "tokens_mean": 10007,
+       "tokens_max": 15202,
+       "tokens_total": 30022
+      },
       "gemini-3.5-flash-lite": {
        "turns": 8,
-       "pass": 8,
-       "pass_pct": 100.0,
+       "pass": 7,
+       "pass_pct": 87.5,
        "tool_choice_pct": 100.0,
        "tool_choice_n": 8,
        "numbers_traceable_pct": 100.0,
        "answered": 8,
-       "reference_checks_pct": 100.0,
-       "reference_checks_n": 5,
-       "reference_failures": [],
+       "reference_checks_pct": 83.3,
+       "reference_checks_n": 6,
+       "reference_failures": [
+        "an_chennai_trend"
+       ],
        "refusals_correct_pct": null,
        "refusals_n": 0,
        "resolved_checks_pct": 100.0,
        "resolved_checks_n": 8,
        "resolved_failures": [],
-       "pass_lenient_wording_SEPARATE": 8,
+       "pass_lenient_wording_SEPARATE": 7,
        "errors": [],
-       "failed": [],
-       "verifier_retries": 4,
-       "tokens_median": 5224,
-       "tokens_mean": 7110,
-       "tokens_max": 11480,
-       "tokens_total": 56883
+       "failed": [
+        "A04.1"
+       ],
+       "verifier_retries": 2,
+       "tokens_median": 7379,
+       "tokens_mean": 8320,
+       "tokens_max": 11698,
+       "tokens_total": 66559
       }
      },
      "by_category": {
-      "comparison": "2/2",
+      "comparison": "5/6",
       "too_close": "1/1",
-      "trend": "3/3",
+      "trend": "2/3",
       "weather": "2/2"
+     }
+    }
+   },
+   "reruns": [],
+   "incomplete_first_pass": []
+  },
+  "conversation": {
+   "main_first_pass": {
+    "run": "20261116-2054_conversation_first",
+    "started": "2026-11-16 20:54",
+    "model_chain": [
+     "google:gemini-3.5-flash-lite",
+     "google:gemini-3.1-flash-lite",
+     "google:gemini-3.8-flash"
+    ],
+    "kind": "first",
+    "complete": true,
+    "commit": "fccbe08",
+    "summary": {
+     "overall": {
+      "turns": 14,
+      "pass": 12,
+      "pass_pct": 85.7,
+      "tool_choice_pct": 100.0,
+      "tool_choice_n": 2,
+      "numbers_traceable_pct": 100.0,
+      "answered": 11,
+      "reference_checks_pct": null,
+      "reference_checks_n": 0,
+      "reference_failures": [],
+      "refusals_correct_pct": 75.0,
+      "refusals_n": 4,
+      "resolved_checks_pct": 100.0,
+      "resolved_checks_n": 2,
+      "resolved_failures": [],
+      "pass_lenient_wording_SEPARATE": 12,
+      "errors": [],
+      "failed": [
+       "V08.1",
+       "V09.1"
+      ],
+      "verifier_retries": 2,
+      "tokens_median": 3835,
+      "tokens_mean": 5550,
+      "tokens_max": 11293,
+      "tokens_total": 77697
+     },
+     "by_model": {
+      "gemini-3.5-flash-lite": {
+       "turns": 14,
+       "pass": 12,
+       "pass_pct": 85.7,
+       "tool_choice_pct": 100.0,
+       "tool_choice_n": 2,
+       "numbers_traceable_pct": 100.0,
+       "answered": 11,
+       "reference_checks_pct": null,
+       "reference_checks_n": 0,
+       "reference_failures": [],
+       "refusals_correct_pct": 75.0,
+       "refusals_n": 4,
+       "resolved_checks_pct": 100.0,
+       "resolved_checks_n": 2,
+       "resolved_failures": [],
+       "pass_lenient_wording_SEPARATE": 12,
+       "errors": [],
+       "failed": [
+        "V08.1",
+        "V09.1"
+       ],
+       "verifier_retries": 2,
+       "tokens_median": 3835,
+       "tokens_mean": 5550,
+       "tokens_max": 11293,
+       "tokens_total": 77697
+      }
+     },
+     "by_category": {
+      "about": "2/2",
+      "clarify": "0/1",
+      "follow_up": "2/2",
+      "greeting": "3/3",
+      "knowledge": "2/3",
+      "off_topic": "3/3"
      }
     }
    },

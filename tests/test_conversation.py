@@ -152,4 +152,4 @@ def test_every_number_in_the_facts_file_is_allowed_and_its_note_is_not():
     for v in (30.0, 60.0, 250.0, 430.0, 500.0, 15.0, 45.0, 100.0):
         assert v in allowed
     assert 1e9 + 20261113 not in allowed                                   # the file's check date is not a fact
-    assert "Minimal Impact" in K.digest() and "Severe: AQI 401–500, PM2.5 above 250" in K.digest()
+    assert "Minimal Impact" in K.digest() and "Severe 401–500 (PM2.5 >250, PM10 >430)" in K.digest()

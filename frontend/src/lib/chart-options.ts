@@ -90,7 +90,11 @@ export function withGaps(data: ChartPoint[]): ChartPoint[] {
   const sorted = [...keys].sort();
   if (daily) {
     const end = Date.parse(sorted[sorted.length - 1] + "T00:00:00Z");
-    for (let t = Date.parse(sorted[0] + "T00:00:00Z"); t <= end; t += 86_400_000) {
+    // weekly series (one point per week, dated on its Monday) step by 7 days, so only a missing week breaks the line
+    const times = sorted.map((k) => Date.parse(k + "T00:00:00Z"));
+    const weekly = times.length > 2 && times.slice(1).every((t, i) => (t - times[i]) % (7 * 86_400_000) === 0);
+    const step = weekly ? 7 * 86_400_000 : 86_400_000;
+    for (let t = Date.parse(sorted[0] + "T00:00:00Z"); t <= end; t += step) {
       const k = new Date(t).toISOString().slice(0, 10);
       out.push([k, have.has(k) ? have.get(k)! : null]);
     }
