@@ -94,6 +94,8 @@ class FinalAnswer(BaseModel):
     # comparison answers: code-built summary from the tool result (higher city, difference, ratio, common days, each
     # city's mean and 95% range), shown as the comparison card
     comparison: dict[str, Any] | None = None
+    # trend answers: code-built trend test result (status, change, p-value) from the city_trend result
+    trend: dict[str, Any] | None = None
     verification: dict[str, Any] = Field(default_factory=dict)
     model: str | None = None
     usage: dict[str, int] = Field(default_factory=dict)

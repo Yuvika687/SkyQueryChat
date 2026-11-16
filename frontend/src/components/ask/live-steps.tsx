@@ -103,11 +103,11 @@ export function StepsSummary({ turn, open, className }: { turn: Turn; open?: boo
   const model = (turn.answer?.model || turn.done?.model || "").replace(/^.*:/, "");
   const secs = seconds(turn);
   return (
-    <details className={cn("group rounded-xl border border-line bg-white/[0.02]", className)} open={open}>
-      <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-subtle [&::-webkit-details-marker]:hidden">
-        <span className="grid size-5 place-items-center rounded-full bg-teal/15 text-teal"><Check className="size-3" aria-hidden /></span>
-        <span><b className="font-semibold text-foreground">How this answer was made</b> · {steps.length} steps{secs ? ` · ${secs}` : ""}</span>
-        <ChevronDown className="ml-auto size-4 transition-transform group-open:rotate-180" aria-hidden />
+    <details className={cn("group", className)} open={open}>
+      <summary className="inline-flex cursor-pointer list-none items-center gap-2 py-1 text-[13px] text-faint hover:text-subtle [&::-webkit-details-marker]:hidden">
+        <Check className="size-3.5 text-teal" aria-hidden />
+        <span>How this answer was made · {steps.length} steps{secs ? ` · ${secs}` : ""}</span>
+        <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" aria-hidden />
       </summary>
       <ol className="flex flex-col gap-1.5 px-4 pb-3 pl-11 text-[13px]">
         {steps.map((s) => (

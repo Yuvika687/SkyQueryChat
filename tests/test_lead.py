@@ -13,12 +13,12 @@ FIX = ROOT / "frontend" / "src" / "test" / "fixtures"
 
 
 def _demo():
-    return {a["question"]: a["final"] for a in json.loads(DEMO.read_text())["answers"]}
+    return {a["question"]: a["final"] for a in json.loads(DEMO.read_text(encoding="utf-8"))["answers"]}
 
 
 def _fixture(name: str) -> dict:
     ev = {}
-    for blk in (FIX / name).read_text().split("\n\n"):
+    for blk in (FIX / name).read_text(encoding="utf-8").split("\n\n"):
         e = [x[7:] for x in blk.splitlines() if x.startswith("event: ")]
         d = [x[6:] for x in blk.splitlines() if x.startswith("data: ")]
         if e and d:

@@ -35,7 +35,7 @@ class ModelEntry:
 
 
 def load_config(path: Path = CONFIG) -> dict:
-    return json.loads(path.read_text())
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def model_chain(cfg: dict | None = None, include_disabled: bool = False) -> list[ModelEntry]:

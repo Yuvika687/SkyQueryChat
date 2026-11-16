@@ -1928,7 +1928,161 @@
      }
     }
    },
-   "reruns": [],
+   "reruns": [
+    {
+     "run": "20261117-0207_conversation_rerun",
+     "started": "2026-11-17 02:07",
+     "model_chain": [
+      "google:gemini-3.5-flash-lite",
+      "google:gemini-3.1-flash-lite",
+      "google:gemini-3.8-flash"
+     ],
+     "kind": "rerun",
+     "complete": true,
+     "commit": "41b1f79",
+     "summary": {
+      "overall": {
+       "turns": 5,
+       "pass": 4,
+       "pass_pct": 80.0,
+       "tool_choice_pct": 100.0,
+       "tool_choice_n": 5,
+       "numbers_traceable_pct": 100.0,
+       "answered": 4,
+       "reference_checks_pct": null,
+       "reference_checks_n": 0,
+       "reference_failures": [],
+       "refusals_correct_pct": 100.0,
+       "refusals_n": 1,
+       "resolved_checks_pct": 100.0,
+       "resolved_checks_n": 4,
+       "resolved_failures": [],
+       "pass_lenient_wording_SEPARATE": 5,
+       "errors": [],
+       "failed": [
+        "V17.1"
+       ],
+       "verifier_retries": 0,
+       "code_fallback_n": 0,
+       "code_fallback_pct": 0.0,
+       "tokens_median": 7638,
+       "tokens_mean": 7586,
+       "tokens_max": 7748,
+       "tokens_total": 37932
+      },
+      "by_model": {
+       "gemini-3.5-flash-lite": {
+        "turns": 5,
+        "pass": 4,
+        "pass_pct": 80.0,
+        "tool_choice_pct": 100.0,
+        "tool_choice_n": 5,
+        "numbers_traceable_pct": 100.0,
+        "answered": 4,
+        "reference_checks_pct": null,
+        "reference_checks_n": 0,
+        "reference_failures": [],
+        "refusals_correct_pct": 100.0,
+        "refusals_n": 1,
+        "resolved_checks_pct": 100.0,
+        "resolved_checks_n": 4,
+        "resolved_failures": [],
+        "pass_lenient_wording_SEPARATE": 5,
+        "errors": [],
+        "failed": [
+         "V17.1"
+        ],
+        "verifier_retries": 0,
+        "code_fallback_n": 0,
+        "code_fallback_pct": 0.0,
+        "tokens_median": 7638,
+        "tokens_mean": 7586,
+        "tokens_max": 7748,
+        "tokens_total": 37932
+       }
+      },
+      "by_category": {
+       "misspelling": "1/1",
+       "non_metro": "2/2",
+       "non_metro_alias": "0/1",
+       "not_in_bulletin": "1/1"
+      }
+     }
+    },
+    {
+     "run": "20261117-0209_conversation_rerun",
+     "started": "2026-11-17 02:09",
+     "model_chain": [
+      "google:gemini-3.5-flash-lite",
+      "google:gemini-3.1-flash-lite",
+      "google:gemini-3.8-flash"
+     ],
+     "kind": "rerun",
+     "complete": true,
+     "commit": "41b1f79",
+     "summary": {
+      "overall": {
+       "turns": 1,
+       "pass": 1,
+       "pass_pct": 100.0,
+       "tool_choice_pct": 100.0,
+       "tool_choice_n": 1,
+       "numbers_traceable_pct": 100.0,
+       "answered": 1,
+       "reference_checks_pct": null,
+       "reference_checks_n": 0,
+       "reference_failures": [],
+       "refusals_correct_pct": null,
+       "refusals_n": 0,
+       "resolved_checks_pct": 100.0,
+       "resolved_checks_n": 1,
+       "resolved_failures": [],
+       "pass_lenient_wording_SEPARATE": 1,
+       "errors": [],
+       "failed": [],
+       "verifier_retries": 0,
+       "code_fallback_n": 0,
+       "code_fallback_pct": 0.0,
+       "tokens_median": 7650,
+       "tokens_mean": 7650,
+       "tokens_max": 7650,
+       "tokens_total": 7650
+      },
+      "by_model": {
+       "gemini-3.5-flash-lite": {
+        "turns": 1,
+        "pass": 1,
+        "pass_pct": 100.0,
+        "tool_choice_pct": 100.0,
+        "tool_choice_n": 1,
+        "numbers_traceable_pct": 100.0,
+        "answered": 1,
+        "reference_checks_pct": null,
+        "reference_checks_n": 0,
+        "reference_failures": [],
+        "refusals_correct_pct": null,
+        "refusals_n": 0,
+        "resolved_checks_pct": 100.0,
+        "resolved_checks_n": 1,
+        "resolved_failures": [],
+        "pass_lenient_wording_SEPARATE": 1,
+        "errors": [],
+        "failed": [],
+        "verifier_retries": 0,
+        "code_fallback_n": 0,
+        "code_fallback_pct": 0.0,
+        "tokens_median": 7650,
+        "tokens_mean": 7650,
+        "tokens_max": 7650,
+        "tokens_total": 7650
+       }
+      },
+      "by_category": {
+       "non_metro_alias": "1/1"
+      }
+     }
+    }
+   ],
    "incomplete_first_pass": []
   },
   "suggestions": {

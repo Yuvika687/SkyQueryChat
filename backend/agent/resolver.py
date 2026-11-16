@@ -173,6 +173,10 @@ def resolve_period(text: str | None, anchor: date | None = None) -> dict:
     t = re.sub(r"\s+", " ", t)
     t = re.sub(r"^(?:between|during|in|over|for|the)\s+", "", t)
     t = re.sub(r"\bsept\b", "sep", t)
+    # everyday phrases for the most recent days: read against the latest data, like "last 7 days"
+    t = {"this week": "last 7 days", "past week": "last 7 days", "the past week": "last 7 days",
+         "latest": "last 1 days", "latest day": "last 1 days", "latest available": "last 1 days",
+         "latest available day": "last 1 days"}.get(t, t)
     t = re.sub(r"^(\d{4})-(\d{2})$", lambda m: f"{calendar.month_abbr[int(m.group(2))].lower()} {m.group(1)}"
                if 1 <= int(m.group(2)) <= 12 else m.group(0), t)                      # 2025-11
     t = re.sub(r"^(\d{1,2})/(\d{4})$", lambda m: f"{calendar.month_abbr[int(m.group(1))].lower()} {m.group(2)}"

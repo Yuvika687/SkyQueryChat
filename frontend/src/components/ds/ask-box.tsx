@@ -32,7 +32,7 @@ export function AskBox({ placeholder, hint, suggestions = [], className }: {
           if (q.trim()) go(q);
           else input.current?.focus();
         }}
-        className="glass flex items-center gap-2 rounded-2xl py-2 pr-2 pl-5 shadow-float focus-within:border-teal/60"
+        className="card flex items-center gap-2 rounded-2xl py-2 pr-2 pl-5 focus-within:border-teal/60"
       >
         <label htmlFor="home-q" className="sr-only">Your question</label>
         <input

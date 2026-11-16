@@ -13,7 +13,15 @@ import { CATEGORY_STYLE, CITIES, pmCategory } from "@/lib/categories";
 import { cityStations, dayStatus, statusColour, type Pollutant, POLLUTANT_LABEL } from "@/lib/explore";
 import { INDIA_BOUNDS, WORKER_URL, addCityOutlines, addIndiaLayers, hasWebGL, loadBaseStyle, loadBoundary, showCityOutline, addCredits } from "@/lib/map-base";
 import type { ExploreData } from "@/lib/types";
+import { cpcbCategory, cpcbFeatures, type CpcbCity } from "@/lib/cpcb";
+import { fmtDate } from "@/lib/format";
 import { shortName } from "./panels";
+
+/** City centres when a city has no primary station in the data window (same centres as Home). */
+const CITY_CENTRE: Record<string, [number, number]> = {
+  Delhi: [77.19, 28.636], Mumbai: [72.858, 19.07], Kolkata: [88.366, 22.556], Chennai: [80.235, 13.05],
+  Bengaluru: [77.59, 12.96], Hyderabad: [78.45, 17.41],
+};
 
 type Pad = { top: number; bottom: number; left: number; right: number };
 
@@ -26,7 +34,8 @@ function fitPad(p: Pad, w: number, h: number, room = 120): Pad {
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 const FONT = ["Noto Sans Regular"]; // the font the basemap's own labels use
 
-export function ExploreMap({ data, day, pollutant, city, station, highlight, lowCost, padding, reduceMotion, onCity, onStation }: {
+export function ExploreMap({ data, day, pollutant, city, station, highlight, lowCost, padding, reduceMotion, onCity, onStation,
+  cpcb = null, cpcbSelected = null, onCpcb }: {
   data: ExploreData | null;
   day: number;
   pollutant: Pollutant;
@@ -39,15 +48,20 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
   reduceMotion: boolean;
   onCity: (c: string) => void;
   onStation: (id: number) => void;
+  /** the all-cities official AQI layer: its cities (null when the layer is off), the selected one and a pick handler */
+  cpcb?: CpcbCity[] | null;
+  cpcbSelected?: string | null;
+  onCpcb?: (name: string) => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<MLMap | null>(null);
   const lib = useRef<typeof import("maplibre-gl") | null>(null);
   const cityMarkers = useRef<Map<string, { m: Marker; b: HTMLButtonElement }>>(new Map());
-  const handlers = useRef({ onCity, onStation });
+  const markersOn = useRef<MLMap | null>(null);
+  const handlers = useRef({ onCity, onStation, onCpcb });
   const [ready, setReady] = useState<"loading" | "ready" | "failed">("loading");
   const [hover, setHover] = useState<number | null>(null);
-  useEffect(() => { handlers.current = { onCity, onStation }; }, [onCity, onStation]);
+  useEffect(() => { handlers.current = { onCity, onStation, onCpcb }; }, [onCity, onStation, onCpcb]);
 
   // ---------------------------------------------------------------- create the map once
   useEffect(() => {
@@ -80,7 +94,23 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
             m.on("mousemove", layer, (e) => { m.getCanvas().style.cursor = "pointer"; setHover(Number(e.features?.[0]?.properties?.id)); });
             m.on("mouseleave", layer, () => { m.getCanvas().style.cursor = ""; setHover(null); });
           }
-          m.once("idle", () => !cancelled && setReady("ready"));
+          addCpcbLayers(m);
+          m.on("click", "cpcb-dot", (e) => { const n = e.features?.[0]?.properties?.name; if (n) handlers.current.onCpcb?.(String(n)); });
+          const pop = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: "sq-popup" });
+          m.on("mousemove", "cpcb-dot", (e) => {
+            const f = e.features?.[0];
+            if (!f) return;
+            m.getCanvas().style.cursor = "pointer";
+            const p = f.properties as { name: string; aqi: number; cat: string; date: string };
+            pop.setLngLat((f.geometry as GeoJSON.Point).coordinates as [number, number])
+              .setHTML(`<strong>${p.name}</strong><span>Official AQI <b>${p.aqi}</b> · ${p.cat}</span><small>CPCB 4 PM bulletin, ${p.date}</small>`)
+              .addTo(m);
+          });
+          m.on("mouseleave", "cpcb-dot", () => { m.getCanvas().style.cursor = ""; pop.remove(); });
+          // "idle" can fire before this handler is attached (fast, cached loads): never wait for a second one
+          const done = () => !cancelled && setReady("ready");
+          if (m.loaded()) done(); else m.once("idle", done);
+          setTimeout(done, 4000);
         });
         m.on("error", () => { if (!m.isStyleLoaded()) setReady("failed"); });
       } catch {
@@ -100,11 +130,17 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
   useEffect(() => {
     const m = map.current, L = lib.current;
     if (ready !== "ready" || !m || !L || !data) return;
+    if (markersOn.current !== m) {
+      for (const { m: old } of cityMarkers.current.values()) old.remove();
+      cityMarkers.current.clear();
+      markersOn.current = m;
+    }
     if (!cityMarkers.current.size) {
       for (const c of CITIES) {
         const st = data.stations.filter((s) => s.city === c && s.tier === "primary");
-        if (!st.length) continue;
-        const lon = st.reduce((a, s) => a + s.lon, 0) / st.length, lat = st.reduce((a, s) => a + s.lat, 0) / st.length;
+        const [lon, lat] = st.length
+          ? [st.reduce((a, s) => a + s.lon, 0) / st.length, st.reduce((a, s) => a + s.lat, 0) / st.length]
+          : CITY_CENTRE[c];
         const b = document.createElement("button");
         b.type = "button";
         // Same label sides as Home: Mumbai and Bengaluru left of the dot (so Mumbai never touches Hyderabad's marker
@@ -118,8 +154,36 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
         cityMarkers.current.set(c, { m: mk, b });
       }
     }
-    for (const [c, { b }] of cityMarkers.current) paintCity(b, c, data.cities[c]?.values[day] ?? null, pollutant, city !== null);
-  }, [ready, data, day, pollutant, city]);
+    for (const [c, { b }] of cityMarkers.current) {
+      const cd = data.cities[c];
+      paintCity(b, c, cd?.values[day] ?? null, pollutant, city !== null || !!cpcb, cd?.aqi?.[day] ?? null,
+        cd?.stations_reporting?.[day] ?? null, data.dates[day]);
+    }
+  }, [ready, data, day, pollutant, city, cpcb]);
+
+  // ---------------------------------------------------------------- all CPCB cities (official AQI)
+  useEffect(() => {
+    const m = map.current;
+    if (ready !== "ready" || !m) return;
+    const src = m.getSource("cpcb") as GeoJSONSource | undefined;
+    if (!src) return;
+    if (!cpcb) { src.setData(EMPTY); return; }
+    const fc = cpcbFeatures(cpcb, cpcbSelected, (c) => { const k = cpcbCategory(c); return k ? CATEGORY_STYLE[k].bg : "#64748B"; });
+    for (const f of fc.features) {
+      const c = cpcb.find((x) => x.city === f.properties?.name)!;
+      Object.assign(f.properties!, { cat: CATEGORY_STYLE[cpcbCategory(c) ?? "None"].label, date: fmtDate(c.date) });
+    }
+    src.setData(fc);
+  }, [ready, cpcb, cpcbSelected]);
+  useEffect(() => {
+    const m = map.current;
+    if (ready !== "ready" || !m || !cpcb) return;
+    const c = cpcbSelected ? cpcb.find((x) => x.city === cpcbSelected) : null;
+    const pad = fitPad(padding, m.getContainer().clientWidth, m.getContainer().clientHeight);
+    if (c?.lon != null && c.lat != null) m.easeTo({ center: [c.lon, c.lat], zoom: Math.max(m.getZoom(), 6), padding: pad, duration: reduceMotion ? 0 : 900 });
+    else if (!cpcbSelected) m.fitBounds(INDIA_BOUNDS, { padding: pad, duration: reduceMotion ? 0 : 900 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, !!cpcb, cpcbSelected]);
 
   // ---------------------------------------------------------------- stations for the day; the active one is larger
   const active = station ?? highlight ?? hover;
@@ -128,7 +192,7 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
     if (ready !== "ready" || !m) return;
     const src = m.getSource("stations") as GeoJSONSource | undefined;
     if (!src) return;
-    if (!data || !city) { src.setData(EMPTY); return; }
+    if (!data || !city || cpcb) { src.setData(EMPTY); return; }
     const feats = cityStations(data, city, lowCost).map((s) => {
       const st = dayStatus(s, day, pollutant);
       const value = st.kind === "value" ? String(Math.round(st.value)) : "–";
@@ -143,7 +207,7 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
       };
     });
     src.setData({ type: "FeatureCollection", features: feats });
-  }, [ready, data, city, lowCost, day, pollutant, active, highlight, station]);
+  }, [ready, data, city, lowCost, day, pollutant, active, highlight, station, cpcb]);
 
   useEffect(() => {
     const m = map.current;
@@ -153,7 +217,7 @@ export function ExploreMap({ data, day, pollutant, city, station, highlight, low
   // ---------------------------------------------------------------- fly in and out (padding keeps stations clear of panels)
   useEffect(() => {
     const m = map.current;
-    if (ready !== "ready" || !m || !data) return;
+    if (ready !== "ready" || !m || !data || cpcb) return;
     const duration = reduceMotion ? 0 : 1600;
     if (!city) {
       m.fitBounds(INDIA_BOUNDS, { padding: fitPad(padding, m.getContainer().clientWidth, m.getContainer().clientHeight), duration });
@@ -222,12 +286,30 @@ function addStationLayers(m: MLMap) {
     paint: { "text-color": "#FFFFFF", "text-halo-color": "rgba(6,10,20,0.98)", "text-halo-width": 2 } });
 }
 
+// ------------------------------------------------------------------ all CPCB cities layer
+function addCpcbLayers(m: MLMap) {
+  m.addSource("cpcb", { type: "geojson", data: EMPTY });
+  m.addLayer({ id: "cpcb-dot", type: "circle", source: "cpcb",
+    paint: { "circle-color": ["get", "color"], "circle-radius": ["case", ["get", "selected"], 9, ["get", "metro"], 8, 4.5],
+      "circle-stroke-color": ["case", ["get", "selected"], "#2DD4BF", ["get", "metro"], "#EAF0FB", "rgba(10,17,34,0.85)"],
+      "circle-stroke-width": ["case", ["get", "selected"], 3, ["get", "metro"], 2, 1] } });
+  m.addLayer({ id: "cpcb-label", type: "symbol", source: "cpcb", filter: ["any", ["get", "metro"], ["get", "selected"]],
+    layout: { "text-field": ["get", "name"], "text-size": 12, "text-offset": [0, 1.2], "text-anchor": "top", "text-font": FONT },
+    paint: { "text-color": "#EAF0FB", "text-halo-color": "#0a1122", "text-halo-width": 1.4 } });
+}
+
 // City marker painting lives outside the component: it only updates the DOM buttons MapLibre positions.
-function paintCity(b: HTMLButtonElement, c: string, v: number | null, pollutant: Pollutant, hidden: boolean) {
+function paintCity(b: HTMLButtonElement, c: string, v: number | null, pollutant: Pollutant, hidden: boolean,
+  aqi: { aqi: number; category: string } | null, stations: number | null, date: string) {
   const cat = pmCategory(v, pollutant);
   const col = cat ? CATEGORY_STYLE[cat] : { bg: "#64748B", fg: "#fff", label: "No city value" };
   b.style.setProperty("--c", col.bg);
   b.hidden = hidden;
-  b.innerHTML = `<span class="dot" aria-hidden="true"></span><span class="lbl" aria-hidden="true"><b>${c}</b> ${v == null ? "no city value" : v.toFixed(1)}</span>`;
+  // hover / focus card: the PM value with its category, the official AQI and the stations behind the average
+  const card = `<span class="card" aria-hidden="true"><strong>${c}</strong>`
+    + `<span>${POLLUTANT_LABEL[pollutant]} <b>${v == null ? "no city value" : v.toFixed(1)}</b>${v == null ? "" : " µg/m³ · " + col.label}</span>`
+    + `<span>Official AQI <b>${aqi ? aqi.aqi : "–"}</b>${aqi ? " · " + aqi.category : ""}</span>`
+    + `<small>${stations ?? 0} stations · ${fmtDate(date)} · click for stations</small></span>`;
+  b.innerHTML = `<span class="dot" aria-hidden="true"></span><span class="lbl" aria-hidden="true"><b>${c}</b> ${v == null ? "no city value" : v.toFixed(1)}</span>${card}`;
   b.setAttribute("aria-label", `${c}: ${v == null ? "no city value this day" : `${v.toFixed(1)} µg/m³ ${POLLUTANT_LABEL[pollutant]}, ${col.label}`}. Show its stations`);
 }

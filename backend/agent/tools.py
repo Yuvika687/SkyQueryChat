@@ -258,5 +258,39 @@ def data_coverage(ctx: RunContext[RunDeps], city: str, period: str | None = None
     return _call(ctx, "data_coverage", dict(city=city, period=period), go)
 
 
+def official_aqi(ctx: RunContext[RunDeps], city: str, period: str | None = None) -> dict:
+    """Official CPCB AQI (daily 4 PM bulletin) for ANY city in CPCB's bulletin, about 320 cities including the six
+    analysed ones: latest AQI, category, main pollutant, stations reporting, change from the previous bulletin, and
+    the period's mean, highest, lowest and trend. Use it for every city outside Delhi, Mumbai, Kolkata, Chennai,
+    Bengaluru and Hyderabad (those have no station-level PM analysis). Accepts older names and small misspellings.
+    period defaults to the 30 days up to the city's latest bulletin."""
+    def go():
+        from backend.analysis import official_aqi as OA
+        store = ctx.deps.session.store
+        if "city_aqi_all" not in store.tables:
+            raise ValueError("Official AQI for all bulletin cities is not loaded.")
+        r = OA.bulletin_cities(store).resolve(city)
+        if not r.get("city"):
+            msg = r["message"]
+            if r.get("nearest"):
+                msg += " Nearest cities that are covered: " + ", ".join(r["nearest"]) + "."
+            raise ValueError(msg)
+        a = [r["note"]] if r.get("note") else []
+        s = e = None
+        if period:
+            s, e, notes = _period(period, a)
+            if any("relative to the latest data" in n for n in notes):   # "this week": count back from the bulletins
+                last = OA.latest_date(store, r["city"])
+                s, e = last - (e - s), last
+                a[:] = [x for x in a if "relative to the latest data" not in x] + \
+                    [f"relative to the latest bulletin ({last})"]
+        res = OA.official_aqi(store, r["city"], s, e)
+        dr = res.date_range
+        if not period:
+            a.append(f"no period stated: used the 30 days up to the latest bulletin ({dr['start']} to {dr['end']})")
+        return res, {"city": r["city"], "resolved": _rq([r["city"]], "AQI (official CPCB)", dr["start"], dr["end"], a)}
+    return _call(ctx, "official_aqi", dict(city=city, period=period), go)
+
+
 TOOLS = [check_request, city_trend, compare_cities, diwali_aqi, Tool(delhi_pm_diwali, prepare=only_if_pm_asked),
-         unusual_days, weather_association, data_coverage]
+         unusual_days, weather_association, data_coverage, official_aqi]

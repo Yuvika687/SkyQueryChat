@@ -377,7 +377,7 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
     diwali = pd.read_parquet(processed / "diwali.parquet")
     weather = pd.read_parquet(processed / "weather_daily.parquet")
     dq_old = pd.read_parquet(processed / "date_quality.parquet")
-    manifest_in = json.loads((processed / "manifest.json").read_text())
+    manifest_in = json.loads((processed / "manifest.json").read_text(encoding="utf-8"))
     data_end = date.fromisoformat(manifest_in["openaq_data_end"])
 
     meta = st.drop_duplicates("sensor_key")[["sensor_key", "city", "tier", "monitor_type", "provider"]]
@@ -477,7 +477,7 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
     panels = {pol: set(st.loc[st[f"delhi_diwali_panel_{pol}"], "location_id"].astype(int)) for pol in C.POLLUTANTS}
     blank_cache_path = processed / "opencity_cache" / "blank_rates.parquet"
     mapping = opencity_dir / "mapping.json"
-    ids = list(json.loads(mapping.read_text())) if mapping.exists() else []
+    ids = list(json.loads(mapping.read_text(encoding="utf-8"))) if mapping.exists() else []
     if ids and all((opencity_dir / f"{l}.csv").exists() for l in ids):
         oc_raw = pd.concat([T.read_opencity_csv(opencity_dir / f"{l}.csv", int(l)) for l in ids], ignore_index=True)
         support = delhi_pm_support(diwali, oc_raw, panels, {int(l) for l in ids}, hourly=hourly, stations=st)
@@ -498,6 +498,8 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
     # pass-through slim tables
     tables["stations"] = st
     tables["city_daily_aqi"] = aqi
+    if (processed / "city_aqi_all.parquet").exists():          # official AQI for every bulletin city
+        tables["city_aqi_all"] = pd.read_parquet(processed / "city_aqi_all.parquet")
     tables["weather_daily"] = weather
     tables["network_gaps"] = gaps
 

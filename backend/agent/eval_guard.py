@@ -31,7 +31,7 @@ def last_reset(now: float | None = None) -> float:
 def run_started(run_dir: Path) -> float | None:
     """Start time of a run from its meta.json ("%Y-%m-%d %H:%M", the machine's local time)."""
     try:
-        meta = json.loads((run_dir / "meta.json").read_text())
+        meta = json.loads((run_dir / "meta.json").read_text(encoding="utf-8"))
         return time.mktime(time.strptime(meta["started"], "%Y-%m-%d %H:%M"))
     except (OSError, KeyError, ValueError):
         return None
@@ -44,7 +44,7 @@ def local_usage(runs_dir: Path, since: float) -> dict[str, dict[str, int]]:
         t = run_started(d)
         if t is None or t < since or not (d / "results.jsonl").exists():
             continue
-        for line in (d / "results.jsonl").read_text().splitlines():
+        for line in (d / "results.jsonl").read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
             f = json.loads(line).get("final") or {}
@@ -107,7 +107,7 @@ def estimate(runs_dir: Path, set_name: str, n_questions: int, margin: float = 1.
     """Requests and tokens for a run of `n_questions`, from the set's most recent complete run (plus 25%)."""
     best = None
     for d in sorted(runs_dir.glob(f"*_{set_name}_*"), reverse=True):
-        rows = [json.loads(x) for x in (d / "results.jsonl").read_text().splitlines() if x.strip()] \
+        rows = [json.loads(x) for x in (d / "results.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()] \
             if (d / "results.jsonl").exists() else []
         if len(rows) >= n_questions * 0.8:
             best = rows

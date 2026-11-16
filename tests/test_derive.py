@@ -200,7 +200,7 @@ def test_manifest_records_diwali_percent_as_approved_on_request_range():
     import json
     from pathlib import Path
     from backend.pipeline import derive as D
-    m = json.loads((Path(__file__).resolve().parents[1] / "data" / "app" / "manifest.json").read_text())
+    m = json.loads((Path(__file__).resolve().parents[1] / "data" / "app" / "manifest.json").read_text(encoding="utf-8"))
     assert m["diwali_percent_status"] == D.MANIFEST_PERCENT_STATUS == "approved_on_request_range"
     assert m["diwali_percent_note"] == D.MANIFEST_PERCENT_NOTE and "range" in m["diwali_percent_note"]
     assert D.PERCENT_STATUS == "pending_user_approval"          # per-window baselines unchanged

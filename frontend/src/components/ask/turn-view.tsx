@@ -33,11 +33,11 @@ export function TurnView({ turn, health, isLatest, busy, onAsk, onRetry, onProof
   return (
     <article data-turn={turn.id} className="sq-rise flex min-w-0 flex-col gap-3" aria-label={`Question: ${turn.question}`}>
       <div className="flex justify-end">
-        <p className="max-w-[85%] rounded-2xl rounded-br-md border border-teal/25 bg-teal/[0.08] px-4 py-2.5 text-[14.5px]">{turn.question}</p>
+        <p className="max-w-[85%] rounded-2xl rounded-br-md bg-teal/[0.1] px-4 py-2.5 text-[15px]">{turn.question}</p>
       </div>
       <Body turn={turn} health={health} isLatest={isLatest} busy={busy} onAsk={onAsk} onRetry={onRetry}
         onProof={(t) => onProof(turn, t)} activeProof={activeProof} onEvidence={() => onEvidence(turn)} />
-      {turn.answer && turn.phase === "done" && !isChatReply(turn) && <StepsSummary turn={turn} />}
+      {turn.answer && turn.phase === "done" && !isChatReply(turn) && <StepsSummary turn={turn} className="lg:hidden" />}
     </article>
   );
 }
@@ -51,7 +51,7 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activePro
 
   if (turn.phase === "waking") {
     return (
-      <div className="glass flex flex-col gap-3 rounded-3xl p-5">
+      <div className="card flex flex-col gap-3 p-5">
         <Callout tone="info" icon={Clock} title="Waking up the data server, this can take up to a minute">
           Your question will be sent as soon as it is ready.
         </Callout>
@@ -74,7 +74,7 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activePro
     return (
       <>
         {notices}
-        <div className="glass flex flex-col gap-3 rounded-3xl p-5" role="status" aria-live="polite">
+        <div className="flex flex-col gap-3 px-1" role="status" aria-live="polite">
           <TypingDots />
           <LiveSteps turn={turn} />
         </div>
@@ -83,13 +83,14 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activePro
   }
   const a = turn.answer;
   if (isChatReply(turn)) return <>{notices}<ChatReply turn={turn} busy={busy} onAsk={onAsk} /></>;
-  const unsupported = unsupportedCities(turn);
+  // only when the answer itself says the city is not covered (other bulletin cities have official AQI)
+  const unsupported = a.status === "answered" ? [] : unsupportedCities(turn);
   return (
     <>
       {notices}
       {(cached || backup) && (
         <p className="flex flex-wrap gap-2 text-[12px] text-faint">
-          {cached && <span className="inline-flex items-center gap-1"><Clock className="size-3" aria-hidden />{cached === "demo" ? "Saved demo answer" : "Saved answer"}</span>}
+          {cached && <span className="inline-flex items-center gap-1"><Clock className="size-3" aria-hidden />{cached === "demo" ? "Saved demo answer" : "Answered live earlier (same question, last 6 hours)"}</span>}
           {backup && <span className="inline-flex items-center gap-1 text-warn"><Zap className="size-3" aria-hidden />Backup model</span>}
         </p>
       )}
@@ -103,7 +104,7 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activePro
       {a.status === "clarify" && a.clarifying_question && <Callout tone="info" title="One question first">{a.clarifying_question}</Callout>}
       {unsupported.length > 0 && (
         <div>
-          <p className="mb-2 text-sm text-subtle">{unsupported.join(", ")} {unsupported.length === 1 ? "isn't" : "aren't"} covered. SkyQueryChat covers these six cities:</p>
+          <p className="mb-2 text-sm text-subtle">{unsupported.join(", ")} {unsupported.length === 1 ? "isn't" : "aren't"} covered for station data. These six cities have full analysis:</p>
           <ul className="flex flex-wrap gap-2">
             {CITIES.map((c) => (
               <li key={c}>
@@ -130,7 +131,7 @@ function ChatReply({ turn, busy, onAsk }: { turn: Turn; busy: boolean; onAsk: (q
   const chips = (a.follow_ups ?? []).filter((q) => q.trim()).slice(0, 3);
   return (
     <div className="flex flex-col gap-3" data-kind={a.kind}>
-      <div className="glass max-w-[85%] rounded-3xl rounded-bl-lg p-5 text-[15px] leading-7 shadow-card sm:px-6">
+      <div className="card max-w-[85%] rounded-bl-md p-5 text-[15px] leading-7 sm:px-6">
         <p>{readable(text)}</p>
         {more && <p className="mt-2 text-subtle">{readable(more)}</p>}
       </div>
@@ -139,7 +140,7 @@ function ChatReply({ turn, busy, onAsk }: { turn: Turn; busy: boolean; onAsk: (q
           {chips.map((q) => (
             <li key={q}>
               <button type="button" disabled={busy} onClick={() => onAsk(q)}
-                className="min-h-9 rounded-full border border-line-strong bg-white/[0.03] px-3.5 py-1.5 text-left text-[13px] hover:border-teal/60 hover:text-teal disabled:opacity-50">
+                className="min-h-9 rounded-full bg-white/[0.05] px-3.5 py-1.5 text-left text-[13.5px] hover:bg-white/[0.09] disabled:opacity-50">
                 {q}
               </button>
             </li>
@@ -202,7 +203,7 @@ function ErrorState({ turn, isLatest, busy, onAsk, onRetry }: { turn: Turn; isLa
       <QuestionChips questions={e.demo_questions.slice(0, 4)} onAsk={onAsk} disabled={busy} />
     </div>
   );
-  const box = "glass flex flex-col gap-3 rounded-3xl p-5";
+  const box = "card flex flex-col gap-3 p-5";
   const tryThese = (
     <div>
       <p className="mb-2 text-xs font-medium text-subtle">Or try one of these:</p>

@@ -80,9 +80,9 @@ def expectations(set_name: str) -> dict:
 
 
 def rescore(run: Path) -> dict:
-    meta = json.loads((run / "meta.json").read_text())
+    meta = json.loads((run / "meta.json").read_text(encoding="utf-8"))
     exp = expectations(meta["set"])
-    rows = [json.loads(x) for x in (run / "results.jsonl").read_text().splitlines() if x.strip()]
+    rows = [json.loads(x) for x in (run / "results.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
     out = []
     for r in rows:
         e = exp.get((r["id"], r["turn"]), r["expected"])

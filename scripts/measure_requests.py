@@ -41,7 +41,7 @@ def main():
         f = d / "results.jsonl"
         if not f.exists():
             continue
-        rows = [json.loads(x) for x in f.read_text().splitlines() if x.strip()]
+        rows = [json.loads(x) for x in f.read_text(encoding="utf-8").splitlines() if x.strip()]
         st = stats(rows)
         if st:
             out["runs"][d.name] = st

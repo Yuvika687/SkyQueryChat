@@ -301,7 +301,7 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
 
     @app.get("/api/meta")
     async def meta():
-        man = json.loads((ROOT / "data" / "app" / "manifest.json").read_text())
+        man = json.loads((ROOT / "data" / "app" / "manifest.json").read_text(encoding="utf-8"))
         return {"cities": R.SUPPORTED_CITIES, "pollutants": ["pm25", "pm10"], "data_windows": {k: str(v) for k, v in R.DATA.items()},
                 "attribution": man.get("attribution"), "default_analysis_rule": man.get("default_analysis_rule"),
                 "demo_questions": [x["question"] for x in demos.values()]}
@@ -319,7 +319,7 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
 
     @app.get("/api/limits")
     async def limits():
-        out = json.loads((ROOT / "backend" / "config" / "known_limits.json").read_text())
+        out = json.loads((ROOT / "backend" / "config" / "known_limits.json").read_text(encoding="utf-8"))
         # the data end dates always come from the loaded data, never from fixed text
         d = R.DATA
         for x in out.get("limits", []):
@@ -411,6 +411,43 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
             cache[pollutant] = F.explore_data(S(), pollutant)
         return cache[pollutant]
 
+    @app.get("/api/aqi/cities")
+    async def aqi_cities():
+        """Every city in CPCB's daily bulletin: its latest official AQI (CPCB 4 PM bulletin), category, main pollutant,
+        stations reporting, and map coordinates (GeoNames, CC BY 4.0; null when no confident match). Read-only, no LLM."""
+        if "aqi_cities" not in state:
+            from backend.analysis import official_aqi as OA
+            store = S()
+            if "city_aqi_all" not in store.tables:
+                return JSONResponse(status_code=503, content={"error": {
+                    "code": "not_loaded", "message": "Official AQI for all cities is not loaded."}})
+            items = await asyncio.to_thread(OA.latest_all, store)
+            state["aqi_cities"] = {"cities": items, "n_cities": len(items),
+                                   "n_plotted": sum(c["lat"] is not None for c in items),
+                                   "coordinates_source": "GeoNames (geonames.org), CC BY 4.0",
+                                   "source": OA.SOURCE}
+        return state["aqi_cities"]
+
+    @app.get("/api/aqi/city/{name}")
+    async def aqi_city(name: str):
+        """One bulletin city's last 30 days of official AQI (null on days without a bulletin value), latest bulletin and
+        the change from the previous one. Older names and small misspellings are accepted."""
+        from backend.analysis import official_aqi as OA
+        store = S()
+        if "city_aqi_all" not in store.tables:
+            return JSONResponse(status_code=503, content={"error": {
+                "code": "not_loaded", "message": "Official AQI for all cities is not loaded."}})
+        r = OA.bulletin_cities(store).resolve(name)
+        if not r.get("city"):
+            return JSONResponse(status_code=404, content={"error": {
+                "code": "not_in_bulletin", "message": r["message"], "nearest": r.get("nearest", [])}})
+        cache = state.setdefault("aqi_city", {})
+        if r["city"] not in cache:
+            if len(cache) > 400:
+                cache.clear()
+            cache[r["city"]] = await asyncio.to_thread(OA.city_series, store, r["city"])
+        return cache[r["city"]]
+
     @app.get("/api/city/{city}")
     async def city_page(city: str):
         """City page: latest value, 30 days, calendar, Diwali AQI, unusual days, weather association, stations.
@@ -460,11 +497,11 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
     @app.get("/api/accuracy")
     async def accuracy():
         p = ROOT / "evals" / "scoreboard.json"
-        out = json.loads(p.read_text()) if p.exists() else {"sets": {}}
+        out = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {"sets": {}}
         out["answer_wording_since"] = ANSWER_WORDING_SINCE
         cc = ROOT / "docs" / "crosscheck_bulletins.json"
         if cc.exists():
-            d = json.loads(cc.read_text())
+            d = json.loads(cc.read_text(encoding="utf-8"))
             # agreement figures only; the internal estimates themselves are never exposed
             out["crosscheck"] = {"by_city": {
                 c: {k: v.get(k) for k in ("days", "correlation", "within_20pct", "period")}
@@ -555,9 +592,9 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         sid, sess = state["sessions"].get(body.session_id)
         yield sse("meta", {"request_id": rid, "session_id": sid}, 0)
         first_turn = not sess.turns
+        # Every question is answered live. Only a live answer to the same words from the last 6 hours is reused
+        # (it saves AI quota); saved demo answers are used only when no AI model has room left (below).
         hit = (cache.get(body.message), "cache") if first_turn else (None, None)
-        if first_turn and hit[0] is None and normalise(body.message) in demos:
-            hit = (demos[normalise(body.message)], "demo")
         if hit[0] is not None:
             sess.context.update(hit[0].get("context", {}))
             for x in _older_notice(hit[0], 1):

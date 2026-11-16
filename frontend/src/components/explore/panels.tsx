@@ -68,10 +68,11 @@ function MiniChart({ dates, series }: { dates: string[]; series: { colour: strin
   const diwali = dates.findIndex((d) => DIWALI.includes(d));
   return (
     <svg aria-hidden viewBox="0 0 100 34" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
-      {diwali >= 0 && <line x1={(diwali / n) * 100} x2={(diwali / n) * 100} y1={0} y2={34} stroke="#F5B942" strokeOpacity={0.55} strokeWidth={1} vectorEffect="non-scaling-stroke" strokeDasharray="2 2" />}
+      <line x1={0} x2={100} y1={32} y2={32} stroke="rgb(148 170 214)" strokeOpacity={0.12} strokeWidth={1} vectorEffect="non-scaling-stroke" />
+      {diwali >= 0 && <line x1={(diwali / n) * 100} x2={(diwali / n) * 100} y1={0} y2={34} stroke="#F5B942" strokeOpacity={0.7} strokeWidth={1} vectorEffect="non-scaling-stroke" strokeDasharray="2 2" />}
       {series.map((s, k) => (
-        <g key={k} stroke={s.colour} fill={s.colour} strokeOpacity={series.length > 1 ? 0.45 : 0.7} fillOpacity={0.6}>
-          <path d={path(s.values)} fill="none" strokeWidth={1.3} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+        <g key={k} stroke={s.colour} fill={s.colour} strokeOpacity={series.length > 1 ? 0.38 : 0.6} fillOpacity={0.5}>
+          <path d={path(s.values)} fill="none" strokeWidth={1} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
           {dots(s.values)}
         </g>
       ))}
@@ -162,21 +163,28 @@ export function TimeControl({ dates, day, onDay, playing, onPlay, canPlay, speed
   );
 }
 
-export function Legend({ pollutant }: { pollutant: Pollutant }) {
+const AQI_RANGES = ["0–50", "51–100", "101–200", "201–300", "301–400", "401–500"];
+
+export function Legend({ pollutant }: { pollutant: Pollutant | "aqi" }) {
+  const aqi = pollutant === "aqi";
+  const title = aqi ? "Official AQI categories (CPCB)" : `${POLLUTANT_LABEL[pollutant]} categories, 24-hour mean (µg/m³)`;
+  const ranges = aqi ? AQI_RANGES : LEGEND_RANGES[pollutant];
   return (
-    <div aria-label={`${POLLUTANT_LABEL[pollutant]} categories, 24-hour mean in µg/m³`}>
-      <p className="mb-1.5 text-[11px] text-faint">{POLLUTANT_LABEL[pollutant]} categories, 24-hour mean (µg/m³)</p>
+    <div aria-label={title}>
+      <p className="mb-1.5 text-[12px] text-faint">{title}</p>
       <ul className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11.5px] text-subtle">
         {ORDER.map((c, i) => (
           <li key={c} className="flex items-center gap-1.5">
             <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ background: CATEGORY_STYLE[c].bg }} />
-            <span className="whitespace-nowrap">{CATEGORY_STYLE[c].label} <span className="num text-faint">{LEGEND_RANGES[pollutant][i]}</span></span>
+            <span className="whitespace-nowrap">{CATEGORY_STYLE[c].label} <span className="num text-faint">{ranges[i]}</span></span>
           </li>
         ))}
-        <li className="col-span-2 flex items-center gap-1.5">
-          <span aria-hidden className="size-2.5 shrink-0 rounded-[3px] bg-[#64748B]" />
-          <span>Grey: not enough data (under 16 valid hours) or no readings</span>
-        </li>
+        {!aqi && (
+          <li className="col-span-2 flex items-center gap-1.5">
+            <span aria-hidden className="size-2.5 shrink-0 rounded-[3px] bg-[#64748B]" />
+            <span>Grey: not enough data (under 16 valid hours) or no readings</span>
+          </li>
+        )}
       </ul>
     </div>
   );

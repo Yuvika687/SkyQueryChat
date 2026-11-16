@@ -1,0 +1,18 @@
+{
+ "set": "conversation",
+ "kind": "rerun",
+ "started": "2026-11-17 02:09",
+ "model_chain": [
+  "google:gemini-3.5-flash-lite",
+  "google:gemini-3.1-flash-lite",
+  "google:gemini-3.8-flash"
+ ],
+ "data": "evals\\data",
+ "data_end": "2026-11-11",
+ "commit": "41b1f79",
+ "ids": [
+  "V17"
+ ],
+ "complete": true,
+ "stopped": null
+}

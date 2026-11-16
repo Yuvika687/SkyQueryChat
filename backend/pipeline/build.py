@@ -27,6 +27,7 @@ Outputs (in out_dir):
 from __future__ import annotations
 
 import json
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
@@ -230,7 +231,7 @@ def refresh_sensor_last(st: pd.DataFrame, last_utc: dict, candidates_path: Path)
     for sid, ts in last_utc.items():
         m = st["sensor_id"] == sid
         st.loc[m, "sensor_last"] = st.loc[m, "sensor_last"].where(st.loc[m, "sensor_last"] >= ts, ts)
-    cand = json.loads(candidates_path.read_text())
+    cand = json.loads(candidates_path.read_text(encoding="utf-8"))
     for city in cand["cities"].values():
         for tier, items in city.items():
             for s in items if isinstance(items, list) else []:
@@ -240,7 +241,7 @@ def refresh_sensor_last(st: pd.DataFrame, last_utc: dict, candidates_path: Path)
                         sen["last"] = ts.tz_convert("UTC").strftime("%Y-%m-%dT%H:%M:%SZ")
                         if pd.Timestamp(sen["last"]) > pd.Timestamp(s.get("location_last_utc") or sen["last"]):
                             s["location_last_utc"] = sen["last"]
-    candidates_path.write_text(json.dumps(cand, indent=1, ensure_ascii=False))
+    candidates_path.write_text(json.dumps(cand, indent=1, ensure_ascii=False), encoding="utf-8")
     return st
 
 
@@ -539,6 +540,46 @@ def load_bulletins(path: Path, cities: list[str], pdf_until: date | None = None)
     return b.reset_index(drop=True)
 
 
+def _name_key(name: str) -> str:
+    return re.sub(r"[^a-z]", "", str(name).lower())
+
+
+ALL_CITIES_START = C.GAP_END     # the all-cities table spans the same period as the measured data
+ALL_CITIES_COLS = ["city", "bulletin_date", "aqi", "aqi_category", "prominent_pollutant", "no_stations",
+                   "total_stations", "source"]
+
+
+def load_all_bulletins(path: Path, start: date = ALL_CITIES_START, pdf_until: date | None = None,
+                       download: bool = True) -> tuple[pd.DataFrame, list[str]]:
+    """Official AQI for EVERY city in CPCB's daily bulletin (not only the six analysed cities), from the same two
+    sources as load_bulletins. PDF names are mapped to UrbanEmissions' spelling where only case, spaces or hyphens
+    differ ("Navi mumbai" -> "Navi Mumbai"). A city listed twice in one bulletin with different values is dropped for
+    that date (never guessed). Returns (table, dropped "city date" notes)."""
+    b = pd.read_parquet(path, columns=["date", "city", "aqi", "aqi_category", "prominent_pollutant", "no_stations"])
+    b["date"] = pd.to_datetime(b["date"]).dt.date
+    b = b[b["date"] >= start].copy()
+    b["source"], b["total_stations"] = SRC_BULLETIN, np.nan
+    canon = {_name_key(c): c for c in b["city"].unique()}
+    ue_end = b["date"].max()
+    dropped: list[str] = []
+    if pdf_until and pdf_until > ue_end:
+        pdf = cpcb_bulletins.load(ue_end + timedelta(days=1), pdf_until, None, download=download,
+                                  allow_duplicates=True)
+        if not pdf.empty:
+            pdf["city"] = [canon.get(_name_key(c), c) for c in pdf["city"]]
+            dup = pdf.duplicated(["date", "city"], keep=False)
+            dropped = sorted({f"{c} {d}" for c, d in zip(pdf.loc[dup, "city"], pdf.loc[dup, "date"])})
+            pdf = pdf[~dup].assign(source=SRC_BULLETIN_PDF)
+            b = pd.concat([b, pdf[pdf["date"] > ue_end]], ignore_index=True)
+    b = b.rename(columns={"date": "bulletin_date"})
+    b["aqi"] = pd.to_numeric(b["aqi"], errors="coerce")
+    b = b.dropna(subset=["aqi"])
+    b["aqi_category"] = b["aqi_category"].astype(str).str.strip().str.replace("Very poor", "Very Poor")
+    b["no_stations"] = pd.to_numeric(b["no_stations"], errors="coerce")
+    b = b.drop_duplicates(["city", "bulletin_date"]).sort_values(["city", "bulletin_date"])
+    return b[ALL_CITIES_COLS].reset_index(drop=True), dropped
+
+
 # --------------------------------------------------------------------------- main
 FLAG_COLS = ["flag_flatline", "flag_spike"]
 NETWORK_ERRORS = (RuntimeError, OSError, httpx.HTTPError)    # net.get raises RuntimeError after its retries
@@ -553,7 +594,7 @@ def load_base(base_dir: Path) -> dict:
     log = pd.read_parquet(base_dir / "cleaning_log.parquet")
     if "local_date" not in log.columns:
         raise RuntimeError("incremental build: the previous cleaning_log has no per-day counts; run a full build first")
-    return {"manifest": json.loads((base_dir / "manifest.json").read_text()),
+    return {"manifest": json.loads((base_dir / "manifest.json").read_text(encoding="utf-8")),
             "hourly": pd.read_parquet(base_dir / "station_hourly.parquet"), "log": log,
             "aqi": pd.read_parquet(base_dir / "city_daily_aqi.parquet")}
 
@@ -570,7 +611,7 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
     manifest["sources"] instead of failing the whole build."""
     base = load_base(base_dir) if base_dir is not None else None
     out_dir.mkdir(parents=True, exist_ok=True)
-    cand = json.loads(candidates_path.read_text())
+    cand = json.loads(candidates_path.read_text(encoding="utf-8"))
     st = load_stations(cand, cities)
     sources: dict[str, str] = {}
 
@@ -705,6 +746,18 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
             print(f"  bulletins: NOT UPDATED, keeping the previous data ({type(e).__name__}: {e})", flush=True)
     _assert_unique(aqi, ["city", "bulletin_date"], "city_daily_aqi")
 
+    try:                                    # official AQI for every bulletin city (Explore layer, official_aqi tool)
+        aqi_all, aqi_all_dropped = load_all_bulletins(bulletin_path, pdf_until=end)
+        sources["cpcb_bulletins_all_cities"] = "updated"
+    except Exception as e:
+        aqi_all, aqi_all_dropped = None, []
+        sources["cpcb_bulletins_all_cities"] = f"not updated ({type(e).__name__}: {str(e)[:300]})"
+        if progress:
+            print(f"  all-cities bulletins: NOT UPDATED ({type(e).__name__}: {e})", flush=True)
+    if aqi_all is not None:
+        _assert_unique(aqi_all, ["city", "bulletin_date"], "city_aqi_all")
+        _write(aqi_all, out_dir / "city_aqi_all.parquet")
+
     diwali, panels = build_diwali(daily, st, aqi, dq, blank_hours, cities, today, data_end)
 
     stations = st.drop(columns=["sensor_first", "sensor_last"]).assign(
@@ -745,6 +798,9 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
                   "timestamps": "labels mark END of interval; hour = floor(ts - interval)",
                   "diwali": "AQI is the main comparison; PM rows are supporting/status only; no PM % change"},
         "rows": {k: int(len(v)) for k, v in outputs.items()},
+        "all_cities_bulletins": ({"cities": int(aqi_all["city"].nunique()), "rows": int(len(aqi_all)),
+                                  "start": str(aqi_all["bulletin_date"].min()), "end": str(aqi_all["bulletin_date"].max()),
+                                  "dropped_duplicate_city_days": aqi_all_dropped} if aqi_all is not None else None),
         "other_sensor_rows_ignored": other if not base else base["manifest"].get("other_sensor_rows_ignored"),
         **({"other_sensor_rows_ignored_in_reprocessed_days": other} if base else {}),
         "delhi_panel": {k: len(v) for k, v in panels.items()},

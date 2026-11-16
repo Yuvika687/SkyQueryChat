@@ -14,7 +14,8 @@ test("data & accuracy panel", async ({ page }) => {
   await expect(panel.getByText("Conversation questions")).toBeVisible();
   await expect(panel.getByText(/Survey of India/)).toBeVisible();
   await expect(panel.getByText(/Health Statements for AQI Categories/)).toBeVisible();
-  await expect(panel.getByText("GODL-India")).toBeVisible();
+  await expect(panel.getByText("GODL-India").first()).toBeVisible();
+  await expect(panel.getByText(/GeoNames/).first()).toBeVisible();          // credit for the all-cities map
   const text = await panel.innerText();
   expect(text).not.toMatch(/combined|rerun|\d{4}-\d{2}-\d{2}|\blive\b/i);   // first-pass only, readable dates
   await page.keyboard.press("Escape");

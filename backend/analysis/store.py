@@ -9,7 +9,8 @@ import pandas as pd
 APP_DIR = Path(__file__).resolve().parents[2] / "data" / "app"
 TABLES = ["stations", "station_daily", "city_daily", "city_daily_aqi", "weather_daily", "date_quality",
           "network_gaps", "diwali_aqi_levels", "diwali_aqi_baselines", "delhi_pm_diwali_support",
-          "diwali_pm_status", "data_status_reasons"]
+          "diwali_pm_status", "data_status_reasons", "city_aqi_all"]
+CATEGORICAL = {"city_aqi_all": ["city", "aqi_category", "prominent_pollutant", "source"]}   # about 150,000 rows
 
 
 # The tables are small (about 60 MB in pandas), so one DuckDB thread is enough. This keeps memory low on
@@ -19,8 +20,12 @@ DUCKDB_CONFIG = {"threads": 1, "memory_limit": "256MB"}
 
 def read_tables(app_dir: Path = APP_DIR) -> dict[str, pd.DataFrame]:
     """Single-threaded reads: multi-threaded Parquet decoding briefly needs about 120 MB more memory."""
-    return {t: pd.read_parquet(app_dir / f"{t}.parquet", use_threads=False) for t in TABLES
-            if (app_dir / f"{t}.parquet").exists()}
+    out = {t: pd.read_parquet(app_dir / f"{t}.parquet", use_threads=False) for t in TABLES
+           if (app_dir / f"{t}.parquet").exists()}
+    for t, cols in CATEGORICAL.items():      # repeated text as categories keeps the all-cities table small in memory
+        if t in out:
+            out[t] = out[t].astype({c: "category" for c in cols if c in out[t]})
+    return out
 
 
 class Store:

@@ -12,7 +12,7 @@ export function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
 /** Shown when the free backend is asleep (it wakes on the first request). */
 export function WakeUpState({ className, compact }: { className?: string; compact?: boolean }) {
   return (
-    <div role="status" className={cn("glass flex items-start gap-3 rounded-2xl px-4 py-3.5", className)}>
+    <div role="status" className={cn("card flex items-start gap-3 px-4 py-3.5", className)}>
       <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-teal" aria-hidden />
       <div className="min-w-0">
         <p className="text-sm font-medium">Waking up the data server, this can take up to a minute</p>
@@ -29,7 +29,7 @@ export function ErrorState({ title, message, onRetry, className }: {
   className?: string;
 }) {
   return (
-    <div role="alert" className={cn("glass flex items-start gap-3 rounded-2xl px-4 py-3.5", className)}>
+    <div role="alert" className={cn("card flex items-start gap-3 px-4 py-3.5", className)}>
       <CloudOff className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">{title}</p>

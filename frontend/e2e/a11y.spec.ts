@@ -31,12 +31,12 @@ for (const [name, path, ready] of PAGES) {
 test("a11y: ask answer and proof", async ({ page }, info) => {
   await page.goto("/ask");
   const box = page.getByLabel("Your question");
-  await box.fill("How bad was Delhi's air on Diwali 2025?");
+  await box.fill("AQI in Lucknow");                      // a live answer (reused for 6 hours, so one AI call)
   await box.press("Enter");
-  await expect(page.getByText("Saved demo answer")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/numbers? checked/).first()).toBeVisible({ timeout: 90_000 });
   await page.waitForTimeout(800);
   await check(page, "ask answer");
-  await page.locator("article").first().getByRole("button", { name: "352" }).first().click();
+  await page.locator("article").first().locator('button[aria-haspopup="dialog"]').first().click();
   await page.waitForTimeout(500);
   await check(page, `ask proof (${info.project.name})`);
 });

@@ -66,6 +66,8 @@ drawn between stations.
 - Cities ranked highest first, each with a 7-day sparkline.
 - The change from the previous day ("▲ 17.3 vs 10 Nov"), shown only when that day has a value.
 - CPCB's official health statement for the category, on hover or focus.
+- **Find your city:** search all 329 cities in CPCB's daily bulletin (older names such as Bangalore or Gurgaon work);
+  choosing one opens its official AQI panel on Explore.
 - Quick ask from any page: ⌘K or Ctrl+K.
 </details>
 
@@ -75,6 +77,10 @@ drawn between stations.
 - A slim timeline with a mini chart of the daily averages and a Diwali marker; play the last 30 days at 1× or 2×.
 - Search any station by name across the six cities.
 - A station panel with its 30-day chart and CPCB's health statement. Low-cost sensors are shown separately.
+- **All CPCB cities (official AQI):** a second layer with every bulletin city as a small dot coloured by category (the
+  six metros highlighted), a searchable list, and a city panel with the latest AQI, main pollutant, change from the
+  previous bulletin, a 30-day chart with gaps and "Ask about this city". Locations from GeoNames; a city without a
+  confident match is listed but not plotted.
 </details>
 
 <details>
@@ -83,6 +89,9 @@ drawn between stations.
 - Each answer comes with a chart, an evidence table and the agent's steps.
 - Click a highlighted number to see where it came from.
 - Copy a link that reopens the question, copy the answer, and download the chart (PNG) or its data (CSV).
+- Any city in CPCB's bulletin can be asked about ("AQI in Lucknow"): the answer uses the official AQI and says that
+  station-level PM analysis covers only the six cities. A place outside the bulletin gets an honest answer with the
+  nearest covered cities.
 </details>
 
 <details>
@@ -97,6 +106,8 @@ drawn between stations.
 <details>
 <summary><b>Compare</b>: 2–6 cities side by side over the same dates</summary>
 
+- A slim control panel on the left and the results on the right: a summary strip (highest city, lowest city and their
+  ratio, or "too close to call"), then the chart and the ranking.
 - PM2.5, PM10 or official AQI (AQI on its own chart), with daily lines and a ranking with 95% range bars.
 - "Too close to call" when ranges overlap, a trend for each city, and a warning when coverage is low.
 - The selection is kept in the link; copy link and download data (CSV).
@@ -176,7 +187,7 @@ data refreshes daily. Runs are in `evals/runs/`; the scoreboard is
 ## Run locally
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 cp .env.example .env                 # add your own GEMINI_API_KEY
 uvicorn backend.api.main:app --port 8000
@@ -184,8 +195,11 @@ uvicorn backend.api.main:app --port 8000
 cd frontend && cp .env.example .env.local && npm install && npm run dev   # http://localhost:3000
 ```
 
-Tests: `pytest`, then `npm test` and `npm run e2e` in `frontend/`. Deploy: `render.yaml` for the backend, and Vercel
-with root directory `frontend` for the site.
+Tests: `pytest`, then `npm test` and `npm run e2e` in `frontend/`. Deploy: see [DEPLOY.md](DEPLOY.md) (Render for the
+backend, Vercel with root directory `frontend` for the site).
+
+Rebuild only the all-cities official AQI table (the daily refresh does this too):
+`python scripts/build_city_aqi_all.py`; city locations: `python -I scripts/build_city_coordinates.py <GeoNames IN.zip>`.
 
 ## Limits
 
@@ -199,7 +213,8 @@ with root directory `frontend` for the site.
 
 - **Measured PM:** [OpenAQ](https://openaq.org) archive (CPCB, AirNow and AirGradient); licence set by each provider.
 - **Official AQI:** CPCB daily bulletins via [UrbanEmissions](https://github.com/urbanemissionsinfo/AQI_bulletins) and
-  [cpcb.gov.in](https://cpcb.gov.in/AQI_Bulletin.php) (GODL-India). **Delhi station files:**
+  [cpcb.gov.in](https://cpcb.gov.in/AQI_Bulletin.php) (GODL-India), for the six cities and for every bulletin city.
+  **City locations:** [GeoNames](https://www.geonames.org) (CC BY 4.0). **Delhi station files:**
   [OpenCity](https://data.opencity.in) (public domain).
 - **Weather:** [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0), reanalysis from the Copernicus Climate Change
   Service.

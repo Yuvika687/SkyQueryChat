@@ -12,6 +12,8 @@ TEXT = {
     "not_causal": CAUSAL_WARNING,
     "modelled_weather": "Weather values are modelled (Open-Meteo reanalysis), not measured.",
     "association_not_cause": "This is an association, not a cause.",
+    "pm_only_six_metros": "Station-level PM2.5 and PM10 analysis covers only Delhi, Mumbai, Kolkata, Chennai, Bengaluru "
+                          "and Hyderabad; for this city the app has CPCB's official AQI only.",
 }
 
 
@@ -29,6 +31,8 @@ def required_warnings(full: dict) -> list[dict]:
         out.append("aqi_not_concentration")
     if kind.startswith("diwali"):
         out.append("not_causal")
+    if kind == "official_aqi" and not (full.get("values") or {}).get("is_metro", True):
+        out.append("pm_only_six_metros")
     if "modelled" in dt:
         out.append("modelled_weather")
     if kind.startswith("weather"):
@@ -42,6 +46,8 @@ def required_warnings(full: dict) -> list[dict]:
             res.append({"code": "pm_incomplete", "text": w})
         elif openaq_2026 and ("underestimate" in lw or "no baseline is given" in lw):
             res.append({"code": "pm_incomplete", "text": w})
+        elif kind == "official_aqi" and lw.startswith("station-level pm2.5"):
+            continue                                  # already the pm_only_six_metros note
         elif "not yet available" in lw or "not available" in lw or "no measured pm data" in lw:
             res.append({"code": "no_data", "text": w})
     return res

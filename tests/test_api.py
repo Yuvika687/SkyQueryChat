@@ -183,7 +183,8 @@ def test_repeated_question_is_served_from_cache(store):
         assert d["cards"][0]["value"] > 0
 
 
-def test_demo_answer_served_without_llm(store):
+def test_saved_demo_answers_are_never_served_while_live_ai_is_available(store):
+    """Every question is answered live: a saved demo answer to the same words is not served first."""
     demo = {"what is delhi s diwali aqi": {"question": "What is Delhi's Diwali AQI?", "steps": [],
             "final": {"status": "answered", "answer": "Cached demo answer.", "cards": [], "chart": None,
                       "sources": [], "warnings": [], "data_types": ["official_aqi"]}}}
@@ -192,9 +193,7 @@ def test_demo_answer_served_without_llm(store):
         raise RuntimeError("no keys")
     with TestClient(make(store, factory=broken, demo=demo)) as c:
         _, ev = chat(c, "What is Delhi's Diwali AQI?")
-        assert dict(ev)["answer"]["text"] == "Cached demo answer." and dict(ev)["done"]["source"] == "demo"
-        _, ev = chat(c, "Something not cached")
-        assert dict(ev)["error"]["code"] == "model_unavailable"
+        assert dict(ev)["error"]["code"] == "model_unavailable" and "answer" not in dict(ev)
         assert c.get("/api/cities").status_code == 200          # data pages still work
 
 
@@ -457,6 +456,7 @@ def test_closing_stream_early_cancels_task(store):
 
 
 # ----------------------------------------------------------------------------- memory
+@pytest.mark.skipif(sys.platform == "win32", reason="the memory check uses the Unix-only resource module")
 @pytest.mark.skipif(bool(os.getenv("GITHUB_ACTIONS")), reason=(
     "GitHub's runner reports a much higher peak (about 670 MB) for the same code and data than macOS (about 300 MB) "
     "and the Render-like container (283-305 MB, CLAUDE.md); the data refresh limits data/app to 8 MB instead"))
@@ -512,13 +512,18 @@ def test_answer_event_carries_llm_headline_explanation_follow_ups_and_code_metho
         assert a["method"].startswith("Measured PM") and a["verification"]["answer_source"] == "llm"
 
 
-def test_saved_demo_answer_replays_its_llm_text(store):
+def test_saved_demo_answer_replays_its_llm_text_only_when_the_ai_quota_is_used_up(store):
     from backend.api.protect import normalise
-    demo = {normalise(a["question"]): a for a in json.loads((APP / "demo_answers.json").read_text())["answers"]}
-    saved = demo[normalise("How bad was Delhi's air on Diwali 2025?")]["final"]
-    with TestClient(make(store, demo=demo)) as c:
-        _, ev = chat(c, "How bad was Delhi's air on Diwali 2025?")
-        a = dict(ev)["answer"]
+    demo = {normalise(a["question"]): a for a in json.loads((APP / "demo_answers.json").read_text(encoding="utf-8"))["answers"]}
+    q = "How bad was Delhi's air on Diwali 2025?"
+    saved = demo[normalise(q)]["final"]
+    tiny = {"test:primary": ProviderLimit("test:primary", rpm=100, tpm=10**7, rpd=3, daily_token_budget=10**9)}
+    qm = _quota(tiny, safety_margin=1.0, demo_reserve=0.0, question_requests=4)   # 4 > 3: no room for a new question
+    with TestClient(make(store, demo=demo, quota=qm)) as c:
+        _, ev = chat(c, q)
+        d = dict(ev)
+        assert d["notice"]["code"] == "cached_fallback"
+        a = d["answer"]
         assert a["text"] == saved["answer"] and a["headline"] == (saved.get("headline") or saved["answer"])
         assert a["method"] and a["cached"]
 
@@ -709,9 +714,11 @@ def test_saved_answers_with_no_fixed_period_say_which_data_they_used(store):
     assert str(saved_data_end(last)) == "2026-11-11"
     demo = {"is rain associated with lower pm10 in mumbai": {**rel, "steps": [], "final": {
         **rel["final"], "status": "answered", "answer": "x", "cards": [], "chart": None}}}
-    with TestClient(make(store, demo=demo)) as c:
+    tiny = {"test:primary": ProviderLimit("test:primary", rpm=100, tpm=10**7, rpd=3, daily_token_budget=10**9)}
+    qm = _quota(tiny, safety_margin=1.0, demo_reserve=0.0, question_requests=4)   # saved answers only when quota is used up
+    with TestClient(make(store, demo=demo, quota=qm)) as c:
         ev = parse(c.post("/api/chat", json={"message": rel["question"]}).text)
-        notes = [d for e, d in ev if e == "notice"]
+        notes = [d for e, d in ev if e == "notice" and d["code"] == "saved_older"]
         assert notes and notes[0]["code"] == "saved_older" and "30 Oct 2026" in notes[0]["message"]
         assert f"{R.DATA['measured_end'].day} {R.DATA['measured_end']:%b %Y}" in notes[0]["message"]
 

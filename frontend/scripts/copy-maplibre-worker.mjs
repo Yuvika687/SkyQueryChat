@@ -3,10 +3,11 @@
 import { copyFileSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const dist = path.dirname(require.resolve("maplibre-gl/package.json")) + "/dist";
-const out = new URL("../public/maplibre/", import.meta.url).pathname;
+const out = fileURLToPath(new URL("../public/maplibre/", import.meta.url)); // works on Windows too
 mkdirSync(out, { recursive: true });
 copyFileSync(`${dist}/maplibre-gl-worker.mjs`, `${out}/maplibre-gl-worker.mjs`);
 console.log("copied maplibre-gl-worker.mjs to public/maplibre/");

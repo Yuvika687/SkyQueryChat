@@ -22,7 +22,7 @@ PROD_RATE_PER_DAY = 30
 
 def question_token_cap() -> int:
     """The one per-question token cap: limits.max_tokens_per_question in models.json."""
-    return int(json.loads(MODELS_JSON.read_text())["limits"]["max_tokens_per_question"])
+    return int(json.loads(MODELS_JSON.read_text(encoding="utf-8"))["limits"]["max_tokens_per_question"])
 
 
 def _tokens_per_question() -> int:

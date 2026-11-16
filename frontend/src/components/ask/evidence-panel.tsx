@@ -18,7 +18,7 @@ import { ChartPanel, DataTable } from "./answer-parts";
 import { StepsSummary } from "./live-steps";
 
 export function EvidencePanel({ turn, className }: { turn: Turn; className?: string }) {
-  const [tab, setTab] = useState<"evidence" | "data">("evidence");
+  const [tab, setTab] = useState<"evidence" | "data" | "how">("evidence");
   const a = turn.answer;
   if (!a) return null;
   const ev = evidenceFor(turn);
@@ -31,11 +31,11 @@ export function EvidencePanel({ turn, className }: { turn: Turn; className?: str
   ];
   return (
     <div className={cn("flex min-h-0 min-w-0 flex-col", className)}>
-      <div role="tablist" aria-label="Evidence or data" className="flex gap-1 border-b border-line px-4 pt-3">
-        {(["evidence", "data"] as const).map((k) => (
+      <div role="tablist" aria-label="Chart, data or how it was made" className="flex gap-1 px-4 pt-4 pr-14">
+        {(["evidence", "data", "how"] as const).map((k) => (
           <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={cn("-mb-px border-b-2 px-3 pb-2.5 text-[13.5px] font-medium", tab === k ? "border-teal text-foreground" : "border-transparent text-subtle hover:text-foreground")}>
-            {k === "evidence" ? "Evidence" : "Data"}
+            className={cn("h-8 rounded-full px-3.5 text-[13.5px] font-medium", tab === k ? "bg-white/[0.08] text-foreground" : "text-subtle hover:text-foreground")}>
+            {k === "evidence" ? "Chart" : k === "data" ? "Data" : "How it was made"}
           </button>
         ))}
       </div>
@@ -47,15 +47,18 @@ export function EvidencePanel({ turn, className }: { turn: Turn; className?: str
             ) : (
               <EmptyNote title="No chart for this answer" hint="Ask about a period (for example “over the last 30 days”) to get a chart." />
             )}
-            <dl className="grid grid-cols-[96px_1fr] overflow-hidden rounded-xl border border-line text-[13px]">
+          </>
+        ) : tab === "how" ? (
+          <>
+            <dl className="grid grid-cols-[88px_1fr] gap-x-3 gap-y-2.5 text-[13.5px]">
               {rows.filter(([, v]) => v).map(([k, v]) => (
                 <div key={k} className="contents">
-                  <dt className="border-b border-line bg-white/[0.02] px-3 py-2 text-faint last-of-type:border-0">{k}</dt>
-                  <dd className="border-b border-line px-3 py-2 last-of-type:border-0">{readable(v)}</dd>
+                  <dt className="text-faint">{k}</dt>
+                  <dd>{readable(v)}</dd>
                 </div>
               ))}
             </dl>
-            <StepsSummary turn={turn} />
+            <StepsSummary turn={turn} open />
           </>
         ) : (
           <>
@@ -64,7 +67,7 @@ export function EvidencePanel({ turn, className }: { turn: Turn; className?: str
                 <h3 className="mb-2 text-[12px] font-medium tracking-wide text-faint uppercase">Values in the answer</h3>
                 <ul className="flex flex-col gap-1.5 text-[13px]">
                   {turn.cards.map((c) => (
-                    <li key={c.field} className="flex justify-between gap-3 rounded-lg border border-line px-3 py-2">
+                    <li key={c.field} className="flex justify-between gap-3 rounded-lg px-3 py-2 odd:bg-white/[0.03]">
                       <span className="text-subtle">{readable(c.label)}</span>
                       <span className="num shrink-0 font-semibold">{fmtNumber(c)} <span className="font-normal text-faint">{/index/i.test(c.unit) ? "AQI" : c.unit}</span></span>
                     </li>
@@ -105,14 +108,14 @@ export function ProofView({ proof, onBack, backLabel = "Back to evidence" }: { p
       {proof.scale && <ScaleBar value={proof.raw} scale={proof.scale} />}
       <section>
         <h3 className="mb-1.5 text-[11px] font-medium tracking-wide text-faint uppercase">How it was worked out</h3>
-        <p className="rounded-xl border border-line bg-white/[0.03] px-3.5 py-3 text-[14px] leading-6">{proof.how}</p>
+        <p className="tile px-3.5 py-3 text-[14px] leading-6">{proof.how}</p>
       </section>
       {proof.rows.length > 0 && (
         <section>
           <h3 className="mb-1.5 text-[11px] font-medium tracking-wide text-faint uppercase">{proof.rows.some((r) => r.title.startsWith("Bulletin")) ? "Bulletins used" : "Rows used"}</h3>
           <ul className="flex flex-col gap-1.5">
             {proof.rows.map((r) => (
-              <li key={r.title} className="grid grid-cols-[1fr_auto] gap-x-3 rounded-xl border border-line px-3.5 py-2.5 text-[13px]">
+              <li key={r.title} className="grid grid-cols-[1fr_auto] gap-x-3 rounded-xl px-3.5 py-2.5 text-[13px] odd:bg-white/[0.03]">
                 <span className="font-medium">{r.title}</span>
                 <span className="num text-right text-[17px] font-semibold">{r.value}</span>
                 <span className="text-faint">{r.sub}</span>
@@ -130,7 +133,7 @@ export function ProofView({ proof, onBack, backLabel = "Back to evidence" }: { p
           ))}
         </dl>
       </section>
-      <p className="flex items-start gap-2.5 rounded-xl border border-teal/35 bg-teal/[0.07] px-3.5 py-3 text-[13px]">
+      <p className="flex items-start gap-2.5 rounded-xl bg-teal/[0.08] px-3.5 py-3 text-[13px]">
         <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-teal/20 text-teal"><Check className="size-3" aria-hidden /></span>
         {proof.check}
       </p>

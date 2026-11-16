@@ -37,7 +37,7 @@ SPIKE_NEIGHBOUR_RATIO = 0.5   # ... and the sensor's own previous and next hours
 CITY_MIN_STATIONS_ABS = 3
 CITY_MIN_STATIONS_FRACTION = 0.5
 
-EVENTS = json.loads((ROOT / "backend" / "config" / "events.json").read_text())
+EVENTS = json.loads((ROOT / "backend" / "config" / "events.json").read_text(encoding="utf-8"))
 
 
 def diwali_date(year: int) -> date:

@@ -306,9 +306,12 @@ def unit_mismatches(texts: list[str], by_unit: dict[str, set[float]], user_numbe
 # ----------------------------------------------------------------------------- wording the answer must not use
 BANNED_WORDING = re.compile(r"\bnot(?:ing|ed that|es that)\b"            # "noting", "noting that", "noted that"
                             r"|[µu]g\s?/\s?m(?:²|2)\b"                     # a wrong unit: concentrations are µg/m³
-                            r"|\branked\s+(?:#|no\.?\s*)?\d+", re.I)          # rank talk ("ranked 1") reads like a table
+                            r"|\branked\s+(?:#|no\.?\s*)?\d+"               # rank talk ("ranked 1") reads like a table
+                            r"|\bright now\b|\btoday\b|\bcurrently\b|\bat the moment\b|\blive (?:data|readings|air)\b",
+                            re.I)                                            # the data is never live: "latest available"
 
 
 def banned_wording(text: str) -> list[str]:
-    """Wording the answer must not use: filler ('noting', 'noting that', 'noted that') and wrong units ('µg/m²')."""
+    """Wording the answer must not use: filler ('noting'), wrong units ('µg/m²'), rank talk ('ranked 1') and anything that
+    implies live data ('right now', 'today', 'currently'): the data is the latest available, published with a delay."""
     return [m.group(0) for m in BANNED_WORDING.finditer(text or "")]

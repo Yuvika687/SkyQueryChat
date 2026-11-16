@@ -37,7 +37,7 @@ def _tokens(u: dict) -> int:
 
 async def main(only: set[int] | None):
     path = ROOT / "data" / "app" / "demo_answers.json"
-    saved = {a["question"]: a for a in json.loads(path.read_text())["answers"]} if path.exists() else {}
+    saved = {a["question"]: a for a in json.loads(path.read_text(encoding="utf-8"))["answers"]} if path.exists() else {}
     agent = core.build_agent()
     todo = [q for i, q in enumerate(DEMO, 1) if not only or i in only]
     for n, q in enumerate(todo):
@@ -63,7 +63,7 @@ async def main(only: set[int] | None):
         if n < len(todo) - 1:
             await asyncio.sleep(15)
     out = [saved[q] for q in DEMO if q in saved]
-    path.write_text(json.dumps({"answers": out}, indent=1, ensure_ascii=False))
+    path.write_text(json.dumps({"answers": out}, indent=1, ensure_ascii=False), encoding="utf-8")
     print(f"saved {len(out)} demo answers")
 
 

@@ -86,6 +86,7 @@ export const CREDIT_ITEMS: { label: string; links: { text: string; href: string 
   { label: "India boundary as per the Survey of India", links: [{ text: "DataMeet", href: "https://github.com/datameet/maps" }], licence: "CC0" },
   { label: "Districts (Census 2011)", links: [{ text: "DataMeet", href: "https://github.com/datameet/maps/tree/master/Districts" }], licence: "CC BY 2.5 IN" },
   { label: "Station data", links: [{ text: "CPCB via OpenAQ", href: "https://openaq.org" }] },
+  { label: "Bulletin city locations", links: [{ text: "GeoNames", href: "https://www.geonames.org" }], licence: "CC BY 4.0" },
 ];
 
 const a = (l: { text: string; href: string }) => `<a href="${l.href}" target="_blank" rel="noreferrer">${l.text}</a>`;
@@ -94,6 +95,7 @@ export const CREDITS_HTML = [
   `India boundary as per the Survey of India via ${a(CREDIT_ITEMS[1].links[0])} (CC0)`,
   `Districts via ${a(CREDIT_ITEMS[2].links[0])} (CC BY 2.5 IN)`,
   `Station data: CPCB via ${a(CREDIT_ITEMS[3].links[0])}`,
+  `City locations: ${a(CREDIT_ITEMS[4].links[0])} (CC BY 4.0)`,
 ].join(" · ");
 
 /** MapLibre's compact attribution ("ⓘ", bottom-right), collapsed at start (MapLibre opens it until the first drag). */

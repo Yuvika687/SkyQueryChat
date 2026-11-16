@@ -75,8 +75,8 @@ def pick_sensor(sensors: list[dict], param: str) -> dict | None:
 
 
 def main() -> None:
-    locs = {x["id"]: x for x in json.loads((PROBE / "india_locations.json").read_text())}
-    survey = json.loads((PROBE / "sensor_survey.json").read_text())
+    locs = {x["id"]: x for x in json.loads((PROBE / "india_locations.json").read_text(encoding="utf-8"))}
+    survey = json.loads((PROBE / "sensor_survey.json").read_text(encoding="utf-8"))
 
     result = {"status": "candidate", "radius_km": RADIUS_KM, "gap_not_continuous": GAP,
               "rules": __doc__.split("Rules:")[1].strip(), "cities": {}}

@@ -2,11 +2,11 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// Ask page with the real backend and local data. Saved demo answers and recorded streams only: no AI quota.
+// Ask page with the real backend and local data. Answers are live (one AI call, then the 6-hour answer cache).
 const SHOTS = join(__dirname, "..", "..", "docs", "screenshots", "ask");
 mkdirSync(SHOTS, { recursive: true });
 
-const SAVED_Q = "How bad was Delhi's air on Diwali 2025?"; // a saved demo answer from the backend
+const SAVED_Q = "AQI in Lucknow"; // answered live once, then served from the 6-hour answer cache
 const COMPARE = readFileSync(join(__dirname, "..", "src", "test", "fixtures", "compare-llm.sse"), "utf8"); // recorded live answer
 const SID = "d".repeat(32);
 const isDesktop = (info: TestInfo) => (info.project.use.viewport?.width ?? 0) >= 1024;
@@ -64,11 +64,11 @@ test.describe("Ask page", () => {
     expect(problems).toEqual([]);
   });
 
-  test("saved answer: badge, checked numbers, notes, evidence and data", async ({ page }, info) => {
+  test("live answer: badge, checked numbers, notes, evidence and data", async ({ page }, info) => {
     const problems = watchConsole(page);
     await page.goto("/ask");
     await askVia(page, SAVED_Q);
-    await expect(page.getByText("Saved demo answer")).toBeVisible();
+    await expect(page.getByText(/numbers? checked/).first()).toBeVisible({ timeout: 90_000 });
     const card = page.locator("article").first();
     await expect(card.getByText("Official AQI", { exact: true }).first()).toBeVisible();
     await expect(card.getByText(/\d+ numbers checked/)).toBeVisible();
@@ -76,11 +76,12 @@ test.describe("Ask page", () => {
     await expect(card.getByText(/\d{4}-\d{2}-\d{2}|16:00/)).toHaveCount(0);            // readable dates and times only
     // wide screens: the evidence panel is already open; phones: "Chart and evidence" opens it as a bottom sheet
     if (!isDesktop(info)) await card.getByRole("button", { name: "Chart and evidence" }).click();
-    const tabs = page.getByRole("tablist", { name: "Evidence or data" });
-    await expect(tabs.getByRole("tab", { name: "Evidence" })).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByText("How this answer was made").first()).toBeVisible();
+    const tabs = page.getByRole("tablist", { name: "Chart, data or how it was made" });
+    await expect(tabs.getByRole("tab", { name: "Chart" })).toHaveAttribute("aria-selected", "true");
+    await tabs.getByRole("tab", { name: "How it was made" }).click();
+    await expect(page.getByRole("tabpanel").getByText(/How this answer was made/)).toBeVisible();
     await tabs.getByRole("tab", { name: "Data" }).click();
-    await expect(page.getByRole("table")).toContainText("21 Oct 2025");
+    await expect(page.getByRole("table")).toContainText(/\d{1,2} [A-Z][a-z]{2} 2026/);
     if (isDesktop(info)) await expect(page.getByRole("complementary", { name: "Evidence" })).toBeVisible();
     await expectNoOverflow(page);
     expect(problems).toEqual([]);
@@ -89,12 +90,11 @@ test.describe("Ask page", () => {
   test("clicking a highlighted number opens its proof, and Back returns", async ({ page }, info) => {
     await page.goto("/ask");
     await askVia(page, SAVED_Q);
-    await expect(page.getByText("Saved demo answer")).toBeVisible();
-    await page.locator("article").first().getByRole("button", { name: "352" }).first().click();
+    await expect(page.getByText(/numbers? checked/).first()).toBeVisible({ timeout: 90_000 });
+    await page.locator("article").first().locator('button[aria-haspopup="dialog"]').first().click();
     const proof = isDesktop(info) ? page.getByRole("complementary", { name: "Proof" }) : page.getByRole("dialog");
     await expect(proof).toBeVisible();
     await expect(proof.getByText("How it was worked out")).toBeVisible();
-    await expect(proof.getByText(/Mean of the 2 festival bulletins/)).toBeVisible();
     await expect(proof.getByText(/^Copied exactly from the analysis result\./)).toBeVisible();
     await expect(proof).not.toContainText(/gemini/i);                                      // the model is named only in the steps
     await proof.getByRole("button", { name: isDesktop(info) ? "Back to evidence" : "Close" }).click();

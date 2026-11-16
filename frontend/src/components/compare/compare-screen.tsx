@@ -5,11 +5,12 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
-import { AlertTriangle, ArrowRight, Download, Link2, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, Download, Link2, Sparkles } from "lucide-react";
 import { LazyChart } from "@/components/chart/lazy-chart";
 import { askHref } from "@/components/ds/ask-box";
 import { DataGate } from "@/components/ds/data-state";
 import { Section, Segmented } from "@/components/ds/section";
+import { Term } from "@/components/ds/term";
 import { EmptyNote, Skeleton } from "@/components/ds/states";
 import { copyText, download, toCSV, useToast } from "@/components/ds/toast";
 import { CITIES, CITY_COLOURS } from "@/lib/categories";
@@ -53,11 +54,13 @@ export function CompareScreen() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1240px] px-4 pt-[84px] pb-[calc(104px+env(safe-area-inset-bottom))] sm:px-8 md:pt-[104px] md:pb-12">
-      <header className="mb-6">
-        <h1 className="font-display text-[48px] leading-none sm:text-[64px]">Compare</h1>
+    <div className="mx-auto w-full max-w-[1280px] px-4 pt-[88px] pb-[calc(104px+env(safe-area-inset-bottom))] sm:px-8 md:pt-[104px] md:pb-12">
+      <header className="mb-8">
+        <h1 className="page-title">Compare</h1>
         <p className="mt-3 text-[16px] text-subtle">Put cities side by side over the same dates.</p>
-        <p className="mt-1 text-[13.5px] text-faint">Pick cities, a pollutant and a period. Numbers are PM2.5 (fine particles) or PM10 (coarse particles) in µg/m³ (micrograms per cubic metre); the official AQI (Air Quality Index) comes from CPCB (Central Pollution Control Board) bulletins.</p>
+        <p className="mt-1 text-[14px] text-faint">
+          <Term k="pm25" /> or <Term k="pm10" /> in <Term k="ugm3" />, or the official <Term k="aqi" /> from <Term k="cpcb" />.
+        </p>
       </header>
       <DataGate state={periods} what="Compare page">
         {(per) => <CompareBody sel={sel} per={per} update={update} />}
@@ -89,58 +92,59 @@ function CompareBody({ sel, per, update }: { sel: Selection; per: Periods; updat
   };
 
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-4">
-      {/* ------------------------------------------------------------ controls */}
-      <section aria-label="Selection" className="glass flex flex-col gap-4 rounded-2xl p-4 shadow-card sm:p-5">
+    <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[288px_minmax(0,1fr)] lg:items-start">
+      {/* ------------------------------------------------------------ controls: a slim left panel */}
+      <section aria-label="Selection" className="card flex flex-col gap-6 p-5 lg:sticky lg:top-[96px]">
         <fieldset>
-          <legend className="mb-2 text-[13px] font-medium">Cities <span className="font-normal text-faint">(two to six)</span></legend>
-          <div className="flex flex-wrap gap-2">
+          <legend className="mb-2.5 text-[13px] font-medium text-subtle">Cities <span className="font-normal text-faint">(two to six)</span></legend>
+          <div className="flex flex-wrap gap-2 lg:flex-col lg:gap-1">
             {CITIES.map((c) => {
               const on = sel.cities.includes(c);
               return (
                 <button key={c} type="button" aria-pressed={on} onClick={() => toggle(c)} disabled={on && sel.cities.length <= 2}
                   title={on && sel.cities.length <= 2 ? "At least two cities are needed" : undefined}
-                  className={cn("inline-flex min-h-10 items-center gap-2 rounded-full border px-3.5 text-[13.5px] font-medium transition-colors",
-                    on ? "border-transparent bg-white/[0.08] text-foreground" : "border-line text-subtle hover:text-foreground", "disabled:cursor-not-allowed")}>
-                  <span aria-hidden className={cn("size-2.5 rounded-full", !on && "opacity-40")} style={{ background: CITY_COLOURS[c] }} />
+                  className={cn("inline-flex min-h-10 items-center gap-2.5 rounded-xl px-3 text-[14px] font-medium transition-colors lg:w-full",
+                    on ? "bg-white/[0.07] text-foreground" : "text-subtle hover:bg-white/[0.03] hover:text-foreground", "disabled:cursor-not-allowed")}>
+                  <span aria-hidden className={cn("size-2.5 rounded-full", !on && "opacity-35")} style={{ background: CITY_COLOURS[c] }} />
                   {c}
+                  {on && <Check className="ml-auto hidden size-4 text-teal lg:block" aria-hidden />}
                   {on && <span className="sr-only">(selected)</span>}
                 </button>
               );
             })}
           </div>
         </fieldset>
-        <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
-          <div>
-            <p className="mb-2 text-[13px] font-medium" id="metric-label">Pollutant</p>
-            <Segmented label="Pollutant" value={sel.metric} onChange={(m) => update({ metric: m })} options={METRICS} />
-          </div>
-          <div className="min-w-0">
-            <label htmlFor="period" className="mb-2 block text-[13px] font-medium">Period</label>
-            <select id="period" value={sel.period} onChange={(e) => update(e.target.value === "custom"
-              ? { period: "custom", start, end } : { period: e.target.value, start: undefined, end: undefined })}
-              className="h-10 rounded-xl border border-line bg-surface px-3 text-[13.5px]">
-              {per.presets.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-              <option value="custom">Custom dates</option>
-            </select>
-          </div>
+        <div>
+          <p className="mb-2.5 text-[13px] font-medium text-subtle" id="metric-label">Pollutant</p>
+          <Segmented label="Pollutant" value={sel.metric} onChange={(m) => update({ metric: m })} options={METRICS} />
+        </div>
+        <div className="min-w-0">
+          <label htmlFor="period" className="mb-2.5 block text-[13px] font-medium text-subtle">Period</label>
+          <select id="period" value={sel.period} onChange={(e) => update(e.target.value === "custom"
+            ? { period: "custom", start, end } : { period: e.target.value, start: undefined, end: undefined })}
+            className="h-10 w-full rounded-xl bg-white/[0.05] px-3 text-[14px]">
+            {per.presets.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            <option value="custom">Custom dates</option>
+          </select>
           {sel.period === "custom" && (
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="text-[13px]"><span className="mb-2 block font-medium">From</span>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <label className="text-[13px]"><span className="mb-1.5 block text-faint">From</span>
                 <input type="date" value={start} min={per.data_start} max={per.data_end} onChange={(e) => e.target.value && update({ start: e.target.value, end })}
-                  className="h-10 rounded-xl border border-line bg-surface px-3 text-[13.5px] [color-scheme:dark]" /></label>
-              <label className="text-[13px]"><span className="mb-2 block font-medium">To</span>
+                  className="h-10 w-full rounded-xl bg-white/[0.05] px-2 text-[13px] [color-scheme:dark]" /></label>
+              <label className="text-[13px]"><span className="mb-1.5 block text-faint">To</span>
                 <input type="date" value={end} min={start} max={per.data_end} onChange={(e) => e.target.value && update({ start, end: e.target.value })}
-                  className="h-10 rounded-xl border border-line bg-surface px-3 text-[13.5px] [color-scheme:dark]" /></label>
+                  className="h-10 w-full rounded-xl bg-white/[0.05] px-2 text-[13px] [color-scheme:dark]" /></label>
             </div>
           )}
-          <p className="text-[12.5px] text-faint sm:ml-auto">{fmtRange(start, end)} · data from {fmtDate(per.data_start)} to {fmtDate(per.data_end)}</p>
+          <p className="mt-2.5 text-[12.5px] leading-5 text-faint">{fmtRange(start, end)}. Data from {fmtDate(per.data_start)} to {fmtDate(per.data_end)}.</p>
         </div>
       </section>
 
-      <DataGate state={data} what="comparison" skeleton={<Skeleton className="h-[420px]" />}>
+      <div className="flex min-w-0 flex-col gap-6">
+      <DataGate state={data} what="comparison" skeleton={<Skeleton className="h-[420px] rounded-[18px]" />}>
         {(d) => <Results d={d} label={label} />}
       </DataGate>
+      </div>
     </div>
   );
 }
@@ -154,18 +158,56 @@ export function compareCSV(d: CompareData): string {
   return toCSV(rows);
 }
 
-function Tools({ d }: { d: CompareData }) {
+/** Copy link, Download CSV and Explain this with AI, together in one row. */
+function Actions({ d, question }: { d: CompareData; question: string }) {
   const toast = useToast();
-  const btn = "inline-flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 text-[13px] text-subtle transition-colors hover:border-teal/60 hover:text-foreground";
+  const btn = "inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.05] px-3.5 text-[14px] text-subtle transition-colors hover:bg-white/[0.08] hover:text-foreground";
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <button type="button" className={btn} onClick={() => void copyText(window.location.href, toast, "Link copied")}>
-        <Link2 className="size-3.5" aria-hidden />Copy link
+        <Link2 className="size-4" aria-hidden />Copy link
       </button>
       <button type="button" className={btn}
         onClick={() => { download(`compare-${d.metric}-${d.start}-${d.end}.csv`, compareCSV(d), "text/csv;charset=utf-8"); toast("Data downloaded (CSV)"); }}>
-        <Download className="size-3.5" aria-hidden />Download data (CSV)
+        <Download className="size-4" aria-hidden />Download CSV
       </button>
+      <Link href={askHref(question)} className="inline-flex h-10 items-center gap-2 rounded-xl bg-teal px-3.5 text-[14px] font-semibold text-teal-ink hover:bg-teal-hover sm:ml-auto">
+        <Sparkles className="size-4" aria-hidden />Explain this with AI
+      </Link>
+    </div>
+  );
+}
+
+/** Highest city, lowest city and their ratio (calculated in Python), or "too close to call". */
+function Summary({ d, unit }: { d: CompareData; unit: string }) {
+  const s = d.summary;
+  if (!s) return null;
+  const tile = "tile flex min-w-0 flex-col gap-1 px-4 py-3.5";
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Summary">
+      <div className={tile}>
+        <span className="text-[12.5px] text-faint">Highest</span>
+        <span className="flex items-baseline gap-2"><span aria-hidden className="size-2.5 shrink-0 self-center rounded-full" style={{ background: CITY_COLOURS[s.highest.city] }} />
+          <span className="truncate text-[16px] font-semibold">{s.highest.city}</span>
+          <span className="num ml-auto text-[20px] font-semibold">{s.highest.mean.toFixed(1)}</span></span>
+        <span className="text-right text-[12px] text-faint">{unit} mean</span>
+      </div>
+      <div className={tile}>
+        <span className="text-[12.5px] text-faint">Lowest</span>
+        <span className="flex items-baseline gap-2"><span aria-hidden className="size-2.5 shrink-0 self-center rounded-full" style={{ background: CITY_COLOURS[s.lowest.city] }} />
+          <span className="truncate text-[16px] font-semibold">{s.lowest.city}</span>
+          <span className="num ml-auto text-[20px] font-semibold">{s.lowest.mean.toFixed(1)}</span></span>
+        <span className="text-right text-[12px] text-faint">{unit} mean</span>
+      </div>
+      <div className={cn(tile, s.too_close_to_call && "bg-warn/[0.07]")}>
+        <span className="text-[12.5px] text-faint">{s.too_close_to_call ? "Result" : "Highest vs lowest"}</span>
+        {s.too_close_to_call ? (
+          <span className="text-[16px] font-semibold text-warn">Too close to call</span>
+        ) : (
+          <span className="num text-[20px] font-semibold">{s.ratio != null ? `${s.ratio.toFixed(1)}×` : "–"}</span>
+        )}
+        <span className="num text-[12px] text-faint">{s.too_close_to_call ? "Their 95% ranges overlap heavily" : `+${s.difference.toFixed(1)} ${unit} · ${d.common_days} common days`}</span>
+      </div>
     </div>
   );
 }
@@ -186,33 +228,29 @@ function Results({ d, label }: { d: CompareData; label: string }) {
 
   return (
     <>
+      <Summary d={d} unit={unit} />
+      <Actions d={d} question={question} />
       {low.length > 0 && (
-        <p role="alert" className="flex items-start gap-2.5 rounded-2xl border border-warn/40 bg-warn/[0.08] px-4 py-3 text-[13.5px]">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
+        <p role="alert" className="flex items-start gap-2.5 rounded-[14px] bg-warn/[0.08] px-4 py-3 text-[14px]">
+          <AlertTriangle className="mt-1 size-4 shrink-0 text-warn" aria-hidden />
           <span><strong>Low coverage:</strong> {listJoin(low.map((c) => `${c.city} (${Math.round(c.coverage_pct)}% of days)`))} {low.length === 1 ? "has" : "have"} a value on fewer than half the days, so treat {low.length === 1 ? "its" : "their"} figures with care.</span>
         </p>
       )}
       <Section id="lines" title={`${METRIC_NAME[d.metric].replace(/^o/, "O")} by day`}
-        line={<>{label}: {aqi ? "CPCB's 4 PM bulletins (official AQI, an index)" : "24-hour city averages (measured)"}. Days without a value are gaps.</>}
-        action={<Tools d={d} />}>
+        line={<>{label}: {aqi ? "CPCB's 4 PM bulletins (official AQI, an index)" : "24-hour city averages (measured)"}. Days without a value are gaps.</>}>
         {Object.values(d.lines).every((v) => v.every((x) => x == null)) ? (
           <EmptyNote title="No values for these cities in this period" hint="Try a longer period, another pollutant, or a preset such as the last 90 days." className="h-[340px] content-center" />
         ) : <LazyChart option={option} height={340} ariaLabel={`${METRIC_NAME[d.metric]} by day for ${listJoin(d.cities.map((c) => c.city))}, ${fmtRange(d.start, d.end)}`} />}
       </Section>
       <Section id="ranking" title="Ranking"
-        line={`Highest first. Means use the ${d.common_days} days on which every selected city has a value; the bar shows the approximate 95% range.`}
-        action={<Link href={askHref(question)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-teal px-3.5 text-[13.5px] font-semibold text-teal-ink hover:bg-teal-hover">
-          <Sparkles className="size-4" aria-hidden />Explain this with AI</Link>}>
+        line={`Highest first. Means use the ${d.common_days} days on which every selected city has a value; the bar shows the 95% range.`}>
         <RankingTable d={d} unit={unit} />
         {close.length > 0 && (
-          <p className="mt-3 text-[13px] text-subtle"><strong className="text-foreground">Too close to call:</strong> {close.map(([a, b]) => `${a} and ${b}`).join("; ")}. Their 95% ranges overlap heavily, so their order could easily swap.</p>
+          <p className="mt-4 text-[14px] text-subtle"><strong className="text-foreground">Too close to call:</strong> {close.map(([a, b]) => `${a} and ${b}`).join("; ")}. Their 95% ranges overlap heavily, so their order could easily swap.</p>
         )}
-        {d.cities.some((c) => c.trend.note) && <p className="mt-3 text-[12.5px] text-subtle">{SHORT_NOTE}</p>}
-        <p className="mt-2 text-[12px] text-faint">{d.method} Source: {d.source}.</p>
+        {d.cities.some((c) => c.trend.note) && <p className="mt-3 text-[13px] text-subtle">{SHORT_NOTE}</p>}
+        <p className="mt-3 text-[12.5px] text-faint">{d.method} Source: {d.source}.</p>
       </Section>
-      <p className="text-center text-[12.5px] text-faint">
-        Want the story behind these numbers? <Link href={askHref(question)} className="font-medium text-teal hover:underline">Ask the AI analyst <ArrowRight className="inline size-3.5" aria-hidden /></Link>
-      </p>
     </>
   );
 }
@@ -239,57 +277,77 @@ function RangeBar({ c, unit, pct }: { c: CompareData["cities"][number]; unit: st
   );
 }
 
+const TREND_TONE: Record<string, string> = {
+  Rising: "bg-[#FB923C]/15 text-[#FDBA74]", Falling: "bg-[#22C55E]/15 text-[#86EFAC]",
+  "No clear trend": "bg-white/[0.06] text-subtle", "Not enough data": "bg-white/[0.04] text-faint",
+};
+
+function TrendBadge({ t }: { t: { short: string; detail: string } }) {
+  return (
+    <span className="flex flex-col items-start gap-1">
+      <span className={cn("inline-flex h-6 items-center rounded-full px-2.5 text-[12px] font-medium whitespace-nowrap", TREND_TONE[t.short])}>{t.short}</span>
+      <span className="text-[12px] leading-4 text-faint">{t.detail}</span>
+    </span>
+  );
+}
+
+function Coverage({ c }: { c: CompareData["cities"][number] }) {
+  return c.low_coverage ? (
+    <span className="inline-flex items-center gap-1 font-semibold text-warn"><AlertTriangle className="size-3.5" aria-hidden />{Math.round(c.coverage_pct)}%<span className="sr-only"> (low coverage)</span></span>
+  ) : <span>{Math.round(c.coverage_pct)}%</span>;
+}
+
 function RankingTable({ d, unit }: { d: CompareData; unit: string }) {
   const pct = rangeScale(d);
   return (
     <>
-    {/* phones: one card per city */}
-    <ol className="flex flex-col gap-2 md:hidden">
+    {/* phones: one block per city, separated by space (no boxes) */}
+    <ol className="flex flex-col gap-5 md:hidden">
       {d.cities.map((c, i) => {
         const t = trendText(c.trend, unit);
         return (
-          <li key={c.city} className="rounded-xl border border-line px-3.5 py-3">
+          <li key={c.city}>
             <div className="flex items-baseline justify-between gap-3">
-              <span className="inline-flex items-center gap-2 font-medium"><span className="num text-faint">{i + 1}</span>
+              <span className="inline-flex items-center gap-2 text-[15px] font-medium"><span className="num text-faint">{i + 1}</span>
                 <span aria-hidden className="size-2.5 rounded-full" style={{ background: CITY_COLOURS[c.city] }} />{c.city}</span>
-              <span className="num font-semibold">{c.mean == null ? "–" : c.mean.toFixed(1)} <span className="text-[11.5px] font-normal text-faint">{unit}</span></span>
+              <span className="num text-[16px] font-semibold">{c.mean == null ? "–" : c.mean.toFixed(1)} <span className="text-[12px] font-normal text-faint">{unit}</span></span>
             </div>
             <div className="mt-2"><RangeBar c={c} unit={unit} pct={pct} /></div>
-            <p className="mt-2 text-[12.5px] text-subtle">
-              {c.valid_days} valid days · <span className={cn(c.low_coverage && "font-semibold text-warn")}>{Math.round(c.coverage_pct)}% coverage</span> · {t.short}
-              <span className="block text-[11.5px] text-faint">{t.detail}</span>
-            </p>
+            <div className="mt-2 flex items-start justify-between gap-3 text-[13px] text-subtle">
+              <TrendBadge t={t} />
+              <span className="shrink-0 text-right">{c.valid_days} days · <Coverage c={c} /></span>
+            </div>
           </li>
         );
       })}
     </ol>
     <div className="hidden md:block">
-      <table className="w-full text-[13.5px]">
+      <table className="w-full text-[14px]">
         <thead>
-          <tr className="border-b border-line text-left text-[12px] text-faint">
-            <th scope="col" className="py-2 pr-3 font-medium">#</th>
-            <th scope="col" className="py-2 pr-3 font-medium">City</th>
-            <th scope="col" className="py-2 pr-3 text-right font-medium">Mean</th>
-            <th scope="col" className="w-[30%] py-2 pr-3 font-medium">95% range</th>
-            <th scope="col" className="py-2 pr-3 text-right font-medium">Valid days</th>
-            <th scope="col" className="py-2 pr-3 text-right font-medium">Coverage</th>
-            <th scope="col" className="py-2 font-medium">Trend</th>
+          <tr className="text-left text-[12.5px] text-faint">
+            <th scope="col" className="pb-3 pr-3 font-medium">#</th>
+            <th scope="col" className="pb-3 pr-3 font-medium">City</th>
+            <th scope="col" className="pb-3 pr-3 text-right font-medium">Mean</th>
+            <th scope="col" className="w-[30%] pb-3 pr-3 font-medium">95% range</th>
+            <th scope="col" className="pb-3 pr-3 text-right font-medium">Days</th>
+            <th scope="col" className="pb-3 pr-3 text-right font-medium">Coverage</th>
+            <th scope="col" className="pb-3 font-medium">Trend</th>
           </tr>
         </thead>
         <tbody>
           {d.cities.map((c, i) => {
             const t = trendText(c.trend, unit);
             return (
-              <tr key={c.city} className="border-b border-line/60 last:border-0">
-                <td className="num py-2.5 pr-3 text-faint">{i + 1}</td>
-                <th scope="row" className="py-2.5 pr-3 text-left font-medium">
+              <tr key={c.city} className="align-top odd:bg-white/[0.02] [&>*:first-child]:rounded-l-xl [&>*:last-child]:rounded-r-xl">
+                <td className="num py-3 pr-3 pl-3 text-faint">{i + 1}</td>
+                <th scope="row" className="py-3 pr-3 text-left font-medium">
                   <span className="inline-flex items-center gap-2"><span aria-hidden className="size-2.5 rounded-full" style={{ background: CITY_COLOURS[c.city] }} />{c.city}</span>
                 </th>
-                <td className="num py-2.5 pr-3 text-right font-semibold">{c.mean == null ? "–" : c.mean.toFixed(1)} <span className="text-[11.5px] font-normal text-faint">{unit}</span></td>
-                <td className="py-2.5 pr-3"><RangeBar c={c} unit={unit} pct={pct} /></td>
-                <td className="num py-2.5 pr-3 text-right">{c.valid_days}</td>
-                <td className={cn("num py-2.5 pr-3 text-right", c.low_coverage && "font-semibold text-warn")}>{Math.round(c.coverage_pct)}%{c.low_coverage && <span className="sr-only"> (low coverage)</span>}</td>
-                <td className="py-2.5"><span className="font-medium">{t.short}</span><span className="block text-[11.5px] text-faint">{t.detail}</span></td>
+                <td className="num py-3 pr-3 text-right font-semibold whitespace-nowrap">{c.mean == null ? "–" : c.mean.toFixed(1)} <span className="text-[12px] font-normal text-faint">{unit}</span></td>
+                <td className="py-3.5 pr-3"><RangeBar c={c} unit={unit} pct={pct} /></td>
+                <td className="num py-3 pr-3 text-right">{c.valid_days}</td>
+                <td className="num py-3 pr-3 text-right"><Coverage c={c} /></td>
+                <td className="py-3 pr-3"><TrendBadge t={t} /></td>
               </tr>
             );
           })}

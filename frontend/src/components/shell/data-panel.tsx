@@ -42,6 +42,8 @@ const VISITOR_LIMITS = ["network_gaps", "delhi_999", "five_city_diwali_pm", "sta
 const SOURCES: { k: string; v: string; licence: string; href: string }[] = [
   { k: "Measured PM2.5 and PM10", v: "CPCB reference monitors (and a few AirNow and AirGradient sensors), via the OpenAQ archive", licence: "licence set by each data provider", href: "https://openaq.org" },
   { k: "Official AQI", v: "CPCB daily city bulletins at 4 PM, via UrbanEmissions and cpcb.gov.in", licence: "GODL-India", href: "https://cpcb.gov.in/AQI_Bulletin.php" },
+  { k: "Official AQI, all bulletin cities", v: "Every city in CPCB's daily 4 PM bulletin (about 330 cities, from 18 Feb 2025), updated by the daily refresh. Official AQI only: station-level PM analysis covers the six cities", licence: "GODL-India", href: "https://cpcb.gov.in/AQI_Bulletin.php" },
+  { k: "City locations (all-cities map)", v: "GeoNames gazetteer; only confident matches are plotted, others are listed but not on the map", licence: "CC BY 4.0", href: "https://www.geonames.org" },
   { k: "Delhi PM, Diwali 2024 and 2025", v: "OpenCity Delhi station files (supporting context only)", licence: "public domain", href: "https://data.opencity.in" },
   { k: "Health notes", v: "CPCB's official health statement for each category, from the daily AQI bulletin (“Health Statements for AQI Categories”)", licence: "CPCB", href: "https://cpcb.nic.in/AQI_Bulletin.php" },
   { k: "Weather (modelled)", v: "Open-Meteo, reanalysis from Copernicus C3S", licence: "CC BY 4.0", href: "https://open-meteo.com" },

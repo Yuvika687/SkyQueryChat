@@ -22,8 +22,9 @@ Essential features:
 - A live agent execution timeline
 - Source, data type and coverage shown with every answer
 
-**Do NOT build:** all-India coverage, satellite processing, custom ML forecasting, login,
-multilingual support, or arbitrary Python execution.
+**Do NOT build:** all-India station-level analysis, satellite processing, custom ML forecasting, login,
+multilingual support, or arbitrary Python execution. (Official AQI for every CPCB bulletin city was added on the
+owner's request, 2026-11-17; see "Official AQI for all bulletin cities" below.)
 
 ## 2. Technology stack
 
@@ -569,6 +570,23 @@ Rules:
   greeting and four 2x2 suggestions; typing dots and live steps; the evidence panel opens for each new data answer on wide
   screens and can be closed; phones open chart and evidence from "Chart and evidence" as a bottom sheet; errors show
   "Try again" plus three suggestions; copy actions are icon buttons.
+
+### Official AQI for all bulletin cities, live answers and UI polish (main, 2026-11-17)
+
+- **All bulletin cities:** `city_aqi_all` (329 cities, from 18 Feb 2025; `build.load_all_bulletins`, also
+  `scripts/build_city_aqi_all.py`); duplicate city rows within one bulletin are dropped and recorded. Resolver, nearest
+  covered cities and the analysis: `backend/analysis/official_aqi.py`; coordinates `backend/config/cpcb_city_coordinates.json`
+  and towns `india_places.json` (GeoNames, CC BY 4.0, `scripts/build_city_coordinates.py`; only confident matches are
+  plotted). Tool `official_aqi(city, period)`; required warning `pm_only_six_metros` for non-metro cities; endpoints
+  `/api/aqi/cities`, `/api/aqi/city/{name}`. Frozen copy for evaluations: `evals/data/city_aqi_all.parquet` (to 11 Nov 2026).
+- **Live answers:** demo answers are served only when no AI model has room (`cached_fallback`); the 6-hour cache of live
+  answers stays. The checker rejects "right now", "today", "currently" ("latest available").
+- **UI:** `card` (the only bordered container), `tile` (tint inside a card), `page-title`, `section-title` utilities in
+  `globals.css`; body 15 px; opaque nav band. Ask answer = meta line, 21 px headline, tiles, explanation, "What this
+  means", chips; evidence tabs Chart / Data / How it was made. Compare: controls left, summary strip (`summary` from
+  `pages.compare_page`), one action row. Explore: layer switch and `cpcb-panels.tsx`; Home: `city-finder.tsx`.
+- **Windows:** all text files are read/written as UTF-8; `copy-maplibre-worker.mjs` uses `fileURLToPath`.
+- Screenshots: `node frontend/scripts/capture-screens.mjs` -> `docs/screenshots/current/`. Deploy guide: `DEPLOY.md`.
 
 ## 6. UI requirements
 
