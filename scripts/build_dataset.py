@@ -1,6 +1,7 @@
 """Build the processed dataset.  Examples:
   python scripts/build_dataset.py                       # full six-city build -> data/processed
   python scripts/build_dataset.py --pilot               # Delhi+Chennai pilot -> data/raw/pilot
+  python scripts/build_dataset.py --incremental --api-topup   # daily refresh: only days from the stored archive end
 """
 from __future__ import annotations
 
@@ -28,6 +29,9 @@ ap.add_argument("--end", default=None)
 ap.add_argument("--out", default=None)
 ap.add_argument("--api-topup", action="store_true",
                 help="fetch recent days the archive has not published from the OpenAQ API (needs OPENAQ_API_KEY)")
+ap.add_argument("--incremental", action="store_true",
+                help="continue from the processed tables in the output folder: download and process only the days "
+                     "from their archive end (never the full history)")
 a = ap.parse_args()
 
 today = date.today()
@@ -44,6 +48,7 @@ t = time.time()
 m = build.run(out, cities, start, end, today,
               candidates_path=C.PROCESSED / "station_candidates.json",
               opencity_dir=C.RAW / "opencity",
-              bulletin_path=C.RAW / "bulletins" / "aqi-bulletins.parquet", api_topup=a.api_topup)
+              bulletin_path=C.RAW / "bulletins" / "aqi-bulletins.parquet", api_topup=a.api_topup,
+              base_dir=out if a.incremental else None)
 print(json.dumps(m["rows"], indent=1))
 print(f"built {cities} {start}..{end} -> {out} in {time.time()-t:.0f}s")

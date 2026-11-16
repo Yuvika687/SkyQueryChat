@@ -297,10 +297,28 @@ def night_coverage_gaps(hourly: pd.DataFrame, source: str, keys: set[str], pollu
     return out
 
 
-def delhi_pm_support(diwali: pd.DataFrame, opencity_raw: pd.DataFrame, panels: dict[str, set[int]],
+BLANK_COLS = ["blank_diwali_night_panel", "blank_festival_nights_panel", "blank_diwali_night_all37",
+              "blank_baseline_nights_panel"]
+
+
+def delhi_pm_support(diwali: pd.DataFrame, opencity_raw: pd.DataFrame | None, panels: dict[str, set[int]],
                      all_stations: set[int], hourly: pd.DataFrame | None = None,
-                     stations: pd.DataFrame | None = None) -> pd.DataFrame:
+                     stations: pd.DataFrame | None = None, blank_cache: pd.DataFrame | None = None) -> pd.DataFrame:
+    """opencity_raw None: the OpenCity blank rates (2024-2025, fixed files) come from blank_cache instead."""
     rows = []
+
+    def blanks(y: int, pol: str, D: date, F: list[date]) -> dict:
+        if opencity_raw is None:
+            hit = blank_cache[(blank_cache["year"] == y) & (blank_cache["pollutant"] == pol)] \
+                if blank_cache is not None else blank_cache
+            if hit is None or len(hit) != 1:
+                raise RuntimeError(f"OpenCity raw files are absent and the blank-rate cache has no {y} {pol} row")
+            return {c: hit[c].iat[0] for c in BLANK_COLS}
+        return {"blank_diwali_night_panel": blank_rates(opencity_raw, panels[pol], pol, [D]),
+                "blank_festival_nights_panel": blank_rates(opencity_raw, panels[pol], pol, F),
+                "blank_diwali_night_all37": blank_rates(opencity_raw, all_stations, pol, [D]),
+                "blank_baseline_nights_panel": blank_rates(opencity_raw, panels[pol], pol, C.baseline_days(y))}
+
     sup = diwali[(diwali["role"] == "supporting") & diwali["metric"].isin(C.POLLUTANTS)]
     for _, r in sup.iterrows():
         y, pol = int(r["year"]), r["metric"]
@@ -337,10 +355,7 @@ def delhi_pm_support(diwali: pd.DataFrame, opencity_raw: pd.DataFrame, panels: d
             "data_type": "measured (values > 999 blank in source)", "role": "supporting_context",
             "panel_stations": int(r["n_stations"]),
             "baseline_mean_lower_bound": r["baseline_value"], "festival_mean_lower_bound": r["festival_value"],
-            "blank_diwali_night_panel": blank_rates(opencity_raw, panels[pol], pol, [D]),
-            "blank_festival_nights_panel": blank_rates(opencity_raw, panels[pol], pol, F),
-            "blank_diwali_night_all37": blank_rates(opencity_raw, all_stations, pol, [D]),
-            "blank_baseline_nights_panel": blank_rates(opencity_raw, panels[pol], pol, C.baseline_days(y)),
+            **blanks(y, pol, D, F),
             "proven_over_999_festival_nights_panel": r["blank_proven_share_festival_nights"],
             "values_are_lower_bounds": True, "baseline_mean": np.nan, "festival_mean": np.nan,
             "hours_above_999_festival_nights": np.nan, "valid_hours_festival_nights": np.nan,
@@ -457,11 +472,24 @@ def run(processed: Path = C.PROCESSED, out: Path = APP, opencity_dir: Path = C.R
         t["units"] = "index (0-500)"
     tables["diwali_aqi_levels"] = levels
     tables["diwali_aqi_baselines"] = baselines
-    m = json.loads((C.RAW / "opencity" / "mapping.json").read_text())
-    oc_raw = pd.concat([T.read_opencity_csv(opencity_dir / f"{l}.csv", int(l)) for l in m], ignore_index=True)
+    # OpenCity blank rates (2024-2025 files that never change; 417 MB, and the site blocks automated downloads): computed
+    # from the raw files when they are all present and saved beside the build's OpenCity cache, else read from that cache.
     panels = {pol: set(st.loc[st[f"delhi_diwali_panel_{pol}"], "location_id"].astype(int)) for pol in C.POLLUTANTS}
-    tables["delhi_pm_diwali_support"] = delhi_pm_support(diwali, oc_raw, panels, {int(l) for l in m},
-                                                         hourly=hourly, stations=st)
+    blank_cache_path = processed / "opencity_cache" / "blank_rates.parquet"
+    mapping = opencity_dir / "mapping.json"
+    ids = list(json.loads(mapping.read_text())) if mapping.exists() else []
+    if ids and all((opencity_dir / f"{l}.csv").exists() for l in ids):
+        oc_raw = pd.concat([T.read_opencity_csv(opencity_dir / f"{l}.csv", int(l)) for l in ids], ignore_index=True)
+        support = delhi_pm_support(diwali, oc_raw, panels, {int(l) for l in ids}, hourly=hourly, stations=st)
+        blank_cache_path.parent.mkdir(parents=True, exist_ok=True)
+        support.loc[support["source"] == SRC_OPENCITY, ["year", "pollutant", *BLANK_COLS]] \
+            .reset_index(drop=True).to_parquet(blank_cache_path, index=False)
+    elif blank_cache_path.exists():
+        support = delhi_pm_support(diwali, None, panels, set(), hourly=hourly, stations=st,
+                                   blank_cache=pd.read_parquet(blank_cache_path))
+    else:
+        raise RuntimeError(f"OpenCity raw files are not in {opencity_dir} and there is no {blank_cache_path}")
+    tables["delhi_pm_diwali_support"] = support
     tables["diwali_pm_status"] = diwali[diwali["role"] == "status"][
         ["city", "year", "metric", "units", "source", "data_type", "n_stations", "status", "reason_code",
          "low_quality_dates"]].reset_index(drop=True)

@@ -2,6 +2,8 @@
 # every validation and cleaning rule), rebuilds data/app, runs the backend tests and, only if everything passes and the
 # data changed, commits "Refresh data through <date>" to main. That push redeploys Render and Vercel. If any step fails,
 # nothing is committed, the run shows as failed, and the site keeps the last good data.
+# Incremental: it continues from the committed data/processed tables and downloads only the days from their OpenAQ
+# archive end, never the full history. A source that cannot be reached keeps its previous data and shows as a warning.
 name: Refresh data
 
 on:
@@ -19,7 +21,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 300           # the first run downloads the whole OpenAQ archive history; later runs reuse the cache
+    timeout-minutes: 30            # a normal run takes a few minutes; a stuck run fails fast
     steps:
       - uses: actions/checkout@v4
 
@@ -32,19 +34,20 @@ jobs:
       - name: Install
         run: pip install -r requirements-dev.txt
 
-      # Raw downloads (never committed): OpenAQ archive files, CPCB bulletin PDFs and OpenAQ API top-up files.
+      # Small raw downloads reused between runs (never committed): CPCB bulletin PDFs and OpenAQ API top-up files.
+      # OpenAQ archive files are not cached: an incremental run downloads only a few days of them.
       - name: Restore raw download cache
         id: raw
         uses: actions/cache/restore@v4
         with:
           path: |
-            data/raw/openaq_archive
             data/raw/bulletins/cpcb_pdfs
             data/raw/openaq_api
-          key: raw-${{ github.run_id }}
-          restore-keys: raw-
+          key: raw-small-${{ github.run_id }}
+          restore-keys: raw-small-
 
       - name: Download the UrbanEmissions bulletin table
+        continue-on-error: true      # if it fails, the build keeps the stored bulletins and reports it
         run: |
           mkdir -p data/raw/bulletins
           curl -fsSL --retry 3 --retry-delay 10 -o data/raw/bulletins/aqi-bulletins.parquet \
@@ -52,6 +55,7 @@ jobs:
 
       - name: Refresh data (pipeline and checks)
         id: refresh
+        timeout-minutes: 25
         env:
           OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
           PYTHONUNBUFFERED: "1"
@@ -64,10 +68,9 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            data/raw/openaq_archive
             data/raw/bulletins/cpcb_pdfs
             data/raw/openaq_api
-          key: raw-${{ github.run_id }}
+          key: raw-small-${{ github.run_id }}
 
       - name: Backend tests
         if: steps.refresh.outputs.changed == 'true'
@@ -87,5 +90,10 @@ jobs:
           git push origin HEAD:main
 
       - name: Nothing new
-        if: steps.refresh.outputs.changed != 'true'
+        if: steps.refresh.outcome == 'success' && steps.refresh.outputs.changed != 'true'
         run: echo "No new data since the last refresh; nothing to commit."
+
+      - name: Explain a failure
+        if: failure()
+        run: |
+          echo "::error title=Data refresh failed::Nothing was committed and the site keeps the last good data. Open the failed step above for the reason (a step stopped after 25 minutes means it was stuck)."

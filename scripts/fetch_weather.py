@@ -20,8 +20,11 @@ today = date.today()
 out = C.PROCESSED / "weather_daily.parquet"
 if a.append:
     old = pd.read_parquet(out)
-    start = old["local_date"].max() + timedelta(days=1)
-    w, new = W.append(old, start, today - timedelta(days=1), today)
+    start, end = old["local_date"].max() + timedelta(days=1), today - timedelta(days=1)
+    if start > end:                                   # already up to date: nothing to request
+        print(f"weather already ends {start - timedelta(days=1)}; no new days to fetch")
+        sys.exit(0)
+    w, new = W.append(old, start, end, today)
     print(f"added {len(new)} city-days ({start} onwards); kept {len(old)} existing rows unchanged")
 else:
     w = W.build(date(2025, 2, 18), today - timedelta(days=1), today, use_cache=a.cache)

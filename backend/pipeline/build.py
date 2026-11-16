@@ -2,6 +2,11 @@
 
 Repeatable: every output is rebuilt from raw inputs and written atomically (tmp + rename),
 so a rerun replaces files instead of appending. Primary keys are asserted unique.
+
+Incremental mode (`base_dir`, used by the daily refresh): the OpenAQ hours before the previous build's archive end
+are taken from that build's station_hourly (and their cleaning counts from its cleaning_log); only the days from the
+archive end onward are downloaded and processed again. Every later step (fault flags, daily values, quality, city
+values, Diwali) runs on the whole table exactly as in a full build, so the result matches a full rebuild.
 Nothing is gap-filled or imputed: missing hours/days stay missing and are counted.
 
 Outputs (in out_dir):
@@ -16,7 +21,7 @@ Outputs (in out_dir):
   opencity_blanks.parquet      Delhi OpenCity blanks per sensor-day: proven source-limit vs other
   diwali.parquet               Diwali rows: AQI = main comparison; PM = supporting/status only
   data_status_reasons.parquet  reason codes + user-facing messages (stored separately)
-  cleaning_log.parquet         per-sensor counts of removed/flagged readings
+  cleaning_log.parquet         counts of removed/flagged readings per sensor and reading date (OpenAQ) or sensor
   manifest.json                build metadata and row counts
 """
 from __future__ import annotations
@@ -27,6 +32,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+import httpx
 import numpy as np
 import pandas as pd
 
@@ -118,16 +124,17 @@ def load_stations(candidates: dict, cities: list[str]) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------- OpenAQ
-def location_days(st: pd.DataFrame, start: date, end: date) -> dict[int, list[date]]:
+def location_days(st: pd.DataFrame, start: date, end: date, window: bool = False) -> dict[int, list[date]]:
     """Archive days to request per location. A sensor still reporting when the station snapshot was taken (last
-    reading within 3 days of the newest one) is requested up to `end`: the snapshot's 'last' date is not an end."""
+    reading within 3 days of the newest one) is requested up to `end`: the snapshot's 'last' date is not an end.
+    window=True (incremental builds): every tier starts at `start` (no early history for supporting stations)."""
     out = {}
     snap = st["sensor_last"].max()
     st = st.assign(sensor_last=st["sensor_last"].where(st["sensor_last"] < snap - pd.Timedelta(days=3),
                                                        pd.Timestamp(end, tz=C.IST)))
     for lid, g in st.groupby("location_id"):
         tier = g["tier"].iat[0]
-        lo = max(min(start, SUPPORTING_START) if tier == "supporting_single_station" else start,
+        lo = max(min(start, SUPPORTING_START) if tier == "supporting_single_station" and not window else start,
                  g["sensor_first"].min().date())
         hi = min(end, g["sensor_last"].max().date() + timedelta(days=1))
         if lo <= hi:
@@ -136,9 +143,9 @@ def location_days(st: pd.DataFrame, start: date, end: date) -> dict[int, list[da
 
 
 def download_openaq(st: pd.DataFrame, start: date, end: date, today: date, workers: int = 16,
-                    progress: bool = True):
+                    progress: bool = True, window: bool = False):
     """Fetch (or reuse cached) archive files. Returns (paths by location, last published date)."""
-    days = location_days(st, start, end)
+    days = location_days(st, start, end, window=window)
     jobs = [(lid, d) for lid, ds in days.items() for d in ds]
     paths: dict[int, list[tuple[date, Path]]] = {lid: [] for lid in days}
 
@@ -253,9 +260,9 @@ def process_openaq(st: pd.DataFrame, paths: dict, start: date, end: date):
         other += int((~raw["sensor_key"].isin(keep)).sum())
         raw = raw[raw["sensor_key"].isin(keep)]
         hi_parts.append(raw.loc[raw["value"] > C.OPENCITY_LIMIT, ["location_id", "pollutant", "ts"]])
-        clean, log = T.clean_readings(raw)
+        clean, log = T.clean_readings(raw.assign(local_date=raw["ts"].dt.date), by=["sensor_key", "local_date"])
         logs.append(log)
-        h = T.to_hourly(clean)
+        h = T.to_hourly(clean.drop(columns="local_date"))
         hourly_parts.append(h[(h["hour"] >= lo) & (h["hour"] < hi)])
     hourly = pd.concat(hourly_parts, ignore_index=True)
     hourly["source"] = SRC_OPENAQ
@@ -301,13 +308,17 @@ _OC_PARTS = ("hourly", "log", "blank_hours")
 
 
 def opencity_step(st_delhi_primary: pd.DataFrame, opencity_dir: Path, proven_hi: pd.DataFrame,
-                  cache_dir: Path = OPENCITY_CACHE, progress: bool = True):
+                  cache_dir: Path = OPENCITY_CACHE, progress: bool = True, prefer_cache: bool = False):
     """process_opencity from the raw files when all of them are present (and refresh the cache), else the cached
-    output. Never silently drops Delhi's 2024-2025 supporting data: no files and no cache is an error."""
+    output. Never silently drops Delhi's 2024-2025 supporting data: no files and no cache is an error.
+    prefer_cache (incremental builds): use the cache whenever it exists, because proven_hi then covers only the new
+    days and could not prove the 2024-2025 blanks again."""
     ids = sorted(st_delhi_primary["location_id"].unique())
     have = [lid for lid in ids if (opencity_dir / f"{lid}.csv").exists()]
     cached = all((cache_dir / f"{n}.parquet").exists() for n in _OC_PARTS)
-    if have and (len(have) == len(ids) or not cached):
+    if prefer_cache and not cached:
+        raise RuntimeError(f"incremental build needs the OpenCity cache in {cache_dir}; run a full build first")
+    if have and not prefer_cache and (len(have) == len(ids) or not cached):
         out = process_opencity(st_delhi_primary, opencity_dir, proven_hi)
         cache_dir.mkdir(parents=True, exist_ok=True)
         for n, df in zip(_OC_PARTS, out):
@@ -529,31 +540,94 @@ def load_bulletins(path: Path, cities: list[str], pdf_until: date | None = None)
 
 
 # --------------------------------------------------------------------------- main
+FLAG_COLS = ["flag_flatline", "flag_spike"]
+NETWORK_ERRORS = (RuntimeError, OSError, httpx.HTTPError)    # net.get raises RuntimeError after its retries
+
+
+def load_base(base_dir: Path) -> dict:
+    """The previous build that an incremental build continues from (read before anything is written)."""
+    need = ["manifest.json", "station_hourly.parquet", "cleaning_log.parquet", "city_daily_aqi.parquet"]
+    missing = [n for n in need if not (base_dir / n).exists()]
+    if missing:
+        raise RuntimeError(f"incremental build: {base_dir} has no {', '.join(missing)}; run a full build first")
+    log = pd.read_parquet(base_dir / "cleaning_log.parquet")
+    if "local_date" not in log.columns:
+        raise RuntimeError("incremental build: the previous cleaning_log has no per-day counts; run a full build first")
+    return {"manifest": json.loads((base_dir / "manifest.json").read_text()),
+            "hourly": pd.read_parquet(base_dir / "station_hourly.parquet"), "log": log,
+            "aqi": pd.read_parquet(base_dir / "city_daily_aqi.parquet")}
+
+
+def _openaq_sort(h: pd.DataFrame) -> pd.DataFrame:
+    return h.sort_values(["location_id", "sensor_key", "hour"], kind="stable").reset_index(drop=True)
+
+
 def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
         candidates_path: Path, opencity_dir: Path, bulletin_path: Path, progress: bool = True,
-        api_topup: bool = False) -> dict:
+        api_topup: bool = False, base_dir: Path | None = None) -> dict:
+    """Full build, or (base_dir given) an incremental build that reprocesses only the days from the previous build's
+    archive end. In incremental mode an unreachable source keeps its previous data and is reported in
+    manifest["sources"] instead of failing the whole build."""
+    base = load_base(base_dir) if base_dir is not None else None
     out_dir.mkdir(parents=True, exist_ok=True)
     cand = json.loads(candidates_path.read_text())
     st = load_stations(cand, cities)
+    sources: dict[str, str] = {}
 
-    paths, archive_end = download_openaq(st, start, end, today, progress=progress)
-    api = {"files": {}, "last_utc": {}, "requests": 0}
-    if api_topup and archive_end < end:
-        # only the days the archive has not published yet (a short window keeps API requests fast)
-        from . import openaq_api
-        api = openaq_api.top_up(st, archive_end + timedelta(days=1), end, progress=progress)
-        st = refresh_sensor_last(st, api["last_utc"], candidates_path)
-    api_files = api["files"] or cached_api_files(st, archive_end + timedelta(days=1), end)   # rebuilds reuse the cache
-    paths, api_days = merge_api(paths, api_files)
-    last_pub = last_published(st, paths, start, end)
-    data_end = min(end, last_pub)
-    api_dates = sorted({d.split(":")[1] for d in api_days if date.fromisoformat(d.split(":")[1]) <= data_end})
-    h_oa, log_oa, other, proven_hi = process_openaq(st, paths, start, data_end)
+    win = start
+    if base:
+        win = max(start, date.fromisoformat(base["manifest"]["openaq_archive_end"]))
+    try:
+        paths, archive_end = download_openaq(st, win, end, today, progress=progress, window=base is not None)
+        api = {"files": {}, "last_utc": {}, "requests": 0}
+        if api_topup and archive_end < end:
+            # only the days the archive has not published yet (a short window keeps API requests fast)
+            from . import openaq_api
+            api = openaq_api.top_up(st, archive_end + timedelta(days=1), end, progress=progress)
+            st = refresh_sensor_last(st, api["last_utc"], candidates_path)
+        openaq_ok = True
+    except NETWORK_ERRORS as e:
+        if base is None:
+            raise
+        openaq_ok = False
+        sources["openaq"] = f"not updated (unreachable: {str(e)[:300]})"
+        if progress:
+            print(f"  openaq: NOT UPDATED, keeping the previous data ({e})", flush=True)
+
+    if openaq_ok:
+        api_files = api["files"] or cached_api_files(st, archive_end + timedelta(days=1), end)   # rebuilds reuse the cache
+        paths, api_days = merge_api(paths, api_files)
+        last_pub = last_published(st, paths, win, end)
+        data_end = min(end, last_pub)
+        api_dates = sorted({d.split(":")[1] for d in api_days if date.fromisoformat(d.split(":")[1]) <= data_end})
+        api_summary = {"dates": api_dates, "location_days": len(api_days), "requests": api["requests"],
+                       "note": "API readings are used only for location-days the archive had not published; "
+                               "a later refresh replaces them with archive files."}
+        h_oa, log_oa, other, proven_hi = process_openaq(st, paths, win, data_end)
+        if base:
+            cut = _day_bounds(win, win)[0]
+            old_h, old_log = base["hourly"], base["log"]
+            old_h = old_h[(old_h["source"] == SRC_OPENAQ) & (old_h["hour"] < cut)].drop(columns=FLAG_COLS)
+            old_log = old_log[(old_log["source"] == SRC_OPENAQ) & (pd.to_datetime(old_log["local_date"]).dt.date < win)]
+            h_oa = pd.concat([old_h, h_oa[old_h.columns]], ignore_index=True)
+            log_oa = pd.concat([old_log, log_oa[old_log.columns]], ignore_index=True)
+        sources["openaq"] = "updated"
+    else:
+        bm = base["manifest"]
+        archive_end = date.fromisoformat(bm["openaq_archive_end"])
+        data_end = date.fromisoformat(bm["openaq_data_end"])
+        api_summary = bm.get("openaq_api_topup")
+        h_oa = base["hourly"][base["hourly"]["source"] == SRC_OPENAQ].drop(columns=FLAG_COLS)
+        log_oa = base["log"][base["log"]["source"] == SRC_OPENAQ]
+        other, proven_hi = None, pd.DataFrame(columns=["location_id", "pollutant", "ts"])
+    h_oa = _openaq_sort(h_oa)
+    log_oa = log_oa.sort_values(["sensor_key", "local_date"], kind="stable").reset_index(drop=True)
     hourly, logs, blank_hours = [h_oa], [log_oa], None
     if "Delhi" in cities:
         h_oc, log_oc, blank_hours = opencity_step(
             st[(st.city == "Delhi") & (st.tier == "primary")], opencity_dir, proven_hi,
-            cache_dir=out_dir / "opencity_cache", progress=progress)    # beside this build's output (tests use a temp dir)
+            cache_dir=out_dir / "opencity_cache", progress=progress,     # beside this build's output (tests use a temp dir)
+            prefer_cache=base is not None)
         hourly.append(h_oc)
         logs.append(log_oc)
     hourly = pd.concat(hourly, ignore_index=True)
@@ -619,7 +693,16 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
     cd["source"], cd["data_type"], cd["units"] = SRC_OPENAQ, "measured", C.UNITS
     _assert_unique(cd, ["city", "pollutant", "local_date"], "city_daily")
 
-    aqi = load_bulletins(bulletin_path, cities, pdf_until=end)
+    try:
+        aqi = load_bulletins(bulletin_path, cities, pdf_until=end)
+        sources["cpcb_bulletins"] = "updated"
+    except Exception as e:                  # unreachable source or a changed file: keep the stored bulletins
+        if base is None:
+            raise
+        aqi = base["aqi"]
+        sources["cpcb_bulletins"] = f"not updated ({type(e).__name__}: {str(e)[:300]})"
+        if progress:
+            print(f"  bulletins: NOT UPDATED, keeping the previous data ({type(e).__name__}: {e})", flush=True)
     _assert_unique(aqi, ["city", "bulletin_date"], "city_daily_aqi")
 
     diwali, panels = build_diwali(daily, st, aqi, dq, blank_hours, cities, today, data_end)
@@ -646,9 +729,9 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
         "cities": cities, "openaq_requested": [str(start), str(end)],
         "openaq_data_end": str(data_end), "not_yet_published": [str(d) for d in pending],
         "openaq_archive_end": str(archive_end),
-        "openaq_api_topup": {"dates": api_dates, "location_days": len(api_days), "requests": api["requests"],
-                             "note": "API readings are used only for location-days the archive had not published; "
-                                     "a later refresh replaces them with archive files."},
+        "openaq_api_topup": api_summary,
+        "build": {"mode": "incremental" if base else "full", "reprocessed_from": str(win)},
+        "sources": sources,
         "bulletins": {"urbanemissions_end": str(aqi.loc[aqi["source"] == SRC_BULLETIN, "bulletin_date"].max()),
                       "cpcb_pdf_dates": [str(x) for x in sorted(aqi.loc[aqi["source"] == SRC_BULLETIN_PDF,
                                                                             "bulletin_date"].unique())],
@@ -662,7 +745,8 @@ def run(out_dir: Path, cities: list[str], start: date, end: date, today: date,
                   "timestamps": "labels mark END of interval; hour = floor(ts - interval)",
                   "diwali": "AQI is the main comparison; PM rows are supporting/status only; no PM % change"},
         "rows": {k: int(len(v)) for k, v in outputs.items()},
-        "other_sensor_rows_ignored": other,
+        "other_sensor_rows_ignored": other if not base else base["manifest"].get("other_sensor_rows_ignored"),
+        **({"other_sensor_rows_ignored_in_reprocessed_days": other} if base else {}),
         "delhi_panel": {k: len(v) for k, v in panels.items()},
     }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=1))

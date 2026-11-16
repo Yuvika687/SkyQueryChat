@@ -119,3 +119,62 @@ def test_diwali_aqi_main_and_no_pm_percent_change(env):
     reasons = pd.read_parquet(env / "out/data_status_reasons.parquet").set_index("reason_code")
     assert reasons.loc["OPENAQ_INGESTION_GAP", "user_message"].format(year=2025) == \
         "Measured PM data is incomplete for Diwali 2025."
+
+
+# ------------------------------------------------------------------ incremental builds (daily refresh)
+def _tables(folder):
+    out = {}
+    for f in sorted(folder.glob("*.parquet")):
+        df = pd.read_parquet(f)
+        out[f.name] = df.sort_values(df.columns.tolist(), na_position="first").reset_index(drop=True)
+    return out
+
+
+def _run_to(env, out, end, base=None):
+    return build.run(env / out, ["Delhi"], DAYS[0], end, date(2026, 11, 3),
+                     candidates_path=env / "cand.json", opencity_dir=env / "opencity",
+                     bulletin_path=env / "b.parquet", progress=False, base_dir=base)
+
+
+def test_incremental_build_matches_a_full_build_and_downloads_only_new_days(env, monkeypatch):
+    _run(env, "full")
+    _run_to(env, "inc", DAYS[2])                                   # the previous build: archive to DAYS[2]
+    # In real data the OpenCity files (2024-2025) end long before any refresh window, so their cache was built with
+    # every OpenAQ reading that can prove a blank. These fixtures overlap the window, so give the cache a full build wrote.
+    import shutil
+    shutil.rmtree(env / "inc/opencity_cache")
+    shutil.copytree(env / "full/opencity_cache", env / "inc/opencity_cache")
+    asked, real = [], archive.fetch
+    monkeypatch.setattr(archive, "fetch", lambda lid, d, today=None: (asked.append(d), real(lid, d, today))[1])
+    m = _run_to(env, "inc", DAYS[-1], base=env / "inc")
+    assert min(asked) == DAYS[2]                                   # never the history before the stored archive end
+    assert m["build"] == {"mode": "incremental", "reprocessed_from": str(DAYS[2])}
+    assert m["sources"] == {"openaq": "updated", "cpcb_bulletins": "updated"}
+    full, inc = _tables(env / "full"), _tables(env / "inc")
+    assert full.keys() == inc.keys()
+    for name in full:
+        pd.testing.assert_frame_equal(full[name], inc[name], obj=name)
+
+
+def test_incremental_build_keeps_previous_data_when_a_source_is_unreachable(env, monkeypatch):
+    _run_to(env, "inc", DAYS[2])
+    before = _tables(env / "inc")
+
+    def down(lid, d, today=None):
+        raise RuntimeError("GET failed after 6 attempts")
+    monkeypatch.setattr(archive, "fetch", down)
+    monkeypatch.setattr(build.time, "sleep", lambda s: None)      # skip the waits between download retry rounds
+    (env / "b.parquet").unlink()                                  # the bulletin table could not be downloaded
+    m = _run_to(env, "inc", DAYS[-1], base=env / "inc")
+    assert m["sources"]["openaq"].startswith("not updated (unreachable")
+    assert m["sources"]["cpcb_bulletins"].startswith("not updated")
+    assert m["openaq_data_end"] == str(DAYS[2])
+    after = _tables(env / "inc")
+    for name in ("station_hourly.parquet", "station_daily.parquet", "city_daily.parquet", "city_daily_aqi.parquet",
+                 "cleaning_log.parquet"):
+        pd.testing.assert_frame_equal(before[name], after[name], obj=name)
+
+
+def test_incremental_build_needs_a_previous_build(env):
+    with pytest.raises(RuntimeError, match="run a full build first"):
+        _run_to(env, "empty", DAYS[-1], base=env / "empty")

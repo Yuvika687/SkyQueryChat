@@ -1,14 +1,21 @@
 """Daily data refresh: run the existing pipeline end to end, then check the result before anything is published.
 
   python scripts/refresh_data.py            # build -> weather -> app tables -> CPCB cross-check -> checks
+  python scripts/refresh_data.py --full     # same, but rebuild all history from local raw files (needs data/raw)
 
 Steps (each is the existing script, unchanged rules):
-  1. scripts/build_dataset.py --api-topup  OpenAQ archive (+ API top-up for days the archive has not published),
-                                           CPCB bulletins (UrbanEmissions, then CPCB's own PDFs), all cleaning,
-                                           validity, fault-flag and gap rules -> data/processed
+  1. scripts/build_dataset.py --incremental --api-topup
+                                           Incremental: continues from the committed data/processed tables and
+                                           downloads only the days from their OpenAQ archive end (never the full
+                                           history). OpenAQ archive (+ API top-up for days the archive has not
+                                           published), CPCB bulletins (UrbanEmissions, then CPCB's own PDFs), all
+                                           cleaning, validity, fault-flag and gap rules -> data/processed
   2. scripts/fetch_weather.py --append     Open-Meteo weather, new days only -> data/processed
   3. scripts/derive_app_tables.py          compact app tables -> data/app
   4. scripts/crosscheck_bulletins.py       CPCB cross-check figures -> docs/crosscheck_bulletins.json
+One unreachable source does not stop the others: OpenAQ or the CPCB bulletins keep their previous data (the build
+reports it in manifest["sources"]), and a failed weather step keeps the stored weather. Every source is reported with
+its data end before and after, as GitHub warnings and in the run summary.
 Checks (any failure exits non-zero, so the workflow commits nothing and the site keeps the last good data):
   * the data end dates never move backwards;
   * values already published do not change (city PM up to the archive end of the previous build, every earlier
@@ -68,6 +75,23 @@ def _run(args: list[str]) -> None:
     print(f"  ok in {time.time() - t:.0f}s", flush=True)
 
 
+SOURCE_NAMES = {"openaq": ("Measured PM (OpenAQ)", "measured"), "cpcb_bulletins": ("Official AQI (CPCB bulletins)", "aqi"),
+                "weather": ("Weather (Open-Meteo)", "weather")}
+
+
+def report(before: dict, after: dict, statuses: dict) -> tuple[list[str], list[str]]:
+    """(lines, warnings): each source's data end before -> after and whether it was updated."""
+    lines, warnings = [], []
+    for key, (name, end_key) in SOURCE_NAMES.items():
+        status = statuses.get(key, "updated")
+        b, a = before.get(end_key), after.get(end_key)
+        moved = f"{b} -> {a}" if a != b else f"{a} (no new days)"
+        lines.append(f"{name}: {moved}; {status}")
+        if not status.startswith("updated"):
+            warnings.append(f"{name} was not updated: {status}. Its previous data is kept.")
+    return lines, warnings
+
+
 def check(before_ends: dict, before: dict, app: Path = APP) -> tuple[dict, list[str]]:
     after_ends, after = _ends(app), _snapshot(app)
     problems = []
@@ -106,18 +130,34 @@ def main() -> int:
     if not os.getenv("OPENAQ_API_KEY", "").strip():
         from dotenv import load_dotenv                  # local runs: the key lives in .env (never printed)
         load_dotenv(ROOT / ".env")
+    t0 = time.time()
     before_ends, before = _ends(APP), _snapshot(APP)
     print(f"before: {before_ends}", flush=True)
-    _run(["scripts/build_dataset.py", "--api-topup"])
-    _run(["scripts/fetch_weather.py", "--append"])
+    full = "--full" in sys.argv[1:]
+    _run(["scripts/build_dataset.py", "--api-topup"] + ([] if full else ["--incremental"]))
+    statuses = dict(json.loads((ROOT / "data" / "processed" / "manifest.json").read_text()).get("sources") or {})
+    try:
+        _run(["scripts/fetch_weather.py", "--append"])
+    except subprocess.CalledProcessError:   # the stored weather file is only replaced after a successful fetch
+        statuses["weather"] = "not updated (the Open-Meteo step failed; see the log above)"
     _run(["scripts/derive_app_tables.py"])
     _run(["scripts/crosscheck_bulletins.py"])
     after_ends, problems = check(before_ends, before)
+    lines, warnings = report(before_ends, after_ends, statuses)
+    print("\nSOURCES:\n  " + "\n  ".join(lines), flush=True)
+    for w in warnings:
+        print(f"::warning title=Data source not updated::{w}", flush=True)
+    summary = os.getenv("GITHUB_STEP_SUMMARY")
+    if summary:
+        with open(summary, "a") as f:
+            f.write("### Data refresh\n\n" + "".join(f"- {x}\n" for x in lines)
+                    + "".join(f"- ⚠️ {x}\n" for x in warnings + problems))
     if problems:
         print("\nREFRESH CHECKS FAILED:\n  " + "\n  ".join(problems), flush=True)
         return 1
     changed = _changed()
-    print(f"\nchecks passed; data changed: {changed}; measured data now ends {after_ends['measured']}", flush=True)
+    print(f"\nchecks passed in {time.time() - t0:.0f}s; data changed: {changed}; "
+          f"measured data now ends {after_ends['measured']}", flush=True)
     out = os.getenv("GITHUB_OUTPUT")
     if out:
         with open(out, "a") as f:

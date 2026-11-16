@@ -72,18 +72,19 @@ def align_to_archive_slots(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
 
 
 # --------------------------------------------------------------------------- cleaning
-def clean_readings(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Remove (never alter) bad readings and count each reason per sensor.
+def clean_readings(df: pd.DataFrame, by: list[str] | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Remove (never alter) bad readings and count each reason per sensor (or per `by` group, e.g. sensor and day).
 
-    Returns (clean_df, log_df). log_df has one row per sensor_key with counts:
+    Returns (clean_df, log_df). log_df has one row per group with counts:
     n_raw, n_missing, n_dup_exact, n_dup_conflict, n_bad_units, n_nonpositive,
     n_above_max (> 5000, removed), n_above_1000 (kept, flagged), n_kept.
     """
+    by = by or ["sensor_key"]
     d = df.copy()
-    log = d.groupby("sensor_key").size().rename("n_raw").to_frame()
+    log = d.groupby(by).size().rename("n_raw").to_frame()
 
     def count(mask, name):
-        log[name] = d[mask].groupby("sensor_key").size().reindex(log.index, fill_value=0)
+        log[name] = d[mask].groupby(by).size().reindex(log.index, fill_value=0)
 
     m = d["value"].isna(); count(m, "n_missing"); d = d[~m]
     dup_all = d.duplicated(["sensor_key", "ts", "value"], keep="first")
@@ -94,7 +95,7 @@ def clean_readings(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     m = d["value"] <= C.VALUE_MIN_EXCLUSIVE; count(m, "n_nonpositive"); d = d[~m]
     m = d["value"] > C.VALUE_MAX_INCLUSIVE; count(m, "n_above_max"); d = d[~m]
     count(d["value"] > C.FLAG_HIGH, "n_above_1000")    # flagged, KEPT
-    log["n_kept"] = d.groupby("sensor_key").size().reindex(log.index, fill_value=0)
+    log["n_kept"] = d.groupby(by).size().reindex(log.index, fill_value=0)
     return d.sort_values(["sensor_key", "ts"]).reset_index(drop=True), log.reset_index()
 
 

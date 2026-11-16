@@ -204,3 +204,20 @@ def test_manifest_records_diwali_percent_as_approved_on_request_range():
     assert m["diwali_percent_status"] == D.MANIFEST_PERCENT_STATUS == "approved_on_request_range"
     assert m["diwali_percent_note"] == D.MANIFEST_PERCENT_NOTE and "range" in m["diwali_percent_note"]
     assert D.PERCENT_STATUS == "pending_user_approval"          # per-window baselines unchanged
+
+
+def _opencity_support_row(year=2025, pol="pm25"):
+    return pd.DataFrame([{"role": "supporting", "metric": pol, "year": year, "source": Dv.SRC_OPENCITY, "n_stations": 20,
+                          "baseline_value": 100.0, "festival_value": 200.0, "blank_proven_share_festival_nights": 0.1,
+                          "status": "ok", "low_quality_dates": "", "warning": "w"}])
+
+
+def test_opencity_blank_rates_come_from_the_cache_when_the_raw_files_are_absent():
+    cache = pd.DataFrame([{"year": 2025, "pollutant": "pm25", "blank_diwali_night_panel": 0.31,
+                           "blank_festival_nights_panel": 0.22, "blank_diwali_night_all37": 0.4,
+                           "blank_baseline_nights_panel": 0.05}])
+    row = Dv.delhi_pm_support(_opencity_support_row(), None, {"pm25": {1}}, set(), blank_cache=cache).iloc[0]
+    assert row["blank_diwali_night_panel"] == 0.31 and row["blank_baseline_nights_panel"] == 0.05
+    assert row["festival_mean_lower_bound"] == 200.0 and bool(row["values_are_lower_bounds"])
+    with pytest.raises(RuntimeError, match="blank-rate cache has no 2024 pm25"):
+        Dv.delhi_pm_support(_opencity_support_row(2024), None, {"pm25": {1}}, set(), blank_cache=cache)
