@@ -554,6 +554,22 @@ Rules:
   hints use the anchored Tooltip (`ProofButton`), not a native title; chat bubbles use the answer-card glass style; a blank
   step text falls back to a plain default.
 
+### Ask fixes, answer style and chat-first layout (main, 2026-11-16)
+
+- **"Too many steps" on "Compare Delhi and Mumbai over the last 30 days"**: the unit check rejected the user's own "30 days"
+  (only years and numbers up to 12 counted as the user's), each retry repeated it, and the run passed the token cap; the
+  code fallback then failed the same check. Now `user_safe_numbers` keeps counts the user wrote with a unit, comparisons
+  carry `n_days_in_period`, the cap is 16,000 tokens (`models.json`), and error texts never blame the user.
+- **Answer style:** direct first sentence, friendly wording, at most three key numbers in **bold**, explanation of 2–3
+  sentences or "- " lines, and a `takeaway` written by the model from code-built fields (`category` / `cpcb_health`:
+  the CPCB band of the average daily level and CPCB's health statement, `fields.cpcb_band`). The checker also rejects
+  "noting", rank talk ("ranked 1") and wrong units ("µg/m²"); literal "\n" and "a..b" ranges are normalised.
+- **Suggestions:** every question the site suggests is in `evals/suggestions.json` (27); first run 27/27, 0 fallback.
+- **Layout:** one-line Ask header (title, date chip below `lg`, New chat / Recent chats icon buttons); empty state with a
+  greeting and four 2x2 suggestions; typing dots and live steps; the evidence panel opens for each new data answer on wide
+  screens and can be closed; phones open chart and evidence from "Chart and evidence" as a bottom sheet; errors show
+  "Try again" plus three suggestions; copy actions are icon buttons.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

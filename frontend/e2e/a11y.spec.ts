@@ -13,7 +13,7 @@ const PAGES: [string, string, string | RegExp][] = [
   ["home", "/", "Ask India's air"],
   ["explore", "/explore", "Every monitoring station"],
   ["explore station", "/explore?city=delhi&station=5626&pollutant=pm25", "Reference monitor"],
-  ["ask", "/ask", "Ask any question about air quality in the six cities."],
+  ["ask", "/ask", "Hi! What would you like to know about the air?"],
   ["city", "/city/delhi", "Last 30 days"],
   ["compare", "/compare?cities=delhi,mumbai&metric=pm25&period=30d", "Ranking"],
   ["404", "/no-such-page", "This page doesn't exist"],

@@ -262,7 +262,7 @@ def test_plan_sentence_with_unasked_numbers_or_prompt_text_falls_back_to_code():
 def test_persistently_invented_numbers_return_clear_error(session_factory):
     model, _ = scripted([lambda m, info: final(info, status="answered", answer="Delhi PM2.5 was 987.6 µg/m³.")])
     out, _ = run(core.build_agent(model), session_factory(), "Delhi PM2.5?")
-    assert out.status == "error" and "every number matches the data" in out.answer and "Traceback" not in out.answer
+    assert out.status == "error" and "check every number" in out.answer and "Traceback" not in out.answer
 
 
 @real
@@ -412,7 +412,7 @@ def test_per_question_token_limit_without_data_is_a_clear_error(session_factory)
     def loop(m, info):
         return ModelResponse(parts=[ToolCallPart("check_request", {"cities": ["Delhi"]})])
     out, _ = asyncio.run(core.ask(core.build_agent(FunctionModel(loop)), session_factory(), "Delhi?", max_tokens=300))
-    assert out.status == "error" and "too many steps" in out.answer
+    assert out.status == "error" and "within my limits" in out.answer and "ask about" not in out.answer
 
 
 def test_model_chain_from_config_and_env(monkeypatch):

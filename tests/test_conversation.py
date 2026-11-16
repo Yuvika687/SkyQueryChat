@@ -185,3 +185,20 @@ def test_noting_in_any_form_is_sent_back_to_be_rewritten(session_factory, kind, 
     out, deps = ask(model, session_factory(), "hi")
     assert seen["requests"] == 2 and out.answer == clean
     assert any("Do not write ['noting']" in p for f in deps.verification_failures for p in f["problems"])
+
+
+def test_a_wrong_concentration_unit_is_sent_back():
+    from backend.agent import verify as V
+    assert V.banned_wording("PM2.5 averaged 168.8 µg/m², or 12 ug/m2") == ["µg/m²", "ug/m2"]
+    assert V.banned_wording("PM2.5 averaged 168.8 µg/m³") == []
+
+
+def test_rank_talk_is_sent_back_and_literal_line_breaks_become_bullets():
+    from backend.agent import verify as V
+    from backend.agent.schemas import LLMAnswer
+    assert V.banned_wording("Delhi ranked 1 and Mumbai ranked 2.") == ["ranked 1", "ranked 2"]
+    assert V.banned_wording("Delhi ranked higher than Mumbai.") == []
+    out = core._normalise_kind(LLMAnswer(status="answered", answer="x", explanation="- Delhi: 155\\n- Mumbai: 50"))
+    assert out.explanation == "- Delhi: 155\n- Mumbai: 50"
+    out = core._normalise_kind(LLMAnswer(status="answered", answer="over 17 Oct 2026..15 Nov 2026, 82.8 µg/m³"))
+    assert out.answer == "over 17 Oct 2026 – 15 Nov 2026, 82.8 µg/m³"

@@ -198,6 +198,8 @@ def user_safe_numbers(question: str) -> set[float]:
     out = {v for _, v, dec, pct in nums if not pct and dec == 0 and (2000 <= v <= 2100 or 0 < v <= 12)}
     for _, yy in re.findall(r"\b(20\d\d)\s?[-–/]\s?(\d\d)\b", question):   # "winter 2025-26": the short year
         out.add(float(yy))
+    for n in re.findall(r"\b(\d{1,3})\s*(?:days?|weeks?|months?|years?)\b", question, re.I):   # "last 30 days"
+        out.add(float(n))
     for y, m, d in dates:
         out.update({float(y), float(int(m)), float(int(d)), _code(int(y), int(m), int(d))})
     for _, ds in readable_dates(question)[0]:          # dates the user wrote may be echoed back
@@ -302,9 +304,11 @@ def unit_mismatches(texts: list[str], by_unit: dict[str, set[float]], user_numbe
 
 
 # ----------------------------------------------------------------------------- wording the answer must not use
-BANNED_WORDING = re.compile(r"\bnot(?:ing|ed that|es that)\b", re.I)     # "noting", "noting that", "noted that"
+BANNED_WORDING = re.compile(r"\bnot(?:ing|ed that|es that)\b"            # "noting", "noting that", "noted that"
+                            r"|[µu]g\s?/\s?m(?:²|2)\b"                     # a wrong unit: concentrations are µg/m³
+                            r"|\branked\s+(?:#|no\.?\s*)?\d+", re.I)          # rank talk ("ranked 1") reads like a table
 
 
 def banned_wording(text: str) -> list[str]:
-    """Filler wording the answer must not use, in any form ('noting', 'noting that', 'noted that')."""
+    """Wording the answer must not use: filler ('noting', 'noting that', 'noted that') and wrong units ('µg/m²')."""
     return [m.group(0) for m in BANNED_WORDING.finditer(text or "")]

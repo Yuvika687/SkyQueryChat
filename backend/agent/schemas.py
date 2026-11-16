@@ -20,7 +20,9 @@ class LLMAnswer(BaseModel):
         "(e.g. 'delhi?', 'mumbai') is clarify, not data"))
     status: Literal["answered", "clarify", "refused", "unavailable"]
     answer: str = Field(description="headline: 1-2 sentences, finding first; numbers exactly as in tool fields")
-    explanation: str = Field(default="", description="1-3 sentences: what it means, pattern, caveats")
+    explanation: str = Field(default="", description="2-3 sentences (or '- ' lines for 3+ cities): what it shows, caveats")
+    takeaway: str = Field(default="", description="one practical sentence without numbers, from the *category and "
+                                                  "*cpcb_health fields; empty if none")
     follow_ups: list[str] = Field(default_factory=list, description="2-3 short next questions")
     cards: list[str] = Field(default_factory=list, description="up to 4 'dataset_id.field' for metric cards")
     chart: str | None = Field(default=None, description="dataset_id to chart")
@@ -77,6 +79,7 @@ class FinalAnswer(BaseModel):
     answer: str                          # LLM-written (number-checked); code-written only as a last-resort fallback
     headline: str | None = None          # the lead sentence shown first: the same text as `answer`
     explanation: str = ""                # LLM-written explanation (number-checked)
+    takeaway: str = ""                   # LLM-written practical takeaway (CPCB band and health statement from tool fields)
     method: str = ""                     # code-written data type, stations, coverage and method
     follow_ups: list[str] = Field(default_factory=list)   # LLM-written; empty -> the UI uses templates
     cards: list[Card] = Field(default_factory=list)

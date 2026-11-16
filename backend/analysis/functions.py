@@ -44,6 +44,11 @@ def _ist_iso(t) -> str:
     return (ts.tz_localize("UTC") if ts.tzinfo is None else ts).tz_convert("Asia/Kolkata").isoformat()
 
 
+def _days(n: int, what: str = "day") -> str:
+    """'1 day', '7 days' (never 'day(s)', which reads badly when the model repeats it)."""
+    return f"{n} {what}" if n == 1 else f"{n} {what}s"
+
+
 def _iso(d) -> str:
     """A daily value's date as 'yyyy-mm-dd' (never a timestamp with a time of day)."""
     return pd.Timestamp(d).date().isoformat()
@@ -135,7 +140,7 @@ def _peer_warning(cd: pd.DataFrame) -> list[str]:
     if m.empty:
         return []
     ex = ", ".join(f"{_d(d)} ({e:+.0f}%)" for d, e in zip(m["local_date"].head(5), m["peer_outlier_effect_pct"].head(5)))
-    return [f"On {len(m)} day(s) one station flagged as a peer outlier moves the city value by more than 25% "
+    return [f"On {_days(len(m))} one station flagged as a peer outlier moves the city value by more than 25% "
             f"(e.g. {ex}); treat those days with caution."]
 
 
@@ -282,7 +287,8 @@ def compare_cities(s: Store, cities: list[str], pollutant: str, start: date, end
     for c, f in frames.items():
         warns += [f"{c}: {w}" for w in _peer_warning(f)]
     if len(common) < 30:
-        warns.append(f"Only {len(common)} day(s) have values for every city; comparison is weak.")
+        n = len(common)
+        warns.append(f"Only {n} {'day has' if n == 1 else 'days have'} values for every city, so the comparison is weak.")
     n_st = {c: int(len(_primary_stations(s, c))) for c in cities}
     # one line per city on a date axis; days without a city value stay gaps. Over 90 days the chart opens on weekly
     # means (calculated here), with the daily view one click away.
@@ -582,12 +588,12 @@ def unusual_days(s: Store, city: str, pollutant: str, start: date, end: date,
                          "data_quality": row["severity"], "peer_outlier_over_25pct": _is_major(cd, t)})
     lowq = [d for d in days if d["data_quality"] in ("moderate", "severe")]
     if lowq:
-        warns.append(f"{len(lowq)} flagged day(s) fall on dates with moderate/severe data gaps.")
+        warns.append(f"{_days(len(lowq), 'flagged day')} fall on dates with moderate or severe data gaps.")
     q = _quality(s, [city], start, end)
     warns += _common_warnings(start, end, q, _data_end(s))
     po = [d for d in days if d["peer_outlier_over_25pct"]]
     if po:
-        warns.append(f"{len(po)} unusual day(s) depend on one peer-outlier station (> 25% effect): "
+        warns.append(f"{_days(len(po), 'unusual day')} depend on one peer-outlier station (> 25% effect): "
                      + ", ".join(str(d["date"]) for d in po[:5]) + ".")
     series = [[str(t.date()), r(x)] for t, x in in_period["city_mean"].items()]
     chart = ChartSpec(type="line", title=f"{city} {POLLUTANT_NAMES[pollutant]} with unusual days",

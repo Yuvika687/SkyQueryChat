@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CloudOff, Loader2 } from "lucide-react";
+import { CloudOff, Loader2, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { proofFor, type Target } from "@/lib/proof";
 import { useApp } from "@/components/shell/app-context";
@@ -31,6 +31,10 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
   // the evidence panel follows the newest answer, or the answer whose number was clicked
   const [proof, setProof] = useState<{ turnId: string; target: Target } | null>(null);
   const desktop = useIsDesktop();
+  // wide screens: the chart and evidence panel (closable); phones: the same content in a bottom sheet
+  // the panel stays closed only for the answer it was closed on; a new answer (or "Chart and evidence") opens it
+  const [closedFor, setClosedFor] = useState<string | null>(null);
+  const [sheetTurn, setSheetTurn] = useState<string | null>(null);
   const { storeChat, openChat } = app;
 
   const onTurnFinished = useCallback(
@@ -80,6 +84,8 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
   const answered = [...chat.turns].reverse().find((t) => t.answer && t.phase === "done" && !isChatReply(t)) ?? null;
   const picked = chat.turns.find((t) => t.id === (proof?.turnId ?? selected));
   const panelTurn = picked && !isChatReply(picked) ? picked : answered;
+  const sheet = chat.turns.find((t) => t.id === sheetTurn) ?? null;
+  const panelOpen = !!panelTurn && closedFor !== panelTurn.id;
   const proofView = proof && panelTurn ? proofFor(proof.target, panelTurn) : null;
 
   // The top bar follows what the conversation is about (from the latest answer's resolved_query).
@@ -119,6 +125,13 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
   const openProof = (t: Turn, target: Target) => {
     setSelected(t.id);
     setProof({ turnId: t.id, target });
+    setClosedFor(null);
+  };
+  const openEvidence = (t: Turn) => {
+    setProof(null);
+    setSelected(t.id);
+    if (desktop) setClosedFor(null);
+    else setSheetTurn(t.id);
   };
   const placeholder = "Ask about air quality in the six cities";
 
@@ -130,7 +143,7 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
           {chat.turns.length === 0 ? (
             <EmptyState onAsk={ask} disabled={chat.busy} />
           ) : (
-            <div className="mx-auto flex w-full max-w-[780px] min-w-0 flex-col gap-10 px-4 pt-6 pb-24 sm:px-6">
+            <div className="mx-auto flex w-full max-w-[760px] min-w-0 flex-col gap-8 px-4 pt-5 pb-16 sm:px-6">
               {chat.turns.map((t, i) => (
                 <TurnView
                   key={t.id}
@@ -142,7 +155,7 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
                   onRetry={retry}
                   onProof={openProof}
                   activeProof={proof?.turnId === t.id ? proof.target.id : null}
-                  inlineEvidence={!desktop}
+                  onEvidence={openEvidence}
                 />
               ))}
             </div>
@@ -153,15 +166,26 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
         <Composer ref={composer} busy={chat.busy} onSend={ask} onStop={chat.stop} placeholder={placeholder} />
       </div>
       {/* Desktop: the evidence for the focused answer; a clicked number swaps it to that number's proof. */}
-      {desktop && panelTurn?.answer && (
-        <aside aria-label={proofView ? "Proof" : "Evidence"} className="flex w-[440px] shrink-0 flex-col border-l border-line bg-[#0a1122]/80 xl:w-[480px]">
+      {desktop && panelOpen && panelTurn?.answer && (
+        <aside aria-label={proofView ? "Proof" : "Evidence"} className="sq-slide-in relative flex w-[420px] shrink-0 flex-col border-l border-line bg-[#0a1122]/80 xl:w-[460px]">
+          <button type="button" onClick={() => { setClosedFor(panelTurn.id); setProof(null); }} aria-label="Close the evidence panel"
+            className="absolute top-2.5 right-3 z-10 grid size-8 place-items-center rounded-full text-subtle hover:bg-white/[0.06] hover:text-foreground">
+            <X className="size-4" aria-hidden />
+          </button>
           {proofView ? (
-            <div className="overflow-y-auto p-5"><ProofView proof={proofView} onBack={() => setProof(null)} /></div>
+            <div className="overflow-y-auto p-5 pt-12"><ProofView proof={proofView} onBack={() => setProof(null)} /></div>
           ) : (
             <EvidencePanel turn={panelTurn} className="min-h-0 flex-1" />
           )}
         </aside>
       )}
+      {/* Phones: the chart and evidence open as a bottom sheet. */}
+      <Sheet open={!desktop && !!sheet?.answer} onOpenChange={(o) => { if (!o) setSheetTurn(null); }}>
+        <SheetContent side="bottom" className="max-h-[86dvh] overflow-y-auto rounded-t-3xl border-line bg-surface p-0">
+          <SheetTitle className="sr-only">Chart and evidence</SheetTitle>
+          {sheet?.answer && <EvidencePanel turn={sheet} />}
+        </SheetContent>
+      </Sheet>
       {/* Phones: the proof opens as a bottom sheet over the conversation. */}
       <Sheet open={!desktop && !!proofView} onOpenChange={(o) => { if (!o) setProof(null); }}>
         <SheetContent side="bottom" className="max-h-[86dvh] overflow-y-auto rounded-t-3xl border-line bg-surface p-5">

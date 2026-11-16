@@ -20,6 +20,27 @@ class Field:
     unit: str = ""
 
 
+def cpcb_band(pollutant: str, value) -> tuple[str, str] | None:
+    """CPCB category and health statement for a PM concentration (24-hour breakpoints, value rounded first), from
+    backend/config/knowledge.json. Applied to an average of daily values, it describes the typical day."""
+    if value is None or pollutant not in ("pm25", "pm10"):
+        return None
+    from .knowledge import load
+    v = round(float(value))
+    for c in load()["aqi"]["categories"]:
+        hi = c.get(f"{pollutant}_24h_ugm3")
+        if hi is None or v <= hi[1]:
+            return c["category"], c["health_statement"]
+    return None
+
+
+def _band_fields(f: dict, prefix: str, who: str, pollutant: str, value) -> None:
+    b = cpcb_band(pollutant, value)
+    if b:
+        f[f"{prefix}category"] = Field(b[0], f"CPCB {PN[pollutant]} band of {who}'s average daily level")
+        f[f"{prefix}cpcb_health"] = Field(b[1], f"CPCB health statement for the {b[0]} band")
+
+
 def _per(d: dict) -> str:
     dr = d.get("date_range") or {}
     return f"{dr.get('start')} to {dr.get('end')}" if dr.get("start") else ""
@@ -36,6 +57,7 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
         s = v.get("summary") or {}
         if s:
             f["mean"] = Field(s["mean_of_daily_values"], f"{city} mean {P}, {per}", u)
+            _band_fields(f, "", city, d.get("metric"), s["mean_of_daily_values"])
             f["median"] = Field(s["median"], f"{city} median daily {P}, {per}", u)
             f["highest_value"] = Field(s["highest_day"]["value"], f"{city} highest daily {P} ({s['highest_day']['date']})", u)
             f["highest_date"] = Field(str(s["highest_day"]["date"]), "date of highest day")
@@ -66,6 +88,7 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
                 f[f"mean_{p['period']}"] = Field(p["mean"], f"{city} {P} mean, {p['period']}", u)
     elif k == "compare_cities":
         f["n_cities"] = Field(len(v["cities"]), "cities compared", "cities")
+        f["n_days_in_period"] = Field(cov.get("days_in_period"), "days in period", "days")
         f["n_common_days"] = Field(v["common_days"], "days with data for every city (the means use these days)", "days")
         for x in v.get("comparisons") or []:
             a, b = x["higher"], x["lower"]
@@ -74,6 +97,7 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
                 f[f"ratio_{a}_to_{b}"] = Field(x["ratio"], f"{a} as a multiple of {b}, mean {P} (common days)", "×")
         for c in v["cities"]:
             f[f"{c['city']}_mean"] = Field(c["mean_common_days"], f"{c['city']} mean {P} (common days), {per}", u)
+            _band_fields(f, f"{c['city']}_", c["city"], d.get("metric"), c["mean_common_days"])
             f[f"{c['city']}_rank"] = Field(c["rank_highest_first"], f"{c['city']} rank (1 = highest {P})", "")
             f[f"{c['city']}_n_valid_days"] = Field(c["n_valid_days"], f"{c['city']} days with data", "days")
             if c.get("range95_low") is not None:

@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Clock, CloudOff, MapPin, RotateCcw, Square, Zap } from "lucide-react";
-import { Skeleton } from "@/components/ds/states";
+import { SUGGESTED } from "./empty-state";
 import { backupModel, isChatReply, servedFrom, type Turn } from "@/lib/chat-state";
 import { CITIES } from "@/lib/categories";
 import { fmtDate, readable } from "@/lib/format";
@@ -14,7 +14,6 @@ import type { Target } from "@/lib/proof";
 import type { Health } from "@/lib/types";
 import { AnswerCard } from "./answer-card";
 import { Callout } from "./answer-parts";
-import { EvidencePanel } from "./evidence-panel";
 import { LiveSteps, StepsSummary } from "./live-steps";
 
 interface Props {
@@ -26,27 +25,24 @@ interface Props {
   onRetry: (t: Turn) => void;
   onProof: (t: Turn, target: Target) => void;
   activeProof: string | null;
-  /** phones: show the evidence under the answer */
-  inlineEvidence: boolean;
+  /** opens this answer's chart and evidence (right panel on wide screens, bottom sheet on phones) */
+  onEvidence: (t: Turn) => void;
 }
 
-export function TurnView({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activeProof, inlineEvidence }: Props) {
+export function TurnView({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activeProof, onEvidence }: Props) {
   return (
-    <article data-turn={turn.id} className="flex min-w-0 flex-col gap-4" aria-label={`Question: ${turn.question}`}>
+    <article data-turn={turn.id} className="sq-rise flex min-w-0 flex-col gap-3" aria-label={`Question: ${turn.question}`}>
       <div className="flex justify-end">
         <p className="max-w-[85%] rounded-2xl rounded-br-md border border-teal/25 bg-teal/[0.08] px-4 py-2.5 text-[14.5px]">{turn.question}</p>
       </div>
       <Body turn={turn} health={health} isLatest={isLatest} busy={busy} onAsk={onAsk} onRetry={onRetry}
-        onProof={(t) => onProof(turn, t)} activeProof={activeProof} />
+        onProof={(t) => onProof(turn, t)} activeProof={activeProof} onEvidence={() => onEvidence(turn)} />
       {turn.answer && turn.phase === "done" && !isChatReply(turn) && <StepsSummary turn={turn} />}
-      {inlineEvidence && turn.answer && turn.phase === "done" && !isChatReply(turn) && (turn.chart || turn.cards.length > 0) && (
-        <div className="glass min-w-0 overflow-hidden rounded-3xl [contain:inline-size]"><EvidencePanel turn={turn} /></div>
-      )}
     </article>
   );
 }
 
-function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activeProof }: Omit<Props, "onProof" | "inlineEvidence"> & { onProof: (t: Target) => void }) {
+function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activeProof, onEvidence }: Omit<Props, "onProof" | "onEvidence"> & { onProof: (t: Target) => void; onEvidence: () => void }) {
   const notices = turn.notices.map((n) => (
     <Callout key={n.code} tone={n.code === "low" ? "warn" : "info"} icon={n.code === "cached_fallback" ? Clock : Zap}>{n.message}</Callout>
   ));
@@ -59,7 +55,7 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activePro
         <Callout tone="info" icon={Clock} title="Waking up the data server, this can take up to a minute">
           Your question will be sent as soon as it is ready.
         </Callout>
-        <AnswerSkeleton />
+        <TypingDots />
       </div>
     );
   }
@@ -78,10 +74,9 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activePro
     return (
       <>
         {notices}
-        <div className="glass flex flex-col gap-4 rounded-3xl p-5" role="status" aria-live="polite">
-          <p className="text-[12px] font-medium tracking-wide text-faint uppercase">Working on it</p>
+        <div className="glass flex flex-col gap-3 rounded-3xl p-5" role="status" aria-live="polite">
+          <TypingDots />
           <LiveSteps turn={turn} />
-          <AnswerSkeleton />
         </div>
       </>
     );
@@ -121,7 +116,7 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activePro
           </ul>
         </div>
       )}
-      <AnswerCard turn={turn} onProof={onProof} activeProof={activeProof} onAsk={onAsk} busy={busy} />
+      <AnswerCard turn={turn} onProof={onProof} activeProof={activeProof} onAsk={onAsk} busy={busy} onEvidence={onEvidence} />
     </>
   );
 }
@@ -155,13 +150,15 @@ function ChatReply({ turn, busy, onAsk }: { turn: Turn; busy: boolean; onAsk: (q
   );
 }
 
-function AnswerSkeleton() {
+/** "The analyst is typing": three softly pulsing dots (static when reduced motion is preferred). */
+function TypingDots() {
   return (
-    <div className="flex flex-col gap-3" aria-hidden>
-      <Skeleton className="h-5 w-11/12" />
-      <Skeleton className="h-5 w-8/12" />
-      <div className="grid grid-cols-3 gap-3"><Skeleton className="h-20 rounded-2xl" /><Skeleton className="h-20 rounded-2xl" /><Skeleton className="h-20 rounded-2xl" /></div>
-    </div>
+    <span className="inline-flex items-center gap-1.5 py-1" aria-label="Working on the answer">
+      {[0, 1, 2].map((i) => (
+        <span key={i} className="size-2 rounded-full bg-teal/80 motion-safe:animate-[sq-dot_1.2s_ease-in-out_infinite]"
+          style={{ animationDelay: `${i * 0.15}s` }} />
+      ))}
+    </span>
   );
 }
 
@@ -206,6 +203,12 @@ function ErrorState({ turn, isLatest, busy, onAsk, onRetry }: { turn: Turn; isLa
     </div>
   );
   const box = "glass flex flex-col gap-3 rounded-3xl p-5";
+  const tryThese = (
+    <div>
+      <p className="mb-2 text-xs font-medium text-subtle">Or try one of these:</p>
+      <QuestionChips questions={SUGGESTED.map((s) => s.q).filter((q) => q !== turn.question).slice(0, 3)} onAsk={onAsk} disabled={busy} />
+    </div>
+  );
   switch (e.code) {
     case "ai_limit":
       return (
@@ -232,7 +235,7 @@ function ErrorState({ turn, isLatest, busy, onAsk, onRetry }: { turn: Turn; isLa
         <div className={box}>
           <Callout tone="warn" title="The AI service is busy right now">Please try again in about a minute.</Callout>
           {retry}
-          {saved}
+          {saved || tryThese}
         </div>
       );
     case "backend_waking":
@@ -248,8 +251,9 @@ function ErrorState({ turn, isLatest, busy, onAsk, onRetry }: { turn: Turn; isLa
     default:
       return (
         <div className={box}>
-          <Callout tone="error" title="The answer couldn't be completed">{e.message}</Callout>
+          <Callout tone="warn" title="That one didn't work out this time">{e.message}</Callout>
           {retry}
+          {tryThese}
         </div>
       );
   }

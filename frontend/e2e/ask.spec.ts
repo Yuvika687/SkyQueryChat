@@ -50,12 +50,16 @@ async function recordedChat(page: Page, body = COMPARE) {
 }
 
 test.describe("Ask page", () => {
-  test("empty state: purpose, hint and suggestions", async ({ page }) => {
+  test("empty state: compact header, greeting, hint and four suggestions", async ({ page }) => {
     const problems = watchConsole(page);
     await page.goto("/ask");
-    await expect(page.getByText("Ask any question about air quality in the six cities.")).toBeVisible();
-    await expect(page.getByText("Click any highlighted number to see where it came from.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ask", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "New chat" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Recent chats" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Hi! What would you like to know about the air?" })).toBeVisible();
+    await expect(page.getByText(/click one to see where it came from/)).toBeVisible();
     await expect(page.getByRole("button", { name: /Compare Delhi and Mumbai over the last 30 days/ })).toBeVisible();
+    await expect(page.locator("section[aria-labelledby=empty-title] li")).toHaveCount(4);
     await expectNoOverflow(page);
     expect(problems).toEqual([]);
   });
@@ -70,6 +74,8 @@ test.describe("Ask page", () => {
     await expect(card.getByText(/\d+ numbers checked/)).toBeVisible();
     await expect(card.getByText("Official AQI is an index of several pollutants, not a PM2.5 or PM10 concentration.")).toBeVisible();
     await expect(card.getByText(/\d{4}-\d{2}-\d{2}|16:00/)).toHaveCount(0);            // readable dates and times only
+    // wide screens: the evidence panel is already open; phones: "Chart and evidence" opens it as a bottom sheet
+    if (!isDesktop(info)) await card.getByRole("button", { name: "Chart and evidence" }).click();
     const tabs = page.getByRole("tablist", { name: "Evidence or data" });
     await expect(tabs.getByRole("tab", { name: "Evidence" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByText("How this answer was made").first()).toBeVisible();

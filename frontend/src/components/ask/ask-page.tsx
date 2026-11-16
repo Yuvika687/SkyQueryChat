@@ -4,8 +4,10 @@
 // history (saved in this browser only) that used to live in the sidebar.
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { History, MapPin, Plus, Trash2 } from "lucide-react";
+import { History, Plus, Trash2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { fmtDate } from "@/lib/format";
 import { useApp } from "@/components/shell/app-context";
 import { cn } from "@/lib/utils";
 import { AskScreen } from "./ask-screen";
@@ -18,23 +20,14 @@ export function AskPage() {
   const { openChat } = useApp();
   return (
     <div className="flex h-dvh flex-col pt-[72px] pb-[88px] md:pt-[80px] md:pb-0">
-      <header className="mx-auto flex w-full max-w-[1120px] flex-wrap items-end gap-x-6 gap-y-2 px-4 pt-2 pb-3 sm:px-6">
-        <div className="min-w-0">
-          <h1 className="font-display text-[34px] leading-none sm:text-[40px]">Ask</h1>
-          <p className="mt-1.5 text-[14px] text-foreground">Ask any question about air quality in the six cities.</p>
-          <p className="mt-0.5 text-[12.5px] text-faint">Click any highlighted number to see where it came from.</p>
+      {/* one compact line: title, latest data date, new chat and recent chats */}
+      <header className="mx-auto flex w-full max-w-[1120px] items-center gap-3 px-4 pt-1 pb-2.5 sm:px-6">
+        <h1 className="font-display text-[26px] leading-none">Ask</h1>
+        <LatestDate />
+        <div className="ml-auto flex items-center gap-1.5">
+          <IconButton label="New chat" onClick={() => openChat(null)}><Plus className="size-4" aria-hidden /></IconButton>
+          <IconButton label="Recent chats" onClick={() => setHistoryOpen(true)}><History className="size-4" aria-hidden /></IconButton>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <button type="button" onClick={() => openChat(null)} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 text-[13px] text-subtle hover:border-teal/60 hover:text-foreground">
-            <Plus className="size-4" aria-hidden />
-            New chat
-          </button>
-          <button type="button" onClick={() => setHistoryOpen(true)} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 text-[13px] text-subtle hover:border-teal/60 hover:text-foreground">
-            <History className="size-4" aria-hidden />
-            <span className="sr-only sm:not-sr-only">Recent chats</span>
-          </button>
-        </div>
-        <AskContextLabel />
       </header>
       <div className="flex min-h-0 flex-1 border-t border-line">
         <AskScreen initialQuestion={q} onInitialSent={() => router.replace("/ask", { scroll: false })} />
@@ -53,17 +46,27 @@ export function AskPage() {
   );
 }
 
-function AskContextLabel() {
-  const { askContext } = useApp();
-  if (!askContext || !askContext.cities.length) return null;
-  const cities = askContext.cities.length === 6 ? "All six cities" : askContext.cities.join(", ");
+function LatestDate() {
+  const { health } = useApp();
+  const end = health?.data_windows?.measured_end;
+  if (!end) return null;
   return (
-    <p className="flex w-full min-w-0 basis-full flex-wrap items-center gap-x-1.5 text-[13px] text-subtle" aria-label="Current conversation">
-      <MapPin className="size-3.5 shrink-0" aria-hidden />
-      <span className="text-foreground">{cities}</span>
-      {askContext.pollutant && <span className="shrink-0">· {askContext.pollutant}</span>}
-      {askContext.period && <span>· {askContext.period}</span>}
-    </p>
+    // wide screens show the same date in the navigation bar, so the chip is for narrower screens only
+    <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line px-2.5 text-[12.5px] text-subtle lg:hidden">
+      <span className="size-1.5 rounded-full bg-teal" aria-hidden />Data to {fmtDate(end)}
+    </span>
+  );
+}
+
+function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<button type="button" onClick={onClick} aria-label={label}
+        className="grid size-9 place-items-center rounded-full border border-line-strong text-subtle hover:border-teal/60 hover:text-foreground" />}>
+        {children}
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 

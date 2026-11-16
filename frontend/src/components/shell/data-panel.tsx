@@ -32,6 +32,7 @@ const SETS: { key: string; name: string; note: string; history?: string }[] = [
   { key: "diwali2026", name: "Diwali 2026 questions", note: "added after the Diwali 2026 bulletins arrived" },
   { key: "analysis", name: "Statistics and comparison questions", note: "city comparisons, 95% ranges, “too close to call”, trends and weather associations" },
   { key: "conversation", name: "Conversation questions", note: "greetings, questions about the project and air quality, unclear and off-topic messages" },
+  { key: "suggestions", name: "Every suggested question", note: "each question the site offers on Home, Ask, quick ask and the city, Explore and Compare pages" },
 ];
 
 // Limits a visitor should know about (the API also lists internal engineering notes).

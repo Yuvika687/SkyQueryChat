@@ -1,0 +1,32 @@
+{
+ "_about": "Every question the site suggests (added 2026-11-16): Ask empty state, Home, quick ask (Ctrl/Cmd+K), the three questions on each city page, and one default instance of the Explore station and Compare page questions (their dates follow the selection). A turn passes when it is answered (or correctly marked unavailable) with every number traced, never an error. Runs on the frozen evaluation data (to 11 Nov 2026).",
+ "questions": [
+  {"id": "S01", "category": "ask empty state, quick ask", "turns": ["Compare Delhi and Mumbai over the last 30 days"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S02", "category": "ask empty state", "turns": ["Was Delhi worse around Diwali 2025 than Diwali 2024?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S03", "category": "ask empty state", "turns": ["Show PM2.5 levels in Kolkata for the last 30 days"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S04", "category": "ask empty state, quick ask, city page (Mumbai)", "turns": ["Is rain associated with lower PM2.5 in Mumbai?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S05", "category": "home", "turns": ["How did Delhi's air change around Diwali 2026?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S06", "category": "home, quick ask", "turns": ["Which of the six cities had the highest PM2.5 in winter 2025?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S07", "category": "home", "turns": ["Is rain associated with lower PM10 in Mumbai?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S08", "category": "home", "turns": ["Were there any unusual PM2.5 days in Delhi in 2025?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S09", "category": "quick ask, city page (Delhi)", "turns": ["How bad was Delhi's air on Diwali 2026?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S10", "category": "city page (Delhi)", "turns": ["How has PM2.5 in Delhi changed over the last 30 days?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S11", "category": "city page (Delhi)", "turns": ["Is rain associated with lower PM2.5 in Delhi?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S12", "category": "city page (Mumbai)", "turns": ["How has PM2.5 in Mumbai changed over the last 30 days?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S13", "category": "city page (Mumbai)", "turns": ["How bad was Mumbai's air on Diwali 2026?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S14", "category": "city page (Kolkata)", "turns": ["How has PM2.5 in Kolkata changed over the last 30 days?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S15", "category": "city page (Kolkata)", "turns": ["How bad was Kolkata's air on Diwali 2026?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S16", "category": "city page (Kolkata)", "turns": ["Is rain associated with lower PM2.5 in Kolkata?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S17", "category": "city page (Chennai)", "turns": ["How has PM2.5 in Chennai changed over the last 30 days?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S18", "category": "city page (Chennai)", "turns": ["How bad was Chennai's air on Diwali 2026?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S19", "category": "city page (Chennai)", "turns": ["Is rain associated with lower PM2.5 in Chennai?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S20", "category": "city page (Bengaluru)", "turns": ["How has PM2.5 in Bengaluru changed over the last 30 days?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S21", "category": "city page (Bengaluru)", "turns": ["How bad was Bengaluru's air on Diwali 2026?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S22", "category": "city page (Bengaluru)", "turns": ["Is rain associated with lower PM2.5 in Bengaluru?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S23", "category": "city page (Hyderabad)", "turns": ["How has PM2.5 in Hyderabad changed over the last 30 days?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S24", "category": "city page (Hyderabad)", "turns": ["How bad was Hyderabad's air on Diwali 2026?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S25", "category": "city page (Hyderabad)", "turns": ["Is rain associated with lower PM2.5 in Hyderabad?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S26", "category": "explore station (default 30-day window)", "turns": ["How did PM2.5 in Delhi change from 13 Oct 2026 to 11 Nov 2026?"], "expect": [{"status": ["answered", "unavailable"]}]},
+  {"id": "S27", "category": "compare page (default selection)", "turns": ["Compare PM2.5 in Delhi and Mumbai from 13 Oct 2026 to 11 Nov 2026."], "expect": [{"status": ["answered", "unavailable"]}]}
+ ]
+}

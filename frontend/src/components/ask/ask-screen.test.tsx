@@ -75,6 +75,32 @@ function chatReply(kind: string, status: string, text: string): ChatEvent[] {
 }
 
 describe("Ask screen", () => {
+  it("an error never blames the user: Try again plus three questions that work", async () => {
+    vi.mocked(api.streamChat).mockImplementation(streamOf(errorStream("too_many_steps", "I couldn't finish this answer within my limits this time. Please try again.")));
+    renderAsk();
+    await ask("Compare Delhi and Mumbai over the last 30 days");
+    expect(await screen.findByText(/within my limits this time/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    const chips = screen.getByText("Or try one of these:").parentElement!;
+    expect(within(chips).getAllByRole("button")).toHaveLength(3);
+    expect(within(chips).queryByRole("button", { name: "Compare Delhi and Mumbai over the last 30 days" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/ask about one city/i)).not.toBeInTheDocument();
+  });
+
+  it("shows bold key numbers without the markers, bullet lines and the practical takeaway", async () => {
+    const ev = chatReply("data", "answered", "Delhi's air was far more polluted: its PM2.5 averaged **155** µg/m³.") as unknown as { event: string; data: Record<string, unknown> }[];
+    Object.assign(ev[1].data, { explanation: "- Delhi: 155 µg/m³\n- Mumbai: 50 µg/m³",
+      takeaway: "That average sits in CPCB's Very poor band, where CPCB warns of respiratory illness on prolonged exposure." });
+    vi.mocked(api.streamChat).mockImplementation(streamOf(ev as unknown as ChatEvent[]));
+    renderAsk();
+    await ask("Compare Delhi and Mumbai");
+    const strong = await screen.findByText("155", { selector: "strong span" });
+    expect(strong.closest("p")?.textContent).not.toContain("**");
+    expect(screen.getByText("Mumbai: 50 µg/m³")).toBeInTheDocument();
+    expect(screen.getByText(/Very poor band, where CPCB warns/)).toBeInTheDocument();
+  });
+
+
   it.each([
     ["greeting", "answered", "Hi! I'm SkyQueryChat. I look at PM2.5, PM10 and official AQI for six Indian cities."],
     ["off_topic", "refused", "I'm SkyQueryChat, an air-quality analyst for Indian cities, so I can't help with that."],
@@ -92,12 +118,12 @@ describe("Ask screen", () => {
   });
 
 
-  it("shows the empty state with six suggested questions (an even grid) and the sources line", async () => {
+  it("shows the empty state: a short greeting, four suggestion cards in a 2x2 grid and the sources line", async () => {
     renderAsk();
-    expect(await screen.findByRole("heading", { name: "What do you want to know about the air?" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Hi! What would you like to know about the air?" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Compare Delhi and Mumbai over the last 30 days/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Diwali 2025 than Diwali 2024/ })).toBeInTheDocument();
-    expect(screen.getAllByRole("listitem")).toHaveLength(6);
+    expect(screen.getAllByRole("listitem")).toHaveLength(4);
     expect(screen.getByText(/Answers use the data available and may contain gaps\. Sources:/)).toHaveTextContent(/Sources: CPCB.*via OpenAQ/);
     expect(screen.getByRole("link", { name: "Open-Meteo.com" })).toHaveAttribute("href", "https://open-meteo.com/");
   });
@@ -131,8 +157,9 @@ describe("Ask screen", () => {
     expect(screen.queryAllByText(/rank/i).filter((el) => el.closest("dl"))).toHaveLength(0);
     expect(screen.getAllByRole("button", { name: "73.0" }).length).toBeGreaterThanOrEqual(1);   // headline and key number
     expect(screen.getByLabelText("Your question")).toHaveAttribute("placeholder", "Ask about air quality in the six cities");
-    // the evidence follows the answer (phone layout in tests): coverage, stations and the period in words
-    const tabs = screen.getByRole("tablist", { name: "Evidence or data" });
+    // phone layout in tests: "Chart and evidence" opens a bottom sheet with coverage, stations and the period in words
+    await user.click(screen.getByRole("button", { name: "Chart and evidence" }));
+    const tabs = await screen.findByRole("tablist", { name: "Evidence or data" });
     expect(within(tabs).getByRole("tab", { name: "Evidence" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getAllByText(/Latest 30 days available/).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Stations").length).toBeGreaterThan(0);   // evidence table row

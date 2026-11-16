@@ -103,6 +103,8 @@ export interface AnswerEvent {
   headline?: string | null;
   /** The model's number-checked explanation (older saved answers: the code-written method text). */
   explanation: string;
+  /** One practical sentence from the result's CPCB band and health statement (absent in older answers). */
+  takeaway?: string;
   /** Code-written data type, stations, coverage and method (absent in older saved answers). */
   method?: string;
   /** Up to three follow-up questions written by the model; empty means the UI uses its templates. */

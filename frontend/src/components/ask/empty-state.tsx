@@ -1,29 +1,26 @@
 "use client";
 
-import { ArrowUpRight, CalendarHeart, CloudRain, GitCompareArrows, LineChart, Sparkles, Wind } from "lucide-react";
+import { ArrowUpRight, CalendarHeart, CloudRain, GitCompareArrows, LineChart } from "lucide-react";
 
 // Exact questions from docs/ui-design-spec.md (Ask screen, empty state).
 export const SUGGESTED = [
   { q: "Compare Delhi and Mumbai over the last 30 days", icon: GitCompareArrows },
   { q: "Was Delhi worse around Diwali 2025 than Diwali 2024?", icon: CalendarHeart },
   { q: "Show PM2.5 levels in Kolkata for the last 30 days", icon: LineChart },
-  { q: "Which days were unusually polluted in Delhi?", icon: Sparkles },
-  { q: "How did wind speed relate to PM2.5 in Hyderabad?", icon: Wind },
   { q: "Is rain associated with lower PM2.5 in Mumbai?", icon: CloudRain },
 ];
 
 export function EmptyState({ onAsk, disabled }: { onAsk: (q: string) => void; disabled?: boolean }) {
   return (
-    <section className="mx-auto flex w-full max-w-[760px] flex-col gap-6 px-4 py-10 sm:py-16" aria-labelledby="empty-title">
+    <section className="sq-rise mx-auto flex w-full max-w-[760px] flex-col gap-6 px-4 py-8 sm:py-14" aria-labelledby="empty-title">
       <div>
-        <h2 id="empty-title" className="text-[24px] leading-8 font-semibold">What do you want to know about the air?</h2>
-        <p className="mt-2 text-sm text-subtle">
-          PM2.5 (fine particles) and PM10 (coarse particles) in µg/m³ (micrograms per cubic metre), and the official AQI (Air Quality Index) from
-          CPCB (Central Pollution Control Board) bulletins, for Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad. Every answer shows its
-          data type, period, stations, coverage and source.
+        <h2 id="empty-title" className="text-[24px] leading-8 font-semibold">Hi! What would you like to know about the air?</h2>
+        <p className="mt-2 text-sm leading-6 text-subtle">
+          Ask about PM2.5, PM10 or official AQI in Delhi, Mumbai, Kolkata, Chennai, Bengaluru or Hyderabad. Every number
+          in an answer is calculated from real measurements and checked; click one to see where it came from.
         </p>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2">
         {SUGGESTED.map(({ q, icon: Icon }) => (
           <li key={q}>
             <button

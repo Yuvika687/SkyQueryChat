@@ -46,11 +46,11 @@
   "google": "Per-model free-tier quotas from the owner's AI Studio (2026-11-06; usage there is a 28-day peak). Provider 429 bodies name the quota per project per model."
  },
  "limits": {
-  "_note": "max_tokens_per_question is the one per-question token cap (12,000, set 2026-11-08). The API uses it as the hard cap and the shared quota reserves the same amount for each new question, so a question can never use more than it reserved. Measured max on current code: 9,825 tokens (holdout2 first pass); mean about 4,200-5,500. Env TOKENS_PER_QUESTION may only lower it. model_request_timeout_s: each single model request (including the SDK's own retries) is stopped after this many seconds and the chain moves to the next model; the whole question still stops at QUESTION_TIMEOUT_S (60 s).",
+  "_note": "max_tokens_per_question is the one per-question token cap (16,000 since 2026-11-16, was 12,000: a comparison with one correction needs about 10,000-13,000). The API uses it as the hard cap and the shared quota reserves the same amount for each new question, so a question can never use more than it reserved. Measured max on current code: 9,825 tokens (holdout2 first pass); mean about 4,200-5,500. Env TOKENS_PER_QUESTION may only lower it. model_request_timeout_s: each single model request (including the SDK's own retries) is stopped after this many seconds and the chain moves to the next model; the whole question still stops at QUESTION_TIMEOUT_S (60 s).",
   "request_limit": 10,
   "output_retries": 3,
   "max_history_turns": 2,
-  "max_tokens_per_question": 12000,
+  "max_tokens_per_question": 16000,
   "model_request_timeout_s": 20
  },
  "quota": {

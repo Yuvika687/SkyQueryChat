@@ -278,13 +278,13 @@ def test_one_token_cap_for_run_limit_and_reservation(monkeypatch):
     from backend.api.settings import Settings, question_token_cap
     cfg = M.load_config()
     cap = cfg["limits"]["max_tokens_per_question"]
-    assert cap == 12_000 and "question_tokens" not in cfg["quota"]
+    assert cap == 16_000 and "question_tokens" not in cfg["quota"]
     assert QuotaManager.from_config(cfg).cfg.question_tokens == cap == question_token_cap()
     monkeypatch.delenv("TOKENS_PER_QUESTION", raising=False)
     assert Settings().tokens_per_question == cap
     monkeypatch.setenv("TOKENS_PER_QUESTION", "8000")                # env may lower the cap
     assert Settings().tokens_per_question == 8000
-    monkeypatch.setenv("TOKENS_PER_QUESTION", "16000")               # but never raise it above the reservation
+    monkeypatch.setenv("TOKENS_PER_QUESTION", "20000")               # but never raise it above the reservation
     assert Settings().tokens_per_question == cap
 
 

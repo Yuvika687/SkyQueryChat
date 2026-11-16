@@ -490,7 +490,7 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         f = json.loads(final.model_dump_json())
         return [sse("answer", {"status": f["status"], "kind": f.get("kind", "data"), "text": f["answer"],
                                "headline": f.get("headline"),
-                               "explanation": f["explanation"], "method": f.get("method", ""),
+                               "explanation": f["explanation"], "takeaway": f.get("takeaway", ""), "method": f.get("method", ""),
                                "follow_ups": f.get("follow_ups", []),
                                "clarifying_question": f["clarifying_question"], "data_types": f["data_types"],
                                "resolved_query": f.get("resolved_query"), "required_warnings": f.get("required_warnings", []),
@@ -521,7 +521,7 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
         new = "method" in f                         # saved before answers were LLM-written: explanation was code text
         yield sse("answer", {"status": f["status"], "kind": f.get("kind", "data"), "comparison": f.get("comparison"),
                              "text": f["answer"], "headline": f.get("headline") or f["answer"],
-                             "explanation": f.get("explanation", "") if new else "",
+                             "explanation": f.get("explanation", "") if new else "", "takeaway": f.get("takeaway", ""),
                              "method": f.get("method", "") if new else f.get("explanation", ""),
                              "follow_ups": f.get("follow_ups", []),
                              "clarifying_question": f.get("clarifying_question"), "data_types": f.get("data_types", []),
