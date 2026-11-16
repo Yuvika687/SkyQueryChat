@@ -469,8 +469,9 @@ def test_memory_fits_render_free_tier():
             "a=core.build_agent();"
             "r=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss;"
             "print(json.dumps({'max_rss_mb': round(r/(1024*1024 if sys.platform=='darwin' else 1024),1)}))")
+    # the same memory setting as Render (render.yaml): Arrow's default allocator holds on to freed memory
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT,
-                         env={**os.environ, "PYTHONPATH": str(ROOT)}, timeout=180)
+                         env={**os.environ, "PYTHONPATH": str(ROOT), "ARROW_DEFAULT_MEMORY_POOL": "system"}, timeout=180)
     mb = json.loads(out.stdout.strip().splitlines()[-1])["max_rss_mb"]
     print(f"peak RSS {mb} MB")
     assert mb < 400, mb          # Render free tier: 512 MB
