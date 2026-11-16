@@ -1,5 +1,5 @@
 {
- "built_utc": "2026-11-16T16:54:47+00:00",
+ "built_utc": "2026-11-16T17:39:59+00:00",
  "cities": [
   "Delhi",
   "Mumbai",
@@ -26,8 +26,8 @@
   "note": "API readings are used only for location-days the archive had not published; a later refresh replaces them with archive files."
  },
  "build": {
-  "mode": "full",
-  "reprocessed_from": "2025-02-18"
+  "mode": "incremental",
+  "reprocessed_from": "2026-11-12"
  },
  "sources": {
   "openaq": "updated",
@@ -85,6 +85,7 @@
   "opencity_blanks": 54154
  },
  "other_sensor_rows_ignored": 0,
+ "other_sensor_rows_ignored_in_reprocessed_days": 0,
  "delhi_panel": {
   "pm25": 31,
   "pm10": 28,

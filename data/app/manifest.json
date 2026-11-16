@@ -1,5 +1,5 @@
 {
- "derived_from": "2026-11-16T16:54:47+00:00",
+ "derived_from": "2026-11-16T17:39:59+00:00",
  "openaq_data_end": "2026-11-15",
  "openaq_archive_end": "2026-11-12",
  "openaq_api_topup": {
@@ -87,8 +87,8 @@
   "diwali_pm_status.parquet": 6519,
   "network_gaps.parquet": 13919,
   "station_daily.parquet": 2481685,
-  "stations.parquet": 18995,
+  "stations.parquet": 18989,
   "weather_daily.parquet": 26437
  },
- "total_bytes": 3269838
+ "total_bytes": 3269832
 }
