@@ -616,6 +616,30 @@ def test_compare_page_data(store):
         assert c.get("/api/compare", params={"cities": "Delhi,Mumbai", "start": "2020-01-01", "end": "2020-02-01"}).status_code == 400
 
 
+def test_compare_any_bulletin_city_for_official_aqi_and_2026_presets(store):
+    with TestClient(make(store)) as c:
+        per = c.get("/api/compare/periods").json()
+        ids = {p["id"] for p in per["presets"]}
+        assert {"2026", "post-monsoon-2026", "diwali-2026"} <= ids
+        assert all(p["end"] <= per["data_end"] for p in per["presets"])
+        p30 = next(p for p in per["presets"] if p["id"] == "30d")
+        r = c.get("/api/compare", params={"cities": "Delhi,lucknow,Bangalore", "metric": "aqi",
+                                           "start": p30["start"], "end": p30["end"]})
+        assert r.status_code == 200, r.text
+        d = r.json()
+        assert set(d["lines"]) == {"Delhi", "Lucknow", "Bengaluru"}          # names resolved (Bangalore -> Bengaluru)
+        t = store.tables["city_aqi_all"]
+        lk = t[(t["city"] == "Lucknow")]
+        last = str(max(x for x in lk["bulletin_date"].astype(str) if x <= p30["end"]))[:10]
+        i = d["dates"].index(last)
+        assert d["lines"]["Lucknow"][i] == float(lk[lk["bulletin_date"].astype(str).str[:10] == last]["aqi"].iat[0])
+        # PM2.5 stays six-metro; unknown places are refused
+        assert c.get("/api/compare", params={"cities": "Delhi,Lucknow", "metric": "pm25", "start": p30["start"],
+                                             "end": p30["end"]}).status_code == 400
+        assert c.get("/api/compare", params={"cities": "Delhi,Shimla", "metric": "aqi", "start": p30["start"],
+                                             "end": p30["end"]}).status_code == 400
+
+
 def test_accuracy_reports_first_pass_scores_and_crosscheck(store):
     with TestClient(make(store)) as c:
         d = c.get("/api/accuracy").json()

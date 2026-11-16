@@ -33,7 +33,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ bu
   };
 
   return (
-    <div className="bg-background px-4 pt-2 pb-3">
+    <div className="bg-gradient-to-t from-background from-70% to-transparent px-4 pt-3 pb-3">
       <form
         className="mx-auto flex w-full max-w-[760px] flex-col gap-1.5"
         onSubmit={(e) => {
@@ -41,7 +41,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ bu
           submit();
         }}
       >
-        <div className="card flex items-end gap-2 rounded-2xl p-2 focus-within:border-teal/70">
+        <div className="card flex items-end gap-2 rounded-2xl p-2 transition-shadow focus-within:border-teal/70 focus-within:shadow-[0_0_0_4px_rgb(45_212_191/0.1),0_0_40px_-12px_rgb(45_212_191/0.5)]">
           <label htmlFor="question" className="sr-only">Your question</label>
           <textarea
             id="question"
@@ -74,7 +74,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ bu
               aria-label="Send"
               disabled={!text.trim()}
               className={cn(
-                "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-teal px-3 text-sm font-medium text-background hover:bg-teal-hover disabled:bg-raised disabled:text-subtle",
+                "sq-shine inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-b from-[#5EEAD4] to-teal px-3 text-sm font-semibold text-background shadow-[0_6px_18px_-6px_rgb(45_212_191/0.6)] transition-all hover:brightness-110 disabled:from-raised disabled:to-raised disabled:text-subtle disabled:shadow-none",
               )}
             >
               <ArrowUp className="size-4" aria-hidden />

@@ -74,6 +74,8 @@ export type ChartPoint = [string | number, number | null] | Record<string, unkno
 export interface ChartSeries {
   name: string;
   type?: string;
+  /** optional fixed colour (e.g. a non-metro city on Compare) */
+  colour?: string;
   data: ChartPoint[];
 }
 

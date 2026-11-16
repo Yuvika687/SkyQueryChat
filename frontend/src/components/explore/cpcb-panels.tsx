@@ -2,6 +2,7 @@
 
 // The "All CPCB cities (official AQI)" layer: a searchable list of every bulletin city (cities without a confident map
 // location are listed, marked "not on the map") and one city's panel with its latest bulletin and 30-day chart.
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MapPinOff, MessageSquare, Search, X } from "lucide-react";
@@ -20,8 +21,12 @@ export function LayerSwitch({ value, onChange }: { value: "stations" | "cpcb"; o
     <div role="radiogroup" aria-label="Map layer" className="grid h-9 grid-cols-2 rounded-full bg-white/[0.05] p-0.5">
       {opts.map(([k, label]) => (
         <button key={k} type="button" role="radio" aria-checked={value === k} onClick={() => onChange(k)}
-          className={cn("rounded-full px-3 text-[13px] font-medium whitespace-nowrap",
-            value === k ? "bg-teal text-teal-ink" : "text-subtle hover:text-foreground")}>
+          className={cn("relative isolate rounded-full px-3 text-[13px] font-medium whitespace-nowrap transition-colors duration-200",
+            value === k ? "text-teal-ink" : "text-subtle hover:text-foreground")}>
+          {value === k && (
+            <motion.span layoutId="layer-switch" aria-hidden transition={{ type: "spring", stiffness: 460, damping: 36 }}
+              className="absolute inset-0 -z-10 rounded-full bg-gradient-to-b from-[#5EEAD4] to-teal shadow-[0_4px_16px_-4px_rgb(45_212_191/0.6)]" />
+          )}
           {label}
         </button>
       ))}
@@ -86,7 +91,8 @@ export function CpcbCityPanel({ name, onClose }: { name: string; onClose: () => 
     return () => { live = false; };
   }, [name]);
   const head = (
-    <div className="flex items-start gap-3">
+    // stays at the top of the panel while its content scrolls
+    <div className="flex items-start gap-3 md:sticky md:top-0 md:z-10 md:-mx-5 md:bg-[#0b1324] md:px-5 md:pt-5 md:pb-3">
       <div className="min-w-0 flex-1">
         <h2 className="text-[22px] leading-7 font-semibold">{d?.city ?? name}</h2>
         <p className="mt-0.5 text-[13px] text-faint">{d ? cpcbLabel(d.latest.date) : "Official AQI (CPCB 4 PM bulletin)"}</p>

@@ -32,7 +32,7 @@ export function AskBox({ placeholder, hint, suggestions = [], className }: {
           if (q.trim()) go(q);
           else input.current?.focus();
         }}
-        className="card flex items-center gap-2 rounded-2xl py-2 pr-2 pl-5 focus-within:border-teal/60"
+        className="card sq-ring flex items-center gap-2 rounded-2xl py-2 pr-2 pl-5 focus-within:border-teal/60 focus-within:shadow-[0_0_0_4px_rgb(45_212_191/0.1),var(--shadow-card)]"
       >
         <label htmlFor="home-q" className="sr-only">Your question</label>
         <input
@@ -47,10 +47,10 @@ export function AskBox({ placeholder, hint, suggestions = [], className }: {
         />
         <button
           type="submit"
-          className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-teal px-5 text-sm font-semibold text-teal-ink transition-colors hover:bg-teal-hover"
+          className="sq-shine group/ask inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-b from-[#5EEAD4] to-teal px-5 text-sm font-semibold text-teal-ink shadow-[0_6px_20px_-6px_rgb(45_212_191/0.6)] transition-all hover:brightness-110"
         >
           Ask
-          <ArrowRight className="size-4" aria-hidden />
+          <ArrowRight className="size-4 transition-transform group-hover/ask:translate-x-0.5" aria-hidden />
         </button>
       </form>
       {hint && <p className="mt-2.5 px-1 text-[13px] text-faint">{hint}</p>}
@@ -63,8 +63,8 @@ export function AskBox({ placeholder, hint, suggestions = [], className }: {
                 type="button"
                 onClick={() => go(s)}
                 className={cn(
-                  "rounded-full border border-line bg-white/[0.03] px-3 py-1.5 text-left text-[13px] whitespace-nowrap text-subtle transition-colors md:whitespace-normal",
-                  "hover:border-teal/50 hover:text-foreground",
+                  "rounded-full border border-line bg-white/[0.03] px-3 py-1.5 text-left text-[13px] whitespace-nowrap text-subtle transition-all duration-200 md:whitespace-normal",
+                  "hover:-translate-y-px hover:border-teal/50 hover:bg-teal/[0.06] hover:text-foreground",
                 )}
               >
                 {s}

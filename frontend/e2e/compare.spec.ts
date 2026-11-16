@@ -35,7 +35,22 @@ test("compare: purpose, chart, ranking with ranges, URL keeps the selection, AI 
 
 test("compare: custom dates come from the address", async ({ page }) => {
   await page.goto("/compare?cities=delhi,mumbai&metric=pm25&start=2026-10-20&end=2026-11-05");
-  await expect(page.getByLabel("Period")).toHaveValue("custom");
+  await expect(page.getByRole("radio", { name: "Custom dates" })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByLabel("From")).toHaveValue("2026-10-20");
   await expect(page.getByRole("heading", { name: "Ranking" })).toBeVisible({ timeout: 30_000 });
+});
+
+test("compare: official AQI for any bulletin city, and 2026 periods", async ({ page }) => {
+  await page.goto("/compare?cities=delhi,mumbai&metric=aqi&period=30d");
+  await expect(page.getByRole("radio", { name: "2026 so far" })).toBeVisible({ timeout: 30_000 });
+  const add = page.getByRole("combobox", { name: "Add any CPCB bulletin city" });
+  await add.fill("Lucknow");
+  await page.getByRole("option", { name: /Lucknow/ }).click();
+  await expect(page).toHaveURL(/cities=delhi(%2C|,)mumbai(%2C|,)Lucknow/);
+  await expect(page.getByRole("button", { name: "Remove Lucknow" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ranking" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("table:visible, ol:visible").filter({ hasText: "Lucknow" }).first()).toBeVisible();
+  // PM2.5 is measured for the six metros only: the other city leaves the selection
+  await page.getByRole("radio", { name: "PM2.5" }).click();
+  await expect(page).not.toHaveURL(/Lucknow/);
 });

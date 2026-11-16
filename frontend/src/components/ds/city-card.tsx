@@ -24,7 +24,7 @@ export function CityCard({ city, rank, date, pollutantLabel = "PM2.5" }: {
   return (
     <Link
       href={`/city/${city.city.toLowerCase()}`}
-      className="card group sq-lift flex h-full flex-col px-4 py-3 transition-colors hover:border-line-strong md:p-6"
+      className="card sq-glow group sq-lift flex h-full flex-col px-4 py-3 transition-colors hover:border-line-strong md:p-6"
       aria-label={`${city.city}: ${city.value} µg/m³ ${pollutantLabel}, ${cat ?? "no category"}, ${fmtDate(date)}${city.change != null && city.previous ? `, ${city.change > 0 ? "up" : city.change < 0 ? "down" : "no change"} ${Math.abs(city.change).toFixed(1)} from ${fmtDate(city.previous.date)}` : ""}, ${city.stations_reporting} of ${city.stations_total} stations reporting.${city.official_aqi ? ` ${officialAqiText(city.official_aqi)}.` : ""}${health ? ` CPCB health note: ${health}.` : ""} Open the city page.`}
     >
       {/* phone: two rows */}

@@ -26,6 +26,8 @@ services:
         value: system               # returns Parquet read memory to the system (measured: about 120 MB lower peak)
       - key: GEMINI_API_KEY
         sync: false
+      - key: GEMINI_API_KEY_2       # optional backup Gemini key (best from another Google project); used when the first runs out
+        sync: false
       - key: ALLOWED_ORIGINS        # the Vercel address, e.g. https://<project>.vercel.app (no trailing slash)
         sync: false
       - key: DEMO_ACCESS_TOKEN      # optional owner demo pass; must match the same variable on Vercel

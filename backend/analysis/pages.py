@@ -155,10 +155,19 @@ def compare_page(s: Store, cities: list[str], metric: str, start: date, end: dat
     """Daily lines on matching dates, ranking with 95% ranges, and each city's trend. metric: pm25, pm10 or aqi."""
     days = (end - start).days + 1
     if metric == "aqi":
+        metros = [c for c in cities if c in C.CITIES]
         q = s.q("SELECT city, bulletin_date AS d, aqi FROM city_daily_aqi WHERE bulletin_date BETWEEN ? AND ? "
-                "AND city IN (" + ",".join("?" * len(cities)) + ")", [start, end, *cities])
+                "AND city IN (" + ",".join("?" * max(1, len(metros))) + ")", [start, end, *(metros or [""])])
         q["d"] = pd.to_datetime(q["d"]).dt.date
-        series = {c: {d: v for d, v in zip(q[q.city == c].d, q[q.city == c].aqi) if pd.notna(v)} for c in cities}
+        series = {c: {d: v for d, v in zip(q[q.city == c].d, q[q.city == c].aqi) if pd.notna(v)} for c in metros}
+        if len(metros) < len(cities):     # other bulletin cities: the all-cities bulletin table (same CPCB 4 PM values)
+            t = s.tables["city_aqi_all"]
+            for c in cities:
+                if c in series:
+                    continue
+                g = t[t["city"] == c]
+                ds = pd.to_datetime(g["bulletin_date"]).dt.date
+                series[c] = {d: float(v) for d, v in zip(ds, g["aqi"]) if pd.notna(v) and start <= d <= end}
         common = set.intersection(*(set(v) for v in series.values())) if series else set()
         rows = []
         for c in cities:
@@ -220,6 +229,13 @@ def periods(s: Store) -> dict:
         {"id": "winter-2025-26", "label": "Winter 2025–26", "start": date(2025, 12, 1), "end": date(2026, 2, 28)},
         {"id": "post-monsoon-2025", "label": "Post-monsoon 2025", "start": date(2025, 10, 1), "end": date(2025, 11, 30)},
     ]
+    # 2026 periods (only those that have started; each ends at the latest data)
+    for pid, lab, a, b in (("2026", "2026 so far", date(2026, 1, 1), date(2026, 12, 31)),
+                           ("summer-2026", "Summer 2026", date(2026, 3, 1), date(2026, 5, 31)),
+                           ("monsoon-2026", "Monsoon 2026", date(2026, 6, 1), date(2026, 9, 30)),
+                           ("post-monsoon-2026", "Post-monsoon 2026", date(2026, 10, 1), date(2026, 11, 30))):
+        if a <= end:
+            pre.append({"id": pid, "label": lab, "start": a, "end": min(b, end)})
     for y in (2025, 2026):
         d = C.diwali_date(y)
         if d + timedelta(days=7) <= end or y == 2026:

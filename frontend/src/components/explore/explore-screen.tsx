@@ -247,7 +247,7 @@ export function ExploreScreen() {
             </div>
           )}
           {cpcbOn && cpcbCity && (
-            <aside aria-label="City" className="absolute top-[76px] right-4 bottom-4 z-10 w-[370px] overflow-y-auto rounded-3xl border border-line-strong bg-[#0b1324]/[0.97] p-5 shadow-float backdrop-blur-xl">
+            <aside key={cpcbCity} aria-label="City" className="sq-slide-in absolute top-[76px] right-4 bottom-4 z-10 w-[370px] overflow-y-auto rounded-3xl border border-line-strong bg-[#0b1324]/[0.97] p-5 pt-0 shadow-float backdrop-blur-xl">
               <CpcbCityPanel name={cpcbCity} onClose={() => setCpcbCity(null)} />
             </aside>
           )}

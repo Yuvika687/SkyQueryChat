@@ -96,7 +96,14 @@ function shortLabel(c: Card, sameCity: string | null): { label: string; sub: str
 
 /** Up to three key numbers; rank cards are dropped (the answer already says which is higher). */
 export function keyNumbers(cards: Card[], max = 3): KeyNumber[] {
-  const usable = cards.filter((c) => !/(^|_)rank$/.test(c.field));
+  // rank cards are dropped, and the same figure is shown once (older saved answers may repeat a card)
+  const seen = new Set<string>();
+  const usable = cards.filter((c) => {
+    const k = `${c.label}|${c.value}`;
+    if (/(^|_)rank$/.test(c.field) || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
   const cities = new Set(usable.map((c) => c.label.split(" ")[0]));
   const sameCity = cities.size === 1 ? [...cities][0] : null;
   return usable.slice(0, max).map((c) => {

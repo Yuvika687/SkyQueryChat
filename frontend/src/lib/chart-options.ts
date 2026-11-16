@@ -124,17 +124,18 @@ function lineOption(spec: ChartSpec, dataType: DataType | null) {
         itemStyle: { color: C.warning, borderColor: C.surface, borderWidth: 1 },
       };
     }
-    const colour = modelled ? C.modelled : CITY_COLOURS[s.name] ?? (i === 0 ? C.accent : /median|rolling/i.test(s.name) ? C.sub : YEAR_COLOURS[i % 3]);
+    const colour = modelled ? C.modelled : s.colour ?? CITY_COLOURS[s.name] ?? (i === 0 ? C.accent : /median|rolling/i.test(s.name) ? C.sub : YEAR_COLOURS[i % 3]);
     const isRef = /median|rolling/i.test(s.name);
-    const single = spec.series.length === 1 && pol && !modelled;
+    const aqiLine = spec.series.length === 1 && !pol && isAQI(spec) && time && !modelled;   // one official AQI line
+    const single = (spec.series.length === 1 && pol && !modelled) || aqiLine;
     return {
       name: s.name, type: "line", smooth: false, connectNulls: false,
       data: single ? withGaps(s.data).map((p) => {
         const v = Array.isArray(p) ? (p[1] as number | null) : null;
-        const cat = v == null ? null : pmCategoryOf(v, pol!);
+        const cat = v == null ? null : aqiLine ? aqiCategory(v) : pmCategoryOf(v, pol!);
         return { value: p, itemStyle: cat ? { color: CATEGORY_STYLE[cat].bg, borderColor: "#0E1729", borderWidth: 1 } : undefined };
       }) : withGaps(s.data),
-      ...(single && time ? { markPoint: { symbol: "pin", symbolSize: 34, label: { color: "#06140B", fontSize: 10, fontWeight: 600, formatter: (q: { value: number }) => q.value.toFixed(1) },
+      ...(single && time ? { markPoint: { symbol: "pin", symbolSize: 34, label: { color: "#06140B", fontSize: 10, fontWeight: 600, formatter: (q: { value: number }) => (aqiLine ? String(Math.round(q.value)) : q.value.toFixed(1)) },
         itemStyle: { color: C.text }, data: [{ type: "max", name: "Highest" }] } } : {}),
       // small symbols on dense series so a single day between two gaps is still visible
       showSymbol: true, symbolSize: s.data.length <= 2 ? 10 : s.data.length <= 40 ? 5 : 2,

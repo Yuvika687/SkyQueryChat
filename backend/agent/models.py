@@ -19,6 +19,25 @@ from .quota import LimitedModel, ModelTimeout, QuotaExceeded, QuotaManager
 
 CONFIG = Path(__file__).resolve().parents[1] / "config" / "models.json"
 KEY_ENV = {"groq": "GROQ_API_KEY", "google": "GEMINI_API_KEY"}
+# Optional second Gemini key (ideally from a different Google Cloud project, because Gemini free quotas are per
+# project per model). When it is set, the same Gemini models are appended to the chain with this key, after every
+# model on the main key, so the app keeps answering when the main key's daily quota is used up.
+BACKUP_KEY_ENVS = ("GEMINI_API_KEY_2", "GEMINI_API_KEY_BACKUP")
+BACKUP_SUFFIX = "@backup"
+
+
+def backup_gemini_key() -> str | None:
+    """The backup Gemini key, if one is set and differs from the main key. Never logged or returned."""
+    main = os.environ.get("GEMINI_API_KEY", "")
+    for name in BACKUP_KEY_ENVS:
+        key = os.environ.get(name, "").strip()
+        if key and key != main:
+            return key
+    return None
+
+
+def gemini_configured() -> bool:
+    return bool(os.environ.get("GEMINI_API_KEY") or backup_gemini_key())
 
 
 @dataclass
@@ -64,8 +83,8 @@ def live_labels(cfg: dict | None = None) -> list[str]:
     return [e.label for e in model_chain(cfg)]
 
 
-def _build_one(e: ModelEntry):
-    key = os.environ.get(e.key_env)
+def _build_one(e: ModelEntry, key: str | None = None):
+    key = key or os.environ.get(e.key_env)
     if not key:
         return None
     if e.provider == "groq":
@@ -101,7 +120,9 @@ def _record_fallback(exc: Exception, quota: QuotaManager | None = None) -> bool:
                          "reason": exc.reason if local else None})
     del FALLBACK_LOG[:-50]
     if rate_limited and not local:            # a real provider 429: tell the shared limiter
-        pq = (quota or QUOTA).by_model_name(getattr(exc, "model_name", None))
+        q = quota or QUOTA
+        key = getattr(exc, "sq_quota_key", None)
+        pq = q.get(key) if key else q.by_model_name(getattr(exc, "model_name", None))
         if pq:
             pq.on_provider_error(per_day=per_day, rate_limited=True)
     return isinstance(exc, ModelAPIError)
@@ -124,8 +145,12 @@ def build_model(chain: list[ModelEntry] | None = None, quota: QuotaManager | Non
     """FallbackModel over every configured entry whose key is present. Raises if none."""
     chain = chain if chain is not None else model_chain()
     pairs = [(e.label, m) for e, m in ((e, _build_one(e)) for e in chain) if m is not None]
+    backup = backup_gemini_key()
+    if backup:      # same Gemini models on the backup key, after the main key's models (own quota counters)
+        pairs += [(e.label + BACKUP_SUFFIX, m) for e, m in
+                  ((e, _build_one(e, backup)) for e in chain if e.provider == "google") if m is not None]
     if not pairs:
-        raise RuntimeError("No model available: add GEMINI_API_KEY to .env")
+        raise RuntimeError("No model available: add GEMINI_API_KEY (and optionally GEMINI_API_KEY_2) to .env")
     return limited_chain(pairs, quota)
 
 
