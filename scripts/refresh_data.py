@@ -120,10 +120,29 @@ def check(before_ends: dict, before: dict, app: Path = APP) -> tuple[dict, list[
     return after_ends, problems
 
 
+STAMP_KEYS = {"built_utc", "derived_from"}       # build times: a change in these alone is not new data
+
+
+def _strip_stamps(x):
+    if isinstance(x, dict):
+        return {k: _strip_stamps(v) for k, v in x.items() if k not in STAMP_KEYS}
+    if isinstance(x, list):
+        return [_strip_stamps(v) for v in x]
+    return x
+
+
 def _changed() -> bool:
+    """True when any data file changed, ignoring manifests whose only change is a build time."""
     r = subprocess.run(["git", "status", "--porcelain", "--", "data/app", "data/processed", "docs/crosscheck_bulletins.json"],
                        cwd=ROOT, capture_output=True, text=True, check=True)
-    return bool(r.stdout.strip())
+    for line in r.stdout.splitlines():
+        path = line[3:].strip()
+        if not path.endswith("manifest.json") or line.startswith("??"):
+            return True
+        old = subprocess.run(["git", "show", f"HEAD:{path}"], cwd=ROOT, capture_output=True, text=True)
+        if old.returncode != 0 or _strip_stamps(json.loads(old.stdout)) != _strip_stamps(json.loads((ROOT / path).read_text())):
+            return True
+    return False
 
 
 def main() -> int:

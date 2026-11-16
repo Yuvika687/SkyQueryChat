@@ -81,12 +81,13 @@ def assert_order(evs):
 # ----------------------------------------------------------------------------- read-only endpoints
 def test_health_is_fast_and_has_no_secrets(store, monkeypatch):
     monkeypatch.setenv("GROQ_API_KEY", "gsk_THIS_IS_A_FAKE_TEST_KEY_123456")
+    monkeypatch.setenv("GEMINI_API_KEY", "AIza_THIS_IS_A_FAKE_TEST_KEY_123456")   # ai_configured means a Gemini key is set
     with TestClient(make(store)) as c:
         r = c.get("/api/health")
         assert r.status_code == 200 and r.json()["status"] == "ok" and r.json()["data_loaded"]
         assert r.json()["ai_configured"] is True
         for path in ("/api/health", "/api/meta", "/api/limits", "/api/accuracy"):
-            assert "gsk_THIS_IS_A_FAKE" not in c.get(path).text
+            assert "gsk_THIS_IS_A_FAKE" not in c.get(path).text and "AIza_THIS_IS_A_FAKE" not in c.get(path).text
 
 
 def test_data_endpoints(store):
@@ -464,6 +465,7 @@ def test_memory_fits_render_free_tier():
             "[c.get(p) for p in ('/api/health','/api/cities','/api/stations','/api/trends?city=Delhi&freq=D',"
             "'/api/coverage?city=Delhi','/api/diwali/Delhi')];"
             "from backend.agent import core;import os;os.environ.setdefault('GROQ_API_KEY','gsk_fake_for_memory_test');"
+            "os.environ.setdefault('GEMINI_API_KEY','fake_for_memory_test');"
             "a=core.build_agent();"
             "r=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss;"
             "print(json.dumps({'max_rss_mb': round(r/(1024*1024 if sys.platform=='darwin' else 1024),1)}))")

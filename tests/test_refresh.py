@@ -121,3 +121,14 @@ def test_refresh_checks_reject_changed_history_backwards_dates_and_oversize(tmp_
     assert R._unchanged(old["city_daily"], new.assign(city_mean=[100.0, 1.0]), ["city", "pollutant", "local_date"],
                         ["city_mean", "meets_rule"], date(2026, 11, 1), "local_date") == 0
     assert R.SIZE_LIMIT_MB >= 5
+
+
+def test_a_manifest_that_differs_only_in_its_build_time_is_not_new_data():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("refresh_data", Path(__file__).resolve().parents[1] / "scripts" / "refresh_data.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    a = {"built_utc": "2026-11-16T08:00:00+00:00", "openaq_data_end": "2026-11-15", "rows": {"x": 1}}
+    b = {**a, "built_utc": "2026-11-17T02:00:00+00:00"}
+    assert m._strip_stamps(a) == m._strip_stamps(b)
+    assert m._strip_stamps(a) != m._strip_stamps({**b, "openaq_data_end": "2026-11-16"})

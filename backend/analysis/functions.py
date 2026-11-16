@@ -37,6 +37,13 @@ def weekly_points(dates, values) -> list[list]:
     return [[p.start_time.date().isoformat(), r(m)] for p, (m, n) in g.iterrows() if n >= WEEK_MIN_DAYS]
 
 
+def _ist_iso(t) -> str:
+    """A bulletin time in Indian Standard Time. DuckDB returns time-zone-aware values in the machine's own zone (UTC on
+    Render and GitHub), so convert explicitly."""
+    ts = pd.Timestamp(t)
+    return (ts.tz_localize("UTC") if ts.tzinfo is None else ts).tz_convert("Asia/Kolkata").isoformat()
+
+
 def _iso(d) -> str:
     """A daily value's date as 'yyyy-mm-dd' (never a timestamp with a time of day)."""
     return pd.Timestamp(d).date().isoformat()
@@ -767,7 +774,7 @@ def official_aqi_by_date(s: Store, dates: list[date]) -> dict[str, dict[date, di
             continue
         out.setdefault(x.city, {})[d] = {
             "date": str(d), "aqi": int(round(float(x.aqi))), "category": x.aqi_category,
-            "period_start": pd.Timestamp(x.period_start_ist).isoformat(), "period_end": pd.Timestamp(x.period_end_ist).isoformat(),
+            "period_start": _ist_iso(x.period_start_ist), "period_end": _ist_iso(x.period_end_ist),
             "source": x.source}
     return out
 

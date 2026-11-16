@@ -10,7 +10,8 @@ test("data & accuracy panel", async ({ page }) => {
   }
   await expect(panel.getByText("Main question set")).toBeVisible();
   await expect(panel.getByText(/^\d+\/\d+$/).first()).toBeVisible();
-  await expect(panel.getByText("8/8 (after fixing a trend-wording bug found in a first run of 5/8)")).toBeVisible();
+  await expect(panel.getByText("Statistics and comparison questions")).toBeVisible();
+  await expect(panel.getByText("Conversation questions")).toBeVisible();
   await expect(panel.getByText(/Survey of India/)).toBeVisible();
   await expect(panel.getByText(/Health Statements for AQI Categories/)).toBeVisible();
   await expect(panel.getByText("GODL-India")).toBeVisible();
