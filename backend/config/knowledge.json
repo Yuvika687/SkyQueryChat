@@ -1,0 +1,62 @@
+{
+ "_note": "Verified facts for greeting, project and air-quality knowledge answers (backend/agent/knowledge.py). Answers of those kinds may use only numbers from this file or from the live data windows; the number checker enforces it. Sources: CPCB National AQI table and the 'Health Statements for AQI Categories' printed in CPCB's daily AQI bulletin (verbatim, checked 2026-11-13, also in frontend/src/lib/health.ts); CPCB AQI colours and breakpoints (checked 2026-11-06, frontend/src/lib/categories.ts and backend/analysis/aqi.py); India NAAQS 2009 and WHO 2021 24-hour guidelines (frontend/src/lib/categories.ts); the glossary in frontend/src/lib/glossary.ts; data sources and limits from CLAUDE.md and backend/config/known_limits.json. Do not add a fact without its source.",
+ "assistant": {
+  "name": "SkyQueryChat",
+  "role": "an air-quality analyst for six Indian cities",
+  "cities": ["Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"],
+  "pollutants": ["PM2.5", "PM10"],
+  "abilities": [
+   "PM2.5 and PM10 levels and trends for one city and any period in the data",
+   "comparisons between the six cities",
+   "official CPCB AQI around Diwali 2024, 2025 and 2026",
+   "unusually high or low pollution days",
+   "how weather (temperature, humidity, wind, rain) is associated with PM levels",
+   "data coverage and quality for a city"
+  ],
+  "how_answers_work": "The AI writes the wording; Python calculates every number from the stored data, and a checker confirms each number before the answer is shown, with its source, stations and coverage.",
+  "cannot_do": ["other cities or all-India coverage", "pollutants other than PM2.5 and PM10 (official AQI is shown as published)", "forecasts", "medical advice beyond CPCB's health statements"]
+ },
+ "aqi": {
+  "what": "The National Air Quality Index (AQI) published by CPCB turns up to eight pollutants into one number from 0 to 500 and a category. It is an index, not a concentration, so it is never the same as a PM2.5 value.",
+  "bulletin": "CPCB publishes a daily AQI bulletin at 4 PM; each city value is the average of the past 24 hours (4 PM to 4 PM).",
+  "categories": [
+   {"category": "Good", "aqi": [0, 50], "pm25_24h_ugm3": [0, 30], "pm10_24h_ugm3": [0, 50], "health_statement": "Minimal Impact"},
+   {"category": "Satisfactory", "aqi": [51, 100], "pm25_24h_ugm3": [31, 60], "pm10_24h_ugm3": [51, 100], "health_statement": "Minor breathing discomfort to sensitive people"},
+   {"category": "Moderate", "aqi": [101, 200], "pm25_24h_ugm3": [61, 90], "pm10_24h_ugm3": [101, 250], "health_statement": "Breathing discomfort to the people with lungs, asthma and heart diseases"},
+   {"category": "Poor", "aqi": [201, 300], "pm25_24h_ugm3": [91, 120], "pm10_24h_ugm3": [251, 350], "health_statement": "Breathing discomfort to most people on prolonged exposure"},
+   {"category": "Very poor", "aqi": [301, 400], "pm25_24h_ugm3": [121, 250], "pm10_24h_ugm3": [351, 430], "health_statement": "Respiratory illness on prolonged exposure"},
+   {"category": "Severe", "aqi": [401, 500], "pm25_24h_ugm3_above": 250, "pm10_24h_ugm3_above": 430, "health_statement": "Affects healthy people and seriously impacts those with existing diseases"}
+  ],
+  "health_source": "CPCB daily AQI bulletin, 'Health Statements for AQI Categories'"
+ },
+ "glossary": {
+  "PM2.5": "Particulate Matter 2.5 micrometres or smaller: fine particles that reach deep into the lungs, measured as a concentration in µg/m³.",
+  "PM10": "Particulate Matter 10 micrometres or smaller: larger particles such as dust, measured as a concentration in µg/m³. PM10 includes PM2.5.",
+  "AQI": "Air Quality Index: an index from 0 to 500 with six categories, not a concentration.",
+  "CPCB": "Central Pollution Control Board: India's national pollution regulator. It runs the reference monitors and publishes the daily AQI bulletin.",
+  "µg/m³": "micrograms per cubic metre: how much particle mass is in one cubic metre of air."
+ },
+ "standards_24h": {
+  "india_naaqs": {"pm25_ugm3": 60, "pm10_ugm3": 100, "source": "India National Ambient Air Quality Standards (2009)"},
+  "who_guideline": {"pm25_ugm3": 15, "pm10_ugm3": 45, "source": "WHO Global Air Quality Guidelines (2021)"}
+ },
+ "sources": [
+  {"name": "OpenAQ archive and API", "what": "measured hourly PM2.5 and PM10 from CPCB reference monitoring stations (primary city averages use reference stations only)", "type": "measured"},
+  {"name": "CPCB daily AQI bulletins", "what": "official AQI per city, read from UrbanEmissions' parsed bulletins and CPCB's own bulletin PDFs", "type": "official AQI"},
+  {"name": "Open-Meteo Historical Weather API", "what": "daily temperature, humidity, wind and rain (reanalysis, Copernicus C3S); weather data by Open-Meteo.com, CC BY 4.0", "type": "modelled"},
+  {"name": "OpenCity (CPCB data)", "what": "Delhi PM around Diwali 2024 and 2025, supporting context only; values above 999 µg/m³ are blank in this source", "type": "measured"}
+ ],
+ "method": [
+  "A city value is the equal-weight average of valid station-days at the city's primary reference stations; a station-day needs at least 16 valid hours.",
+  "Missing readings are never filled in; days with network-wide gaps are labelled.",
+  "Weather results are associations, never causes."
+ ],
+ "known_limits": [
+  "Measured data starts on 18 Feb 2025; OpenAQ has no CPCB data from Nov 2022 to that date.",
+  "Recent days can be missing until the source publishes them.",
+  "Some city-days have network-wide data gaps; they are labelled, and severe ones are left out of weather associations.",
+  "Delhi Diwali 2024 and 2025 PM are lower bounds, because the source blanks values above 999 µg/m³; Diwali 2026 Delhi PM comes from OpenAQ and is not compared with them.",
+  "Diwali answers use official AQI; measured PM for Diwali 2025 is incomplete outside Delhi.",
+  "Weather is modelled reanalysis and may differ from local stations."
+ ]
+}

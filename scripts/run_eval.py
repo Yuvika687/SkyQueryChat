@@ -29,14 +29,15 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv(ROOT / ".env")
 logging.basicConfig(level=logging.WARNING)
 
-from backend.agent import core, models as M, resolver as R, verify as V  # noqa: E402
+from backend.agent import core, knowledge as K, models as M, resolver as R, verify as V  # noqa: E402
+from backend.agent.schemas import CONVERSATION_KINDS  # noqa: E402
 from backend.analysis.store import Store  # noqa: E402
 from evals import references as REF  # noqa: E402
 
 SETS = {"main": ROOT / "evals" / "questions.json", "groq": ROOT / "evals" / "groq_test.json",
         "holdout": ROOT / "evals" / "holdout.json",          # retired 2026-11-06 (used)
         "holdout2": ROOT / "evals" / "holdout2.json", "diwali2026": ROOT / "evals" / "diwali2026.json",
-        "analysis": ROOT / "evals" / "analysis.json"}
+        "analysis": ROOT / "evals" / "analysis.json", "conversation": ROOT / "evals" / "conversation.json"}
 RUNS = ROOT / "evals" / "runs"
 LEDGER = ROOT / "evals" / "groq_ledger.jsonl"
 GROQ_TPD, GROQ_TPD_STOP, GROQ_EST_PER_Q = 200_000, 185_000, 8_000
@@ -104,9 +105,14 @@ def score_turn(exp: dict, final, deps, refs: dict, question: str) -> dict:
     called = set(deps.tools_called)
     c = {"status_ok": final.status in exp["status"]}
     need, forbid = set(exp.get("tools_any", [])), set(exp.get("forbid_tools", []))
-    c["tool_ok"] = (not need or bool(need & called)) and not (forbid & called)
+    c["tool_ok"] = (not need or bool(need & called)) and not (forbid & called) and not (exp.get("no_tools") and called)
+    kind = getattr(final, "kind", "data")
+    if exp.get("kind"):
+        c["kind_ok"] = kind in exp["kind"]
     s = deps.session      # independent re-check of written numbers against the FULL stored results
     allowed = V.allowed_numbers(list(s.datasets.values()) + list(s.compact.values()) + s.other_payloads)
+    if kind in CONVERSATION_KINDS:     # greeting, project and knowledge replies may quote the facts file and data dates
+        allowed |= K.allowed(R.DATA)
     bad = V.check_numbers([final.answer, final.clarifying_question or ""], allowed, V.user_safe_numbers(question))
     c["unsupported_numbers"] = bad
     c["numbers_supported"] = not bad
@@ -123,7 +129,8 @@ def score_turn(exp: dict, final, deps, refs: dict, question: str) -> dict:
     if r is not None:
         c["resolved_ok"], c["resolved_why"] = r["ok"], r["why"]
     strict = ("status_ok", "tool_ok", "numbers_supported", "not_ok", "causal_ok")
-    base = all(c[k] for k in strict) and c.get("ref_ok", True) and c.get("resolved_ok", True) and final.status != "error"
+    base = all(c[k] for k in strict) and c.get("ref_ok", True) and c.get("resolved_ok", True) and \
+        c.get("kind_ok", True) and final.status != "error"
     c["pass"] = base and c["include_ok"]
     c["pass_lenient"] = base and include_lenient(exp, text, [w.text for w in getattr(final, "required_warnings", [])])
     return c

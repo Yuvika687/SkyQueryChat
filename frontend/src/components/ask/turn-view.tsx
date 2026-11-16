@@ -7,9 +7,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Clock, CloudOff, MapPin, RotateCcw, Square, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ds/states";
-import { backupModel, servedFrom, type Turn } from "@/lib/chat-state";
+import { backupModel, isChatReply, servedFrom, type Turn } from "@/lib/chat-state";
 import { CITIES } from "@/lib/categories";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, readable } from "@/lib/format";
 import type { Target } from "@/lib/proof";
 import type { Health } from "@/lib/types";
 import { AnswerCard } from "./answer-card";
@@ -38,8 +38,8 @@ export function TurnView({ turn, health, isLatest, busy, onAsk, onRetry, onProof
       </div>
       <Body turn={turn} health={health} isLatest={isLatest} busy={busy} onAsk={onAsk} onRetry={onRetry}
         onProof={(t) => onProof(turn, t)} activeProof={activeProof} />
-      {turn.answer && turn.phase === "done" && <StepsSummary turn={turn} />}
-      {inlineEvidence && turn.answer && turn.phase === "done" && (turn.chart || turn.cards.length > 0) && (
+      {turn.answer && turn.phase === "done" && !isChatReply(turn) && <StepsSummary turn={turn} />}
+      {inlineEvidence && turn.answer && turn.phase === "done" && !isChatReply(turn) && (turn.chart || turn.cards.length > 0) && (
         <div className="glass min-w-0 overflow-hidden rounded-3xl [contain:inline-size]"><EvidencePanel turn={turn} /></div>
       )}
     </article>
@@ -87,6 +87,7 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activePro
     );
   }
   const a = turn.answer;
+  if (isChatReply(turn)) return <>{notices}<ChatReply turn={turn} busy={busy} onAsk={onAsk} /></>;
   const unsupported = unsupportedCities(turn);
   return (
     <>
@@ -122,6 +123,35 @@ function Body({ turn, health, isLatest, busy, onAsk, onRetry, onProof, activePro
       )}
       <AnswerCard turn={turn} onProof={onProof} activeProof={activeProof} onAsk={onAsk} busy={busy} />
     </>
+  );
+}
+
+/** Greeting, project or knowledge reply, clarifying question or refusal: the model's words in a plain bubble,
+ * then its suggested questions as chips. No evidence, chart, key numbers or "numbers checked" chip. */
+function ChatReply({ turn, busy, onAsk }: { turn: Turn; busy: boolean; onAsk: (q: string) => void }) {
+  const a = turn.answer!;
+  const text = a.headline || a.text;
+  const more = a.explanation && a.explanation !== text ? a.explanation : "";
+  const chips = (a.follow_ups ?? []).filter((q) => q.trim()).slice(0, 3);
+  return (
+    <div className="flex flex-col gap-3" data-kind={a.kind}>
+      <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-line bg-white/[0.04] px-4 py-3 text-[15px] leading-7">
+        <p>{readable(text)}</p>
+        {more && <p className="mt-2 text-subtle">{readable(more)}</p>}
+      </div>
+      {chips.length > 0 && turn.phase === "done" && (
+        <ul aria-label="Suggested questions" className="flex flex-wrap gap-2">
+          {chips.map((q) => (
+            <li key={q}>
+              <button type="button" disabled={busy} onClick={() => onAsk(q)}
+                className="min-h-9 rounded-full border border-line-strong bg-white/[0.03] px-3.5 py-1.5 text-left text-[13px] hover:border-teal/60 hover:text-teal disabled:opacity-50">
+                {q}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { proofFor, type Target } from "@/lib/proof";
 import { useApp } from "@/components/shell/app-context";
 import { useChat } from "@/hooks/use-chat";
-import type { Turn } from "@/lib/chat-state";
+import { isChatReply, type Turn } from "@/lib/chat-state";
 import { periodLabel } from "@/lib/evidence";
 import { pollutantLabel } from "@/lib/format";
 import { announcement } from "./agent-timeline";
@@ -76,8 +76,10 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
   }, [app.activeChatId, app.newChatKey]);
 
   const latest = chat.turns[chat.turns.length - 1] ?? null;
-  const answered = [...chat.turns].reverse().find((t) => t.answer && t.phase === "done") ?? null;
-  const panelTurn = chat.turns.find((t) => t.id === (proof?.turnId ?? selected)) ?? answered;
+  // The evidence panel follows the latest data answer; chat replies (greetings, refusals...) have no evidence.
+  const answered = [...chat.turns].reverse().find((t) => t.answer && t.phase === "done" && !isChatReply(t)) ?? null;
+  const picked = chat.turns.find((t) => t.id === (proof?.turnId ?? selected));
+  const panelTurn = picked && !isChatReply(picked) ? picked : answered;
   const proofView = proof && panelTurn ? proofFor(proof.target, panelTurn) : null;
 
   // The top bar follows what the conversation is about (from the latest answer's resolved_query).

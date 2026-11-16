@@ -488,7 +488,8 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
 
     def _final_events(final, eid: int) -> list[str]:
         f = json.loads(final.model_dump_json())
-        return [sse("answer", {"status": f["status"], "text": f["answer"], "headline": f.get("headline"),
+        return [sse("answer", {"status": f["status"], "kind": f.get("kind", "data"), "text": f["answer"],
+                               "headline": f.get("headline"),
                                "explanation": f["explanation"], "method": f.get("method", ""),
                                "follow_ups": f.get("follow_ups", []),
                                "clarifying_question": f["clarifying_question"], "data_types": f["data_types"],

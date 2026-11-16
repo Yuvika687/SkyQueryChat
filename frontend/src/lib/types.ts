@@ -72,8 +72,13 @@ export interface ChartSpec {
   notes?: string[];
 }
 
+/** Chosen by the model: conversation kinds show as a plain chat reply; "data" is the full analysis flow. */
+export type MessageKind = "greeting" | "about" | "knowledge" | "data" | "clarify" | "off_topic";
+
 export interface AnswerEvent {
   status: AnswerStatus;
+  /** Absent in answers saved before message kinds existed: those are data answers. */
+  kind?: MessageKind;
   text: string;
   /** Lead sentence: the model's number-checked answer (code-written only as a last-resort fallback). */
   headline?: string | null;

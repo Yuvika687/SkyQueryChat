@@ -59,6 +59,13 @@ export function applyEvent(t: Turn, ev: ChatEvent): Turn {
   }
 }
 
+/** A greeting, project or knowledge reply, clarifying question or refusal: shown as a chat bubble with
+ * suggestion chips, never with evidence, a chart or a numbers-checked chip. */
+export function isChatReply(t: Turn | null | undefined): boolean {
+  const k = t?.answer?.kind;
+  return !!k && k !== "data";
+}
+
 /** Was this answer served from the cache or the demo set rather than a live model run? */
 export function servedFrom(t: Turn): "cache" | "demo" | null {
   if (t.done?.cached) return t.done.source ?? "cache";

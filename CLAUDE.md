@@ -500,6 +500,27 @@ Rules:
 - **Saved answers with no fixed period** (relative words or "no period stated") get a `saved_older` notice naming their data
   end once newer data exists (`saved_data_end` in `backend/api/main.py`). `/api/limits` builds the `data_end` text from the data.
 
+### Message kinds (main, 2026-11-16)
+
+- **The model picks the kind** in the same single call: `final_answer.kind` = greeting | about | knowledge | data |
+  clarify | off_topic (`backend/agent/schemas.py`; no keyword rules). Code fixes the status per kind (clarify -> "clarify",
+  off_topic -> "refused", others "answered") and strips cards/chart from conversation kinds (`core._normalise_kind`).
+  Off-topic requests and attempts to change or reveal the rules get the fixed refusal text in `core.INSTRUCTIONS`.
+- **Facts file:** `backend/config/knowledge.json` (CPCB categories, PM breakpoints and verbatim health statements,
+  glossary, 24-h standards, sources, method, known limits; every fact has its source in `_note`). `backend/agent/knowledge.py`
+  builds the compact digest the model sees only until a data tool is called (about 1,100 tokens on the first request),
+  and `allowed()`: conversation answers may quote only numbers from that file or the data dates; the same number
+  checker sends anything else back. No medical advice beyond CPCB's statements.
+- Data questions keep the full flow (tools, Python, checker, proof). Follow-ups such as "and Mumbai?" use the session
+  context and history as before.
+- UI: conversation kinds show as a plain bubble with the model's three suggestion chips (`ChatReply` in
+  `turn-view.tsx`, `isChatReply` in `chat-state.ts`): no evidence panel, chart, key numbers, steps summary or "numbers
+  checked" chip. The SSE `answer` event carries `kind` (absent in older saved answers = data).
+- A model that answers 404 (missing) or 401 (key rejected) is skipped by the chain like any provider error (test in
+  `tests/test_agent.py`).
+- Evaluation: `evals/conversation.json` (13 questions, 14 turns; `kind` and `no_tools` expectations); the scorer
+  re-checks conversation numbers against the facts file.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

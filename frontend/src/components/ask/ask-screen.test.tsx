@@ -61,7 +61,37 @@ beforeEach(() => {
   localStorage.clear();
 });
 
+function chatReply(kind: string, status: string, text: string): ChatEvent[] {
+  return [
+    { event: "meta", data: { request_id: "r", session_id: SID } },
+    { event: "answer", data: { status, kind, text, headline: text, explanation: "", method: "", clarifying_question: null,
+      follow_ups: ["How did Delhi's PM2.5 change over the last 30 days?", "Compare Delhi and Mumbai PM2.5.", "What was Delhi's Diwali 2026 AQI?"],
+      data_types: [], resolved_query: null, required_warnings: [], model: "gemini-3.5-flash-lite",
+      verification: { passed: true, retries: 0, numbers_checked: 0 } } },
+    { event: "cards", data: [] }, { event: "chart", data: null },
+    { event: "sources", data: { sources: [], coverage: {} } }, { event: "warnings", data: [] },
+    { event: "done", data: { request_id: "r", session_id: SID, status, cached: false, elapsed_ms: 900 } },
+  ] as unknown as ChatEvent[];
+}
+
 describe("Ask screen", () => {
+  it.each([
+    ["greeting", "answered", "Hi! I'm SkyQueryChat. I look at PM2.5, PM10 and official AQI for six Indian cities."],
+    ["off_topic", "refused", "I'm SkyQueryChat, an air-quality analyst for Indian cities, so I can't help with that."],
+  ])("shows a %s as a plain chat bubble with suggestion chips and no evidence", async (kind, status, text) => {
+    vi.mocked(api.streamChat).mockImplementation(streamOf(chatReply(kind, status, text)));
+    renderAsk();
+    await ask("hi");
+    expect(await screen.findByText(text)).toBeInTheDocument();
+    const chips = screen.getByRole("list", { name: "Suggested questions" });
+    expect(within(chips).getAllByRole("button")).toHaveLength(3);
+    expect(screen.queryByText(/numbers? checked/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/How this answer was made/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "Evidence" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+
   it("shows the empty state with six suggested questions (an even grid) and the sources line", async () => {
     renderAsk();
     expect(await screen.findByRole("heading", { name: "What do you want to know about the air?" })).toBeInTheDocument();

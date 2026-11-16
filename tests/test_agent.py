@@ -761,3 +761,29 @@ def test_plan_like_wording():
         assert PLAN_LIKE.search(t)
     for t in ("Mumbai's PM2.5 showed no clear trend.", "In the week before Diwali, AQI rose.", "It is too close to call."):
         assert not PLAN_LIKE.search(t)
+
+
+@real
+@pytest.mark.parametrize("status", [404, 401])
+def test_a_missing_or_rejected_model_is_skipped_automatically(session_factory, status):
+    """404 = the model no longer exists for our key; 401 = the key was rejected for that model. Either way the chain
+    moves to the next model and the visitor still gets an answer."""
+    from pydantic_ai.exceptions import ModelHTTPError
+    from pydantic_ai.models.fallback import FallbackModel
+    from backend.agent import models as M
+
+    def gone(messages, info):
+        raise ModelHTTPError(status, "gemini-retired", {"error": {"status": "NOT_FOUND" if status == 404 else "UNAUTHENTICATED"}})
+
+    def backup(messages, info):
+        return ModelResponse(parts=[TextPart(json.dumps({"kind": "greeting", "status": "answered",
+                                                         "answer": "Hi! I'm SkyQueryChat."}))])
+
+    agent = core.build_agent(FallbackModel(FunctionModel(gone, model_name="gemini-retired"),
+                                           FunctionModel(backup, model_name="gemini-current"),
+                                           fallback_on=M._record_fallback))
+    core.PRIMARY_MODEL[id(agent)] = "gemini-retired"
+    ev = []
+    out, _ = run(agent, session_factory(), "hi", ev)
+    assert out.status == "answered" and out.model.endswith("gemini-current")
+    assert M.FALLBACK_LOG[-1]["status"] == status and any(e.type == "fallback" for e in ev)
