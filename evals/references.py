@@ -18,7 +18,7 @@ import pandas as pd
 # Frozen copy of the app tables (evals/data/), so scores stay reproducible while data/app refreshes daily.
 # SKYQ_EVAL_DATA may point at another copy (for example data/app) for a clearly labelled one-off check.
 APP = Path(os.environ.get("SKYQ_EVAL_DATA") or Path(__file__).resolve().parent / "data")
-EVENTS = json.loads((Path(__file__).resolve().parents[1] / "backend" / "config" / "events.json").read_text())
+EVENTS = json.loads((Path(__file__).resolve().parents[1] / "backend" / "config" / "events.json").read_text(encoding="utf-8"))
 CITIES = ["Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"]
 
 
@@ -34,7 +34,7 @@ def _load():
 
 CD, AQI, W = _load()
 # "All data" questions use the measured data end recorded with the app tables (it moves when new data arrives).
-DATA_END = date.fromisoformat(json.loads((APP / "manifest.json").read_text())["openaq_data_end"])
+DATA_END = date.fromisoformat(json.loads((APP / "manifest.json").read_text(encoding="utf-8"))["openaq_data_end"])
 
 
 def _days(city, pol, a, b):

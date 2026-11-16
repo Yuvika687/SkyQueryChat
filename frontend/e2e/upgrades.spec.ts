@@ -56,7 +56,7 @@ test("compare: copy link keeps the selection; CSV holds the daily lines", async 
   await expect(page.getByRole("heading", { name: "Ranking" })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Copy link" }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/cities=delhi(,|%2C)mumbai/);
-  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download data (CSV)" }).click()]);
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download CSV" }).click()]);
   const csv = readFileSync((await dl.path())!, "utf8").trim().split("\n");
   expect(csv[0]).toBe("date,Delhi_pm25,Mumbai_pm25,unit,data_type,source");
   expect(csv).toHaveLength(31);
@@ -66,15 +66,15 @@ test("ask answer: copy link, copy answer, download chart and data", async ({ pag
   test.skip(info.project.name !== "desktop", "clipboard permission is granted on desktop Chromium only");
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/ask");
-  await page.locator("textarea#question").fill("How bad was Delhi's air on Diwali 2025?");
+  await page.locator("textarea#question").fill("AQI in Lucknow");
   await page.locator("textarea#question").press("Enter");
-  await expect(page.getByText("Saved demo answer")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/numbers? checked/).first()).toBeVisible({ timeout: 90_000 });
   const card = page.locator("article").first();
   await card.getByRole("button", { name: "Copy link" }).click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/\/ask\?q=How%20bad%20was%20Delhi/);
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/\/ask\?q=AQI%20in%20Lucknow/);
   await card.getByRole("button", { name: "Copy answer" }).click();
   const text = await page.evaluate(() => navigator.clipboard.readText());
-  expect(text).toMatch(/^Q: How bad was Delhi's air on Diwali 2025\?/);
+  expect(text).toMatch(/^Q: AQI in Lucknow/);
   expect(text).toMatch(/numbers checked against the analysis/);
   expect(text).not.toMatch(/\d{4}-\d{2}-\d{2}/);
   await expect(page.getByRole("status").getByText("Answer copied")).toBeVisible();

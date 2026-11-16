@@ -31,7 +31,7 @@ export function CityScreen({ slug, city }: { slug: string; city: string }) {
     <div className="mx-auto w-full max-w-[1240px] px-4 pt-[84px] pb-[calc(104px+env(safe-area-inset-bottom))] sm:px-8 md:pt-[104px] md:pb-12">
       <header className="mb-6">
         <p className="text-[12px] font-semibold tracking-[0.08em] text-teal uppercase">City</p>
-        <h1 className="mt-1 font-display text-[48px] leading-none sm:text-[64px]">{city}</h1>
+        <h1 className="mt-1 page-title">{city}</h1>
         <p className="mt-3 text-[16px] text-subtle">Everything about {city}&apos;s air, from real monitoring data.</p>
         <p className="mt-1 text-[13.5px] text-faint">Scroll for the last 30 days, a calendar, Diwali and the stations; each section says where its numbers come from.</p>
         <p className="mt-1 text-[12.5px] text-faint">Numbers are PM2.5 (fine particles) or PM10 (coarse particles) in µg/m³ (micrograms per cubic metre); the official AQI (Air Quality Index) comes from CPCB (Central Pollution Control Board) bulletins.</p>
@@ -88,7 +88,7 @@ function Hero({ d, className }: { d: CityPage; className?: string }) {
   const h = d.hero;
   const cat = categoryOf(h.pm25, "pm25");
   return (
-    <section aria-labelledby="hero-title" className={cn("glass relative flex flex-col overflow-hidden rounded-2xl p-5 shadow-card sm:p-6", className)}>
+    <section aria-labelledby="hero-title" className={cn("card relative flex flex-col overflow-hidden p-5 sm:p-6", className)}>
       <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-teal/10 blur-3xl" />
       <h2 id="hero-title" className="text-[13px] text-subtle">
         <Term k="pm25" /> · 24-hour city average · latest available, <strong className="font-semibold text-foreground">{fmtDate(h.date)}</strong>
@@ -103,12 +103,12 @@ function Hero({ d, className }: { d: CityPage; className?: string }) {
       <DayChange change={h.change} previous={h.previous} className="mt-2 text-[13px]" />
       <ScaleBar value={h.pm25} scale="pm25" className="mt-4" />
       {healthNote(cat) && (
-        <p className="mt-4 rounded-xl border border-line bg-white/[0.03] px-3.5 py-2.5 text-[13px]">
+        <p className="mt-4 rounded-xl bg-white/[0.04] px-3.5 py-2.5 text-[13px]">
           <span className="text-subtle">CPCB health note:</span> {healthNote(cat)}.
           <span className="mt-0.5 block text-[11.5px] text-faint">{HEALTH_SOURCE}.</span>
         </p>
       )}
-      <dl className="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-4 text-[13px]">
+      <dl className="mt-6 grid grid-cols-3 gap-3 pt-2 text-[13px]">
         <div><dt className="text-faint"><Term k="pm10" /></dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.pm10.toFixed(1)} <span className="text-[12px] font-normal text-subtle">µg/m³</span></dd></div>
         <div><dt className="text-faint">Stations reporting</dt><dd className="num mt-0.5 text-[17px] font-semibold">{h.stations_reporting} <span className="text-[12px] font-normal text-subtle">of {h.stations_total}</span></dd></div>
         <div><dt className="text-faint">Among six cities</dt><dd className="mt-0.5 text-[17px] font-semibold">{h.rank_of_six === 1 ? "Highest" : h.rank_of_six === 6 ? "Lowest" : `${ordinal(h.rank_of_six)} highest`}</dd></div>
@@ -179,14 +179,14 @@ function Calendar({ d, className }: { d: CityPage; className?: string }) {
       action={
         <div className="flex items-center gap-1">
           <button type="button" aria-label="Previous month" disabled={i === 0} onClick={() => setI(i - 1)}
-            className="grid size-9 place-items-center rounded-lg border border-line text-subtle hover:text-foreground disabled:opacity-40"><ChevronLeft className="size-4" aria-hidden /></button>
+            className="grid size-9 place-items-center rounded-lg bg-white/[0.05] text-subtle hover:text-foreground disabled:opacity-40"><ChevronLeft className="size-4" aria-hidden /></button>
           <label className="sr-only" htmlFor="cal-month">Month</label>
           <select id="cal-month" value={i} onChange={(e) => setI(Number(e.target.value))}
-            className="h-9 rounded-lg border border-line bg-surface px-2 text-[13px]">
+            className="h-9 rounded-lg bg-white/[0.05] px-2 text-[13px]">
             {months.map(([k], j) => { const [yy, mm] = k.split("-").map(Number); return <option key={k} value={j}>{MONTHS[mm - 1]} {yy}</option>; })}
           </select>
           <button type="button" aria-label="Next month" disabled={i >= months.length - 1} onClick={() => setI(i + 1)}
-            className="grid size-9 place-items-center rounded-lg border border-line text-subtle hover:text-foreground disabled:opacity-40"><ChevronRight className="size-4" aria-hidden /></button>
+            className="grid size-9 place-items-center rounded-lg bg-white/[0.05] text-subtle hover:text-foreground disabled:opacity-40"><ChevronRight className="size-4" aria-hidden /></button>
         </div>
       }>
       <table className="w-full table-fixed border-separate border-spacing-1">
@@ -237,7 +237,7 @@ function Diwali({ d, className }: { d: CityPage; className?: string }) {
         {d.diwali.years.map((y) => {
           const cat = normaliseCategory(y.category);
           return (
-            <article key={y.year} className="min-w-0 rounded-xl border border-line bg-white/[0.02] p-4">
+            <article key={y.year} className="min-w-0 rounded-xl bg-white/[0.04] p-4">
               <h3 className="flex items-baseline justify-between gap-2">
                 <span className="font-display text-[22px]">Diwali {y.year}</span>
                 <span className="text-[12px] text-faint">{fmtDate(y.diwali_date)}</span>
@@ -304,7 +304,7 @@ function Unusual({ d, className }: { d: CityPage; className?: string }) {
           {days.map((u) => {
             const tags = u.reason.split("; ").slice(1);
             return (
-              <li key={u.date} className="rounded-xl border border-line px-3.5 py-2.5">
+              <li key={u.date} className="rounded-xl bg-white/[0.04] px-3.5 py-2.5">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="font-medium">{fmtDate(u.date)}</span>
                   <span className="num text-[15px] font-semibold">{u.value.toFixed(1)} <span className="text-[11.5px] font-normal text-subtle">µg/m³</span></span>
@@ -344,7 +344,7 @@ function Weather({ d, className }: { d: CityPage; className?: string }) {
       )}
       <div className="mt-2 grid grid-cols-2 gap-2">
         {ends.map((g) => (
-          <div key={g.label} className="rounded-xl border border-line px-3 py-2">
+          <div key={g.label} className="rounded-xl bg-white/[0.04] px-3 py-2">
             <p className="text-[12px] text-subtle">{cap(g.label.replace(/\s*\(.*\)$/, "").replace(">=", "≥"))}</p>
             <p className="num mt-0.5 text-[17px] font-semibold">{g.mean.toFixed(1)} <span className="text-[11.5px] font-normal text-subtle">µg/m³ · {g.days} days</span></p>
           </div>
@@ -368,7 +368,7 @@ function Stations({ d, className }: { d: CityPage; className?: string }) {
         {d.stations.map((s) => (
           <li key={s.id}>
             <Link href={`/explore?city=${encodeURIComponent(d.city)}&station=${s.id}`}
-              className="flex min-h-14 items-center gap-3 rounded-xl border border-line px-3 py-2 transition-colors hover:border-teal/60 focus-visible:border-teal">
+              className="flex min-h-14 items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2 transition-colors hover:bg-white/[0.07]">
               <MapPin className={cn("size-4 shrink-0", s.tier === "low_cost" ? "text-warn" : "text-teal")} aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13.5px] font-medium">{s.name.replace(/\s+-\s+[A-Z]{2,}.*$/, "")}</span>
@@ -396,7 +396,7 @@ function AskChips({ city, className }: { city: string; className?: string }) {
       <ul className="flex flex-col gap-1.5">
         {qs.map((q) => (
           <li key={q}>
-            <Link href={askHref(q)} className="group flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-white/[0.02] px-3 py-2 text-[13.5px] transition-colors hover:border-teal/60">
+            <Link href={askHref(q)} className="group flex min-h-11 items-center justify-between gap-3 rounded-xl bg-white/[0.04] px-3 py-2 text-[13.5px] transition-colors hover:bg-white/[0.07]">
               {q}<ArrowRight className="size-4 shrink-0 text-teal transition-transform group-hover:translate-x-0.5" aria-hidden />
             </Link>
           </li>

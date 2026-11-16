@@ -45,7 +45,7 @@ SIZE_LIMIT_MB = 8.0
 
 
 def _ends(app: Path) -> dict:
-    m = json.loads((app / "manifest.json").read_text())
+    m = json.loads((app / "manifest.json").read_text(encoding="utf-8"))
     w = pd.read_parquet(app / "weather_daily.parquet", columns=["local_date"])
     return {"measured": m["openaq_data_end"], "archive": m.get("openaq_archive_end") or m["openaq_data_end"],
             "aqi": (m.get("bulletins") or {}).get("end"), "weather": str(pd.to_datetime(w["local_date"]).max().date())}
@@ -140,7 +140,7 @@ def _changed() -> bool:
         if not path.endswith("manifest.json") or line.startswith("??"):
             return True
         old = subprocess.run(["git", "show", f"HEAD:{path}"], cwd=ROOT, capture_output=True, text=True)
-        if old.returncode != 0 or _strip_stamps(json.loads(old.stdout)) != _strip_stamps(json.loads((ROOT / path).read_text())):
+        if old.returncode != 0 or _strip_stamps(json.loads(old.stdout)) != _strip_stamps(json.loads((ROOT / path).read_text(encoding="utf-8"))):
             return True
     return False
 
@@ -154,7 +154,7 @@ def main() -> int:
     print(f"before: {before_ends}", flush=True)
     full = "--full" in sys.argv[1:]
     _run(["scripts/build_dataset.py", "--api-topup"] + ([] if full else ["--incremental"]))
-    statuses = dict(json.loads((ROOT / "data" / "processed" / "manifest.json").read_text()).get("sources") or {})
+    statuses = dict(json.loads((ROOT / "data" / "processed" / "manifest.json").read_text(encoding="utf-8")).get("sources") or {})
     try:
         _run(["scripts/fetch_weather.py", "--append"])
     except subprocess.CalledProcessError:   # the stored weather file is only replaced after a successful fetch
@@ -168,7 +168,7 @@ def main() -> int:
         print(f"::warning title=Data source not updated::{w}", flush=True)
     summary = os.getenv("GITHUB_STEP_SUMMARY")
     if summary:
-        with open(summary, "a") as f:
+        with open(summary, "a", encoding="utf-8") as f:
             f.write("### Data refresh\n\n" + "".join(f"- {x}\n" for x in lines)
                     + "".join(f"- ⚠️ {x}\n" for x in warnings + problems))
     if problems:
@@ -179,7 +179,7 @@ def main() -> int:
           f"measured data now ends {after_ends['measured']}", flush=True)
     out = os.getenv("GITHUB_OUTPUT")
     if out:
-        with open(out, "a") as f:
+        with open(out, "a", encoding="utf-8") as f:
             f.write(f"data_end={after_ends['measured']}\nchanged={'true' if changed else 'false'}\n")
     return 0
 

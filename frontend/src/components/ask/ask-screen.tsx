@@ -22,7 +22,11 @@ function newId() {
 
 /** initialQuestion: a question passed in the address (/ask?q=...), e.g. from the Home page. It starts a new chat
  * and is sent once; onInitialSent lets the page remove it from the address. */
-export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?: string | null; onInitialSent?: () => void } = {}) {
+export function AskScreen({ initialQuestion, onInitialSent, tools }: {
+  initialQuestion?: string | null; onInitialSent?: () => void;
+  /** New chat / Recent chats: small icon buttons on the same line as the conversation */
+  tools?: React.ReactNode;
+} = {}) {
   const app = useApp();
   const chatId = useRef<string | null>(null);
   const composer = useRef<ComposerHandle>(null);
@@ -108,7 +112,7 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const behavior = reduce ? "auto" : "smooth";
     const art = el.querySelector<HTMLElement>(`[data-turn="${latest.id}"]`);
-    if (latest.answer && art) el.scrollTo({ top: Math.max(0, art.offsetTop - 16), behavior });
+    if (latest.answer && art) el.scrollTo({ top: Math.max(0, art.offsetTop - 60), behavior });   // room for the New chat / Recent chats row
     else el.scrollTo({ top: el.scrollHeight, behavior });
   }, [lastKey, latest]);
 
@@ -133,17 +137,22 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
     if (desktop) setClosedFor(null);
     else setSheetTurn(t.id);
   };
-  const placeholder = "Ask about air quality in the six cities";
+  const placeholder = "Ask about air quality in any Indian city";
 
   return (
     <div className="flex min-h-0 flex-1">
       <div className="flex min-w-0 flex-1 flex-col">
-        <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto">
+        <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto [scroll-padding-bottom:32px]">
+          {tools && (
+            <div className="sticky top-0 z-10 mx-auto flex h-0 w-full max-w-[760px] justify-start px-4 sm:px-6">
+              <div className="mt-3 -ml-1.5 flex items-center gap-0.5 rounded-full bg-background/80 p-0.5 backdrop-blur">{tools}</div>
+            </div>
+          )}
           <BackendBanner />
           {chat.turns.length === 0 ? (
             <EmptyState onAsk={ask} disabled={chat.busy} />
           ) : (
-            <div className="mx-auto flex w-full max-w-[760px] min-w-0 flex-col gap-8 px-4 pt-5 pb-16 sm:px-6">
+            <div className="mx-auto flex w-full max-w-[760px] min-w-0 flex-col gap-10 px-4 pt-14 pb-24 sm:px-6">
               {chat.turns.map((t, i) => (
                 <TurnView
                   key={t.id}
@@ -167,7 +176,7 @@ export function AskScreen({ initialQuestion, onInitialSent }: { initialQuestion?
       </div>
       {/* Desktop: the evidence for the focused answer; a clicked number swaps it to that number's proof. */}
       {desktop && panelOpen && panelTurn?.answer && (
-        <aside aria-label={proofView ? "Proof" : "Evidence"} className="sq-slide-in relative flex w-[420px] shrink-0 flex-col border-l border-line bg-[#0a1122]/80 xl:w-[460px]">
+        <aside aria-label={proofView ? "Proof" : "Evidence"} className="sq-slide-in relative my-3 mr-3 flex w-[420px] shrink-0 flex-col overflow-hidden rounded-[18px] bg-[#0c1428] xl:w-[460px]">
           <button type="button" onClick={() => { setClosedFor(panelTurn.id); setProof(null); }} aria-label="Close the evidence panel"
             className="absolute top-2.5 right-3 z-10 grid size-8 place-items-center rounded-full text-subtle hover:bg-white/[0.06] hover:text-foreground">
             <X className="size-4" aria-hidden />

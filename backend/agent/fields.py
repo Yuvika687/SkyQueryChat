@@ -199,7 +199,52 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
         f["n_primary_stations"] = Field((d["stations"].get("by_tier") or {}).get("primary"), f"{city} primary stations", "stations")
         f["n_severe_days"] = Field(d["quality"].get("n_severe_dates"), "days with severe network gaps", "days")
         f["n_days_in_period"] = Field(cov.get("days_in_period"), "days in period", "days")
+    elif k == "official_aqi":
+        L, sm = v["latest"], v["summary"]
+        f["latest_aqi"] = Field(L["aqi"], f"{v['city']} {v['label']}", u)
+        f["latest_category"] = Field(L["category"], "CPCB category of the latest bulletin")
+        f["latest_date"] = Field(L["date"], "date of the latest bulletin (covers 4 PM the day before to 4 PM)")
+        f["main_pollutant"] = Field(L["main_pollutant"], "main (prominent) pollutant in the latest bulletin")
+        f["n_stations_reporting"] = Field(L["stations_reporting"], "stations reporting in the latest bulletin", "stations")
+        if v.get("previous"):
+            f["change_from_previous"] = Field(v["change_from_previous"],
+                                              f"change from the previous bulletin ({v['previous']['date']})", u)
+            f["previous_aqi"] = Field(v["previous"]["aqi"], f"official AQI in the previous bulletin ({v['previous']['date']})", u)
+        f["mean_aqi"] = Field(sm["mean"], f"{v['city']} mean official AQI, {per}", u)
+        f["highest_aqi"] = Field(sm["highest"]["aqi"], f"{v['city']} highest official AQI ({sm['highest']['date']})", u)
+        f["highest_date"] = Field(sm["highest"]["date"], "date of the highest bulletin")
+        f["lowest_aqi"] = Field(sm["lowest"]["aqi"], f"{v['city']} lowest official AQI ({sm['lowest']['date']})", u)
+        f["lowest_date"] = Field(sm["lowest"]["date"], "date of the lowest bulletin")
+        f["n_bulletins"] = Field(sm["n_bulletins"], "days with a bulletin value in the period", "days")
+        f["n_days_in_period"] = Field(cov.get("days_in_period"), "days in period", "days")
+        t = sm.get("trend") or {}
+        why = {"no clear trend": " (p >= 0.05)"}.get(t.get("status"), "")
+        f["trend"] = Field(f"{t.get('status')}{why}" if t.get("status") else None,
+                           f"{v['city']} official AQI trend (Mann-Kendall, {per})")
+        if "change_over_period" in t:
+            f["trend_change_over_period"] = Field(t["change_over_period"],
+                                                  f"total change over these {t['period_days']} days (Sen's slope)", u)
+        elif "slope_per_month" in t:
+            f["trend_per_month"] = Field(t["slope_per_month"], "change per month (Sen's slope)", u)
+        hs = aqi_health(L["category"])
+        if hs:
+            f["category"] = Field(hs[0], "CPCB category of the latest bulletin")
+            f["cpcb_health"] = Field(hs[1], f"CPCB health statement for the {hs[0]} category")
+        f["station_level_pm"] = Field("available" if v.get("is_metro") else
+                                      "not available (only Delhi, Mumbai, Kolkata, Chennai, Bengaluru, Hyderabad)",
+                                      "station-level PM2.5/PM10 analysis for this city")
     return {k2: x for k2, x in f.items() if x.value is not None}
+
+
+def aqi_health(category: str | None) -> tuple[str, str] | None:
+    """CPCB's health statement for an AQI category name ("Very Poor" or "Very poor")."""
+    if not category:
+        return None
+    from .knowledge import load
+    for c in load()["aqi"]["categories"]:
+        if c["category"].lower() == str(category).lower():
+            return c["category"], c["health_statement"]
+    return None
 
 
 def notes_for(warnings: list[str], n: int = 2, width: int = 170) -> list[str]:

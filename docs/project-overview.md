@@ -75,6 +75,27 @@ commits "Refresh data through <date>" only when data changed (build times alone 
 reached keeps its previous data and is reported as a warning. First green run: 16 Nov 2026, 11.6 minutes in total (7.7
 for the refresh and checks, 3 for the tests), committing "Refresh data through 15 Nov 2026".
 
+### Official AQI for every CPCB bulletin city
+
+The six metros keep their full station-level analysis. Every other city in CPCB's daily 4 PM bulletin (329 cities in all,
+18 Feb 2025 to the latest bulletin) has official AQI only:
+
+- **Data:** `city_aqi_all` (city, bulletin date, AQI, category, main pollutant, stations reporting, source), built from
+  UrbanEmissions' parsed bulletins and then CPCB's own PDFs by `backend/pipeline/build.py` (`load_all_bulletins`) in the
+  daily refresh; about 150,000 rows, 0.3 MB, so the whole span is kept (data/app stays well under the 8 MB guard). A city
+  listed twice in one bulletin with different values (Kalyan, Nov 2026) is dropped for that date and recorded, never
+  guessed. Categorical columns keep it at about 3 MB in memory.
+- **Names and locations:** `backend/analysis/official_aqi.py` resolves every bulletin city, older names (Bangalore, Bombay,
+  Gurgaon) and close misspellings; a place outside the bulletin gets an honest message and the three nearest covered
+  cities (GeoNames towns). Map coordinates from GeoNames (CC BY 4.0, `scripts/build_city_coordinates.py`): 300 of 329
+  cities have a confident match; the other 29 are listed, not plotted.
+- **Agent tool:** `official_aqi(city, period)` returns the latest AQI, category, main pollutant, change from the previous
+  bulletin, and the period's mean, highest, lowest and trend (Mann-Kendall with Sen's slope), all calculated in Python and
+  covered by the number checker. Non-metro answers carry the required note that station-level PM analysis covers only
+  the six cities. Values are labelled "Official AQI (CPCB 4 PM bulletin, <date>)" everywhere.
+- **Website:** an "All CPCB cities (official AQI)" layer on Explore and a "Find your city" search on Home.
+- **Endpoints:** `/api/aqi/cities` and `/api/aqi/city/{name}` (read-only, no AI).
+
 ## 4. AI agent
 
 **Models** (`backend/config/models.json`): `gemini-3.5-flash-lite` first, then `gemini-3.1-flash-lite`, then
@@ -203,14 +224,14 @@ and Ask 99 / 100 / 100 / 100 (performance, accessibility, best practices, SEO).
 |---|---|
 | `backend/api/` | FastAPI app, visitor limits, answer cache, settings, SSE formatting |
 | `backend/agent/` | Agent loop, tools, number checker, facts file loader, quota limiter, model chain |
-| `backend/analysis/` | Analysis functions, statistics, AQI categories, page data |
+| `backend/analysis/` | Analysis functions, statistics, AQI categories, page data; `official_aqi.py` (every CPCB bulletin city) |
 | `backend/pipeline/` | Downloads (OpenAQ, CPCB, Open-Meteo), cleaning, quality and table building |
-| `backend/config/` | `models.json`, `knowledge.json`, `events.json`, `known_limits.json` |
+| `backend/config/` | `models.json`, `knowledge.json`, `events.json`, `known_limits.json`, `cpcb_city_coordinates.json` and `india_places.json` (GeoNames, CC BY 4.0) |
 | `data/app/` | Compact tables the site serves (committed); `data/processed/` is the rebuild source; `data/raw/` is never committed |
 | `frontend/src/` | Pages (`app/`), components, hooks and helpers (`lib/`) |
 | `frontend/e2e/` | Playwright browser and accessibility tests |
 | `evals/` | Question sets, frozen evaluation data, runs and the scoreboard |
-| `scripts/` | Build, refresh, cross-check, evaluation and demo-answer scripts |
+| `scripts/` | Build, refresh, cross-check, evaluation and demo-answer scripts; `build_city_aqi_all.py`, `build_city_coordinates.py` |
 | `tests/` | Backend tests |
 | `docs/` | Guides (keep-awake, data refresh), checks, design notes and screenshots |
 | `.github/workflows/` | Daily data refresh |

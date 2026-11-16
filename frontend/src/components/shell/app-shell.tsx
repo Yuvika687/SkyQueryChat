@@ -73,10 +73,11 @@ function TopBar({ onData }: { onData: () => void }) {
   return (
     <header className="fixed inset-x-0 top-3 z-40 flex justify-center px-3 sm:top-4">
       {/* a band behind the pill fades to the page colour, so scrolled content never shows around or through it */}
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[76px] bg-gradient-to-b from-background via-background/85 to-transparent" />
+      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[72px] bg-background" />
+      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-[72px] -z-10 h-4 bg-gradient-to-b from-background to-transparent" />
       <nav
         aria-label="Main"
-        className="flex h-12 w-full max-w-[1120px] items-center gap-3 rounded-full border border-line bg-[#0a1120]/[0.93] pr-2 pl-4 shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] backdrop-blur-xl backdrop-saturate-150"
+        className="flex h-12 w-full max-w-[1120px] items-center gap-3 rounded-full border border-line bg-[#0a1120] pr-2 pl-4 shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] backdrop-blur-xl backdrop-saturate-150"
       >
         <Logo />
         <ul className="mx-auto hidden items-center gap-1 md:flex">
@@ -117,7 +118,7 @@ function TabBar() {
   const path = usePathname();
   return (
     <nav aria-label="Main" className="fixed inset-x-3 bottom-3 z-40 md:hidden">
-      <ul className="grid h-16 grid-cols-4 rounded-2xl border border-line bg-[#0a1120]/[0.95] p-1.5 backdrop-blur-xl">
+      <ul className="grid h-16 grid-cols-4 rounded-2xl border border-line bg-[#0a1120] p-1.5">
         {NAV.map((n) => {
           const active = isActive(path, n.href);
           return (

@@ -47,7 +47,7 @@ GROQ_TPM_NEEDED = 6_000          # free tokens this minute before asking (limit 
 
 # ----------------------------------------------------------------------------- scoring
 def load_questions(set_name: str) -> list[dict]:
-    d = json.loads(SETS[set_name].read_text())
+    d = json.loads(SETS[set_name].read_text(encoding="utf-8"))
     qs = d["questions"] + [dict(q, category=q.get("category", "user")) for q in d.get("user_questions", [])]
     for q in qs:
         q.setdefault("expect", [{} for _ in q["turns"]])
@@ -190,12 +190,12 @@ def scoreboard() -> dict:
     """Main result per set = latest COMPLETE first-pass run; reruns listed separately."""
     out = {"note": "Main results are first-pass runs. Reruns are separate and never merged into main scores.", "sets": {}}
     for d in sorted(RUNS.glob("*/meta.json")):
-        meta = json.loads(d.read_text())
+        meta = json.loads(d.read_text(encoding="utf-8"))
         sp = d.parent / "summary.json"
         if not sp.exists():
             continue
         entry = {"run": d.parent.name, **{k: meta[k] for k in ("started", "model_chain", "kind", "complete", "commit")},
-                 "summary": json.loads(sp.read_text())}
+                 "summary": json.loads(sp.read_text(encoding="utf-8"))}
         s = out["sets"].setdefault(meta["set"], {"main_first_pass": None, "reruns": [], "incomplete_first_pass": []})
         if meta.get("invalid"):                       # harness fault, not a model result: kept, never scored
             s.setdefault("invalid_runs", []).append({"run": entry["run"], "reason": meta["invalid"]})
@@ -208,7 +208,7 @@ def scoreboard() -> dict:
         else:
             s["reruns"].append(entry)
     # Re-scoring with later checks (scripts/rescore_runs.py) is listed apart; it never changes the headline.
-    out["rescored_separately"] = {p.stem: json.loads(p.read_text())["summary"]
+    out["rescored_separately"] = {p.stem: json.loads(p.read_text(encoding="utf-8"))["summary"]
                                   for p in sorted((ROOT / "evals" / "rescored").glob("*.json"))}
     (ROOT / "evals" / "scoreboard.json").write_text(json.dumps(out, indent=1))
     return out
@@ -219,11 +219,11 @@ def _ledger_24h() -> int:
     if not LEDGER.exists():
         return 0
     now = time.time()
-    return sum(r["tokens"] for r in map(json.loads, LEDGER.read_text().splitlines()) if now - r["ts"] < 86_400)
+    return sum(r["tokens"] for r in map(json.loads, LEDGER.read_text(encoding="utf-8").splitlines()) if now - r["ts"] < 86_400)
 
 
 def _ledger_add(tokens: int):
-    with LEDGER.open("a") as f:
+    with LEDGER.open("a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": time.time(), "tokens": int(tokens)}) + "\n")
 
 
@@ -323,8 +323,8 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
         G.seed(M.QUOTA, pl.used)
     if resume:
         rdir = Path(resume)
-        meta = json.loads((rdir / "meta.json").read_text())
-        done = {(json.loads(l)["id"]) for l in (rdir / "results.jsonl").read_text().splitlines()}
+        meta = json.loads((rdir / "meta.json").read_text(encoding="utf-8"))
+        done = {(json.loads(l)["id"]) for l in (rdir / "results.jsonl").read_text(encoding="utf-8").splitlines()}
         qs = [q for q in qs if q["id"] not in done]
     else:
         rdir = RUNS / f"{time.strftime('%Y%m%d-%H%M')}_{set_name}_{kind}"
@@ -365,7 +365,7 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
                    "final": json.loads(final.model_dump_json()), "tools_called": deps.tools_called,
                    "events": [{"type": e.type, "title": e.title[:120], "detail": e.detail} for e in deps.events], "checks": sc, "seconds": round(time.time() - t0, 1),
                    "fallback_log": fb}
-            with (rdir / "results.jsonl").open("a") as f:
+            with (rdir / "results.jsonl").open("a", encoding="utf-8") as f:
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
             print(f"{q['id']}.{t + 1} {'PASS' if sc['pass'] else 'FAIL'} [{final.status}] {deps.tools_called} "
                   f"{final.model} tok={tok} {row['seconds']}s :: {final.answer[:100]}", flush=True)
@@ -375,7 +375,7 @@ async def run(set_name, kind, ids, resume, sleep_s, batch, pause, max_tokens):
         if stopped or used > max_tokens:
             stopped = stopped or f"token budget {max_tokens} reached"
             break
-    rows = [json.loads(l) for l in (rdir / "results.jsonl").read_text().splitlines()] if (rdir / "results.jsonl").exists() else []
+    rows = [json.loads(l) for l in (rdir / "results.jsonl").read_text(encoding="utf-8").splitlines()] if (rdir / "results.jsonl").exists() else []
     all_ids = {q["id"] for q in load_questions(set_name) if not ids or q["id"] in ids}
     meta["complete"] = {r["id"] for r in rows} >= all_ids
     meta["stopped"] = stopped

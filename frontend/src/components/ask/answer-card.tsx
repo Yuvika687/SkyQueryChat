@@ -96,8 +96,9 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy, onEvidence
   const a = turn.answer!;
   const ev = evidenceFor(turn);
   const targets = useMemo(() => targetsFor(turn), [turn]);
-  // the comparison card already shows each city's mean, range, the difference and ratio
-  const keys = keyNumbers(a.comparison ? turn.cards.filter((c) => !/^[A-Z][A-Za-z]+_mean$|^difference_|^ratio_/.test(c.field)) : turn.cards);
+  // comparisons: the cities' means stay as tiles; difference and ratio become one small tile ("3.1× · +105 µg/m³")
+  const keys = keyNumbers(a.comparison ? turn.cards.filter((c) => !/^difference_|^ratio_/.test(c.field)) : turn.cards)
+    .slice(0, a.comparison ? 3 : 4);
   const typeKey = (a.data_types.length > 1 ? "mixed" : a.data_types[0]) ?? null;
   const checked = a.verification?.numbers_checked;
   const lead = a.headline || a.text;
@@ -105,128 +106,120 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy, onEvidence
   const fups = followUps(turn);
   const notes = (a.required_warnings ?? []).map((w) => w.text);
   const toast = useToast();
+  const c = a.comparison;
+  const unit = c ? (/µg/.test(c.units) ? "µg/m³" : c.units) : "";
   return (
-    <div className="glass flex flex-col gap-4 rounded-3xl p-5 shadow-card sm:p-6">
-      <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-subtle">
+    <div className="card flex flex-col gap-5 p-5 sm:p-6">
+      {/* a) meta line */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-subtle">
         {typeKey && (
-          <span className="inline-flex h-6 items-center rounded-full border border-[#93C5FD]/45 px-2.5 font-medium text-[#BFDBFE]">{TYPE_LABEL[typeKey] ?? typeKey}</span>
+          <span className="inline-flex h-6 items-center rounded-full bg-[#60A5FA]/12 px-2.5 font-medium text-[#BFDBFE]">{TYPE_LABEL[typeKey] ?? typeKey}</span>
         )}
-        {ev.period && <span>{ev.period}</span>}
+        {ev.period && <><span aria-hidden className="text-faint">·</span><span>{ev.period}</span></>}
         {checked ? (
-          <span className="inline-flex h-6 items-center gap-1 rounded-full bg-teal/10 px-2.5 font-medium text-teal">
+          <><span aria-hidden className="text-faint">·</span>
+          <span className="inline-flex items-center gap-1 font-medium text-teal">
             <Check className="size-3.5" aria-hidden />{checked} {checked === 1 ? "number" : "numbers"} checked
-          </span>
+          </span></>
         ) : null}
         {a.status === "answered" && (
-          <span className="ml-auto flex items-center gap-0.5">
-            <IconAct label="Copy link" onClick={() => void copyText(shareLink(turn.question), toast, "Link copied")}><Link2 className="size-4" aria-hidden /></IconAct>
+          <span className="ml-auto flex items-center">
             <IconAct label="Copy answer" onClick={() => void copyText(answerAsText(turn), toast, "Answer copied")}><Copy className="size-4" aria-hidden /></IconAct>
+            <IconAct label="Copy link" onClick={() => void copyText(shareLink(turn.question), toast, "Link copied")}><Link2 className="size-4" aria-hidden /></IconAct>
           </span>
         )}
       </div>
 
-      {a.comparison && <ComparisonCard c={a.comparison} />}
-
-      {/* short headlines keep the display serif; long ones switch to the sans at a readable size */}
+      {/* b) the headline: 21 px, key numbers in bold and clickable for proof */}
       <NumberText text={lead} targets={targets} onProof={onProof} active={activeProof}
-        className={cn(a.status !== "answered" ? "text-[16px] leading-7"
-          : lead.length > 120 ? "text-[19px] leading-[1.5] font-medium sm:text-[21px]"
-            : "font-display text-[26px] leading-[1.22] sm:text-[30px]")} />
+        className={cn(a.status !== "answered" ? "text-[17px] leading-7" : "text-[20px] leading-[1.5] font-normal text-foreground sm:text-[21px]")} />
 
-      {keys.length > 0 && (
-        <ul aria-label="Key numbers" className={cn("grid gap-3", keys.length >= 3 ? "sm:grid-cols-3" : keys.length === 2 ? "sm:grid-cols-2" : "")}>
+      {/* c) key-number tiles: soft tint, no borders */}
+      {(keys.length > 0 || c) && (
+        <ul aria-label="Key numbers" className={cn("grid grid-cols-2 gap-3", (keys.length + (c ? 1 : 0)) >= 3 && "sm:grid-cols-3", (keys.length + (c ? 1 : 0)) >= 4 && "lg:grid-cols-4")}>
           {keys.map((k) => {
             const t = targets.find((x) => x.kind === "card" && `${x.card.dataset_id}.${x.card.field}` === k.key) ?? null;
             const scale = k.unit === "AQI" ? "aqi" : /µg/.test(k.unit) ? (/pm10/i.test(a.resolved_query?.pollutant ?? "") ? "pm10" : "pm25") : null;
             return (
-              <li key={k.key} className="rounded-2xl border border-line bg-white/[0.025] px-4 py-3">
-                <p className="text-[12px] text-subtle">{k.label}</p>
+              <li key={k.key} className="tile flex min-w-0 flex-col px-4 py-3">
+                <p className="line-clamp-2 text-[12.5px] leading-[18px] text-subtle" title={k.label}>{k.label}</p>
                 <p className="mt-1 flex items-baseline gap-1.5">
                   {t ? (
                     <ProofButton onClick={() => onProof(t)} pressed={activeProof === t.id}
-                      className={cn("num rounded-md px-0.5 text-[26px] leading-8 font-medium underline decoration-teal decoration-dashed decoration-[1.5px] underline-offset-[6px] hover:bg-teal/15",
+                      className={cn("num rounded-md px-0.5 text-[24px] leading-8 font-medium underline decoration-teal/70 decoration-dashed decoration-[1.5px] underline-offset-[6px] hover:bg-teal/15",
                         activeProof === t.id && "bg-teal/20")}>
                       {k.value}
                     </ProofButton>
-                  ) : <span className="num text-[26px] leading-8 font-medium">{k.value}</span>}
+                  ) : <span className="num text-[24px] leading-8 font-medium">{k.value}</span>}
                   {k.role !== "ratio" && <span className="text-[12px] text-subtle">{k.unit}</span>}
-                  {k.category && <CategoryBadge category={k.category} size="sm" className="ml-auto" label="Category" />}
                 </p>
-                {k.range && <p className="num mt-1 text-[12px] text-subtle">({k.range})</p>}
-                {scale && k.role === "level" && <ScaleBar value={k.exact} scale={scale} className="mt-3" />}
-                {k.sub && <p className="mt-2 text-[12px] text-faint">{k.sub}</p>}
+                {k.category && <CategoryBadge category={k.category} size="sm" className="mt-1.5 self-start" label="Category" />}
+                {k.range && <p className="num mt-1 text-[12px] text-faint">({k.range})</p>}
+                {scale && k.role === "level" && <ScaleBar value={k.exact} scale={scale} showEnds={false} className="mt-2.5" />}
+                {k.sub && <p className="mt-1.5 text-[12px] text-faint">{k.sub}</p>}
               </li>
             );
           })}
+          {c && <ComparisonTile c={c} unit={unit} />}
         </ul>
       )}
 
+      {/* d) short explanation or bullets */}
       {explanation && <NumberText text={explanation} targets={targets} onProof={onProof} active={activeProof} className="text-[15px] leading-7 text-subtle" />}
 
+      {/* e) one "What this means" callout, with CPCB's health statement */}
       {a.takeaway && (
-        <p className="flex gap-2.5 rounded-xl border border-line bg-white/[0.03] px-3.5 py-2.5 text-[14px] leading-6">
+        <div className="tile flex gap-3 px-4 py-3.5">
           <HeartPulse className="mt-1 size-4 shrink-0 text-teal" aria-hidden />
-          <span>{plain(readable(a.takeaway))}</span>
-        </p>
-      )}
-
-      {onEvidence && (turn.chart || turn.cards.length > 0) && turn.phase === "done" && (
-        <button type="button" onClick={onEvidence}
-          className="inline-flex h-9 w-fit items-center gap-2 rounded-full border border-line-strong px-3.5 text-[13px] font-medium text-subtle hover:border-teal/60 hover:text-foreground">
-          <BarChart3 className="size-4 text-teal" aria-hidden />Chart and evidence
-        </button>
+          <div>
+            <p className="text-[13px] font-semibold text-foreground">What this means</p>
+            <p className="mt-0.5 text-[14.5px] leading-6 text-subtle">{plain(readable(a.takeaway))}</p>
+          </div>
+        </div>
       )}
 
       {notes.length > 0 && (
         <ul aria-label="Notes" className="flex flex-col gap-1 text-[13px] leading-5 text-faint">
-          {notes.map((n) => <li key={n} className="flex gap-2"><span aria-hidden className="mt-[7px] size-1 shrink-0 rounded-full bg-faint" />{readable(n)}</li>)}
+          {notes.map((n) => <li key={n} className="flex gap-2"><span aria-hidden className="mt-[8px] size-1 shrink-0 rounded-full bg-faint" />{readable(n)}</li>)}
         </ul>
       )}
 
-      {fups.length > 0 && turn.phase === "done" && (
-        <div>
-          <p className="mb-2 text-[12px] font-medium text-faint">Ask next</p>
-          <ul className="flex flex-wrap gap-2">
-            {fups.map((q) => (
-              <li key={q}>
-                <button type="button" disabled={busy} onClick={() => onAsk(q)}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line-strong bg-white/[0.03] px-3.5 py-1.5 text-left text-[13px] hover:border-teal/60 disabled:opacity-50">
-                  {q}<ArrowUpRight className="size-3.5 shrink-0 text-teal" aria-hidden />
-                </button>
-              </li>
-            ))}
-          </ul>
+      {/* f) follow-up chips (and, on phones, the way to the chart and evidence) */}
+      {turn.phase === "done" && (fups.length > 0 || onEvidence) && (
+        <div className="flex flex-wrap gap-2">
+          {onEvidence && (turn.chart || turn.cards.length > 0) && (
+            <button type="button" onClick={onEvidence}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-teal/10 px-3.5 py-1.5 text-[13.5px] font-medium text-teal hover:bg-teal/15 lg:hidden">
+              <BarChart3 className="size-4" aria-hidden />Chart and evidence
+            </button>
+          )}
+          {fups.map((q) => (
+            <button key={q} type="button" disabled={busy} onClick={() => onAsk(q)}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white/[0.05] px-3.5 py-1.5 text-left text-[13.5px] text-foreground hover:bg-white/[0.09] disabled:opacity-50">
+              {q}<ArrowUpRight className="size-3.5 shrink-0 text-teal" aria-hidden />
+            </button>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-/** "Delhi is 2.5× Hyderabad · +50.0 µg/m³ · 526 common days", then each city's mean side by side. Every figure is
- * from the comparison tool's result (code-built summary). */
-function ComparisonCard({ c }: { c: ComparisonSummary }) {
-  const unit = /µg/.test(c.units) ? "µg/m³" : c.units;
-  const head = c.too_close_to_call
-    ? `${c.higher} and ${c.lower} are too close to call`
-    : c.higher && c.lower && c.ratio != null ? `${c.higher} is ${c.ratio.toFixed(1)}× ${c.lower}` : null;
-  const facts = [
-    head,
-    !c.too_close_to_call && c.difference != null ? `+${c.difference.toFixed(1)} ${unit}` : null,
-    c.n_common_days != null ? `${c.n_common_days} common days` : null,
-  ].filter(Boolean);
+/** The comparison as one small tile: "3.1× · +105.0 µg/m³" (or "Too close to call"), common days below. Every figure
+ * is from the comparison tool's result (code-built summary). */
+function ComparisonTile({ c, unit }: { c: ComparisonSummary; unit: string }) {
   return (
-    <section aria-label="Comparison" className="rounded-2xl border border-teal/30 bg-teal/[0.06] px-4 py-3.5">
-      {facts.length > 0 && <p className="text-[15px] font-semibold text-foreground">{facts.join(" · ")}</p>}
-      <ul className={cn("mt-3 grid gap-3", c.cities.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3")}>
-        {c.cities.map((x) => (
-          <li key={x.city} className="rounded-xl border border-line bg-white/[0.03] px-3 py-2.5">
-            <p className="text-[12px] text-subtle">{x.city}</p>
-            <p className="mt-0.5"><span className="num text-[22px] font-medium">{x.mean.toFixed(1)}</span> <span className="text-[12px] text-subtle">{unit}</span></p>
-            {x.range95 && <p className="num text-[12px] text-faint">(95% range {x.range95[0].toFixed(1)}–{x.range95[1].toFixed(1)})</p>}
-          </li>
-        ))}
-      </ul>
-    </section>
+    <li aria-label="Comparison" className={cn("tile flex min-w-0 flex-col px-4 py-3", c.too_close_to_call ? "bg-warn/[0.07]" : "bg-teal/[0.07]")}>
+      <p className="truncate text-[12.5px] text-subtle">{c.higher && c.lower ? `${c.higher} vs ${c.lower}` : "Comparison"}</p>
+      {c.too_close_to_call ? (
+        <p className="mt-1 text-[17px] leading-8 font-semibold text-warn">Too close to call</p>
+      ) : (
+        <p className="num mt-1 text-[20px] leading-8 font-semibold">
+          {c.ratio != null ? `${c.ratio.toFixed(1)}×` : ""}{c.difference != null && <span className="text-[14px] font-medium text-subtle"> · +{c.difference.toFixed(1)} {unit}</span>}
+        </p>
+      )}
+      {c.n_common_days != null && <p className="mt-1 text-[12px] text-faint">{c.n_common_days} common days</p>}
+    </li>
   );
 }
 

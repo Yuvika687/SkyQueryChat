@@ -139,8 +139,8 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-size: 14px;
-    line-height: 22px;
+    font-size: 15px;
+    line-height: 24px;
   }
   :focus-visible {
     outline: 2px solid var(--sq-accent);
@@ -165,12 +165,39 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Translucent floating panel over the map or page. */
+/* ---------------------------------------------------------------- one design system
+   Card: the ONLY bordered container (one border, one radius, one shadow). Never put a card inside a card: inside a
+   card use `tile` (a soft tint, no border) and whitespace. Spacing: Tailwind's 4 px steps (2, 3, 4, 6, 8, 12).
+   Type scale: page title 44/48 (serif) · section title 24 · answer headline 21 · body 15 · small 13 · caption 12. */
 @utility glass {
   background: var(--sq-panel);
-  border: 1px solid rgb(148 170 214 / 0.18);
+  border: 1px solid rgb(148 170 214 / 0.14);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+@utility card {
+  background: var(--sq-panel);
+  border: 1px solid rgb(148 170 214 / 0.14);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+@utility tile {
+  background: rgb(255 255 255 / 0.04);
+  border-radius: 14px;
+}
+@utility page-title {
+  font-family: var(--font-display-serif), Georgia, serif;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  @media (width >= 40rem) { font-size: 48px; }
+}
+@utility section-title {
+  font-family: var(--font-display-serif), Georgia, serif;
+  font-size: 24px;
+  line-height: 1.15;
 }
 
 /* City marker glow: a gentle pulse in the city's category colour (off for reduced motion). */
@@ -214,6 +241,22 @@
 .sq-city-pin .lbl b { font-weight: 600; color: var(--sq-text-2); margin-right: 4px; }
 .sq-city-pin:hover .lbl, .sq-city-pin:focus-visible .lbl { border-color: var(--sq-accent); }
 .sq-city-pin[hidden] { display: none; }
+/* hover / focus card on the six city dots (India view) and on the all-cities layer's dots */
+.sq-city-pin { position: relative; }
+.sq-city-pin .card, .sq-popup .maplibregl-popup-content {
+  display: flex; flex-direction: column; gap: 2px; min-width: 190px; padding: 10px 12px; border-radius: 12px; text-align: left;
+  background: rgb(10 17 34 / 0.97); border: 1px solid var(--sq-border-strong); box-shadow: var(--shadow-float);
+  font-size: 12.5px; line-height: 18px; color: var(--sq-text-2); white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.sq-city-pin .card { position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%); z-index: 10;
+  opacity: 0; pointer-events: none; transition: opacity 120ms; }
+.sq-city-pin .card strong, .sq-popup strong { color: var(--sq-text); font-size: 13.5px; font-weight: 600; }
+.sq-city-pin .card b, .sq-popup b { color: var(--sq-text); font-weight: 600; }
+.sq-city-pin .card small, .sq-popup small { color: var(--sq-text-3); font-size: 11.5px; }
+.sq-city-pin:hover .card, .sq-city-pin:focus-visible .card { opacity: 1; }
+.sq-city-pin:hover, .sq-city-pin:focus-visible { z-index: 20; }
+.sq-popup .maplibregl-popup-tip { display: none; }
+.sq-popup .maplibregl-popup-content span { display: block; }
 .sq-city-pin.left { flex-direction: row-reverse; }
 .sq-city-pin.top { flex-direction: column-reverse; gap: 4px; }
 .sq-station-pin {

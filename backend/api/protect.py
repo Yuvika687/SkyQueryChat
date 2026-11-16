@@ -71,5 +71,5 @@ def load_demo(path: Path = DEMO_FILE) -> dict[str, dict]:
     """Selected demo answers, pre-computed by scripts/build_demo_answers.py. Never expire."""
     if not path.exists():
         return {}
-    d = json.loads(path.read_text())
+    d = json.loads(path.read_text(encoding="utf-8"))
     return {normalise(x["question"]): x for x in d.get("answers", [])}

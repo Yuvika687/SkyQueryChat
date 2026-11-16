@@ -20,17 +20,17 @@ export function AskPage() {
   const { openChat } = useApp();
   return (
     <div className="flex h-dvh flex-col pt-[72px] pb-[88px] md:pt-[80px] md:pb-0">
-      {/* one compact line: title, latest data date, new chat and recent chats */}
-      <header className="mx-auto flex w-full max-w-[1120px] items-center gap-3 px-4 pt-1 pb-2.5 sm:px-6">
-        <h1 className="font-display text-[26px] leading-none">Ask</h1>
-        <LatestDate />
-        <div className="ml-auto flex items-center gap-1.5">
-          <IconButton label="New chat" onClick={() => openChat(null)}><Plus className="size-4" aria-hidden /></IconButton>
-          <IconButton label="Recent chats" onClick={() => setHistoryOpen(true)}><History className="size-4" aria-hidden /></IconButton>
-        </div>
-      </header>
-      <div className="flex min-h-0 flex-1 border-t border-line">
-        <AskScreen initialQuestion={q} onInitialSent={() => router.replace("/ask", { scroll: false })} />
+      {/* no title row: the page name is for screen readers; New chat and Recent chats sit on the content's line */}
+      <h1 className="sr-only">Ask</h1>
+      <div className="flex min-h-0 flex-1">
+        <AskScreen initialQuestion={q} onInitialSent={() => router.replace("/ask", { scroll: false })}
+          tools={(
+            <>
+              <LatestDate />
+              <IconButton label="New chat" onClick={() => openChat(null)}><Plus className="size-4" aria-hidden /></IconButton>
+              <IconButton label="Recent chats" onClick={() => setHistoryOpen(true)}><History className="size-4" aria-hidden /></IconButton>
+            </>
+          )} />
       </div>
       <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
         <SheetContent side="right" className="w-[min(320px,100vw)] border-line bg-surface p-0">
@@ -52,7 +52,7 @@ function LatestDate() {
   if (!end) return null;
   return (
     // wide screens show the same date in the navigation bar, so the chip is for narrower screens only
-    <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line px-2.5 text-[12.5px] text-subtle lg:hidden">
+    <span className="mr-1 inline-flex h-7 items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 text-[12.5px] text-subtle lg:hidden">
       <span className="size-1.5 rounded-full bg-teal" aria-hidden />Data to {fmtDate(end)}
     </span>
   );
@@ -62,7 +62,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
   return (
     <Tooltip>
       <TooltipTrigger render={<button type="button" onClick={onClick} aria-label={label}
-        className="grid size-9 place-items-center rounded-full border border-line-strong text-subtle hover:border-teal/60 hover:text-foreground" />}>
+        className="grid size-8 place-items-center rounded-full text-subtle hover:bg-white/[0.06] hover:text-foreground" />}>
         {children}
       </TooltipTrigger>
       <TooltipContent side="bottom">{label}</TooltipContent>

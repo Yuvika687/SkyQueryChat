@@ -25,9 +25,9 @@ describe("Explore station days", () => {
 
   it("keeps the view in the address and reads it back", () => {
     const v = parseView(new URLSearchParams("city=delhi&station=5626&pollutant=PM10&date=2026-11-09"));
-    expect(v).toEqual({ city: "Delhi", station: 5626, pollutant: "pm10", date: "2026-11-09" });
+    expect(v).toEqual({ city: "Delhi", station: 5626, pollutant: "pm10", date: "2026-11-09", layer: "stations", cpcb: null });
     expect(viewQuery(v)).toBe("city=delhi&station=5626&pollutant=pm10&date=2026-11-09");
-    expect(parseView(new URLSearchParams("city=paris&station=1"))).toEqual({ city: null, station: null, pollutant: "pm25", date: null });
+    expect(parseView(new URLSearchParams("city=paris&station=1"))).toEqual({ city: null, station: null, pollutant: "pm25", date: null, layer: "stations", cpcb: null });
   });
 
   it("writes the last reading in Indian time", () => {

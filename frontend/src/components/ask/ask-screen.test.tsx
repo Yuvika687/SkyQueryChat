@@ -124,8 +124,9 @@ describe("Ask screen", () => {
     expect(screen.getByRole("button", { name: /Compare Delhi and Mumbai over the last 30 days/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Diwali 2025 than Diwali 2024/ })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
-    expect(screen.getByText(/Answers use the data available and may contain gaps\. Sources:/)).toHaveTextContent(/Sources: CPCB.*via OpenAQ/);
-    expect(screen.getByRole("link", { name: "Open-Meteo.com" })).toHaveAttribute("href", "https://open-meteo.com/");
+    expect(screen.getByText(/Latest available data, which may have gaps/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sources" })).toBeInTheDocument();     // a small link under the input
+    // the full credits (OpenAQ, CPCB, Open-Meteo CC BY 4.0) are in the Data & accuracy panel that "Sources" opens
   });
 
   it("shows the model's own headline, explanation and follow-ups from a recorded live answer", async () => {
@@ -156,16 +157,16 @@ describe("Ask screen", () => {
     expect(screen.queryByText(/Backup model/)).not.toBeInTheDocument();
     expect(screen.queryAllByText(/rank/i).filter((el) => el.closest("dl"))).toHaveLength(0);
     expect(screen.getAllByRole("button", { name: "73.0" }).length).toBeGreaterThanOrEqual(1);   // headline and key number
-    expect(screen.getByLabelText("Your question")).toHaveAttribute("placeholder", "Ask about air quality in the six cities");
+    expect(screen.getByLabelText("Your question")).toHaveAttribute("placeholder", "Ask about air quality in any Indian city");
     // phone layout in tests: "Chart and evidence" opens a bottom sheet with coverage, stations and the period in words
     await user.click(screen.getByRole("button", { name: "Chart and evidence" }));
-    const tabs = await screen.findByRole("tablist", { name: "Evidence or data" });
-    expect(within(tabs).getByRole("tab", { name: "Evidence" })).toHaveAttribute("aria-selected", "true");
+    const tabs = await screen.findByRole("tablist", { name: "Chart, data or how it was made" });
+    expect(within(tabs).getByRole("tab", { name: "Chart" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getAllByText(/Latest 30 days available/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Stations").length).toBeGreaterThan(0);   // evidence table row
-    // how the answer was made: collapsed summary, then the steps
-    const summary = screen.getAllByText("How this answer was made")[0];
-    await user.click(summary);
+    // how it was made: the evidence rows and the steps, open
+    await user.click(within(tabs).getByRole("tab", { name: "How it was made" }));
+    expect(screen.getAllByText("Stations").length).toBeGreaterThan(0);   // evidence row
+    expect(screen.getAllByText(/How this answer was made/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Checked all \d+ numbers against the analysis|Checked every number/).length).toBeGreaterThan(0);
     // the Data tab holds the table of values
     await user.click(within(tabs).getByRole("tab", { name: "Data" }));
@@ -321,7 +322,7 @@ describe("Ask screen", () => {
     vi.mocked(api.streamChat).mockImplementation(streamOf(evs));
     renderAsk();
     await ask("PM2.5 in Pune last month");
-    expect(await screen.findByText(/SkyQueryChat covers these six cities/)).toBeInTheDocument();
+    expect(await screen.findByText(/These six cities have full analysis/)).toBeInTheDocument();
     for (const c of ["Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad"]) {
       expect(screen.getByRole("button", { name: c })).toBeInTheDocument();
     }

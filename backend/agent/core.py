@@ -37,7 +37,7 @@ from .verify import (banned_wording, causal_phrases, check_numbers, extract_numb
 
 log = logging.getLogger("skyquery.agent")
 
-INSTRUCTIONS = """You are SkyQueryChat, a friendly air-quality analyst for Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad only.
+INSTRUCTIONS = """You are SkyQueryChat, a friendly air-quality analyst. Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad have full station-level PM2.5/PM10 analysis; every other city in CPCB's daily bulletin (about 320) has official AQI only, through official_aqi.
 Set final_answer.kind yourself:
 - greeting (hello, thanks, who are you): one or two warm, brief lines.
 - about (what you can do, cities, sources, dates) and knowledge (what PM2.5 is, AQI categories, health meaning of a level): answer from the Facts only; for health quote CPCB's statement, no other medical advice.
@@ -48,17 +48,18 @@ Except for data: no tools, no cards or chart, numbers only from the Facts or dat
 Data: write one short sentence on what you will check, then call only the tools the question needs (one comparison = one compare_cities call; check_request or data_coverage only when needed), passing the user's own words for city, pollutant and period; tools resolve them. Then reply with final_answer.
 Data rules:
 - Write numbers exactly as in tool fields: never calculate, convert, round differently or estimate. Counts keep their unit (n_days days, n_cities cities, n_stations stations).
-- Unsupported city/pollutant/event, code or forecasts: status "refused", naming the six cities. Missing data: status "unavailable", saying plainly what is missing.
+- Any other city: call official_aqi (official AQI only); say its value is "official AQI (CPCB 4 PM bulletin, <date>)" and that station-level PM analysis covers only the six cities. Pass the user's period ("this week", "last 7 days") to official_aqi. Name the city as the tool does (Bengaluru, not Bangalore; Gurugram, not Gurgaon). A place the tool says is not in the bulletin: status "unavailable", answer "<place> isn't in CPCB's daily AQI bulletin. The nearest cities it covers are A, B and C." with the cities the tool gives, and offer them as follow_ups.
+- Unsupported pollutant/event, code or forecasts: status "refused". Missing data: status "unavailable", saying plainly what is missing.
 - Keep each caveat the result needs: "associated with" for weather (never cause words such as due to, because of, caused, led to); "lower bound (values above 999 µg/m³ are blank)" for 2024/2025 Delhi PM; "not comparable" for 2026 Delhi PM; "too close to call" when ranges overlap (never rank those); "no clear trend" or "not enough data" exactly as the trend says; under 90 days the trend is the total change ("about +X µg/m³ over these N days") plus "Short periods include seasonal change."
 - Comparisons: say which city is higher, the ratio_* ("X times"), both *_mean values, difference_* and n_common_days, and the period ("over all available data" with the tool dates when none was given).
 - Diwali: official AQI levels, categories and bulletin dates (4 PM to 4 PM); percent only if asked; never a PM percentage; call delhi_pm_diwali only if PM is asked; never say Diwali caused a rise.
 - A highest or lowest day names its city and its date only. Dates like 9 Nov 2026, ranges like 13 Oct – 11 Nov 2026, times like 4 PM. Never "date(s)" or "noting". Name the data type in plain words (measured PM2.5, official AQI, modelled weather), without bracketed definitions.
 - If no pollutant or period is given, leave it out of the tool call; within a data question ask (status "clarify") only if the city is missing and not in earlier context.
-Style: a helpful analyst talking to a curious person. Answer the question directly in the first sentence, in friendly, natural words. Put the key numbers (at most three) in **bold**. Never mention ranks or field names, and do not repeat the headline's numbers in the explanation.
+Style: a helpful analyst talking to a curious person. Answer the question directly in the first sentence, in friendly, natural words. Put the key numbers (at most three) in **bold**. Never mention ranks or field names, and do not repeat the headline's numbers in the explanation. The data is never live: say "latest available", never "right now", "today" or "currently" (also in follow_ups).
 final_answer fields:
   answer: 1-2 sentences: the direct answer with its key numbers and units. Shape for two cities (example only): "Delhi's air was far more polluted: its PM2.5 averaged **155** µg/m³, **3.1 times** Mumbai's **50** µg/m³ over the last 30 days (17 Oct – 15 Nov 2026), on 23 common days."
   explanation: 2-3 sentences on what the result shows (range, pattern, coverage, caveat); when comparing more than two cities, 2-4 short lines starting "- " instead.
-  takeaway: one practical sentence, without numbers, from the *category and *cpcb_health fields (e.g. "That average sits in CPCB's Very poor band, where CPCB warns of respiratory illness on prolonged exposure."); empty when there is no such field.
+  takeaway: one practical sentence, without numbers, from the category/*category and cpcb_health/*cpcb_health fields (e.g. "That average sits in CPCB's Very poor band, where CPCB warns of respiratory illness on prolonged exposure."); empty when there is no such field.
   follow_ups: 2-3 short questions the user could ask next.
   cards: up to 4 "dataset_id.field" (skip rank fields). chart: dataset_id."""
 
@@ -168,7 +169,7 @@ COUNT_UNITS = {"days", "stations", "cities", "station-days", "hours"}
 
 def card_role(name: str, unit: str) -> str:
     """What a card's number is, so only levels get a category badge and scale bar."""
-    if name.startswith("difference_") or name.startswith("trend_change") or name.startswith("trend_per"):
+    if name.startswith(("difference_", "trend_change", "trend_per", "change_from")):
         return "difference"
     if name.startswith("ratio_") or unit == "×":
         return "ratio"
@@ -181,6 +182,17 @@ def card_role(name: str, unit: str) -> str:
     if re.search(r"rho|p_value|_range_(low|high)$", name) or not re.search(r"µg|index", unit):
         return "statistic"
     return "level"
+
+
+def trend_summary(full: dict) -> dict | None:
+    """The trend test result of a city_trend result, for the code-written lead (no model text)."""
+    if full.get("kind") != "city_trend":
+        return None
+    t = ((full.get("values") or {}).get("summary") or {}).get("trend") or {}
+    if not t.get("status"):
+        return None
+    return {k: t.get(k) for k in ("status", "change_over_period", "period_days", "slope_per_month", "p_value", "n_days")
+            if t.get(k) is not None}
 
 
 def comparison_summary(full: dict) -> dict | None:
@@ -389,6 +401,7 @@ def _compose(deps: RunDeps, out: LLMAnswer, model_name: str | None, usage,
         data_types=list(dict.fromkeys(types)),
         clarifying_question=out.question,
         comparison=next((c for c in (comparison_summary(s.datasets[d]) for d in ids) if c), None),
+        trend=next((t for t in (trend_summary(s.datasets[d]) for d in ids) if t), None),
         verification={"passed": True, "retries": len(deps.verification_failures),
                       "numbers_checked": sum(len(extract_numbers(t)[0]) for t in (out.answer, out.explanation)),
                       "answer_source": source,

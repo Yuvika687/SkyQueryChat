@@ -38,6 +38,8 @@ export interface CompareRow { city: string; mean: number | null; range95: [numbe
 export interface CompareData {
   metric: Metric; start: string; end: string; days: number; units: string; data_type: string; source: string; method: string;
   common_days: number; too_close_to_call: [string, string][]; cities: CompareRow[]; dates: string[]; lines: Record<string, (number | null)[]>;
+  /** highest and lowest city means and their ratio, calculated in Python (absent with fewer than two values) */
+  summary?: { highest: { city: string; mean: number }; lowest: { city: string; mean: number }; ratio: number | null; difference: number; too_close_to_call: boolean };
 }
 export interface Periods { data_start: string; data_end: string; presets: { id: string; label: string; start: string; end: string }[] }
 

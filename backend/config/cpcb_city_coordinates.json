@@ -1,0 +1,2308 @@
+{
+ "_note": "Bulletin city coordinates from GeoNames (geonames.org), CC BY 4.0. Built by scripts/build_city_coordinates.py; only confident matches are plotted.",
+ "source": "GeoNames (geonames.org), CC BY 4.0",
+ "built": "2026-11-17",
+ "n_cities": 329,
+ "n_plotted": 300,
+ "not_plotted": [
+  "Ambernath",
+  "Ballabgarh",
+  "Belapur",
+  "Bharatpur",
+  "Bileipada",
+  "Byrnihat",
+  "Byrnihat (Assam)",
+  "Byrnihat (Meghalaya)",
+  "Chhal",
+  "Chikkaballapur",
+  "Fatehabad",
+  "Gummidipoondi",
+  "Hajipur",
+  "Khairthal",
+  "Khora",
+  "Kolar",
+  "Kunjemura",
+  "Mandi Gobindgarh",
+  "Mandikhera",
+  "Manguraha",
+  "Palkalaiperur",
+  "Panchgaon",
+  "Pratapgarh",
+  "Ramanagara",
+  "Satara",
+  "Sivasagar",
+  "Vasai",
+  "Vatva",
+  "Virudhunagar"
+ ],
+ "cities": {
+  "Agartala": {
+   "lat": 23.8361,
+   "lon": 91.2794,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1279290
+  },
+  "Agra": {
+   "lat": 27.1833,
+   "lon": 78.0167,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1279259
+  },
+  "Ahmedabad": {
+   "lat": 23.0258,
+   "lon": 72.5873,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1279233
+  },
+  "Ahmednagar": {
+   "lat": 23.5989,
+   "lon": 72.966,
+   "plotted": true,
+   "match": "only seat of government",
+   "geonameid": 1270099
+  },
+  "Aizawl": {
+   "lat": 23.7289,
+   "lon": 92.7179,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1279186
+  },
+  "Ajmer": {
+   "lat": 26.4521,
+   "lon": 74.6387,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1279159
+  },
+  "Akola": {
+   "lat": 20.7096,
+   "lon": 76.9981,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1279105
+  },
+  "Alwar": {
+   "lat": 27.5625,
+   "lon": 76.625,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1278946
+  },
+  "Amaravati": {
+   "lat": 20.9333,
+   "lon": 77.75,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278718
+  },
+  "Ambala": {
+   "lat": 30.361,
+   "lon": 76.7978,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278860
+  },
+  "Ambernath": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Amravati": {
+   "lat": 20.9333,
+   "lon": 77.75,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278718
+  },
+  "Amritsar": {
+   "lat": 31.6223,
+   "lon": 74.8753,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1278710
+  },
+  "Anantapur": {
+   "lat": 14.6778,
+   "lon": 77.6081,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278672
+  },
+  "Angul": {
+   "lat": 20.8409,
+   "lon": 85.1019,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278593
+  },
+  "Ankleshwar": {
+   "lat": 21.6324,
+   "lon": 72.99,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1278553
+  },
+  "Anpara": {
+   "lat": 24.1941,
+   "lon": 82.7917,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 10559595
+  },
+  "Araria": {
+   "lat": 26.1493,
+   "lon": 87.5132,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278446
+  },
+  "Ariyalur": {
+   "lat": 11.1385,
+   "lon": 79.0756,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278405
+  },
+  "Arrah": {
+   "lat": 25.5563,
+   "lon": 84.6633,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278483
+  },
+  "Asansol": {
+   "lat": 23.6833,
+   "lon": 86.9833,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278314
+  },
+  "Aurangabad (Bihar)": {
+   "lat": 24.752,
+   "lon": 84.3742,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278148
+  },
+  "Aurangabad (Maharashtra)": {
+   "lat": 19.8776,
+   "lon": 75.3423,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1278149
+  },
+  "Baddi": {
+   "lat": 30.9578,
+   "lon": 76.7914,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 7279742
+  },
+  "Badlapur": {
+   "lat": 19.1552,
+   "lon": 73.2655,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1277976
+  },
+  "Bagalkot": {
+   "lat": 16.1867,
+   "lon": 75.6961,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1277936
+  },
+  "Baghpat": {
+   "lat": 28.9448,
+   "lon": 77.2186,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1277882
+  },
+  "Bahadurgarh": {
+   "lat": 28.6929,
+   "lon": 76.9356,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1277835
+  },
+  "Balasore": {
+   "lat": 21.4927,
+   "lon": 86.9335,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1277599
+  },
+  "Ballabgarh": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "2 places share this name"
+  },
+  "Banswara": {
+   "lat": 23.5411,
+   "lon": 74.4425,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1277214
+  },
+  "Baran": {
+   "lat": 25.1,
+   "lon": 76.5167,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1277084
+  },
+  "Baraut": {
+   "lat": 29.102,
+   "lon": 77.2633,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1277044
+  },
+  "Barbil": {
+   "lat": 22.1019,
+   "lon": 85.3775,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 7279597
+  },
+  "Bareilly": {
+   "lat": 28.3668,
+   "lon": 79.4317,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1277013
+  },
+  "Baripada": {
+   "lat": 21.9346,
+   "lon": 86.7285,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1276942
+  },
+  "Barmer": {
+   "lat": 25.7457,
+   "lon": 71.3921,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1276901
+  },
+  "Barrackpore": {
+   "lat": 22.766,
+   "lon": 88.3634,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1277100
+  },
+  "Bathinda": {
+   "lat": 30.2075,
+   "lon": 74.9389,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1276070
+  },
+  "Beed": {
+   "lat": 18.9892,
+   "lon": 75.7563,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1275539
+  },
+  "Begusarai": {
+   "lat": 25.4185,
+   "lon": 86.1339,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1276609
+  },
+  "Belapur": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "3 places share this name"
+  },
+  "Belgaum": {
+   "lat": 15.8521,
+   "lon": 74.5045,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1276533
+  },
+  "Bengaluru": {
+   "lat": 12.9452,
+   "lon": 77.5864,
+   "plotted": true,
+   "match": "project city centre"
+  },
+  "Bettiah": {
+   "lat": 26.8023,
+   "lon": 84.5031,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1276393
+  },
+  "Bhagalpur": {
+   "lat": 25.2445,
+   "lon": 86.9718,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1276300
+  },
+  "Bharatpur": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "73 places share this name"
+  },
+  "Bhavnagar": {
+   "lat": 21.7629,
+   "lon": 72.1533,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1276032
+  },
+  "Bhilai": {
+   "lat": 21.2092,
+   "lon": 81.4285,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1275971
+  },
+  "Bhilwara": {
+   "lat": 25.3471,
+   "lon": 74.6408,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1275960
+  },
+  "Bhiwadi": {
+   "lat": 28.2102,
+   "lon": 76.8606,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 7279747
+  },
+  "Bhiwandi": {
+   "lat": 19.3002,
+   "lon": 73.0588,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1275901
+  },
+  "Bhiwani": {
+   "lat": 28.793,
+   "lon": 76.1397,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1275899
+  },
+  "Bhopal": {
+   "lat": 23.2547,
+   "lon": 77.4029,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1275841
+  },
+  "Bhubaneswar": {
+   "lat": 20.2724,
+   "lon": 85.8338,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1275817
+  },
+  "Bidar": {
+   "lat": 17.908,
+   "lon": 77.5152,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1275738
+  },
+  "Bihar Sharif": {
+   "lat": 25.2008,
+   "lon": 85.5239,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1275716
+  },
+  "Bikaner": {
+   "lat": 28.0176,
+   "lon": 73.3149,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1275665
+  },
+  "Bilaspur": {
+   "lat": 22.08,
+   "lon": 82.1554,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1275637
+  },
+  "Bileipada": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Boisar": {
+   "lat": 19.8036,
+   "lon": 72.756,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1275368
+  },
+  "Brajrajnagar": {
+   "lat": 21.8167,
+   "lon": 83.9167,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1275194
+  },
+  "Bulandshahr": {
+   "lat": 28.4039,
+   "lon": 77.8577,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1275120
+  },
+  "Bundi": {
+   "lat": 25.4385,
+   "lon": 75.6373,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1275103
+  },
+  "Buxar": {
+   "lat": 25.5755,
+   "lon": 83.9804,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1275019
+  },
+  "Byasanagar": {
+   "lat": 20.9557,
+   "lon": 86.1264,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 12522807
+  },
+  "Byrnihat": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Byrnihat (Assam)": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Byrnihat (Meghalaya)": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Chamarajanagar": {
+   "lat": 11.9231,
+   "lon": 76.9395,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1274821
+  },
+  "Chandigarh": {
+   "lat": 30.7363,
+   "lon": 76.7884,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1274746
+  },
+  "Chandrapur": {
+   "lat": 19.9508,
+   "lon": 79.2952,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1274693
+  },
+  "Charkhi Dadri": {
+   "lat": 28.5917,
+   "lon": 76.2716,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1274571
+  },
+  "Chengalpattu": {
+   "lat": 12.6918,
+   "lon": 79.9766,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1274430
+  },
+  "Chennai": {
+   "lat": 13.1056,
+   "lon": 80.2546,
+   "plotted": true,
+   "match": "project city centre"
+  },
+  "Chhal": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "7 places share this name"
+  },
+  "Chhapra": {
+   "lat": 25.7803,
+   "lon": 84.7471,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1274353
+  },
+  "Chikkaballapur": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Chikkamagaluru": {
+   "lat": 13.3223,
+   "lon": 75.774,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1274220
+  },
+  "Chittoor": {
+   "lat": 13.2105,
+   "lon": 79.0956,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1274033
+  },
+  "Chittorgarh": {
+   "lat": 24.8896,
+   "lon": 74.624,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1274040
+  },
+  "Churu": {
+   "lat": 28.3041,
+   "lon": 74.9672,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1273892
+  },
+  "Coimbatore": {
+   "lat": 11.0055,
+   "lon": 76.9661,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1273865
+  },
+  "Cuddalore": {
+   "lat": 11.7562,
+   "lon": 79.7669,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1273802
+  },
+  "Cuttack": {
+   "lat": 20.465,
+   "lon": 85.8793,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1273780
+  },
+  "Damoh": {
+   "lat": 23.8331,
+   "lon": 79.4419,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1273587
+  },
+  "Darbhanga": {
+   "lat": 26.1522,
+   "lon": 85.8971,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1273491
+  },
+  "Dausa": {
+   "lat": 26.89,
+   "lon": 76.3358,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1273369
+  },
+  "Davanagere": {
+   "lat": 14.4669,
+   "lon": 75.9269,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1273368
+  },
+  "Deeg": {
+   "lat": 27.4719,
+   "lon": 77.3256,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1272639
+  },
+  "Dehradun": {
+   "lat": 30.3244,
+   "lon": 78.0339,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1273313
+  },
+  "Delhi": {
+   "lat": 28.6355,
+   "lon": 77.1899,
+   "plotted": true,
+   "match": "project city centre"
+  },
+  "Dewas": {
+   "lat": 22.9658,
+   "lon": 76.0553,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1273066
+  },
+  "Dhanbad": {
+   "lat": 23.7976,
+   "lon": 86.4299,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1272979
+  },
+  "Dharuhera": {
+   "lat": 28.2055,
+   "lon": 76.7969,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1272822
+  },
+  "Dharwad": {
+   "lat": 15.4601,
+   "lon": 75.0078,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1272818
+  },
+  "Dholpur": {
+   "lat": 26.6929,
+   "lon": 77.8797,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1272805
+  },
+  "Dhule": {
+   "lat": 20.9013,
+   "lon": 74.7774,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1272691
+  },
+  "Dindigul": {
+   "lat": 10.369,
+   "lon": 77.9804,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1272543
+  },
+  "Dombivli": {
+   "lat": 19.2167,
+   "lon": 73.0833,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1272423
+  },
+  "Dungarpur": {
+   "lat": 23.8431,
+   "lon": 73.7147,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1272201
+  },
+  "Durgapur": {
+   "lat": 23.5158,
+   "lon": 87.308,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1272175
+  },
+  "Eloor": {
+   "lat": 10.0667,
+   "lon": 76.2833,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1272052
+  },
+  "Eluru": {
+   "lat": 16.7131,
+   "lon": 81.1044,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1272051
+  },
+  "Faridabad": {
+   "lat": 28.4112,
+   "lon": 77.3132,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1271951
+  },
+  "Fatehabad": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "17 places share this name"
+  },
+  "Fatehpur sikri": {
+   "lat": 27.0937,
+   "lon": 77.66,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1271900
+  },
+  "Firozabad": {
+   "lat": 27.1509,
+   "lon": 78.3978,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1271885
+  },
+  "Gadag": {
+   "lat": 15.4298,
+   "lon": 75.6297,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1271850
+  },
+  "Gajraula": {
+   "lat": 28.8457,
+   "lon": 78.2396,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1271780
+  },
+  "Gandhinagar": {
+   "lat": 23.2167,
+   "lon": 72.6833,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1271715
+  },
+  "Gangtok": {
+   "lat": 27.3257,
+   "lon": 88.6122,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1271631
+  },
+  "Gaya": {
+   "lat": 24.7969,
+   "lon": 85.0038,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1271439
+  },
+  "Ghaziabad": {
+   "lat": 28.6654,
+   "lon": 77.4391,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1271308
+  },
+  "Gopalganj": {
+   "lat": 26.4673,
+   "lon": 84.4404,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1270965
+  },
+  "Gorakhpur": {
+   "lat": 26.7663,
+   "lon": 83.3689,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1270927
+  },
+  "Greater Noida": {
+   "lat": 28.4962,
+   "lon": 77.536,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 6954929
+  },
+  "Gummidipoondi": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Guntur": {
+   "lat": 16.2997,
+   "lon": 80.4573,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1270668
+  },
+  "Gurugram": {
+   "lat": 28.4601,
+   "lon": 77.0263,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1270642
+  },
+  "Guwahati": {
+   "lat": 26.1844,
+   "lon": 91.7458,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1271476
+  },
+  "Gwalior": {
+   "lat": 26.2298,
+   "lon": 78.1734,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1270583
+  },
+  "Hajipur": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "126 places share this name"
+  },
+  "Haldia": {
+   "lat": 22.0605,
+   "lon": 88.1098,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1344377
+  },
+  "Hanumangarh": {
+   "lat": 29.5818,
+   "lon": 74.3294,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1270407
+  },
+  "Hapur": {
+   "lat": 28.7298,
+   "lon": 77.7807,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1270393
+  },
+  "Hassan": {
+   "lat": 13.0071,
+   "lon": 76.0962,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1270239
+  },
+  "Haveri": {
+   "lat": 14.7935,
+   "lon": 75.4045,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1270171
+  },
+  "Hingoli": {
+   "lat": 19.7146,
+   "lon": 77.1424,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1270072
+  },
+  "Hisar": {
+   "lat": 29.1539,
+   "lon": 75.7229,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1270022
+  },
+  "Hosur": {
+   "lat": 12.7365,
+   "lon": 77.8326,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1269934
+  },
+  "Howrah": {
+   "lat": 22.5769,
+   "lon": 88.3186,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1270396
+  },
+  "Hubballi": {
+   "lat": 15.3478,
+   "lon": 75.1338,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1269920
+  },
+  "Hyderabad": {
+   "lat": 17.442,
+   "lon": 78.4525,
+   "plotted": true,
+   "match": "project city centre"
+  },
+  "Imphal": {
+   "lat": 24.8081,
+   "lon": 93.9442,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1269771
+  },
+  "Indore": {
+   "lat": 22.7179,
+   "lon": 75.8333,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1269743
+  },
+  "Jabalpur": {
+   "lat": 23.167,
+   "lon": 79.9501,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1269633
+  },
+  "Jaipur": {
+   "lat": 26.9196,
+   "lon": 75.7878,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1269515
+  },
+  "Jaisalmer": {
+   "lat": 26.9176,
+   "lon": 70.9039,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1269507
+  },
+  "Jalandhar": {
+   "lat": 31.3256,
+   "lon": 75.5792,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1268782
+  },
+  "Jalgaon": {
+   "lat": 21.0029,
+   "lon": 75.566,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1269407
+  },
+  "Jalna": {
+   "lat": 19.841,
+   "lon": 75.8864,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1269395
+  },
+  "Jalore": {
+   "lat": 25.3456,
+   "lon": 72.6156,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1269392
+  },
+  "Jamui": {
+   "lat": 24.9261,
+   "lon": 86.2253,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1269291
+  },
+  "Jhalawar": {
+   "lat": 24.5963,
+   "lon": 76.165,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1269027
+  },
+  "Jhansi": {
+   "lat": 25.4589,
+   "lon": 78.5799,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1269006
+  },
+  "Jhunjhunu": {
+   "lat": 28.1256,
+   "lon": 75.398,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1268936
+  },
+  "Jind": {
+   "lat": 29.3158,
+   "lon": 76.315,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1268907
+  },
+  "Jodhpur": {
+   "lat": 26.2684,
+   "lon": 73.0059,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1268865
+  },
+  "Jorapokhar": {
+   "lat": 22.4114,
+   "lon": 85.765,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 11690485
+  },
+  "Kadapa": {
+   "lat": 14.48,
+   "lon": 78.8235,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1273800
+  },
+  "Kaithal": {
+   "lat": 29.8015,
+   "lon": 76.3996,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1268593
+  },
+  "Kakinada": {
+   "lat": 16.9604,
+   "lon": 82.2381,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1268561
+  },
+  "Kalaburagi": {
+   "lat": 17.3358,
+   "lon": 76.8376,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1270752
+  },
+  "Kalyan": {
+   "lat": 19.2437,
+   "lon": 73.1355,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1268295
+  },
+  "Kanchipuram": {
+   "lat": 12.8352,
+   "lon": 79.7001,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1268159
+  },
+  "Kannur": {
+   "lat": 11.8675,
+   "lon": 75.3576,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1274987
+  },
+  "Kanpur": {
+   "lat": 26.4652,
+   "lon": 80.3498,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1267995
+  },
+  "Karauli": {
+   "lat": 26.4983,
+   "lon": 77.0276,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1267819
+  },
+  "Karnal": {
+   "lat": 29.692,
+   "lon": 76.9845,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1267708
+  },
+  "Karur": {
+   "lat": 10.9577,
+   "lon": 78.081,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1267648
+  },
+  "Karwar": {
+   "lat": 14.8136,
+   "lon": 74.1297,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1267635
+  },
+  "Kashipur": {
+   "lat": 29.214,
+   "lon": 78.9569,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1267579
+  },
+  "Katihar": {
+   "lat": 25.5385,
+   "lon": 87.5704,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1267480
+  },
+  "Katni": {
+   "lat": 23.8378,
+   "lon": 80.394,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1262395
+  },
+  "Keonjhar": {
+   "lat": 21.6318,
+   "lon": 85.5969,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1267267
+  },
+  "Khairthal": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Khanna": {
+   "lat": 30.7055,
+   "lon": 76.222,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1267016
+  },
+  "Khora": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "16 places share this name"
+  },
+  "Khurja": {
+   "lat": 28.2538,
+   "lon": 77.8554,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1266607
+  },
+  "Kishanganj": {
+   "lat": 26.1022,
+   "lon": 87.9553,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1266489
+  },
+  "Kiul": {
+   "lat": 25.1642,
+   "lon": 86.0953,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1266456
+  },
+  "Kohima": {
+   "lat": 25.6747,
+   "lon": 94.111,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1266366
+  },
+  "Kolar": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "13 places share this name"
+  },
+  "Kolhapur": {
+   "lat": 16.6956,
+   "lon": 74.2317,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1266285
+  },
+  "Kolkata": {
+   "lat": 22.5511,
+   "lon": 88.3654,
+   "plotted": true,
+   "match": "project city centre"
+  },
+  "Kollam": {
+   "lat": 8.8811,
+   "lon": 76.5847,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1259091
+  },
+  "Koppal": {
+   "lat": 15.3452,
+   "lon": 76.1548,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1266154
+  },
+  "Korba": {
+   "lat": 22.3458,
+   "lon": 82.6963,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1266122
+  },
+  "Kota": {
+   "lat": 25.1825,
+   "lon": 75.8391,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1266049
+  },
+  "Kotputli": {
+   "lat": 27.7021,
+   "lon": 76.1991,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1265961
+  },
+  "Kunjemura": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Kurnool": {
+   "lat": 15.8289,
+   "lon": 78.036,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1265491
+  },
+  "Kurukshetra": {
+   "lat": 29.9657,
+   "lon": 76.837,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 8986322
+  },
+  "Latur": {
+   "lat": 18.3972,
+   "lon": 76.5678,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1265014
+  },
+  "Leh": {
+   "lat": 34.165,
+   "lon": 77.584,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1264976
+  },
+  "Lucknow": {
+   "lat": 26.8393,
+   "lon": 80.9231,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1264733
+  },
+  "Ludhiana": {
+   "lat": 30.912,
+   "lon": 75.8538,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1264728
+  },
+  "Machilipatnam": {
+   "lat": 16.1875,
+   "lon": 81.1389,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1264637
+  },
+  "Madhubani": {
+   "lat": 26.3537,
+   "lon": 86.0717,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1264555
+  },
+  "Madikeri": {
+   "lat": 12.426,
+   "lon": 75.7382,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1264540
+  },
+  "Madurai": {
+   "lat": 9.919,
+   "lon": 78.1195,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1264521
+  },
+  "Mahad": {
+   "lat": 18.0833,
+   "lon": 73.4167,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1264489
+  },
+  "Maihar": {
+   "lat": 24.2659,
+   "lon": 80.7606,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1264317
+  },
+  "Malegaon": {
+   "lat": 20.5497,
+   "lon": 74.5346,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1264115
+  },
+  "Mandi Gobindgarh": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Mandideep": {
+   "lat": 23.0817,
+   "lon": 77.5333,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 7279752
+  },
+  "Mandikhera": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "2 places share this name"
+  },
+  "Manesar": {
+   "lat": 28.3531,
+   "lon": 76.9404,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 9915464
+  },
+  "Mangalore": {
+   "lat": 12.9172,
+   "lon": 74.856,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1263780
+  },
+  "Manguraha": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "4 places share this name"
+  },
+  "Mathura": {
+   "lat": 27.5035,
+   "lon": 77.6722,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1263364
+  },
+  "Meerut": {
+   "lat": 28.98,
+   "lon": 77.7064,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1263214
+  },
+  "Mehsana": {
+   "lat": 23.5986,
+   "lon": 72.3847,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1264389
+  },
+  "Milupara": {
+   "lat": 22.1821,
+   "lon": 83.5192,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1263044
+  },
+  "Mira-Bhayandar": {
+   "lat": 19.3016,
+   "lon": 72.8511,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1276014
+  },
+  "Modinagar": {
+   "lat": 28.8306,
+   "lon": 77.573,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 8440756
+  },
+  "Moradabad": {
+   "lat": 28.8389,
+   "lon": 78.7768,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1262801
+  },
+  "Motihari": {
+   "lat": 26.6486,
+   "lon": 84.9166,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1262710
+  },
+  "Mumbai": {
+   "lat": 19.0919,
+   "lon": 72.87,
+   "plotted": true,
+   "match": "project city centre"
+  },
+  "Munger": {
+   "lat": 25.3746,
+   "lon": 86.4745,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1262482
+  },
+  "Muzaffarnagar": {
+   "lat": 29.4709,
+   "lon": 77.7033,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1262332
+  },
+  "Muzaffarpur": {
+   "lat": 26.1226,
+   "lon": 85.3906,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1262330
+  },
+  "Mysuru": {
+   "lat": 12.2979,
+   "lon": 76.6393,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1262321
+  },
+  "Nagaon": {
+   "lat": 26.35,
+   "lon": 92.6667,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1261163
+  },
+  "Nagapattinam": {
+   "lat": 10.7638,
+   "lon": 79.8431,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1262260
+  },
+  "Nagaur": {
+   "lat": 27.202,
+   "lon": 73.7339,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1262216
+  },
+  "Nagpur": {
+   "lat": 21.1463,
+   "lon": 79.0849,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1262180
+  },
+  "Naharlagun": {
+   "lat": 27.1047,
+   "lon": 93.6952,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 7302855
+  },
+  "Nalbari": {
+   "lat": 26.4394,
+   "lon": 91.4404,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1262078
+  },
+  "Namakkal": {
+   "lat": 11.2213,
+   "lon": 78.1652,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1262039
+  },
+  "Nanded": {
+   "lat": 19.1602,
+   "lon": 77.315,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1261977
+  },
+  "Nandesari": {
+   "lat": 22.4062,
+   "lon": 73.0952,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 13157041
+  },
+  "Narnaul": {
+   "lat": 28.0444,
+   "lon": 76.1083,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1261772
+  },
+  "Nashik": {
+   "lat": 19.9973,
+   "lon": 73.791,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1261731
+  },
+  "Navi Mumbai": {
+   "lat": 19.0368,
+   "lon": 73.0158,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 6619347
+  },
+  "Nayagarh": {
+   "lat": 20.1288,
+   "lon": 85.0963,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1261580
+  },
+  "Nellore": {
+   "lat": 14.4499,
+   "lon": 79.987,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1261529
+  },
+  "Noida": {
+   "lat": 28.58,
+   "lon": 77.33,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 7279746
+  },
+  "Ongole": {
+   "lat": 15.5036,
+   "lon": 80.0445,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1261045
+  },
+  "Ooty": {
+   "lat": 11.4134,
+   "lon": 76.6952,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1253993
+  },
+  "Pali": {
+   "lat": 25.7728,
+   "lon": 73.3234,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1260716
+  },
+  "Palkalaiperur": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Palwal": {
+   "lat": 28.1447,
+   "lon": 77.3255,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1260637
+  },
+  "Pampore": {
+   "lat": 34.0151,
+   "lon": 74.9189,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1260618
+  },
+  "Panchgaon": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "12 places share this name"
+  },
+  "Panchkula": {
+   "lat": 30.6946,
+   "lon": 76.8504,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 6690108
+  },
+  "Panipat": {
+   "lat": 29.3875,
+   "lon": 76.9682,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1260476
+  },
+  "Paradeep": {
+   "lat": 20.3164,
+   "lon": 86.6085,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1260393
+  },
+  "Parbhani": {
+   "lat": 19.2686,
+   "lon": 76.7708,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1260341
+  },
+  "Patiala": {
+   "lat": 30.3362,
+   "lon": 76.3922,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1260107
+  },
+  "Patna": {
+   "lat": 25.5941,
+   "lon": 85.1356,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1260086
+  },
+  "Perundurai": {
+   "lat": 11.2756,
+   "lon": 77.5879,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1259855
+  },
+  "Pimpri-Chinchwad": {
+   "lat": 18.6187,
+   "lon": 73.8037,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 7626690
+  },
+  "Pithampur": {
+   "lat": 22.602,
+   "lon": 75.6965,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 7279595
+  },
+  "Pratapgarh": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "11 places share this name"
+  },
+  "Prayagraj": {
+   "lat": 25.4448,
+   "lon": 81.8432,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1278994
+  },
+  "Puducherry": {
+   "lat": 11.9338,
+   "lon": 79.8298,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1259425
+  },
+  "Pudukottai": {
+   "lat": 10.3813,
+   "lon": 78.8214,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1259297
+  },
+  "Pune": {
+   "lat": 18.5196,
+   "lon": 73.8554,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1259229
+  },
+  "Purnia": {
+   "lat": 25.7789,
+   "lon": 87.4742,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1259166
+  },
+  "Raebareli": {
+   "lat": 26.2309,
+   "lon": 81.2331,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1259064
+  },
+  "Raichur": {
+   "lat": 16.2055,
+   "lon": 77.3557,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1259012
+  },
+  "Raipur": {
+   "lat": 21.2333,
+   "lon": 81.6333,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1258980
+  },
+  "Rairangpur": {
+   "lat": 22.2667,
+   "lon": 86.1739,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1265830
+  },
+  "Rajamahendravaram": {
+   "lat": 17.0052,
+   "lon": 81.7778,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1258932
+  },
+  "Rajgir": {
+   "lat": 25.0283,
+   "lon": 85.4208,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1258864
+  },
+  "Rajkot": {
+   "lat": 22.2916,
+   "lon": 70.7932,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1258847
+  },
+  "Rajsamand": {
+   "lat": 25.0714,
+   "lon": 73.8798,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1258797
+  },
+  "Ramanagara": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Ramanathapuram": {
+   "lat": 9.3716,
+   "lon": 78.8308,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1258740
+  },
+  "Ranipet": {
+   "lat": 12.9247,
+   "lon": 79.3333,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1258451
+  },
+  "Ratlam": {
+   "lat": 23.3303,
+   "lon": 75.0403,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1258342
+  },
+  "Rishikesh": {
+   "lat": 30.1078,
+   "lon": 78.2926,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1258128
+  },
+  "Rohtak": {
+   "lat": 28.8945,
+   "lon": 76.5892,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1258076
+  },
+  "Rourkela": {
+   "lat": 22.225,
+   "lon": 84.8641,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1258315
+  },
+  "Rupnagar": {
+   "lat": 30.969,
+   "lon": 76.5269,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1257951
+  },
+  "Sagar": {
+   "lat": 23.8388,
+   "lon": 78.7387,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1257845
+  },
+  "Saharsa": {
+   "lat": 25.875,
+   "lon": 86.5961,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1257804
+  },
+  "Salem": {
+   "lat": 11.6538,
+   "lon": 78.1554,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1257629
+  },
+  "Samastipur": {
+   "lat": 25.8622,
+   "lon": 85.7795,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1257551
+  },
+  "Sangli": {
+   "lat": 16.8544,
+   "lon": 74.5642,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1257416
+  },
+  "Sasaram": {
+   "lat": 24.9494,
+   "lon": 84.0165,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1257086
+  },
+  "Satara": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "8 places share this name"
+  },
+  "Satna": {
+   "lat": 24.5773,
+   "lon": 80.8272,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1257022
+  },
+  "Sawai Madhopur": {
+   "lat": 26.023,
+   "lon": 76.3441,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1256949
+  },
+  "Shamli": {
+   "lat": 29.4497,
+   "lon": 77.3096,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1256671
+  },
+  "Shillong": {
+   "lat": 25.5689,
+   "lon": 91.8831,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1256523
+  },
+  "Shivamogga": {
+   "lat": 13.9316,
+   "lon": 75.5679,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1256515
+  },
+  "Sikar": {
+   "lat": 27.6121,
+   "lon": 75.14,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1256320
+  },
+  "Silchar": {
+   "lat": 24.8273,
+   "lon": 92.7979,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1256287
+  },
+  "Siliguri": {
+   "lat": 26.71,
+   "lon": 88.4285,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1256525
+  },
+  "Singrauli": {
+   "lat": 24.1997,
+   "lon": 82.6753,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 7279754
+  },
+  "Sirohi": {
+   "lat": 24.8884,
+   "lon": 72.8479,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1256067
+  },
+  "Sirsa": {
+   "lat": 29.5349,
+   "lon": 75.029,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1256052
+  },
+  "Sitamarhi": {
+   "lat": 26.5936,
+   "lon": 85.4906,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1255983
+  },
+  "Sivasagar": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Siwan": {
+   "lat": 26.221,
+   "lon": 84.3561,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1255927
+  },
+  "Solapur": {
+   "lat": 17.6715,
+   "lon": 75.9104,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1256436
+  },
+  "Sonipat": {
+   "lat": 28.9948,
+   "lon": 77.0194,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1255744
+  },
+  "Sri Ganganagar": {
+   "lat": 29.9201,
+   "lon": 73.875,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1271685
+  },
+  "Sri Vijaya Puram": {
+   "lat": 11.6661,
+   "lon": 92.7464,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1259385
+  },
+  "Srikakulam": {
+   "lat": 18.2989,
+   "lon": 83.8975,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1255647
+  },
+  "Srinagar": {
+   "lat": 34.0857,
+   "lon": 74.8055,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1255634
+  },
+  "Suakati": {
+   "lat": 21.6143,
+   "lon": 85.5154,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 11693093
+  },
+  "Surat": {
+   "lat": 21.1959,
+   "lon": 72.8302,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1255364
+  },
+  "Talcher": {
+   "lat": 20.9493,
+   "lon": 85.2335,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1255143
+  },
+  "Tensa": {
+   "lat": 21.8728,
+   "lon": 85.1713,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 10282670
+  },
+  "Thane": {
+   "lat": 19.197,
+   "lon": 72.9635,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1254661
+  },
+  "Thanjavur": {
+   "lat": 10.7852,
+   "lon": 79.1391,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1254649
+  },
+  "Thiruvananthapuram": {
+   "lat": 8.4855,
+   "lon": 76.9492,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1254163
+  },
+  "Thoothukudi": {
+   "lat": 8.7674,
+   "lon": 78.1342,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 8629640
+  },
+  "Thrissur": {
+   "lat": 10.5167,
+   "lon": 76.2167,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1254187
+  },
+  "Tiruchirappalli": {
+   "lat": 10.8155,
+   "lon": 78.6965,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1254388
+  },
+  "Tirumala": {
+   "lat": 13.6355,
+   "lon": 79.4199,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1254360
+  },
+  "Tirunelveli": {
+   "lat": 8.7274,
+   "lon": 77.6838,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1254361
+  },
+  "Tirupati": {
+   "lat": 13.6355,
+   "lon": 79.4199,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1254360
+  },
+  "Tirupur": {
+   "lat": 11.1154,
+   "lon": 77.3546,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1254348
+  },
+  "Tonk": {
+   "lat": 26.1664,
+   "lon": 75.7882,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1254241
+  },
+  "Tumakuru": {
+   "lat": 13.3414,
+   "lon": 77.1022,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1254089
+  },
+  "Tumidih": {
+   "lat": 21.7853,
+   "lon": 82.8739,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 10708608
+  },
+  "Udaipur": {
+   "lat": 24.5858,
+   "lon": 73.7135,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1253986
+  },
+  "Udupi": {
+   "lat": 13.3347,
+   "lon": 74.7462,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1253952
+  },
+  "Ujjain": {
+   "lat": 23.1824,
+   "lon": 75.7764,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1253914
+  },
+  "Ulhasnagar": {
+   "lat": 19.2167,
+   "lon": 73.15,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1253894
+  },
+  "Vadodara": {
+   "lat": 22.2994,
+   "lon": 73.2081,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1253573
+  },
+  "Vapi": {
+   "lat": 20.3717,
+   "lon": 72.9049,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 7279741
+  },
+  "Varanasi": {
+   "lat": 25.3167,
+   "lon": 83.0104,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1253405
+  },
+  "Vasai": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "7 places share this name"
+  },
+  "Vatva": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Vellore": {
+   "lat": 12.9184,
+   "lon": 79.1325,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1253286
+  },
+  "Vijayapura": {
+   "lat": 16.8244,
+   "lon": 75.7154,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1275701
+  },
+  "Vijayawada": {
+   "lat": 16.5074,
+   "lon": 80.6466,
+   "plotted": true,
+   "match": "most populous by 5x",
+   "geonameid": 1253184
+  },
+  "Virar": {
+   "lat": 19.4559,
+   "lon": 72.8114,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1253133
+  },
+  "Virudhunagar": {
+   "lat": null,
+   "lon": null,
+   "plotted": false,
+   "match": "no match"
+  },
+  "Visakhapatnam": {
+   "lat": 17.6801,
+   "lon": 83.2016,
+   "plotted": true,
+   "match": "only seat of government",
+   "geonameid": 1253102
+  },
+  "Vrindavan": {
+   "lat": 27.5811,
+   "lon": 77.6966,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1253079
+  },
+  "Yadgir": {
+   "lat": 16.7701,
+   "lon": 77.1376,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1252822
+  },
+  "Yamunanagar": {
+   "lat": 30.128,
+   "lon": 77.2837,
+   "plotted": true,
+   "match": "only match",
+   "geonameid": 1252797
+  }
+ }
+}

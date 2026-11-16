@@ -16,6 +16,9 @@ import { CITY_COLOURS } from "@/lib/categories";
 import type { ExploreData, ExploreStation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ExploreMap } from "./explore-map";
+import { CpcbCityPanel, CpcbList, LayerSwitch } from "./cpcb-panels";
+import { Term } from "@/components/ds/term";
+import { getCpcbCities, type CpcbCity } from "@/lib/cpcb";
 import { CityRanking, Legend, LowCostToggle, PollutantToggle, StationList, StationPanel, StationSearch, TimeControl } from "./panels";
 
 const STEP_MS = 800;
@@ -51,6 +54,23 @@ export function ExploreScreen() {
   const cache = useRef<Partial<Record<Pollutant, ExploreData>>>({});
   const [data, setData] = useState<ExploreData | null>(null);
   const [failed, setFailed] = useState(false);
+  // the all-cities official AQI layer
+  const [layer, setLayer] = useState<"stations" | "cpcb">(initial.layer ?? "stations");
+  const [cpcbCity, setCpcbCity] = useState<string | null>(initial.cpcb ?? null);
+  const [cpcb, setCpcb] = useState<CpcbCity[] | null>(null);
+  const [cpcbFailed, setCpcbFailed] = useState(false);
+  useEffect(() => {
+    if (layer !== "cpcb" || cpcb || backend !== "ready") return;
+    getCpcbCities().then((d) => setCpcb(d.cities)).catch(() => setCpcbFailed(true));
+  }, [layer, cpcb, backend]);
+  // a city opened from Home's search may be written another way ("bangalore"): use the bulletin's own name
+  useEffect(() => {
+    if (!cpcb || !cpcbCity || cpcb.some((c) => c.city === cpcbCity)) return;
+    const hit = cpcb.find((c) => c.city.toLowerCase() === cpcbCity.toLowerCase());
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (hit) setCpcbCity(hit.city);
+  }, [cpcb, cpcbCity]);
+  const cpcbOn = layer === "cpcb";
 
   // ---------------------------------------------------------------- data (one request per pollutant, kept)
   const load = useCallback(async (p: Pollutant) => {
@@ -85,9 +105,9 @@ export function ExploreScreen() {
   // ---------------------------------------------------------------- address
   useEffect(() => {
     if (!data) return;
-    const q = viewQuery({ city, station: stationObj?.id ?? null, pollutant, date });
+    const q = viewQuery({ city, station: stationObj?.id ?? null, pollutant, date, layer, cpcb: cpcbCity });
     window.history.replaceState(null, "", `/explore?${q}`);
-  }, [data, city, stationObj, pollutant, date]);
+  }, [data, city, stationObj, pollutant, date, layer, cpcbCity]);
 
   // ---------------------------------------------------------------- play
   useEffect(() => {
@@ -139,34 +159,44 @@ export function ExploreScreen() {
   useEffect(() => {
     // the sheet starts collapsed (date, play, slider); it opens when a station is chosen
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (phone && station) setSheet((s) => (s === "peek" ? "half" : s));
-  }, [phone, station]);
+    if (phone && (station || cpcbCity)) setSheet((s) => (s === "peek" ? "half" : s));
+  }, [phone, station, cpcbCity]);
   // Fit stations clear of the panels: left panel, station panel (kept free whenever a city is open, so opening a
   // station never hides another one) and the timeline at the bottom.
   // phones: keep stations above the sheet (collapsed, or half open once a station is chosen)
   const vh = typeof window === "undefined" ? 800 : window.innerHeight;
   const padding = phone
-    ? { top: 120, bottom: station ? Math.round(vh * 0.55) + 16 : 230, left: 28, right: 28 }
-    : { top: 100, bottom: 120, left: 420, right: city ? 420 : 60 };
+    ? { top: 120, bottom: station || cpcbCity ? Math.round(vh * 0.55) + 16 : 230, left: 28, right: 28 }
+    : { top: 100, bottom: cpcbOn ? 40 : 120, left: 420, right: city || cpcbCity ? 420 : 60 };
 
   const loading = !data && !failed;
   const shownStations = data && city ? cityStations(data, city, lowCost) : [];
 
   const header = (
     <div>
-      <h1 className="font-display text-[34px] leading-none md:text-[40px]">Explore</h1>
-      <p className="mt-1.5 text-[14px] text-foreground">See every monitoring station in the six cities.</p>
-      <p className="mt-0.5 text-[12.5px] text-faint">Click a city, then a station. Press play to watch the last 30 days.</p>
-      <p className="mt-1 max-w-[380px] text-[11.5px] leading-4 text-faint">Numbers are PM2.5 (fine particles) or PM10 (coarse particles) in µg/m³ (micrograms per cubic metre); the official AQI (Air Quality Index) comes from CPCB (Central Pollution Control Board) bulletins.</p>
+      <h1 className="page-title">Explore</h1>
+      <p className="mt-2 text-[15px] text-foreground">
+        {cpcbOn ? "Official AQI for every city in CPCB’s daily bulletin." : "Every monitoring station in the six cities."}
+      </p>
+      <p className="mt-1 text-[13px] text-faint">
+        {cpcbOn ? <>Click a dot for its last 30 days. <Term k="aqi" /> from <Term k="cpcb" />.</>
+          : <>Values in <Term k="ugm3" />, <Term k="pm25" /> or <Term k="pm10" />. Click a city, then a station.</>}
+      </p>
     </div>
   );
-  const controls = data && (
+  const pickLayer = (v: "stations" | "cpcb") => { setLayer(v); setStation(null); setCity(null); if (v === "stations") setCpcbCity(null); };
+  const controls = (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <PollutantToggle value={pollutant} onChange={pickPollutant} />
-        {hasLowCost(data) && <LowCostToggle on={lowCost} onChange={(v) => { setLowCost(v); if (!v && stationObj?.tier === "low_cost") setStation(null); }} />}
-      </div>
-      <StationSearch stations={data.stations} onPick={findStation} />
+      <LayerSwitch value={layer} onChange={pickLayer} />
+      {!cpcbOn && data && (
+        <>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <PollutantToggle value={pollutant} onChange={pickPollutant} />
+            {hasLowCost(data) && <LowCostToggle on={lowCost} onChange={(v) => { setLowCost(v); if (!v && stationObj?.tier === "low_cost") setStation(null); }} />}
+          </div>
+          <StationSearch stations={data.stations} onPick={findStation} />
+        </>
+      )}
     </div>
   );
   const time = data && date && (
@@ -175,7 +205,10 @@ export function ExploreScreen() {
       series={city ? [{ colour: "#2DD4BF", values: data.cities[city]?.values ?? [] }]
         : Object.entries(data.cities).map(([c, v]) => ({ colour: CITY_COLOURS[c] ?? "#94A0BC", values: v.values }))} />
   );
-  const list = data && date ? (
+  const cpcbList = cpcbFailed ? (
+    <ErrorState title="The bulletin cities could not load" message="The data server did not answer." onRetry={() => { setCpcbFailed(false); setCpcb(null); }} />
+  ) : cpcb ? <CpcbList cities={cpcb} selected={cpcbCity} onPick={setCpcbCity} /> : <ListSkeleton />;
+  const list = cpcbOn ? cpcbList : data && date ? (
     city ? (
       <StationList city={city} stations={shownStations} day={i} date={date} pollutant={pollutant} selected={stationObj?.id ?? null}
         onStation={pickStation} onHighlight={setHighlight} onBack={() => pickCity(null)} cityValue={data.cities[city]?.values[i] ?? null} />
@@ -191,26 +224,34 @@ export function ExploreScreen() {
   return (
     <div className="fixed inset-0 overflow-hidden bg-background">
       <ExploreMap data={data} day={i} pollutant={pollutant} city={city} station={stationObj?.id ?? null} highlight={highlight} lowCost={lowCost}
-        padding={padding} reduceMotion={reduce} onCity={pickCity} onStation={pickStation} />
+        padding={padding} reduceMotion={reduce} onCity={pickCity} onStation={pickStation}
+        cpcb={cpcbOn ? cpcb : null} cpcbSelected={cpcbCity} onCpcb={setCpcbCity} />
 
       {!phone ? (
         <>
           <aside aria-label="Cities and stations" className="absolute top-[76px] bottom-4 left-4 z-10 border border-line-strong bg-[#0b1324]/[0.96] backdrop-blur-xl flex w-[370px] flex-col overflow-hidden rounded-3xl shadow-float">
-            <div className="flex flex-col gap-4 border-b border-line px-5 pt-5 pb-4">
+            <div className="flex flex-col gap-4 px-5 pt-5 pb-3">
               {header}
               {controls}
             </div>
             {/* one scroll area for the list and the legend, so nothing is cut off */}
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-2 pb-5">
               {state && <div className="px-2 pb-3">{state}</div>}
-              {loading ? <ListSkeleton /> : list}
-              <div className="mx-2 mt-5 border-t border-line pt-4"><Legend pollutant={pollutant} /></div>
+              {loading && !cpcbOn ? <ListSkeleton /> : list}
+              <div className="mx-2 mt-8"><Legend pollutant={cpcbOn ? "aqi" : pollutant} /></div>
             </div>
           </aside>
-          <div className={cn("absolute bottom-4 left-[402px] z-10 rounded-2xl border border-line-strong bg-[#0b1324]/[0.94] px-4 py-2 shadow-float backdrop-blur-xl", stationObj ? "right-[402px]" : "right-[60px]")}>
-            {time ?? <Skeleton className="h-[52px]" />}
-          </div>
-          {stationObj && data && (
+          {!cpcbOn && (
+            <div className={cn("absolute bottom-4 left-[402px] z-10 rounded-2xl border border-line-strong bg-[#0b1324]/[0.94] px-4 py-2 shadow-float backdrop-blur-xl", stationObj ? "right-[402px]" : "right-[60px]")}>
+              {time ?? <Skeleton className="h-[52px]" />}
+            </div>
+          )}
+          {cpcbOn && cpcbCity && (
+            <aside aria-label="City" className="absolute top-[76px] right-4 bottom-4 z-10 w-[370px] overflow-y-auto rounded-3xl border border-line-strong bg-[#0b1324]/[0.97] p-5 shadow-float backdrop-blur-xl">
+              <CpcbCityPanel name={cpcbCity} onClose={() => setCpcbCity(null)} />
+            </aside>
+          )}
+          {!cpcbOn && stationObj && data && (
             <aside aria-label="Station" className="absolute top-[76px] right-4 bottom-4 z-10 border border-line-strong bg-[#0b1324]/[0.97] backdrop-blur-xl w-[370px] overflow-y-auto rounded-3xl p-5 shadow-float">
               <StationPanel station={stationObj} data={data} day={i} onClose={() => setStation(null)} />
             </aside>
@@ -219,18 +260,20 @@ export function ExploreScreen() {
       ) : (
         <>
           <p className="absolute top-[66px] right-3 left-3 z-10 truncate rounded-full border border-line-strong bg-[#0b1324]/[0.94] px-4 py-2 text-[13px] font-medium backdrop-blur-xl">
-            Every monitoring station in the six cities
+            {cpcbOn ? "Official AQI for every CPCB bulletin city" : "Every monitoring station in the six cities"}
           </p>
           <BottomSheet size={sheet} onSize={setSheet}>
             <div className="flex flex-col gap-4">
-              {time ?? <Skeleton className="h-[72px]" />}
-              <p className="-mt-1 text-[12px] text-faint">Tap a city, then a station. Drag up for the list.</p>
+              {!cpcbOn && (time ?? <Skeleton className="h-[72px]" />)}
+              <p className="-mt-1 text-[12px] text-faint">{cpcbOn ? "Tap a dot or a city. Drag up for the list." : "Tap a city, then a station. Drag up for the list."}</p>
               {controls}
               {state}
-              {stationObj && data ? (
+              {cpcbOn && cpcbCity ? (
+                <CpcbCityPanel name={cpcbCity} onClose={() => setCpcbCity(null)} />
+              ) : !cpcbOn && stationObj && data ? (
                 <StationPanel station={stationObj} data={data} day={i} onClose={() => setStation(null)} />
-              ) : loading ? <ListSkeleton /> : list}
-              <Legend pollutant={pollutant} />
+              ) : loading && !cpcbOn ? <ListSkeleton /> : list}
+              <Legend pollutant={cpcbOn ? "aqi" : pollutant} />
             </div>
           </BottomSheet>
         </>

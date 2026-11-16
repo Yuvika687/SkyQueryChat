@@ -9,7 +9,7 @@ test("flies into a city, opens a station, switches pollutant and moves through t
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/explore");
   await expect(page.getByRole("heading", { name: "Explore" })).toBeVisible();
-  await expect(page.getByText("See every monitoring station in the six cities.")).toBeVisible();
+  await expect(page.getByText("Every monitoring station in the six cities.")).toBeVisible();
   await page.waitForSelector('[data-map="ready"]', { timeout: 60_000 });
 
   // the six cities, ranked, then fly into Delhi from its map marker
@@ -89,4 +89,28 @@ test("map credits sit in the compact ⓘ control and expand to the full list", a
   for (const t of ["OpenFreeMap", "OpenMapTiles", "OpenStreetMap", "Survey of India", "CC BY 2.5 IN", "OpenAQ"]) {
     await expect(attrib).toContainText(t);
   }
+});
+
+test("India view shows the six city dots with labels and hover cards", async ({ page }) => {
+  await page.goto("/explore");
+  await page.waitForSelector('[data-map="ready"]', { timeout: 60_000 });
+  const pins = page.locator(".sq-city-pin:not([hidden])");
+  await expect(pins).toHaveCount(6);
+  await pins.first().hover();
+  await expect(pins.first().locator(".card")).toContainText("Official AQI");
+});
+
+test("all CPCB cities layer: search a city, open its official AQI panel, ask about it", async ({ page }) => {
+  await page.goto("/explore");
+  await page.getByRole("radio", { name: "All CPCB cities" }).click();
+  await expect(page).toHaveURL(/layer=cpcb/);
+  await expect(page.locator(".sq-city-pin:not([hidden])")).toHaveCount(0);       // the station layer's markers step aside
+  await page.getByLabel("Find a city").fill("lucknow");
+  await page.getByRole("list", { name: "CPCB bulletin cities" }).getByRole("button", { name: /Lucknow/ }).first().click();
+  await expect(page).toHaveURL(/cpcb=Lucknow/);
+  const panel = page.getByRole("complementary", { name: "City" }).or(page.getByRole("region", { name: "Explore panel" }));
+  await expect(panel.getByText(/Official AQI \(CPCB 4 PM bulletin, \d{1,2} [A-Z][a-z]{2} \d{4}\)/).first()).toBeVisible({ timeout: 30_000 });
+  await expect(panel.getByText(/covers only Delhi, Mumbai, Kolkata, Chennai, Bengaluru/)).toBeVisible();
+  await expect(panel.getByRole("img", { name: /^Official AQI, / })).toBeVisible();          // the 30-day chart
+  await expect(panel.getByRole("link", { name: "Ask about this city" })).toHaveAttribute("href", /\/ask\?q=AQI%20in%20Lucknow/);
 });

@@ -191,6 +191,7 @@ def _trend(f: dict, allowed: set[float]) -> str | None:
         first = f"{city}'s {pol} averaged {pm(pts[0][1])} µg/m³ {per}."
     if first is None:
         return None
+    first += _trend_sentence(f.get("trend") or {})
     if len(daily) >= 3:
         lo, hi = min(daily, key=lambda p: p[1]), max(daily, key=lambda p: p[1])
         return first + (f" Daily values ranged from {pm(lo[1])} µg/m³ on {fmt_day(lo[0], year=False)} "
@@ -200,6 +201,24 @@ def _trend(f: dict, allowed: set[float]) -> str | None:
         return first[:-1] + (f", with a valid city value on {cov['days_with_city_value']} of "
                              f"{cov['days_in_period']} days.")
     return first
+
+
+def _trend_sentence(t: dict) -> str:
+    """The trend test result in words: always says "no clear trend" when the test finds none (p >= 0.05)."""
+    st = t.get("status")
+    if st == "no clear trend":
+        return " There was no clear trend over the period."
+    if st == "not enough data":
+        return " There were not enough days with data to test for a trend."
+    if st in ("increasing", "decreasing"):
+        verb = "rose" if st == "increasing" else "fell"
+        if t.get("change_over_period") is not None and t.get("period_days"):
+            return (f" It {verb} by about {abs(t['change_over_period']):.1f} µg/m³ over these {t['period_days']} days "
+                    f"(short periods include seasonal change).")
+        if t.get("slope_per_month") is not None:
+            return f" It {verb} by about {abs(t['slope_per_month']):.2f} µg/m³ per month."
+        return f" It was {st}."
+    return ""
 
 
 def _festival_points(f: dict) -> dict[str, list[dict]]:
@@ -322,7 +341,7 @@ def headline(final: dict[str, Any]) -> str | None:
     kind = _kind(final)
     if kind not in BUILDERS:
         return None
-    payload = {k: final.get(k) for k in ("cards", "chart", "coverage", "sources", "resolved_query")}
+    payload = {k: final.get(k) for k in ("cards", "chart", "coverage", "sources", "resolved_query", "trend")}
     allowed = allowed_numbers([payload])
     try:
         text = BUILDERS[kind](final, allowed)

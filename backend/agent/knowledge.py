@@ -17,7 +17,7 @@ PATH = Path(__file__).resolve().parents[1] / "config" / "knowledge.json"
 
 @lru_cache(maxsize=1)
 def load() -> dict:
-    return json.loads(PATH.read_text())
+    return json.loads(PATH.read_text(encoding="utf-8"))
 
 
 def _rng(x) -> str:

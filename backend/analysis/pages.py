@@ -196,6 +196,14 @@ def compare_page(s: Store, cities: list[str], metric: str, start: date, end: dat
         t = ST.trend([d for d, _ in pts], [x for _, x in pts], start, end)
         row["trend"] = _trend_out(t)
         row["low_coverage"] = (row["coverage_pct"] or 0) < 50
+    ranked = [x for x in res["cities"] if x.get("mean") is not None]
+    if len(ranked) >= 2:                     # summary strip: highest, lowest and their ratio (calculated here)
+        hi, lo = ranked[0], ranked[-1]
+        close_pairs = {frozenset(p) for p in res["too_close_to_call"]}
+        res["summary"] = {"highest": {"city": hi["city"], "mean": hi["mean"]}, "lowest": {"city": lo["city"], "mean": lo["mean"]},
+                          "ratio": r(hi["mean"] / lo["mean"], 1) if lo["mean"] else None,
+                          "difference": r(hi["mean"] - lo["mean"]),
+                          "too_close_to_call": len(ranked) == 2 and frozenset((hi["city"], lo["city"])) in close_pairs}
     res.update({"metric": metric, "start": str(start), "end": str(end), "days": days,
                 "method": "Ranking uses days on which every selected city has a value. 95% range: weekly block "
                           "bootstrap of those daily values. Trend: Mann-Kendall test with Sen's slope (at least 20 "

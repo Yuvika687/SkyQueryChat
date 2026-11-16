@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { Term } from "@/components/ds/term";
+import { useOpenDataPanel } from "@/components/shell/app-shell";
 import { ArrowUp, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,7 @@ const MAX = 500; // backend limit (ChatRequest.message)
 export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ busy, onSend, onStop, placeholder }, ref) {
   const [text, setText] = useState("");
   const ta = useRef<HTMLTextAreaElement>(null);
+  const openData = useOpenDataPanel();
   useImperativeHandle(ref, () => ({ focus: () => ta.current?.focus(), setText: (t) => setText(t.slice(0, MAX)) }));
 
   const submit = () => {
@@ -32,7 +33,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ bu
   };
 
   return (
-    <div className="border-t border-line bg-background/95 px-4 pt-3 pb-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="bg-background px-4 pt-2 pb-3">
       <form
         className="mx-auto flex w-full max-w-[760px] flex-col gap-1.5"
         onSubmit={(e) => {
@@ -40,7 +41,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ bu
           submit();
         }}
       >
-        <div className="flex items-end gap-2 rounded-2xl border border-line bg-surface p-2 focus-within:border-teal">
+        <div className="card flex items-end gap-2 rounded-2xl p-2 focus-within:border-teal/70">
           <label htmlFor="question" className="sr-only">Your question</label>
           <textarea
             id="question"
@@ -81,13 +82,12 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ bu
             </button>
           )}
         </div>
-        <p className="flex justify-between gap-2 px-1 text-xs leading-4 text-subtle">
+        <p className="flex justify-between gap-2 px-1 text-[12px] leading-4 text-faint">
           <span>
-            Answers use the data available and may contain gaps. Sources: <Term k="cpcb" /> via{" "}
-            <a className="underline underline-offset-2 hover:text-teal" href="https://openaq.org" target="_blank" rel="noreferrer">OpenAQ</a>, <Term k="cpcb" /> bulletins, weather by{" "}
-            <a className="underline underline-offset-2 hover:text-teal" href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo.com</a> (CC BY 4.0) and Copernicus C3S.
+            Latest available data, which may have gaps ·{" "}
+            <button type="button" onClick={openData} className="underline underline-offset-2 hover:text-foreground">Sources</button>
           </span>
-          {text.length > MAX - 60 && <span className="font-mono">{text.length}/{MAX}</span>}
+          {text.length > MAX - 60 && <span className="num">{text.length}/{MAX}</span>}
         </p>
       </form>
     </div>

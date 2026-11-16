@@ -149,7 +149,7 @@ def test_incremental_build_matches_a_full_build_and_downloads_only_new_days(env,
     m = _run_to(env, "inc", DAYS[-1], base=env / "inc")
     assert min(asked) == DAYS[2]                                   # never the history before the stored archive end
     assert m["build"] == {"mode": "incremental", "reprocessed_from": str(DAYS[2])}
-    assert m["sources"] == {"openaq": "updated", "cpcb_bulletins": "updated"}
+    assert m["sources"] == {"openaq": "updated", "cpcb_bulletins": "updated", "cpcb_bulletins_all_cities": "updated"}
     full, inc = _tables(env / "full"), _tables(env / "inc")
     assert full.keys() == inc.keys()
     for name in full:

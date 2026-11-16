@@ -53,7 +53,11 @@ export function rankCities(d: ExploreData, i: number): { city: string; value: nu
 export const hasLowCost = (d: ExploreData) => d.stations.some((s) => s.tier === "low_cost");
 
 // ------------------------------------------------------------------ address (?city=&station=&pollutant=&date=)
-export interface ExploreView { city: string | null; station: number | null; pollutant: Pollutant; date: string | null }
+export interface ExploreView {
+  city: string | null; station: number | null; pollutant: Pollutant; date: string | null;
+  /** "cpcb": the all-cities official AQI layer; cpcb: that layer's selected city */
+  layer?: "stations" | "cpcb"; cpcb?: string | null;
+}
 
 export function parseView(p: URLSearchParams): ExploreView {
   const raw = p.get("city")?.toLowerCase();
@@ -66,6 +70,8 @@ export function parseView(p: URLSearchParams): ExploreView {
     station: city && Number.isInteger(st) && st > 0 ? st : null,
     pollutant: pol === "pm10" ? "pm10" : "pm25",
     date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null,
+    layer: p.get("layer") === "cpcb" ? "cpcb" : "stations",
+    cpcb: p.get("cpcb")?.trim() || null,
   };
 }
 
@@ -75,6 +81,10 @@ export function viewQuery(v: ExploreView): string {
   if (v.city && v.station) q.set("station", String(v.station));
   q.set("pollutant", v.pollutant);
   if (v.date) q.set("date", v.date);
+  if (v.layer === "cpcb") {
+    q.set("layer", "cpcb");
+    if (v.cpcb) q.set("cpcb", v.cpcb);
+  }
   return q.toString();
 }
 

@@ -81,7 +81,7 @@ def build(start: date, end: date, fetched_on: date, use_cache: bool = False) -> 
     parts = []
     for city in C.CITIES:
         f = CACHE / f"{city}.json"
-        j = json.loads(f.read_text()) if (use_cache and f.exists()) else fetch_city(city, start, end)
+        j = json.loads(f.read_text(encoding="utf-8")) if (use_cache and f.exists()) else fetch_city(city, start, end)
         parts.append(parse(city, j, fetched_on))
     w = pd.concat(parts, ignore_index=True)
     if w.duplicated(["city", "local_date"]).any():

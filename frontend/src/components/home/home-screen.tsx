@@ -10,6 +10,7 @@ import { CityCard } from "@/components/ds/city-card";
 import { ErrorState, FadeIn, Skeleton, WakeUpState } from "@/components/ds/states";
 import { fmtDate, fmtSpan } from "@/lib/format";
 import { IndiaMap } from "./india-map";
+import { CityFinder } from "./city-finder";
 
 // Questions the app answers well today (each opens Ask with that question).
 export const HOME_QUESTIONS = [
@@ -46,9 +47,9 @@ export function HomeScreen() {
           <h1 id="home-title" className="mt-5 mb-4 font-display lg:mt-0 text-[52px] leading-[0.98] tracking-[-0.02em] sm:text-[72px] xl:text-[84px]">
             Ask India&apos;s air <em className="text-[#BFF7EE]">anything</em>
           </h1>
-          <p className="max-w-[470px] text-base text-subtle sm:text-[17px] sm:leading-7">
-            The latest PM2.5 (fine particles) for six Indian cities, beside the official AQI (Air Quality Index) from the CPCB
-            (Central Pollution Control Board). Ask about any of it, PM10 (coarse particles) too, in plain words.
+          <p className="max-w-[480px] text-[16px] leading-7 text-subtle sm:text-[17px]">
+            The latest <Term k="pm25" /> for six Indian cities, beside the official <Term k="aqi" /> from <Term k="cpcb" />.
+            Ask about any of it in plain words.
           </p>
           <AskBox
             className="mt-7"
@@ -56,6 +57,7 @@ export function HomeScreen() {
             hint="Type a question, or pick one below. Every number in the answer links to its proof."
             suggestions={HOME_QUESTIONS}
           />
+          <CityFinder className="mt-8 max-w-[520px]" />
         </FadeIn>
 
         <FadeIn delay={0.08}>
@@ -86,9 +88,9 @@ export function HomeScreen() {
       {/* ------------------------------------------------------------ cities */}
       <section aria-labelledby="cities-title" className="mt-10 lg:mt-6">
         <div className="mb-5 flex flex-col gap-1.5 sm:flex-row sm:items-baseline sm:justify-between">
-          <h2 id="cities-title" className="font-display text-[32px] leading-tight sm:text-[38px]">Six cities, highest first</h2>
+          <h2 id="cities-title" className="font-display text-[32px] leading-tight sm:text-[36px]">Six cities, highest first</h2>
           {latest && (
-            <p className="text-[13px] text-faint">
+            <p className="max-w-[640px] text-[13px] text-faint">
               <Term k="pm25" /> 24-hour city average for {fmtDate(latest.date)}, in <Term k="ugm3" />. Small line: daily values, {fmtSpan(latest.start, latest.date)}.
               Official <Term k="aqi" />: <Term k="cpcb" /> 4 PM bulletin for the same date.
             </p>
@@ -112,12 +114,12 @@ export function HomeScreen() {
       </section>
 
       {/* ------------------------------------------------------------ three ways */}
-      <section aria-labelledby="ways-title" className="mt-16">
-        <h2 id="ways-title" className="font-display text-[32px] leading-tight sm:text-[38px]">Three ways to use SkyQueryChat</h2>
+      <section aria-labelledby="ways-title" className="mt-20">
+        <h2 id="ways-title" className="font-display text-[32px] leading-tight sm:text-[36px]">Three ways to use SkyQueryChat</h2>
         <ul className="mt-5 grid gap-4 md:grid-cols-3">
           {WAYS.map((w) => (
             <li key={w.href}>
-              <Link href={w.href} className="glass group sq-lift flex h-full items-start gap-4 rounded-2xl p-5 text-subtle shadow-card transition-colors hover:border-line-strong">
+              <Link href={w.href} className="card group sq-lift flex h-full items-start gap-4 p-6 text-[15px] text-subtle transition-colors hover:border-line-strong">
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="font-display text-[28px] leading-none text-foreground">{w.name}</span>
                   <span>{w.line}</span>
@@ -130,7 +132,7 @@ export function HomeScreen() {
       </section>
 
       {/* ------------------------------------------------------------ footer */}
-      <footer className="mt-16 flex flex-col gap-4 border-t border-line pt-6 text-xs text-faint sm:flex-row sm:items-start sm:justify-between">
+      <footer className="mt-20 flex flex-col gap-4 text-[12.5px] leading-5 text-faint sm:flex-row sm:items-start sm:justify-between">
         <div className="flex max-w-[860px] flex-col gap-1.5">
           <p>
             Measured PM2.5 and PM10: CPCB stations via <a className="underline underline-offset-2 hover:text-foreground" href="https://openaq.org" target="_blank" rel="noreferrer">OpenAQ</a>.

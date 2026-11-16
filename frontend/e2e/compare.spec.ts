@@ -7,8 +7,12 @@ test("compare: purpose, chart, ranking with ranges, URL keeps the selection, AI 
   page.on("pageerror", (e) => problems.push(e.message));
   await page.goto("/compare?cities=mumbai,chennai&metric=pm25&period=winter-2025-26");
   await expect(page.getByText("Put cities side by side over the same dates.")).toBeVisible();
-  await expect(page.getByText("Pick cities, a pollutant and a period.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Ranking" })).toBeVisible({ timeout: 30_000 });
+  // summary strip above the chart: highest, lowest, and "too close to call" when the ranges overlap heavily
+  const summary = page.getByLabel("Summary");
+  await expect(summary.getByText("Highest")).toBeVisible();
+  await expect(summary.getByText("Lowest")).toBeVisible();
+  await expect(summary.getByText("Too close to call")).toBeVisible();
   await expect(page.getByText(/Too close to call:/)).toBeVisible();
   await expect(page.getByRole("img", { name: /95% range/ }).first()).toBeVisible();
   // add a city: the address keeps it

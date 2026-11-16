@@ -59,8 +59,9 @@ def _pollutants(cell: str) -> str:
     return ", ".join(sorted(out))           # same order as UrbanEmissions ("O3, PM10, PM2.5")
 
 
-def parse(path: Path, cities: list[str] | None = None) -> pd.DataFrame:
-    """Rows for the given cities (all cities when None). Fails loudly on anything unexpected."""
+def parse(path: Path, cities: list[str] | None = None, allow_duplicates: bool = False) -> pd.DataFrame:
+    """Rows for the given cities (all cities when None). Fails loudly on anything unexpected. allow_duplicates: keep a
+    city listed twice in one bulletin (CPCB has listed Kalyan twice with different values) for the caller to drop."""
     import pdfplumber                     # local development only (requirements-dev.txt)
     rows, title_date = [], None
     with pdfplumber.open(path) as pdf:
@@ -87,19 +88,20 @@ def parse(path: Path, cities: list[str] | None = None) -> pd.DataFrame:
     out = pd.DataFrame(rows)
     if path.stem.endswith(f"{title_date:%Y%m%d}") is False:
         raise ValueError(f"{path.name}: title date {title_date} does not match the file name")
-    if not out.empty and out.duplicated(["date", "city"]).any():
+    if not out.empty and not allow_duplicates and out.duplicated(["date", "city"]).any():
         raise ValueError(f"{path.name}: duplicate city rows")
     return out
 
 
-def load(start: date, end: date, cities: list[str], download: bool = True) -> pd.DataFrame:
+def load(start: date, end: date, cities: list[str] | None, download: bool = True,
+         allow_duplicates: bool = False) -> pd.DataFrame:
     """Parsed rows for bulletin dates start..end (missing PDFs are skipped; the caller checks coverage)."""
     parts = []
     d = start
     while d <= end:
         p = fetch(d) if download else (CACHE / f"AQI_Bulletin_{d:%Y%m%d}.pdf")
         if p is not None and p.exists():
-            parts.append(parse(p, cities))
+            parts.append(parse(p, cities, allow_duplicates=allow_duplicates))
         d += timedelta(days=1)
     cols = ["date", "city", "aqi", "aqi_category", "prominent_pollutant", "no_stations", "total_stations"]
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=cols)
