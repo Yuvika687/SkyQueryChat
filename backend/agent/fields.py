@@ -201,6 +201,28 @@ def fields_for(d: dict, ctx: dict) -> dict[str, Field]:
         f["n_primary_stations"] = Field((d["stations"].get("by_tier") or {}).get("primary"), f"{city} primary stations", "stations")
         f["n_severe_days"] = Field(d["quality"].get("n_severe_dates"), "days with severe network gaps", "days")
         f["n_days_in_period"] = Field(cov.get("days_in_period"), "days in period", "days")
+    elif k == "occasion_aqi":
+        for o in v.get("occasions", []):
+            p, n = o["key"], o["occasion"]
+            f[f"{p}_local_days"] = Field(o["local_days"][0] if o["local_days"][0] == o["local_days"][1]
+                                         else f"{o['local_days'][0]} to {o['local_days'][1]}", f"{n}: date(s) used")
+            if o["status"] != "ok":
+                f[f"{p}_status"] = Field(o["message"], n)
+                continue
+            f[f"{p}_level_aqi"] = Field(o["level_aqi"], f"{city} official AQI, {n} (mean of its bulletins)", u)
+            f[f"{p}_level_category"] = Field(o["level_category"], f"AQI category, {n}")
+            for b in o["bulletins"]:
+                f[f"{p}_bulletin_{b['bulletin_date']}"] = Field(
+                    b["aqi"], f"{city} official AQI, bulletin {b['bulletin_date']} ({b['covers']})", u)
+                f[f"{p}_category_{b['bulletin_date']}"] = Field(b["category"], f"category, bulletin {b['bulletin_date']}")
+                bd = b["bulletin_date"]
+                f[f"{p}_period_{bd}"] = Field(b["period"], f"reporting period of bulletin {bd} (24 hours, IST)")
+            if o.get("week_before_aqi") is not None:
+                f[f"{p}_week_before_aqi"] = Field(o["week_before_aqi"], f"{city} official AQI, week before {n}", u)
+                f[f"{p}_change_vs_week_before"] = Field(o["change_vs_week_before"],
+                                                        f"change from the week before, {n} (AQI points)", u)
+            f[f"{p}_main_pollutant"] = Field(o["bulletins"][-1]["main_pollutant"], f"main pollutant, {n}")
+            f[f"{p}_n_bulletins"] = Field(len(o["bulletins"]), f"bulletins for {n}", "days")
     elif k == "official_aqi":
         L, sm = v["latest"], v["summary"]
         f["latest_aqi"] = Field(L["aqi"], f"{v['city']} {v['label']}", u)

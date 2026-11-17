@@ -83,6 +83,26 @@ def _city(c: str, assume: list[str] | None = None) -> str:
     return r["city"]
 
 
+def _any_city(ctx, c: str, assume: list[str] | None = None) -> str:
+    """One of the six analysed cities, else any CPCB bulletin city (official AQI only)."""
+    r = R.resolve_city(c)
+    if r.get("city"):
+        return _city(c, assume)
+    from backend.analysis import official_aqi as OA
+    store = ctx.deps.session.store
+    if "city_aqi_all" not in store.tables:
+        raise ValueError(r["message"])
+    b = OA.bulletin_cities(store).resolve(c)
+    if not b.get("city"):
+        msg = b["message"]
+        if b.get("nearest"):
+            msg += " Nearest cities that are covered: " + ", ".join(b["nearest"]) + "."
+        raise ValueError(msg)
+    if assume is not None and b.get("note"):
+        assume.append(b["note"])
+    return b["city"]
+
+
 def _period(period: str | None, assume: list[str] | None = None) -> tuple[date, date, list[str]]:
     r = R.resolve_period(period or "all data")
     if not r.get("start"):
@@ -179,11 +199,11 @@ def compare_cities(ctx: RunContext[RunDeps], cities: list[str], pollutant: str |
 
 
 def diwali_aqi(ctx: RunContext[RunDeps], city: str, years: list[int], percent: bool = False) -> dict:
-    """Official CPCB AQI levels, categories and bulletin dates for Diwali (2024, 2025, 2026).
-    percent=true ONLY if the user explicitly asks for a percentage change."""
+    """Official CPCB AQI levels, categories and bulletin dates for Diwali (2024, 2025, 2026), for ANY city in CPCB's
+    daily bulletin (about 320 cities, e.g. Rohtak, Lucknow, Patna), not only the six analysed ones. percent=true ONLY if the user explicitly asks for a percentage change."""
     def go():
         a = []
-        c = _city(city, a)
+        c = _any_city(ctx, city, a)
         ys = tuple(sorted({int(y) for y in years}))
         d = F.diwali_aqi(ctx.deps.session.store, c, ys).to_dict()
         if percent:
@@ -292,5 +312,37 @@ def official_aqi(ctx: RunContext[RunDeps], city: str, period: str | None = None)
     return _call(ctx, "official_aqi", dict(city=city, period=period), go)
 
 
+def occasion_aqi(ctx: RunContext[RunDeps], city: str, event: str | None = None, dates: list[str] | None = None,
+                 years: list[int] | None = None) -> dict:
+    """Official CPCB AQI on ANY occasion for ANY bulletin city (about 320 cities): a festival or holiday by name
+    (Holi, Dussehra, Durga Puja, Navratri, Karva Chauth, Dhanteras, Bhai Dooj, Chhath, Guru Nanak Jayanti, Eid,
+    Bakrid, Christmas, New Year, Lohri, Makar Sankranti, Republic Day, Independence Day, Raksha Bandhan, Janmashtami,
+    Ganesh Chaturthi, Onam, Shivratri...) in `event`, OR specific dates/short spans in `dates` ("9 November",
+    "2026-11-09", "1 to 5 November 2026"). years: which years (e.g. [2025, 2026]); default: the latest ones with data.
+    Returns the bulletins covering the day and its night, the occasion level, the week before and the change.
+    For Diwali prefer diwali_aqi; for periods longer than a month use official_aqi."""
+    def go():
+        from backend.analysis import events as EV
+        a = []
+        c = _any_city(ctx, city, a)
+        store = ctx.deps.session.store
+        g = EV.series(store, c)
+        if g.empty:
+            raise ValueError(f"No official AQI for {c} in the bulletin data.")
+        first, last = g["bulletin_date"].min(), g["bulletin_date"].max()
+        ys = sorted({int(y) for y in years}) if years else None
+        if event and not dates:
+            occ = EV.event_occasions(event, ys, first, last)
+        elif dates:
+            occ = EV.date_occasions(list(dates), ys, last)
+        else:
+            raise ValueError("Give an event (e.g. 'Holi') or dates (e.g. ['9 November 2026']).")
+        a += [f"{o.name}: local day(s) {o.start}" + (f" to {o.end}" if o.end != o.start else "") for o in occ]
+        res = EV.occasion_aqi(store, c, occ)
+        dr = res.date_range
+        return res, {"city": c, "resolved": _rq([c], "AQI (official CPCB)", dr["start"], dr["end"], a)}
+    return _call(ctx, "occasion_aqi", dict(city=city, event=event, dates=dates, years=years), go)
+
+
 TOOLS = [check_request, city_trend, compare_cities, diwali_aqi, Tool(delhi_pm_diwali, prepare=only_if_pm_asked),
-         unusual_days, weather_association, data_coverage, official_aqi]
+         unusual_days, weather_association, data_coverage, official_aqi, occasion_aqi]

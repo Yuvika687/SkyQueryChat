@@ -14,6 +14,7 @@ import { readable } from "@/lib/format";
 import { keyNumbers } from "@/lib/key-numbers";
 import type { ComparisonSummary } from "@/lib/types";
 import { segments, targetsFor, type Target } from "@/lib/proof";
+import { CATEGORY_STYLE } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -109,7 +110,7 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy, onEvidence
   const c = a.comparison;
   const unit = c ? (/µg/.test(c.units) ? "µg/m³" : c.units) : "";
   return (
-    <div className="card flex flex-col gap-5 p-5 sm:p-6">
+    <div className="card sq-card-in sq-accent-top sq-glow relative flex flex-col gap-5 p-5 sm:p-6">
       {/* a) meta line */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-subtle">
         {typeKey && (
@@ -136,12 +137,13 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy, onEvidence
 
       {/* c) key-number tiles: soft tint, no borders */}
       {(keys.length > 0 || c) && (
-        <ul aria-label="Key numbers" className={cn("grid grid-cols-2 gap-3", (keys.length + (c ? 1 : 0)) >= 3 && "sm:grid-cols-3", (keys.length + (c ? 1 : 0)) >= 4 && "lg:grid-cols-4")}>
+        <ul aria-label="Key numbers" className={cn("sq-stagger grid grid-cols-2 gap-3", (keys.length + (c ? 1 : 0)) >= 3 && "sm:grid-cols-3", (keys.length + (c ? 1 : 0)) >= 4 && "lg:grid-cols-4")}>
           {keys.map((k) => {
             const t = targets.find((x) => x.kind === "card" && `${x.card.dataset_id}.${x.card.field}` === k.key) ?? null;
             const scale = k.unit === "AQI" ? "aqi" : /µg/.test(k.unit) ? (/pm10/i.test(a.resolved_query?.pollutant ?? "") ? "pm10" : "pm25") : null;
             return (
-              <li key={k.key} className="tile flex min-w-0 flex-col px-4 py-3">
+              <li key={k.key} className="tile sq-lift flex min-w-0 flex-col px-4 py-3 hover:-translate-y-0.5"
+                style={k.category ? { backgroundImage: `radial-gradient(110% 90% at 100% 0%, color-mix(in srgb, ${CATEGORY_STYLE[k.category as keyof typeof CATEGORY_STYLE]?.bg ?? "#2DD4BF"} 16%, transparent), transparent 62%)` } : undefined}>
                 <p className="line-clamp-2 text-[12.5px] leading-[18px] text-subtle" title={k.label}>{k.label}</p>
                 <p className="mt-1 flex items-baseline gap-1.5">
                   {t ? (
@@ -186,7 +188,7 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy, onEvidence
 
       {/* f) follow-up chips (and, on phones, the way to the chart and evidence) */}
       {turn.phase === "done" && (fups.length > 0 || onEvidence) && (
-        <div className="flex flex-wrap gap-2">
+        <div className="sq-stagger flex flex-wrap gap-2">
           {onEvidence && (turn.chart || turn.cards.length > 0) && (
             <button type="button" onClick={onEvidence}
               className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-teal/10 px-3.5 py-1.5 text-[13.5px] font-medium text-teal hover:bg-teal/15 lg:hidden">
@@ -195,7 +197,7 @@ export function AnswerCard({ turn, onProof, activeProof, onAsk, busy, onEvidence
           )}
           {fups.map((q) => (
             <button key={q} type="button" disabled={busy} onClick={() => onAsk(q)}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white/[0.05] px-3.5 py-1.5 text-left text-[13.5px] text-foreground hover:bg-white/[0.09] disabled:opacity-50">
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.05] px-3.5 py-1.5 text-left text-[13.5px] text-foreground transition-all hover:-translate-y-0.5 hover:border-teal/40 hover:bg-teal/[0.08] disabled:opacity-50">
               {q}<ArrowUpRight className="size-3.5 shrink-0 text-teal" aria-hidden />
             </button>
           ))}

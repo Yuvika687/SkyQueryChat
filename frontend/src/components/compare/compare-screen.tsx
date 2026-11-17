@@ -5,7 +5,9 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, Download, Link2, MapPin, Plus, Search, Sparkles, X } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Building2, CalendarRange, Check, Download, Gauge, GitCompareArrows, Link2, MapPin, Plus, Scale, Search, Sparkles, Trophy, X } from "lucide-react";
+import { PageHero } from "@/components/ds/page-hero";
+import { StatNumber } from "@/components/ds/data-display";
 import { LazyChart } from "@/components/chart/lazy-chart";
 import { askHref } from "@/components/ds/ask-box";
 import { DataGate } from "@/components/ds/data-state";
@@ -13,7 +15,7 @@ import { Section, Segmented } from "@/components/ds/section";
 import { Term } from "@/components/ds/term";
 import { EmptyNote, Skeleton } from "@/components/ds/states";
 import { copyText, download, toCSV, useToast } from "@/components/ds/toast";
-import { CATEGORY_STYLE, CITIES, cityColour } from "@/lib/categories";
+import { CATEGORY_STYLE, CITIES, aqiCategory, cityColour } from "@/lib/categories";
 import { cpcbCategory, getCpcbCities, searchCpcb, type CpcbCity } from "@/lib/cpcb";
 import { buildOption } from "@/lib/chart-options";
 import { fmtDate, fmtRange } from "@/lib/format";
@@ -67,13 +69,12 @@ export function CompareScreen() {
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 pt-[88px] pb-[calc(104px+env(safe-area-inset-bottom))] sm:px-8 md:pt-[104px] md:pb-12">
-      <header className="mb-8">
-        <h1 className="page-title">Compare</h1>
-        <p className="mt-3 text-[16px] text-subtle">Put cities side by side over the same dates.</p>
+      <PageHero eyebrow="Side by side · 329 cities" icon={GitCompareArrows} title="Compare" aside={<SelectedStack cities={sel.cities} />}>
+        <p className="text-[16px] text-subtle">Put cities side by side over the same dates.</p>
         <p className="mt-1 text-[14px] text-faint">
           <Term k="pm25" /> or <Term k="pm10" /> in <Term k="ugm3" /> for the six metros, or the official <Term k="aqi" /> from <Term k="cpcb" /> for any of 329 bulletin cities.
         </p>
-      </header>
+      </PageHero>
       <DataGate state={periods} what="Compare page">
         {(per) => <CompareBody sel={sel} per={per} update={update} />}
       </DataGate>
@@ -106,9 +107,9 @@ function CompareBody({ sel, per, update }: { sel: Selection; per: Periods; updat
   return (
     <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[288px_minmax(0,1fr)] lg:items-start">
       {/* ------------------------------------------------------------ controls: a slim left panel */}
-      <section aria-label="Selection" className="card flex flex-col gap-6 p-5 lg:sticky lg:top-[96px]">
+      <section aria-label="Selection" className="card sq-card-in flex flex-col gap-6 p-5 transition-shadow hover:shadow-[0_18px_50px_-24px_rgb(45_212_191/0.4)] lg:sticky lg:top-[96px]">
         <fieldset>
-          <legend className="mb-2.5 text-[13px] font-medium text-subtle">Cities <span className="font-normal text-faint">(two to six)</span></legend>
+          <legend className="mb-2.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-subtle"><Building2 className="size-3.5 text-teal" aria-hidden />Cities <span className="font-normal text-faint">(two to six)</span></legend>
           {sel.metric === "aqi" ? (
             <CityAdder selected={sel.cities} onAdd={(c) => update({ cities: [...sel.cities, c] })} full={sel.cities.length >= MAX_CITIES} />
           ) : (
@@ -134,9 +135,10 @@ function CompareBody({ sel, per, update }: { sel: Selection; per: Periods; updat
                 <button key={c} type="button" aria-pressed={on} onClick={() => toggle(c)}
                   disabled={(on && sel.cities.length <= 2) || (!on && sel.cities.length >= MAX_CITIES)}
                   title={on && sel.cities.length <= 2 ? "At least two cities are needed" : !on && sel.cities.length >= MAX_CITIES ? "Up to six cities" : undefined}
-                  className={cn("inline-flex min-h-10 items-center gap-2.5 rounded-xl px-3 text-[14px] font-medium transition-colors lg:w-full",
-                    on ? "bg-white/[0.07] text-foreground" : "text-subtle hover:bg-white/[0.03] hover:text-foreground", "disabled:cursor-not-allowed")}>
-                  <span aria-hidden className={cn("size-2.5 rounded-full", !on && "opacity-35")} style={{ background: cityColour(c, sel.cities) }} />
+                  style={on ? { background: `color-mix(in srgb, ${cityColour(c, sel.cities)} 13%, transparent)` } : undefined}
+                  className={cn("inline-flex min-h-10 items-center gap-2.5 rounded-xl px-3 text-[14px] font-medium transition-all duration-200 lg:w-full",
+                    on ? "text-foreground" : "text-subtle hover:translate-x-0.5 hover:bg-white/[0.03] hover:text-foreground", "disabled:cursor-not-allowed")}>
+                  <span aria-hidden className={cn("size-2.5 rounded-full", on ? "sq-dot-glow" : "opacity-35")} style={{ background: cityColour(c, sel.cities), color: cityColour(c, sel.cities) }} />
                   {c}
                   {on && <Check className="ml-auto hidden size-4 text-teal lg:block" aria-hidden />}
                   {on && <span className="sr-only">(selected)</span>}
@@ -146,11 +148,11 @@ function CompareBody({ sel, per, update }: { sel: Selection; per: Periods; updat
           </div>
         </fieldset>
         <div>
-          <p className="mb-2.5 text-[13px] font-medium text-subtle" id="metric-label">Pollutant</p>
+          <p className="mb-2.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-subtle" id="metric-label"><Gauge className="size-3.5 text-teal" aria-hidden />Pollutant</p>
           <Segmented label="Pollutant" value={sel.metric} onChange={(m) => update({ metric: m })} options={METRICS} />
         </div>
         <div className="min-w-0">
-          <p id="period-label" className="mb-2.5 text-[13px] font-medium text-subtle">Period</p>
+          <p id="period-label" className="mb-2.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-subtle"><CalendarRange className="size-3.5 text-teal" aria-hidden />Period</p>
           <PeriodPicker per={per} value={sel.period} onPick={(id) => update(id === "custom"
             ? { period: "custom", start, end } : { period: id, start: undefined, end: undefined })} />
           {sel.period === "custom" && (
@@ -198,7 +200,7 @@ function Actions({ d, question }: { d: CompareData; question: string }) {
         onClick={() => { download(`compare-${d.metric}-${d.start}-${d.end}.csv`, compareCSV(d), "text/csv;charset=utf-8"); toast("Data downloaded (CSV)"); }}>
         <Download className="size-4" aria-hidden />Download CSV
       </button>
-      <Link href={askHref(question)} className="inline-flex h-10 items-center gap-2 rounded-xl bg-teal px-3.5 text-[14px] font-semibold text-teal-ink hover:bg-teal-hover sm:ml-auto">
+      <Link href={askHref(question)} className="sq-shine inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-teal to-[#5EEAD4] px-3.5 text-[14px] font-semibold text-teal-ink shadow-[0_8px_28px_-10px_rgb(45_212_191/0.7)] hover:brightness-110 sm:ml-auto">
         <Sparkles className="size-4" aria-hidden />Explain this with AI
       </Link>
     </div>
@@ -210,32 +212,96 @@ function Summary({ d, unit }: { d: CompareData; unit: string }) {
   const s = d.summary;
   const names = d.cities.map((c) => c.city);
   if (!s) return null;
-  const tile = "tile flex min-w-0 flex-col gap-1 px-4 py-3.5";
+  const aqi = d.metric === "aqi";
+  const tile = (colour: string) => ({
+    className: "tile sq-lift relative flex min-w-0 flex-col gap-1 overflow-hidden px-4 py-4 hover:-translate-y-0.5",
+    style: { backgroundImage: `radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, ${colour} 20%, transparent), transparent 60%)` },
+  });
+  const city = (label: string, icon: React.ReactNode, x: { city: string; mean: number }) => {
+    const colour = cityColour(x.city, names);
+    const cat = aqi ? aqiCategory(x.mean) : null;
+    return (
+      <div {...tile(colour)}>
+        <span className="inline-flex items-center gap-1.5 text-[12.5px] text-faint">{icon}{label}</span>
+        <span className="flex items-baseline gap-2"><span aria-hidden className="sq-dot-glow size-2.5 shrink-0 self-center rounded-full" style={{ background: colour, color: colour }} />
+          <span className="truncate text-[16px] font-semibold">{x.city}</span>
+          <StatNumber value={x.mean} className="ml-auto text-[26px] leading-8 font-semibold" /></span>
+        <span className="flex items-center justify-end gap-2 text-[12px] text-faint">
+          {cat && <span className="inline-flex h-5 items-center rounded-full px-2 text-[11px] font-semibold" style={{ background: CATEGORY_STYLE[cat].bg, color: CATEGORY_STYLE[cat].fg }}>{CATEGORY_STYLE[cat].label}</span>}
+          {unit} mean</span>
+      </div>
+    );
+  };
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Summary">
-      <div className={tile}>
-        <span className="text-[12.5px] text-faint">Highest</span>
-        <span className="flex items-baseline gap-2"><span aria-hidden className="size-2.5 shrink-0 self-center rounded-full" style={{ background: cityColour(s.highest.city, names) }} />
-          <span className="truncate text-[16px] font-semibold">{s.highest.city}</span>
-          <span className="num ml-auto text-[20px] font-semibold">{s.highest.mean.toFixed(1)}</span></span>
-        <span className="text-right text-[12px] text-faint">{unit} mean</span>
-      </div>
-      <div className={tile}>
-        <span className="text-[12.5px] text-faint">Lowest</span>
-        <span className="flex items-baseline gap-2"><span aria-hidden className="size-2.5 shrink-0 self-center rounded-full" style={{ background: cityColour(s.lowest.city, names) }} />
-          <span className="truncate text-[16px] font-semibold">{s.lowest.city}</span>
-          <span className="num ml-auto text-[20px] font-semibold">{s.lowest.mean.toFixed(1)}</span></span>
-        <span className="text-right text-[12px] text-faint">{unit} mean</span>
-      </div>
-      <div className={cn(tile, s.too_close_to_call && "bg-warn/[0.07]")}>
-        <span className="text-[12.5px] text-faint">{s.too_close_to_call ? "Result" : "Highest vs lowest"}</span>
+    <div className="sq-stagger grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Summary">
+      {city("Highest", <ArrowUpRight className="size-3.5 text-[#FDBA74]" aria-hidden />, s.highest)}
+      {city("Lowest", <ArrowDownRight className="size-3.5 text-[#86EFAC]" aria-hidden />, s.lowest)}
+      <div {...tile(s.too_close_to_call ? "#F59E0B" : "#2DD4BF")}>
+        <span className="inline-flex items-center gap-1.5 text-[12.5px] text-faint"><Scale className="size-3.5 text-teal" aria-hidden />{s.too_close_to_call ? "Result" : "Highest vs lowest"}</span>
         {s.too_close_to_call ? (
-          <span className="text-[16px] font-semibold text-warn">Too close to call</span>
+          <span className="text-[17px] leading-8 font-semibold text-warn">Too close to call</span>
         ) : (
-          <span className="num text-[20px] font-semibold">{s.ratio != null ? `${s.ratio.toFixed(1)}×` : "–"}</span>
+          <span className="text-[26px] leading-8 font-semibold">{s.ratio != null ? <><StatNumber value={s.ratio} />×</> : "–"}</span>
         )}
         <span className="num text-[12px] text-faint">{s.too_close_to_call ? "Their 95% ranges overlap heavily" : `+${s.difference.toFixed(1)} ${unit} · ${d.common_days} common days`}</span>
       </div>
+    </div>
+  );
+}
+
+/** Every city's mean as a bar that grows in, highest first: the comparison at a glance. */
+function Race({ d, unit }: { d: CompareData; unit: string }) {
+  const names = d.cities.map((c) => c.city);
+  const rows = d.cities.filter((c) => c.mean != null);
+  if (rows.length < 2) return null;
+  const max = Math.max(...rows.map((c) => c.mean ?? 0), 1);
+  return (
+    <div className="card sq-accent-top relative p-5 sm:p-6" aria-label="Means at a glance">
+      <p className="mb-4 inline-flex items-center gap-2 text-[13px] font-medium text-subtle">
+        <Trophy className="size-4 text-teal" aria-hidden />At a glance <span className="font-normal text-faint">· mean over the {d.common_days} common days</span>
+      </p>
+      <ol className="flex flex-col gap-3">
+        {rows.map((c, i) => {
+          const colour = cityColour(c.city, names);
+          const cat = d.metric === "aqi" ? aqiCategory(c.mean) : null;
+          return (
+            <li key={c.city} className="grid grid-cols-[minmax(0,118px)_minmax(0,1fr)_auto] items-center gap-3 text-[14px]">
+              <span className="flex min-w-0 items-center gap-2"><span className="num w-4 text-faint">{i + 1}</span><span className="truncate font-medium">{c.city}</span></span>
+              <span aria-hidden className="relative h-3 overflow-hidden rounded-full bg-white/[0.05]">
+                <span className="sq-grow absolute inset-y-0 left-0 rounded-full" style={{
+                  width: `${Math.max(3, (100 * (c.mean ?? 0)) / max)}%`, animationDelay: `${0.15 + i * 0.09}s`,
+                  background: `linear-gradient(90deg, color-mix(in srgb, ${colour} 45%, transparent), ${colour})`,
+                  boxShadow: `0 0 16px color-mix(in srgb, ${colour} 55%, transparent)`,
+                }} />
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="num font-semibold">{c.mean!.toFixed(1)} <span className="text-[12px] font-normal text-faint">{unit}</span></span>
+                {cat && <span className="size-2.5 rounded-full" style={{ background: CATEGORY_STYLE[cat].bg }} title={CATEGORY_STYLE[cat].label} />}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+/** The selected cities as overlapping glowing discs beside the title (decoration). */
+function SelectedStack({ cities }: { cities: string[] }) {
+  return (
+    <div aria-hidden className="hidden items-center gap-4 lg:flex">
+      <div className="flex -space-x-3">
+        {cities.map((c, i) => {
+          const colour = cityColour(c, cities);
+          return (
+            <span key={c} className="sq-pop grid size-12 place-items-center rounded-full border-2 border-[#0b1324] text-[13px] font-bold text-[#0b1324]"
+              style={{ background: `radial-gradient(circle at 35% 30%, #ffffffaa, ${colour} 58%)`, boxShadow: `0 0 24px color-mix(in srgb, ${colour} 45%, transparent)`, animationDelay: `${i * 0.07}s`, zIndex: 10 - i }}>
+              <span className="sq-float" style={{ animationDelay: `${i * 0.4}s` }}>{c.slice(0, 2)}</span>
+            </span>
+          );
+        })}
+      </div>
+      <span className="text-[13px] leading-5 text-subtle"><strong className="block text-[22px] font-semibold text-foreground">{cities.length}</strong>cities</span>
     </div>
   );
 }
@@ -255,8 +321,9 @@ function Results({ d, label }: { d: CompareData; label: string }) {
   const question = `Compare ${METRIC_NAME[d.metric]} in ${listJoin(d.cities.map((c) => c.city))} from ${fmtDate(d.start)} to ${fmtDate(d.end)}.`;
 
   return (
-    <>
+    <div className="sq-stagger flex min-w-0 flex-col gap-6">
       <Summary d={d} unit={unit} />
+      <Race d={d} unit={unit} />
       <Actions d={d} question={question} />
       {low.length > 0 && (
         <p role="alert" className="flex items-start gap-2.5 rounded-[14px] bg-warn/[0.08] px-4 py-3 text-[14px]">
@@ -279,7 +346,7 @@ function Results({ d, label }: { d: CompareData; label: string }) {
         {d.cities.some((c) => c.trend.note) && <p className="mt-3 text-[13px] text-subtle">{SHORT_NOTE}</p>}
         <p className="mt-3 text-[12.5px] text-faint">{d.method} Source: {d.source}.</p>
       </Section>
-    </>
+    </div>
   );
 }
 
@@ -331,7 +398,7 @@ function RankingTable({ d, unit }: { d: CompareData; unit: string }) {
   return (
     <>
     {/* phones: one block per city, separated by space (no boxes) */}
-    <ol className="flex flex-col gap-5 md:hidden">
+    <ol className="sq-stagger flex flex-col gap-5 md:hidden">
       {d.cities.map((c, i) => {
         const t = trendText(c.trend, unit);
         return (
@@ -363,7 +430,7 @@ function RankingTable({ d, unit }: { d: CompareData; unit: string }) {
             <th scope="col" className="pb-3 font-medium">Trend</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="sq-stagger">
           {d.cities.map((c, i) => {
             const t = trendText(c.trend, unit);
             return (

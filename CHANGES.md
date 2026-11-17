@@ -97,3 +97,19 @@ tests for the six dots and the all-cities layer. Screenshots of every page at 14
 - **Look and feel (same colours and fonts):** animated India map on Home with every bulletin city as a coloured dot,
   "Across India" section, word-by-word headline, live counters, sliding tab highlights, glowing cards, a moving border on
   the Ask box, a softer Ask start screen, AQI charts coloured by category. Explore's city panel keeps its title in view.
+
+## 8. Any festival or date, and all pages polished
+
+- **Ask about any festival or any date, for any of 329 bulletin cities:** Holi, Dussehra, Durga Puja, Navratri, Karva
+  Chauth, Dhanteras, Govardhan Puja, Bhai Dooj, Chhath, Guru Nanak Jayanti, Eid, Bakrid, Christmas, New Year, Lohri,
+  Makar Sankranti, Republic Day, Independence Day, Raksha Bandhan, Janmashtami, Ganesh Chaturthi, Onam, Shivratri, or a
+  date such as "9 November". The answer gives the bulletins that cover the day and its night, the average, the week
+  before and the change. Moon-dependent dates are flagged; every answer states the date used.
+- **Diwali for any bulletin city:** "Rohtak AQI on Diwali 2025 and 2026" now answers 362.5 and 306.5 (Very Poor). It
+  used to say Rohtak was not covered.
+- Checked live (Gemini): Rohtak Diwali, Delhi Holi 2026 (151.5, Moderate), Lucknow on 9 November, Patna on Chhath,
+  Jaipur on New Year 2026, Rohtak vs Delhi on Diwali 2026; all answered with every number checked.
+- **Pages:** Compare (animated title, tinted summary tiles with count-up, "At a glance" bars, glowing city toggles), Ask
+  (festival question strip, answers rise in with a running light, tinted number tiles) and Explore (glass panels, title
+  chip, lists that stagger in). Same colours and fonts; all motion off with reduced motion.
+- Tests: `tests/test_occasions.py` (7), `frontend/src/lib/event-chart.test.ts` (2).

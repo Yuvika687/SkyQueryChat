@@ -206,7 +206,7 @@ function eventLineOption(spec: ChartSpec) {
             markLine: {
               silent: true, symbol: "none",
               lineStyle: { type: "solid", width: 1.5, color: C.text, opacity: 0.7 },
-              label: { show: true, position: "end", color: C.text, fontSize: 11, fontWeight: 600, formatter: "Diwali", distance: 4 },
+              label: { show: true, position: "end", color: C.text, fontSize: 11, fontWeight: 600, formatter: eventName(spec), distance: 4 },
               data: [{ xAxis: 0 }],
             },
           }
@@ -336,6 +336,19 @@ function calendarOption(spec: ChartSpec) {
 export function eventKey(spec: ChartSpec): string | null {
   if (!spec.series.some((s) => s.data.some((p) => !Array.isArray(p)))) return null;
   const bands = spec.bands ?? [];
-  const base = "Vertical line: Diwali (D).";
-  return bands.length ? `${base} Shaded: festival bulletins D+1 and D+2, which report Diwali night.` : base;
+  const name = eventName(spec);
+  if (name === "Diwali") {
+    const base = "Vertical line: Diwali (D).";
+    return bands.length ? `${base} Shaded: festival bulletins D+1 and D+2, which report Diwali night.` : base;
+  }
+  const base = `Vertical line: the bulletin dated ${name}.`;
+  return bands.length ? `${base} Shaded: the bulletins covering ${name} and its night (each runs 4 PM to 4 PM).` : base;
+}
+
+/** The occasion an event chart is about, from its title ("Delhi: official CPCB AQI around Holi 2026" -> "Holi"). */
+export function eventName(spec: ChartSpec): string {
+  const m = /around (.+)$/.exec(spec.title ?? "");
+  if (!m) return "Diwali";
+  const first = m[1].split(",")[0].trim();
+  return first.replace(/\s+\d{4}$/, "").replace(/\s*\(.*\)$/, "") || "Diwali";
 }

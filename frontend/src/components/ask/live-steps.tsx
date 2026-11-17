@@ -15,6 +15,8 @@ const TOOL: Record<string, string> = {
   city_trend: "Loaded the city's daily values",
   compare_cities: "Compared the cities on matching days",
   diwali_aqi: "Loaded official CPCB bulletins around Diwali",
+  occasion_aqi: "Loaded official CPCB bulletins for the festival or date",
+  official_aqi: "Loaded official CPCB bulletins for the city",
   delhi_pm_diwali: "Loaded Delhi's measured PM around Diwali",
   unusual_days: "Looked for unusual days",
   weather_association: "Matched air quality with modelled weather",

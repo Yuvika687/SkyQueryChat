@@ -610,6 +610,30 @@ Rules:
   Explore layer switch. Every animation ends visible and is off with reduced motion.
 - Explore city panel: header sticks while scrolling and the panel resets per city.
 
+### Any festival, any date, any bulletin city (main, 2026-11-17)
+
+- **`occasion_aqi` tool** (`backend/analysis/events.py`): official AQI for ANY bulletin city on a festival by name or on
+  dates ("9 November", "2026-11-09", "1 to 5 November 2026", at most 31 days; longer → `official_aqi` with a period).
+  Calendar: `backend/config/festivals.json` (fixed-date occasions every year; lunar festivals 2024–2026, moon-dependent ones
+  flagged; Diwali from `events.json`). Occasion level = mean of bulletins dated D_start..D_end+1 (the day and its night);
+  week before = mean of the 7 bulletins before (≥ 4 needed); change in AQI points (never a %). Metros read the long
+  `city_daily_aqi` table (from 2015) topped up with `city_aqi_all`. Day-month without a year = the latest one with data.
+  A missing bulletin is reported with the nearest bulletins either side, never filled. Fields `<year>_level_aqi`,
+  `<year>_bulletin_<date>`, `<year>_period_<date>` (ISO reporting period, so "8 November" evenings pass the checker).
+  Warning code `not_causal_occasion`.
+- **`diwali_aqi` for any bulletin city:** non-metros get the same Diwali tables built from their bulletins
+  (`official_aqi.diwali_tables`, cached). `/api/diwali/{city}` resolves bulletin cities too.
+- Prompt: "Never say a city or festival is not covered before calling a tool." (The Rohtak Diwali answer used to claim
+  Rohtak wasn't covered.)
+- Event charts name their own occasion (`eventName` from the chart title); Diwali wording unchanged.
+- **Pages:** `PageHero` (eyebrow chip with live dot, `sq-title-grad` title) on Compare; Compare summary tiles tinted by
+  city colour with count-up numbers and AQI category, an "At a glance" bar race, glowing city toggles, a stack of the
+  selected cities by the title. Ask: festival/date example strip (`sq-marquee`, pauses on hover; e2e must hover before
+  clicking), answer card rises in with a running light on top, tinted key-number tiles. Explore: glass panels
+  (`sq-glass`), title chip, lists stagger in. `StatNumber` now shows the real value until its count starts.
+- CSS gotcha: un-layered classes in `globals.css` beat Tailwind utilities, so a class that sets `position` overrides
+  `absolute`/`sticky` (this pushed Compare's sticky panel down 96px). Polish classes must not set `position`.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

@@ -174,7 +174,11 @@ export function ExploreScreen() {
 
   const header = (
     <div>
-      <h1 className="page-title">Explore</h1>
+      <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-teal/25 bg-teal/[0.08] px-2.5 text-[12px] font-medium text-teal">
+        <span aria-hidden className="sq-live size-1.5 rounded-full bg-teal text-teal" />
+        {cpcbOn ? `${cpcb?.length ?? 329} cities · official AQI` : `${data?.stations.length ?? "All"} stations · ${pollutant === "pm25" ? "PM2.5" : "PM10"}`}
+      </span>
+      <h1 className="page-title sq-title-grad mt-3">Explore</h1>
       <p className="mt-2 text-[15px] text-foreground">
         {cpcbOn ? "Official AQI for every city in CPCB’s daily bulletin." : "Every monitoring station in the six cities."}
       </p>
@@ -229,7 +233,7 @@ export function ExploreScreen() {
 
       {!phone ? (
         <>
-          <aside aria-label="Cities and stations" className="absolute top-[76px] bottom-4 left-4 z-10 border border-line-strong bg-[#0b1324]/[0.96] backdrop-blur-xl flex w-[370px] flex-col overflow-hidden rounded-3xl shadow-float">
+          <aside aria-label="Cities and stations" className="sq-glass sq-accent-top sq-card-in absolute top-[76px] bottom-4 left-4 z-10 flex w-[370px] flex-col overflow-hidden rounded-3xl border border-line-strong backdrop-blur-xl">
             <div className="flex flex-col gap-4 px-5 pt-5 pb-3">
               {header}
               {controls}
@@ -242,17 +246,17 @@ export function ExploreScreen() {
             </div>
           </aside>
           {!cpcbOn && (
-            <div className={cn("absolute bottom-4 left-[402px] z-10 rounded-2xl border border-line-strong bg-[#0b1324]/[0.94] px-4 py-2 shadow-float backdrop-blur-xl", stationObj ? "right-[402px]" : "right-[60px]")}>
+            <div className={cn("sq-glass sq-card-in absolute bottom-4 left-[402px] z-10 rounded-2xl border border-line-strong px-4 py-2 backdrop-blur-xl", stationObj ? "right-[402px]" : "right-[60px]")}>
               {time ?? <Skeleton className="h-[52px]" />}
             </div>
           )}
           {cpcbOn && cpcbCity && (
-            <aside key={cpcbCity} aria-label="City" className="sq-slide-in absolute top-[76px] right-4 bottom-4 z-10 w-[370px] overflow-y-auto rounded-3xl border border-line-strong bg-[#0b1324]/[0.97] p-5 pt-0 shadow-float backdrop-blur-xl">
+            <aside key={cpcbCity} aria-label="City" className="sq-slide-in sq-glass absolute top-[76px] right-4 bottom-4 z-10 w-[370px] overflow-y-auto rounded-3xl border border-line-strong p-5 pt-0 backdrop-blur-xl">
               <CpcbCityPanel name={cpcbCity} onClose={() => setCpcbCity(null)} />
             </aside>
           )}
           {!cpcbOn && stationObj && data && (
-            <aside aria-label="Station" className="absolute top-[76px] right-4 bottom-4 z-10 border border-line-strong bg-[#0b1324]/[0.97] backdrop-blur-xl w-[370px] overflow-y-auto rounded-3xl p-5 shadow-float">
+            <aside key={stationObj.id} aria-label="Station" className="sq-slide-in sq-glass absolute top-[76px] right-4 bottom-4 z-10 w-[370px] overflow-y-auto rounded-3xl border border-line-strong p-5 backdrop-blur-xl">
               <StationPanel station={stationObj} data={data} day={i} onClose={() => setStation(null)} />
             </aside>
           )}
