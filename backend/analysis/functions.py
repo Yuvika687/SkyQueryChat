@@ -321,12 +321,32 @@ def compare_cities(s: Store, cities: list[str], pollutant: str, start: date, end
 
 
 # ----------------------------------------------------------------------------- 3. Diwali AQI
+def _diwali_frames(s: Store, city: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The six analysed cities use the pipeline's Diwali tables; any other CPCB bulletin city gets the same
+    tables built from its own bulletins (official AQI only)."""
+    if city in C.CITIES:
+        return (s.q("SELECT * FROM diwali_aqi_levels WHERE city=? ORDER BY year, offset_days", [city]),
+                s.q("SELECT * FROM diwali_aqi_baselines WHERE city=? ORDER BY year, \"window\"", [city]))
+    from . import official_aqi as OA
+    if "city_aqi_all" not in s.tables or city not in OA.bulletin_cities(s).names:
+        raise ValueError(f"Unknown city {city!r}: not one of the six analysed cities or in CPCB's daily bulletin")
+    lv, bl = OA.diwali_tables(s, city)
+    return lv.sort_values(["year", "offset_days"]), bl.sort_values(["year", "window"])
+
+
+def _missing_diwali(s: Store, city: str, y: int) -> str:
+    if city not in C.CITIES:
+        from . import official_aqi as OA
+        first = OA._rows(s, city)["bulletin_date"].min()
+        return (f"Official AQI for Diwali {y} is not available for {city}: the app's CPCB bulletins for {city} "
+                f"start on {first.day} {first:%b %Y}." if hasattr(first, "strftime") else f"Official AQI for Diwali {y} is missing.")
+    return f"Official AQI for Diwali {y} is missing."
+
+
 def diwali_aqi(s: Store, city: str, years: tuple[int, ...] = (2024, 2025)) -> AnalysisResult:
     """MAIN Diwali comparison: official CPCB bulletin AQI levels on the festival days (bulletins dated
     D+1 and D+2, which cover the evenings of D and D+1). Percentages are withheld until approved."""
-    _check(city)
-    lv = s.q("SELECT * FROM diwali_aqi_levels WHERE city=? ORDER BY year, offset_days", [city])
-    bl = s.q("SELECT * FROM diwali_aqi_baselines WHERE city=? ORDER BY year, \"window\"", [city])
+    lv, bl = _diwali_frames(s, city)
     out, series, bands, warns = [], [], [], []
     for y in years:
         g = lv[lv["year"] == y]
@@ -334,7 +354,7 @@ def diwali_aqi(s: Store, city: str, years: tuple[int, ...] = (2024, 2025)) -> An
         if fest.empty or fest["aqi"].isna().any():
             out.append({"year": y, "status": "not_available",
                         "message": f"Official AQI for Diwali {y} is not available yet." if y >= 2026
-                        else f"Official AQI for Diwali {y} is missing."})
+                        else _missing_diwali(s, city, y)})
             continue
         level = float(fest["aqi"].mean())
         b = bl[bl["year"] == y]
@@ -371,7 +391,7 @@ def diwali_aqi(s: Store, city: str, years: tuple[int, ...] = (2024, 2025)) -> An
     if APPROVED_DIWALI_BASELINE is None:
         warns.append("Percentage changes are withheld: they vary strongly with the baseline window "
                      "(see baseline_candidates).")
-    if city != "Delhi":
+    if city != "Delhi" and city in C.CITIES:
         stt = s.q("SELECT p.year, p.status, r.user_message FROM diwali_pm_status p JOIN data_status_reasons r "
                   "USING (reason_code) WHERE p.city=? AND p.metric='pm25'", [city]) \
             if {"diwali_pm_status", "data_status_reasons"} <= set(s.tables) else pd.DataFrame()
@@ -419,9 +439,9 @@ def diwali_aqi_percent(s: Store, city: str, year: int) -> AnalysisResult:
     """ONLY when a user explicitly asks for a percentage. Official AQI, festival level vs the week
     before (D-7..D-1). Single figure only if W1, W2, W3 agree within 25 points; else a range.
     Never for PM concentrations."""
-    _check(city)
-    bl = s.q("SELECT * FROM diwali_aqi_baselines WHERE city=? AND year=?", [city, year]).set_index("window")
-    lv = s.q("SELECT * FROM diwali_aqi_levels WHERE city=? AND year=? ORDER BY offset_days", [city, year])
+    lv, bl = _diwali_frames(s, city)
+    lv = lv[lv["year"] == year].sort_values("offset_days")
+    bl = bl[bl["year"] == year].set_index("window")
     src = lv["source"].dropna().unique().tolist() if "source" in lv else []
     base = {"kind": "diwali_aqi_percent", "title": f"Diwali {year} AQI change in {city} (official AQI)",
             "metric": "aqi", "units": "% change in AQI index", "data_type": "official measured AQI (city average)",

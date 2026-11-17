@@ -120,7 +120,8 @@ export function StatNumber({ value, decimals = 1, className }: { value: number; 
   const inView = useInView(ref, { once: true });
   const reduce = useReducedMotion();
   const final = value.toFixed(decimals);
-  const [shown, setShown] = useState((0).toFixed(decimals));
+  // the real value until the count starts, so a number never reads 0 before it scrolls into view
+  const [shown, setShown] = useState(final);
   useEffect(() => {
     if (!inView || reduce) return;
     const c = animate(0, value, { duration: 0.9, ease: [0.16, 1, 0.3, 1], onUpdate: (v) => setShown(v.toFixed(decimals)) });

@@ -52,7 +52,7 @@ export function CpcbList({ cities, selected, onPick }: { cities: CpcbCity[]; sel
         {cpcbLabel(date)}. Highest first.{off ? ` ${off} cities have no confident map location and are listed only.` : ""}
       </p>
       {shown.length === 0 && <p className="px-1 py-3 text-[14px] text-subtle">No bulletin city matches “{q}”.</p>}
-      <ol className="flex flex-col" aria-label="CPCB bulletin cities">
+      <ol className="sq-stagger flex flex-col" aria-label="CPCB bulletin cities">
         {shown.map((c) => {
           const cat = cpcbCategory(c);
           return (

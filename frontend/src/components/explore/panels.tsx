@@ -196,7 +196,7 @@ export function CityRanking({ data, day, onCity }: { data: ExploreData; day: num
   return (
     <div>
       <h2 className="mb-2 text-sm font-semibold">Six cities, highest first</h2>
-      <ol className="flex flex-col gap-1">
+      <ol className="sq-stagger flex flex-col gap-1">
         {rankCities(data, day).map((c, i) => {
           const cat = pmCategory(c.value, pol);
           return (
@@ -264,7 +264,7 @@ export function StationList({ city, stations, day, date, pollutant, selected, on
       <Link href={`/city/${city.toLowerCase()}`} className="mb-3 inline-flex min-h-9 items-center gap-1.5 rounded-full text-[13px] font-medium text-teal hover:underline">
         Open city page<ArrowRight className="size-3.5" aria-hidden />
       </Link>
-      <ol className="flex flex-col gap-0.5" aria-label={`${city} stations`}>
+      <ol className="sq-stagger flex flex-col gap-0.5" aria-label={`${city} stations`}>
         {ranked.map((s) => {
           const st = dayStatus(s, day, pollutant);
           const col = statusColour(st);

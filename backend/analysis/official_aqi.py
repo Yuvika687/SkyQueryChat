@@ -255,3 +255,19 @@ def city_series(store: Store, city: str, days: int = DEFAULT_DAYS) -> dict:
             "previous_date": prev["bulletin_date"].isoformat() if prev is not None else None,
             "n_days_with_value": sum(1 for s in series if s["aqi"] is not None), "series": series,
             "lat": co.get("lat") if co.get("plotted") else None, "lon": co.get("lon") if co.get("plotted") else None}
+
+
+def diwali_tables(store: Store, city: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Diwali levels and baseline windows for ANY bulletin city, built from its bulletins exactly as the pipeline
+    builds them for the six analysed cities (same festival days, bulletin alignment and windows). Cached per city."""
+    cache = store.__dict__.setdefault("_diwali_cache", {})
+    if city not in cache:
+        from backend.pipeline.derive import diwali_aqi_table
+        g = _rows(store, city)
+        lv, bl = diwali_aqi_table(g)
+        for t in (lv, bl):
+            if "source" not in t:
+                t["source"] = None
+            t["source"] = t["source"].fillna(SOURCE)
+        cache[city] = (lv, bl)
+    return cache[city]

@@ -500,7 +500,12 @@ def create_app(agent_factory: Callable | None = None, store: Store | None = None
 
     @app.get("/api/diwali/{city}")
     async def diwali(city: str, years: str = Query("2024,2025", pattern=r"^\d{4}(,\d{4}){0,2}$")):
-        return F.diwali_aqi(S(), _city(city), tuple(int(y) for y in years.split(","))).to_dict()
+        from backend.analysis import official_aqi as OA
+        r = R.resolve_city(city)
+        c = r["city"] if r.get("city") else OA.bulletin_cities(S()).resolve(city).get("city")
+        if not c:
+            raise ValueError(f"{city} isn't in CPCB's daily AQI bulletin.")
+        return F.diwali_aqi(S(), c, tuple(int(y) for y in years.split(","))).to_dict()
 
     # The answer wording the live app uses (readable dates, caveats kept in the answer) dates from this day.
     # A first-pass run that started earlier was measured with an earlier wording; the panel says so.

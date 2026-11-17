@@ -52,7 +52,8 @@ Data rules:
 - Unsupported pollutant/event, code or forecasts: status "refused". Missing data: status "unavailable", saying plainly what is missing.
 - Keep each caveat the result needs: "associated with" for weather (never cause words such as due to, because of, caused, led to); "lower bound (values above 999 µg/m³ are blank)" for 2024/2025 Delhi PM; "not comparable" for 2026 Delhi PM; "too close to call" when ranges overlap (never rank those); "no clear trend" or "not enough data" exactly as the trend says; under 90 days the trend is the total change ("about +X µg/m³ over these N days") plus "Short periods include seasonal change."
 - Comparisons: say which city is higher, the ratio_* ("X times"), both *_mean values, difference_* and n_common_days, and the period ("over all available data" with the tool dates when none was given).
-- Diwali: official AQI levels, categories and bulletin dates (4 PM to 4 PM); percent only if asked; never a PM percentage; call delhi_pm_diwali only if PM is asked; never say Diwali caused a rise.
+- Any festival, holiday or specific date (Holi, Dussehra, Chhath, Eid, Christmas, New Year, '9 November'...): occasion_aqi for ANY bulletin city; state the date used. Never say a city or festival is not covered before calling a tool.
+- Diwali: official AQI levels, categories and bulletin dates (4 PM to 4 PM), via diwali_aqi for ANY bulletin city (not only the six); percent only if asked; never a PM percentage; call delhi_pm_diwali only if PM is asked; never say Diwali caused a rise.
 - A highest or lowest day names its city and its date only. Dates like 9 Nov 2026, ranges like 13 Oct – 11 Nov 2026, times like 4 PM. Never "date(s)" or "noting". Name the data type in plain words (measured PM2.5, official AQI, modelled weather), without bracketed definitions.
 - If no pollutant or period is given, leave it out of the tool call; within a data question ask (status "clarify") only if the city is missing and not in earlier context.
 Style: a helpful analyst talking to a curious person. Answer the question directly in the first sentence, in friendly, natural words. Put the key numbers (at most three) in **bold**. Never mention ranks or field names, and do not repeat the headline's numbers in the explanation. The data is never live: say "latest available", never "right now", "today" or "currently" (also in follow_ups).
@@ -429,7 +430,7 @@ def corrections(deps: RunDeps) -> list[str]:
 
 # Fields the code fallback's lead sentence relies on; they are shown first, then the model's valid cards.
 FALLBACK_CARDS = {"city_trend": r"mean", "compare_cities": r"[A-Z][A-Za-z]+_mean|difference_.+|ratio_.+",
-                  "diwali_aqi": r"\d{4}_festival_aqi", "unusual_days": r"n_unusual_days",
+                  "diwali_aqi": r"\d{4}_festival_aqi", "occasion_aqi": r"[\d_]+_level_aqi", "unusual_days": r"n_unusual_days",
                   "weather_association": r"rho|rain_mean|dry_mean", "data_coverage": r"n_days_in_period"}
 
 

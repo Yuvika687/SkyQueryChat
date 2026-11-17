@@ -176,7 +176,7 @@ export function AskScreen({ initialQuestion, onInitialSent, tools }: {
       </div>
       {/* Desktop: the evidence for the focused answer; a clicked number swaps it to that number's proof. */}
       {desktop && panelOpen && panelTurn?.answer && (
-        <aside aria-label={proofView ? "Proof" : "Evidence"} className="sq-slide-in relative my-3 mr-3 flex w-[420px] shrink-0 flex-col overflow-hidden rounded-[18px] bg-[#0c1428] xl:w-[460px]">
+        <aside aria-label={proofView ? "Proof" : "Evidence"} className="sq-slide-in sq-glass sq-accent-top relative my-3 mr-3 flex w-[420px] shrink-0 flex-col overflow-hidden rounded-[18px] xl:w-[460px]">
           <button type="button" onClick={() => { setClosedFor(panelTurn.id); setProof(null); }} aria-label="Close the evidence panel"
             className="absolute top-2.5 right-3 z-10 grid size-8 place-items-center rounded-full text-subtle hover:bg-white/[0.06] hover:text-foreground">
             <X className="size-4" aria-hidden />

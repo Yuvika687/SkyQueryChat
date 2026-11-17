@@ -33,7 +33,7 @@ export function TurnView({ turn, health, isLatest, busy, onAsk, onRetry, onProof
   return (
     <article data-turn={turn.id} className="sq-rise flex min-w-0 flex-col gap-3" aria-label={`Question: ${turn.question}`}>
       <div className="flex justify-end">
-        <p className="max-w-[85%] rounded-2xl rounded-br-md bg-teal/[0.1] px-4 py-2.5 text-[15px]">{turn.question}</p>
+        <p className="sq-pop max-w-[85%] rounded-2xl rounded-br-md border border-teal/20 bg-gradient-to-br from-teal/[0.16] to-[#60A5FA]/[0.08] px-4 py-2.5 text-[15px] shadow-[0_10px_30px_-18px_rgb(45_212_191/0.6)]">{turn.question}</p>
       </div>
       <Body turn={turn} health={health} isLatest={isLatest} busy={busy} onAsk={onAsk} onRetry={onRetry}
         onProof={(t) => onProof(turn, t)} activeProof={activeProof} onEvidence={() => onEvidence(turn)} />

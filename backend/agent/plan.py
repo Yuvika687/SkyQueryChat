@@ -20,6 +20,8 @@ WHAT = {
     "city_trend": "look at {pollutant} in {city} {period}",
     "compare_cities": "compare {pollutant} across {cities} {period}",
     "diwali_aqi": "look up official CPCB AQI bulletins for {city} around Diwali {years}",
+    "occasion_aqi": "look up official CPCB AQI bulletins for {city} on {event}",
+    "official_aqi": "look up official CPCB AQI for {city} {period}",
     "delhi_pm_diwali": "load Delhi's measured PM around Diwali {year}",
     "unusual_days": "find unusual {pollutant} days in {city} {period}",
     "weather_association": "relate {pollutant} in {city} to {weather} {period}",
@@ -45,6 +47,7 @@ def describe(step: dict[str, Any]) -> str:
         "years": _join([str(y) for y in years]),
         "year": a.get("year") or "",
         "weather": a.get("weather") or "the weather",
+        "event": a.get("event") or _join([str(d) for d in (a.get("dates") or [])]) or "the date asked",
         "subject": _join([str(c) for c in cities] + ([a["pollutant"]] if a.get("pollutant") else [])) or "the request",
     }
     t = WHAT.get(step.get("tool", ""))

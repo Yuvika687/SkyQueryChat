@@ -1,0 +1,32 @@
+{
+  "_doc": "Festival and holiday dates used by the occasion AQI tool (backend/analysis/events.py). Fixed-date occasions repeat every year. Lunar festivals follow Indian public-holiday calendars; moon-dependent ones (marked moon) can differ by a day between regions, and every answer states the date used so the user can correct it. Diwali comes from events.json (verified dates).",
+  "fixed": {
+    "new_year": {"name": "New Year", "month": 1, "day": 1, "aliases": ["new year", "new years", "new year's day", "new year's eve", "new years eve", "nye", "31st night", "1 january"], "note": "New Year's Eve fireworks fall in the bulletin dated 1 January (4 PM on 31 Dec to 4 PM on 1 Jan)."},
+    "lohri": {"name": "Lohri", "month": 1, "day": 13, "aliases": ["lohri"]},
+    "makar_sankranti": {"name": "Makar Sankranti", "month": 1, "day": 14, "aliases": ["makar sankranti", "sankranti", "pongal", "uttarayan", "magh bihu", "bihu"]},
+    "republic_day": {"name": "Republic Day", "month": 1, "day": 26, "aliases": ["republic day", "26 january", "26th january"]},
+    "independence_day": {"name": "Independence Day", "month": 8, "day": 15, "aliases": ["independence day", "15 august", "15th august"]},
+    "gandhi_jayanti": {"name": "Gandhi Jayanti", "month": 10, "day": 2, "aliases": ["gandhi jayanti", "2 october", "2nd october"]},
+    "christmas": {"name": "Christmas", "month": 12, "day": 25, "aliases": ["christmas", "xmas", "25 december"]},
+    "new_years_eve": {"name": "New Year's Eve", "month": 12, "day": 31, "aliases": [], "note": "The night itself is reported in the next day's bulletin (1 January)."}
+  },
+  "lunar": {
+    "maha_shivratri": {"name": "Maha Shivratri", "aliases": ["shivratri", "maha shivratri", "mahashivratri"], "dates": {"2024": "2024-03-08", "2025": "2025-02-26", "2026": "2026-02-15"}},
+    "holi": {"name": "Holi", "aliases": ["holi", "dhulandi", "rangwali holi", "holika dahan"], "dates": {"2024": "2024-03-25", "2025": "2025-03-14", "2026": "2026-03-04"}, "note": "Holika Dahan bonfires are on the evening before Holi."},
+    "eid_ul_fitr": {"name": "Eid ul-Fitr", "aliases": ["eid", "eid ul fitr", "eid-ul-fitr", "eid al fitr", "ramzan eid", "ramadan eid", "id ul fitr"], "dates": {"2024": "2024-04-11", "2025": "2025-03-31", "2026": "2026-03-21"}, "moon": true},
+    "eid_ul_adha": {"name": "Eid ul-Adha (Bakrid)", "aliases": ["bakrid", "bakri eid", "eid ul adha", "eid-ul-adha", "eid al adha", "id ul zuha"], "dates": {"2024": "2024-06-17", "2025": "2025-06-07", "2026": "2026-05-27"}, "moon": true},
+    "raksha_bandhan": {"name": "Raksha Bandhan", "aliases": ["raksha bandhan", "rakhi", "rakshabandhan"], "dates": {"2024": "2024-08-19", "2025": "2025-08-09", "2026": "2026-08-28"}},
+    "janmashtami": {"name": "Janmashtami", "aliases": ["janmashtami", "krishna janmashtami", "gokulashtami"], "dates": {"2024": "2024-08-26", "2025": "2025-08-16", "2026": "2026-09-04"}},
+    "ganesh_chaturthi": {"name": "Ganesh Chaturthi", "aliases": ["ganesh chaturthi", "ganesh chathurthi", "vinayaka chaturthi", "ganeshotsav"], "dates": {"2024": "2024-09-07", "2025": "2025-08-27", "2026": "2026-09-14"}},
+    "onam": {"name": "Onam (Thiruvonam)", "aliases": ["onam", "thiruvonam"], "dates": {"2024": "2024-09-15", "2025": "2025-09-05", "2026": "2026-08-26"}},
+    "navratri": {"name": "Navratri", "aliases": ["navratri", "navaratri", "sharad navratri"], "dates": {"2024": "2024-10-03", "2025": "2025-09-22", "2026": "2026-10-11"}, "days": 9},
+    "durga_puja": {"name": "Durga Puja (Saptami to Dashami)", "aliases": ["durga puja", "pujo", "durga pooja"], "dates": {"2024": "2024-10-10", "2025": "2025-09-29", "2026": "2026-10-17"}, "days": 4},
+    "dussehra": {"name": "Dussehra", "aliases": ["dussehra", "dasara", "dussera", "vijayadashami", "vijaya dashami", "dashami"], "dates": {"2024": "2024-10-12", "2025": "2025-10-02", "2026": "2026-10-20"}, "note": "Ravan effigies are burnt on the evening of Dussehra, reported in the next day's bulletin."},
+    "karva_chauth": {"name": "Karva Chauth", "aliases": ["karva chauth", "karwa chauth"], "dates": {"2024": "2024-10-20", "2025": "2025-10-10", "2026": "2026-10-29"}},
+    "dhanteras": {"name": "Dhanteras", "aliases": ["dhanteras", "dhantrayodashi"], "dates": {"2024": "2024-10-29", "2025": "2025-10-18", "2026": "2026-11-06"}},
+    "govardhan_puja": {"name": "Govardhan Puja", "aliases": ["govardhan puja", "govardhan", "annakut"], "dates": {"2024": "2024-11-02", "2025": "2025-10-22", "2026": "2026-11-09"}},
+    "bhai_dooj": {"name": "Bhai Dooj", "aliases": ["bhai dooj", "bhaiya dooj", "bhau beej", "bhai phota"], "dates": {"2024": "2024-11-03", "2025": "2025-10-23", "2026": "2026-11-11"}},
+    "chhath": {"name": "Chhath Puja (evening arghya)", "aliases": ["chhath", "chhath puja", "chhat puja", "chath"], "dates": {"2024": "2024-11-07", "2025": "2025-10-27", "2026": "2026-11-15"}},
+    "guru_nanak_jayanti": {"name": "Guru Nanak Jayanti (Gurpurab)", "aliases": ["guru nanak jayanti", "gurpurab", "guru purab", "kartik purnima", "dev deepawali", "dev diwali"], "dates": {"2024": "2024-11-15", "2025": "2025-11-05", "2026": "2026-11-24"}}
+  }
+}
