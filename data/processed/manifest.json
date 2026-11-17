@@ -1,5 +1,5 @@
 {
- "built_utc": "2026-11-16T17:39:59+00:00",
+ "built_utc": "2026-11-17T10:06:03+00:00",
  "cities": [
   "Delhi",
   "Mumbai",
@@ -10,16 +10,16 @@
  ],
  "openaq_requested": [
   "2025-02-18",
-  "2026-11-15"
+  "2026-11-16"
  ],
- "openaq_data_end": "2026-11-15",
+ "openaq_data_end": "2026-11-16",
  "not_yet_published": [],
- "openaq_archive_end": "2026-11-12",
+ "openaq_archive_end": "2026-11-13",
  "openaq_api_topup": {
   "dates": [
-   "2026-11-13",
    "2026-11-14",
-   "2026-11-15"
+   "2026-11-15",
+   "2026-11-16"
   ],
   "location_days": 290,
   "requests": 204,
@@ -31,7 +31,8 @@
  },
  "sources": {
   "openaq": "updated",
-  "cpcb_bulletins": "updated"
+  "cpcb_bulletins": "updated",
+  "cpcb_bulletins_all_cities": "updated"
  },
  "bulletins": {
   "urbanemissions_end": "2026-10-25",
@@ -56,9 +57,10 @@
    "2026-11-12",
    "2026-11-13",
    "2026-11-14",
-   "2026-11-15"
+   "2026-11-15",
+   "2026-11-16"
   ],
-  "end": "2026-11-15"
+  "end": "2026-11-16"
  },
  "rules": {
   "valid_hour_fraction": 0.75,
@@ -72,17 +74,35 @@
  },
  "rows": {
   "stations": 204,
-  "station_hourly": 3558636,
-  "station_daily": 161036,
-  "city_daily": 6984,
-  "city_daily_aqi": 24152,
+  "station_hourly": 3562906,
+  "station_daily": 161220,
+  "city_daily": 6996,
+  "city_daily_aqi": 24158,
   "network_gaps": 1423,
-  "date_quality": 5183,
+  "date_quality": 5190,
   "recurring_gap_hours": 192,
   "diwali": 54,
   "data_status_reasons": 6,
-  "cleaning_log": 110363,
+  "cleaning_log": 110545,
   "opencity_blanks": 54154
+ },
+ "all_cities_bulletins": {
+  "cities": 329,
+  "rows": 150757,
+  "start": "2025-02-18",
+  "end": "2026-11-16",
+  "dropped_duplicate_city_days": [
+   "Kalyan 2026-11-06",
+   "Kalyan 2026-11-08",
+   "Kalyan 2026-11-09",
+   "Kalyan 2026-11-10",
+   "Kalyan 2026-11-11",
+   "Kalyan 2026-11-12",
+   "Kalyan 2026-11-13",
+   "Kalyan 2026-11-14",
+   "Kalyan 2026-11-15",
+   "Kalyan 2026-11-16"
+  ]
  },
  "other_sensor_rows_ignored": 0,
  "other_sensor_rows_ignored_in_reprocessed_days": 0,
