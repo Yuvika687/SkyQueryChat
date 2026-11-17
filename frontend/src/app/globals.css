@@ -460,3 +460,30 @@
   .sq-title-grad, .sq-accent-top::after, .sq-marquee-track, .sq-float { animation: none !important; }
   .sq-marquee { overflow-x: auto; }
 }
+
+/* ---------------------------------------------------------------- mouse effects (components/shell/pointer-fx.tsx)
+   Only active when <html> has .sq-fx (fine pointer, no reduced motion). None of these set `position`. */
+.sq-cursor-glow {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 500ms ease;
+  background: radial-gradient(560px circle at var(--cx, 50%) var(--cy, 50%), rgb(45 212 191 / 0.08), rgb(96 165 250 / 0.03) 30%, transparent 55%);
+}
+.sq-fx .sq-cursor-glow { opacity: 1; }
+/* spotlight inside the card or tile under the cursor (inline tints keep priority) */
+.sq-fx [data-spot-on] {
+  background-image: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), rgb(94 234 212 / 0.10), rgb(96 165 250 / 0.04) 35%, transparent 60%);
+}
+/* gentle 3D tilt and magnetic buttons (Tailwind's hover lifts use the separate `translate` property, so they combine) */
+.sq-fx [data-tilt] { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1); will-change: transform; }
+.sq-fx [data-magnetic] { transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0); transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+/* click ripple */
+.sq-spark {
+  position: fixed; z-index: 9999; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 999px; pointer-events: none;
+  border: 2px solid rgb(94 234 212 / 0.9); box-shadow: 0 0 12px rgb(45 212 191 / 0.7);
+  animation: sq-spark-out 650ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.sq-spark::after {
+  content: ""; position: absolute; inset: -2px; border-radius: inherit; border: 1.5px solid rgb(147 197 253 / 0.7);
+  animation: sq-spark-out 650ms 90ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes sq-spark-out { from { transform: scale(0.4); opacity: 1; } to { transform: scale(5.5); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sq-cursor-glow, .sq-spark { display: none; } }

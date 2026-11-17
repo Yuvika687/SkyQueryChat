@@ -70,6 +70,7 @@ export function EmptyState({ onAsk, disabled }: { onAsk: (q: string) => void; di
               type="button"
               disabled={disabled}
               onClick={() => onAsk(q)}
+              data-tilt
               className="card sq-glow group sq-lift flex h-full min-h-[76px] w-full items-start gap-3 rounded-2xl p-4 text-left text-sm transition-colors hover:-translate-y-0.5 disabled:opacity-60"
             >
               <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-xl bg-teal/10 text-teal transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-6deg]">

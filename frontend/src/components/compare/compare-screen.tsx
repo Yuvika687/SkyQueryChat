@@ -200,7 +200,7 @@ function Actions({ d, question }: { d: CompareData; question: string }) {
         onClick={() => { download(`compare-${d.metric}-${d.start}-${d.end}.csv`, compareCSV(d), "text/csv;charset=utf-8"); toast("Data downloaded (CSV)"); }}>
         <Download className="size-4" aria-hidden />Download CSV
       </button>
-      <Link href={askHref(question)} className="sq-shine inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-teal to-[#5EEAD4] px-3.5 text-[14px] font-semibold text-teal-ink shadow-[0_8px_28px_-10px_rgb(45_212_191/0.7)] hover:brightness-110 sm:ml-auto">
+      <Link href={askHref(question)} data-magnetic className="sq-shine inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-teal to-[#5EEAD4] px-3.5 text-[14px] font-semibold text-teal-ink shadow-[0_8px_28px_-10px_rgb(45_212_191/0.7)] hover:brightness-110 sm:ml-auto">
         <Sparkles className="size-4" aria-hidden />Explain this with AI
       </Link>
     </div>
@@ -214,6 +214,7 @@ function Summary({ d, unit }: { d: CompareData; unit: string }) {
   if (!s) return null;
   const aqi = d.metric === "aqi";
   const tile = (colour: string) => ({
+    "data-tilt": true,
     className: "tile sq-lift relative flex min-w-0 flex-col gap-1 overflow-hidden px-4 py-4 hover:-translate-y-0.5",
     style: { backgroundImage: `radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, ${colour} 20%, transparent), transparent 60%)` },
   });

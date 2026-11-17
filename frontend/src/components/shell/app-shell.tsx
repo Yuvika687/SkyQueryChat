@@ -10,6 +10,7 @@ import { fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useApp } from "./app-context";
 import { DataPanel } from "./data-panel";
+import { PointerFx } from "./pointer-fx";
 import { isMac, useQuickAsk } from "./quick-ask";
 
 export const NAV = [
@@ -39,6 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </a>
       {/* decoration only: slow colour fields and star dust behind every page */}
       <div aria-hidden className="sq-aurora"><i /><b /></div>
+      <PointerFx />
       <TopBar onData={() => setDataOpen(true)} />
       <main id="main" className="relative z-[1]">{children}</main>
       <TabBar />

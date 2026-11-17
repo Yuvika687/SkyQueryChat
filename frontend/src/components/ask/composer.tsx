@@ -72,6 +72,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer({ bu
             <button
               type="submit"
               aria-label="Send"
+              data-magnetic
               disabled={!text.trim()}
               className={cn(
                 "sq-shine inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-b from-[#5EEAD4] to-teal px-3 text-sm font-semibold text-background shadow-[0_6px_18px_-6px_rgb(45_212_191/0.6)] transition-all hover:brightness-110 disabled:from-raised disabled:to-raised disabled:text-subtle disabled:shadow-none",
