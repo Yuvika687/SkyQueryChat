@@ -91,4 +91,4 @@ class Settings:
     @property
     def ai_configured(self) -> bool:
         # The live chain is Gemini only (Groq disabled); a backup key alone also works.
-        return any(os.environ.get(k) for k in ("GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_BACKUP"))
+        return any(v.strip() for k, v in os.environ.items() if k == "GEMINI_API_KEY" or k.startswith("GEMINI_API_KEY_") or k == "GEMINI_API_KEYS")

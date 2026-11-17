@@ -634,6 +634,20 @@ Rules:
 - CSS gotcha: un-layered classes in `globals.css` beat Tailwind utilities, so a class that sets `position` overrides
   `absolute`/`sticky` (this pushed Compare's sticky panel down 96px). Polish classes must not set `position`.
 
+### Many Gemini keys and more fallback models (main, 2026-11-17)
+
+- `models.gemini_keys()`: GEMINI_API_KEY, GEMINI_API_KEY_<n> in number order, GEMINI_API_KEY_BACKUP, GEMINI_API_KEYS
+  (comma list); duplicates dropped. `build_model` repeats each Gemini entry on every key (model-major: best model on all
+  keys first); labels `<label>` for key 1 and `<label>@key<n>` after, each with its own quota counters (QuotaManager
+  copies the base limits for any `@` label). Replaces the single `@backup` key. render.yaml lists _2.._4.
+- Chain: 3.5-flash-lite, 3.1-flash-lite (500/day each), 2.5-flash-lite, 3.8-flash, 3.6-flash, 3.5-flash (20/day each,
+  from Google's 429 bodies `GenerateRequestsPerDayPerProjectPerModel-FreeTier`). Google's rate-limit page no longer lists
+  free per-model limits; probe with a tiny request and read the 429 body.
+- A Gemini entry may set `"api_version"` in settings (popped before the model settings; builds a genai Client).
+  gemini-2.5-flash-lite needs v1beta ("Function calling is not enabled for api version v1"). SKYQ_MODEL_CHAIN now uses
+  the named model's own settings.
+- The full Flash models think by default and can pass the 20 s per-request timeout; they are last resorts only.
+
 ## 6. UI requirements
 
 Premium, dark, responsive AI analytics SaaS interface:

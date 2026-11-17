@@ -113,3 +113,15 @@ tests for the six dots and the all-cities layer. Screenshots of every page at 14
   (festival question strip, answers rise in with a running light, tinted number tiles) and Explore (glass panels, title
   chip, lists that stagger in). Same colours and fonts; all motion off with reduced motion.
 - Tests: `tests/test_occasions.py` (7), `frontend/src/lib/event-chart.test.ts` (2).
+
+## 9. More fallback models and any number of Gemini keys
+
+- **Free limits, read from Google's own replies (17 Nov 2026):** gemini-3.5-flash-lite 500 requests/day,
+  gemini-3.1-flash-lite 500/day; gemini-2.5-flash-lite, gemini-3.5-flash, gemini-3.6-flash and gemini-3.8-flash only
+  20/day each (the old "1000/day" for 2.5 Flash-Lite no longer applies). Gemini 4 models have no free tier.
+- **Chain now:** 3.5-flash-lite → 3.1-flash-lite → 2.5-flash-lite → 3.8-flash → 3.6-flash → 3.5-flash. The last four
+  are small last resorts; every answer still passes the number checker. 2.5-flash-lite needs Google's v1beta API for tool
+  calls (`"api_version": "v1beta"` in its settings). Sample check: 2.5-flash-lite 3/3, 3.6-flash 1/1.
+- **Any number of keys:** `GEMINI_API_KEY`, `GEMINI_API_KEY_2`, `_3`, `_4`, ... (or `GEMINI_API_KEYS=k1,k2,...`). Each
+  model is tried on every key before the next model, each with its own counters. Keys must come from DIFFERENT Google
+  projects to add quota: per project, about 500 + 500 + 4 × 20 = 1,080 requests a day (roughly 250 questions).

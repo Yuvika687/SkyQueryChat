@@ -237,15 +237,22 @@ def test_estimate_is_an_upper_bound_of_small_prompts():
     assert 20 < est < 2_000
 
 
+# the live order (2026-11-17): the two 500/day Flash-Lite models, then four 20/day last resorts
+CHAIN = ["google:gemini-3.5-flash-lite", "google:gemini-3.1-flash-lite", "google:gemini-2.5-flash-lite",
+         "google:gemini-3.8-flash", "google:gemini-3.6-flash", "google:gemini-3.5-flash"]
+
+
 def test_chain_order_and_gemini_limits_from_ai_studio(monkeypatch):
     monkeypatch.delenv("SKYQ_MODEL_CHAIN", raising=False)
-    assert [e.label for e in M.model_chain()] == ["google:gemini-3.5-flash-lite", "google:gemini-3.1-flash-lite",
-                                                  "google:gemini-3.8-flash"]       # Groq disabled 2026-11-08
+    assert [e.label for e in M.model_chain()] == CHAIN                              # Groq disabled 2026-11-08
     qm = QuotaManager.from_config(M.load_config())
     for key, lim in {"google:gemini-3.1-flash-lite": (15, 250_000, 500),
                      "google:gemini-3.8-flash": (5, 250_000, 20)}.items():
         L = qm.get(key).limit
         assert (L.rpm, L.tpm, L.rpd) == lim and "AI Studio" in L.source and "28-day" in L.source
+    for key in ("google:gemini-2.5-flash-lite", "google:gemini-3.6-flash", "google:gemini-3.5-flash"):
+        L = qm.get(key).limit                                           # free limit read from Google's 429 body
+        assert L.rpd == 20 and "429" in L.source
 
 
 def test_gemini_429_text_is_classified_per_minute_or_per_day():
@@ -269,7 +276,7 @@ def test_disabled_groq_is_never_listed_as_a_fallback(monkeypatch):
     monkeypatch.delenv("SKYQ_MODEL_CHAIN", raising=False)
     qm = QuotaManager.from_config(M.load_config(), configured=M.live_labels())
     shown = list(qm.status()["models"])                              # before the agent is built
-    assert shown == ["google:gemini-3.5-flash-lite", "google:gemini-3.1-flash-lite", "google:gemini-3.8-flash"]
+    assert shown == CHAIN
     assert qm.get("groq:openai/gpt-oss-120b").limit.rpm == 30       # its limits stay configured for testing
     assert not any("groq" in k for k in M.QUOTA.status()["models"])
 
@@ -359,8 +366,7 @@ def test_production_ignores_testing_overrides_and_uses_the_gemini_chain(monkeypa
     cfg = M.load_config()
     cfg["chain"][-1]["enabled"] = True                                                  # even if Groq were re-enabled
     monkeypatch.setenv("RENDER", "true")
-    assert [e.label for e in M.model_chain(cfg)] == [
-        "google:gemini-3.5-flash-lite", "google:gemini-3.1-flash-lite", "google:gemini-3.8-flash"]
+    assert [e.label for e in M.model_chain(cfg)] == CHAIN
     q = QuotaManager.from_config(M.load_config())
     assert q.cfg.demo_reserve == 0.15 and q.models["google:gemini-3.5-flash-lite"].limit.rpd == 500
 
