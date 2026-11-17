@@ -1,6 +1,6 @@
 """Build the live model chain from backend/config/models.json.
 
-Live order: gemini-3.5-flash-lite -> gemini-3.1-flash-lite -> gemini-3.8-flash. Entries marked
+Live order: see models.json "chain" (each Gemini model on every key, then the next). Entries marked
 "enabled": false (Groq gpt-oss-120b, kept for later testing) are skipped. Model names live in
 configuration, not code. Local tests may replace the chain with env SKYQ_MODEL_CHAIN, e.g.
   SKYQ_MODEL_CHAIN="google:gemini-3.5-flash-lite,google:gemini-3.1-flash-lite"
@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -19,25 +20,38 @@ from .quota import LimitedModel, ModelTimeout, QuotaExceeded, QuotaManager
 
 CONFIG = Path(__file__).resolve().parents[1] / "config" / "models.json"
 KEY_ENV = {"groq": "GROQ_API_KEY", "google": "GEMINI_API_KEY"}
-# Optional second Gemini key (ideally from a different Google Cloud project, because Gemini free quotas are per
-# project per model). When it is set, the same Gemini models are appended to the chain with this key, after every
-# model on the main key, so the app keeps answering when the main key's daily quota is used up.
-BACKUP_KEY_ENVS = ("GEMINI_API_KEY_2", "GEMINI_API_KEY_BACKUP")
-BACKUP_SUFFIX = "@backup"
+# Any number of Gemini keys: GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3, ... (any suffix, in number order),
+# GEMINI_API_KEY_BACKUP, and/or GEMINI_API_KEYS="key1,key2,...". Free Gemini quotas are per Google project per model,
+# so keys from DIFFERENT projects add capacity; duplicates are ignored. The chain tries each Gemini model on every key
+# before moving to the next model (best model first, as long as any key has quota). Each model+key pair has its own
+# quota counters: the first key keeps the plain label, the others get "@key2", "@key3", ...
+KEY_SUFFIX = "@key"
+_KEY_VAR = re.compile(r"^GEMINI_API_KEY_(\d+)$")
+
+
+def gemini_keys() -> list[str]:
+    """Distinct Gemini keys in order. Never logged or returned to clients."""
+    env = os.environ
+    names = ["GEMINI_API_KEY"] + sorted((n for n in env if _KEY_VAR.match(n)), key=lambda n: int(_KEY_VAR.match(n).group(1)))
+    names.append("GEMINI_API_KEY_BACKUP")
+    keys = [env.get(n, "").strip() for n in names]
+    keys += [k.strip() for k in env.get("GEMINI_API_KEYS", "").split(",")]
+    return list(dict.fromkeys(k for k in keys if k))
 
 
 def backup_gemini_key() -> str | None:
-    """The backup Gemini key, if one is set and differs from the main key. Never logged or returned."""
-    main = os.environ.get("GEMINI_API_KEY", "")
-    for name in BACKUP_KEY_ENVS:
-        key = os.environ.get(name, "").strip()
-        if key and key != main:
-            return key
-    return None
+    """The second distinct Gemini key, if any (kept for older callers)."""
+    ks = gemini_keys()
+    return ks[1] if len(ks) > 1 else None
 
 
 def gemini_configured() -> bool:
-    return bool(os.environ.get("GEMINI_API_KEY") or backup_gemini_key())
+    return bool(gemini_keys())
+
+
+def key_label(label: str, i: int) -> str:
+    """Quota label of a model on the i-th key (0 = the first key keeps the plain label)."""
+    return label if i == 0 else f"{label}{KEY_SUFFIX}{i + 1}"
 
 
 @dataclass
@@ -68,7 +82,9 @@ def model_chain(cfg: dict | None = None, include_disabled: bool = False) -> list
             prov, _, name = item.strip().partition(":")
             if prov not in KEY_ENV or not name:
                 raise ValueError("SKYQ_MODEL_CHAIN entries must look like 'groq:<model>' or 'google:<model>'")
-            base = next((c.get("settings", {}) for c in cfg["chain"] if c["provider"] == prov), {})
+            # the model's own settings when it is configured (e.g. api_version), else the provider's first entry
+            base = next((c.get("settings", {}) for c in cfg["chain"] if c["provider"] == prov and c["model"] == name),
+                        next((c.get("settings", {}) for c in cfg["chain"] if c["provider"] == prov), {}))
             out.append(ModelEntry(prov, name, KEY_ENV[prov], dict(base)))
         return out
     entries = [ModelEntry(c["provider"], c["model"], c["key_env"], c.get("settings", {}), c.get("enabled", True))
@@ -98,8 +114,17 @@ def _build_one(e: ModelEntry, key: str | None = None):
         from google.genai.types import HttpRetryOptions
         from pydantic_ai.models.google import GoogleModel
         from pydantic_ai.providers.google import GoogleProvider
-        provider = GoogleProvider(api_key=key, retry_options=HttpRetryOptions(attempts=3))
-        return GoogleModel(e.model, provider=provider, settings=e.settings or None)
+        settings = dict(e.settings or {})
+        api_version = settings.pop("api_version", None)      # e.g. gemini-2.5-flash-lite needs v1beta for tool calls
+        if api_version:
+            from google import genai
+            from google.genai.types import HttpOptions
+            client = genai.Client(api_key=key, http_options=HttpOptions(api_version=api_version,
+                                                                        retry_options=HttpRetryOptions(attempts=3)))
+            provider = GoogleProvider(client=client)
+        else:
+            provider = GoogleProvider(api_key=key, retry_options=HttpRetryOptions(attempts=3))
+        return GoogleModel(e.model, provider=provider, settings=settings or None)
     raise ValueError(f"unknown provider {e.provider!r}")
 
 
@@ -142,15 +167,23 @@ def limited_chain(pairs: list[tuple[str, object]], quota: QuotaManager | None = 
 
 
 def build_model(chain: list[ModelEntry] | None = None, quota: QuotaManager | None = None):
-    """FallbackModel over every configured entry whose key is present. Raises if none."""
+    """FallbackModel over every configured entry whose key is present. Gemini entries are repeated for every Gemini key
+    (model by model: the best model on all keys first). Raises if none."""
     chain = chain if chain is not None else model_chain()
-    pairs = [(e.label, m) for e, m in ((e, _build_one(e)) for e in chain) if m is not None]
-    backup = backup_gemini_key()
-    if backup:      # same Gemini models on the backup key, after the main key's models (own quota counters)
-        pairs += [(e.label + BACKUP_SUFFIX, m) for e, m in
-                  ((e, _build_one(e, backup)) for e in chain if e.provider == "google") if m is not None]
+    keys = gemini_keys()
+    pairs = []
+    for e in chain:
+        if e.provider == "google":
+            for i, k in enumerate(keys):
+                m = _build_one(e, k)
+                if m is not None:
+                    pairs.append((key_label(e.label, i), m))
+        else:
+            m = _build_one(e)
+            if m is not None:
+                pairs.append((e.label, m))
     if not pairs:
-        raise RuntimeError("No model available: add GEMINI_API_KEY (and optionally GEMINI_API_KEY_2) to .env")
+        raise RuntimeError("No model available: add GEMINI_API_KEY (and optionally GEMINI_API_KEY_2, _3, ...) to .env")
     return limited_chain(pairs, quota)
 
 

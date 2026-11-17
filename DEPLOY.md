@@ -41,7 +41,7 @@ git push -u origin main
 | Variable on Render | What to put there | Your value |
 |---|---|---|
 | `GEMINI_API_KEY` | Google AI Studio key (<https://aistudio.google.com/apikey>). **Required** for Ask. | `________________________` |
-| `GEMINI_API_KEY_2` | Optional backup Gemini key, best from a **different** Google project (free quotas are per project). When the first key's daily quota runs out, the app moves to the same models on this key. | `________________________` |
+| `GEMINI_API_KEY_2`, `GEMINI_API_KEY_3`, `GEMINI_API_KEY_4` | Optional extra Gemini keys, each from a **different** Google project (free quotas are per project, so two keys from one project add nothing). The app tries the best model on every key before moving to the next model. Any number works: add `GEMINI_API_KEY_5`, `_6`, ... in Render's Environment tab, or one `GEMINI_API_KEYS` with keys separated by commas. | `________________________` |
 | `ALLOWED_ORIGINS` | The Vercel website address from step 3, no trailing slash, e.g. `https://sky-query-chat.vercel.app`. Several addresses: separate with commas. Put a placeholder first and update it after step 3. | `________________________` |
 | `DEMO_ACCESS_TOKEN` | Optional. Any long random text; unlocks the owner's reserved AI quota at `/demo`. Leave empty if not needed. If set, use the same value on Vercel. | `________________________` |
 
