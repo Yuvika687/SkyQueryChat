@@ -47,6 +47,7 @@ export function AskBox({ placeholder, hint, suggestions = [], className }: {
         />
         <button
           type="submit"
+          data-magnetic
           className="sq-shine group/ask inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-b from-[#5EEAD4] to-teal px-5 text-sm font-semibold text-teal-ink shadow-[0_6px_20px_-6px_rgb(45_212_191/0.6)] transition-all hover:brightness-110"
         >
           Ask

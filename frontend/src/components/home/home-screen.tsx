@@ -149,7 +149,7 @@ export function HomeScreen() {
         <ul className="mt-5 grid gap-4 md:grid-cols-3">
           {WAYS.map((w, i) => (
             <FadeIn as="li" key={w.href} delay={i * 0.06}>
-              <Link href={w.href} className="card sq-glow group sq-lift flex h-full items-start gap-4 p-6 text-[15px] text-subtle transition-colors hover:border-line-strong">
+              <Link href={w.href} data-tilt className="card sq-glow group sq-lift flex h-full items-start gap-4 p-6 text-[15px] text-subtle transition-colors hover:border-line-strong">
                 <span aria-hidden className="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-teal/25 to-[#3B82F6]/10 text-teal shadow-[inset_0_0_0_1px_rgb(45_212_191/0.25)] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-4deg]">
                   <w.icon className="size-5" />
                 </span>
