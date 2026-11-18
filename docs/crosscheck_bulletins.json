@@ -2,58 +2,58 @@
  "what": "PM-only AQI estimate vs official CPCB bulletin AQI (NOT official AQI)",
  "by_city": {
   "Bengaluru": {
-   "days": 564,
-   "correlation": 0.927,
+   "days": 565,
+   "correlation": 0.928,
    "mean_difference_ours_minus_official": -5.9,
    "mean_absolute_difference": 9.6,
    "median_difference": -5.8,
-   "within_20pct": 76.4,
-   "period": "2025-02-20..2026-11-16"
+   "within_20pct": 76.5,
+   "period": "2025-02-20..2026-11-17"
   },
   "Chennai": {
-   "days": 569,
-   "correlation": 0.77,
+   "days": 570,
+   "correlation": 0.771,
    "mean_difference_ours_minus_official": -0.1,
    "mean_absolute_difference": 13.1,
    "median_difference": -3.1,
    "within_20pct": 77.0,
-   "period": "2025-02-20..2026-11-16"
+   "period": "2025-02-20..2026-11-17"
   },
   "Delhi": {
-   "days": 534,
+   "days": 535,
    "correlation": 0.988,
    "mean_difference_ours_minus_official": 6.8,
    "mean_absolute_difference": 11.0,
-   "median_difference": 2.1,
+   "median_difference": 2.2,
    "within_20pct": 97.4,
-   "period": "2025-02-20..2026-11-16"
+   "period": "2025-02-20..2026-11-17"
   },
   "Hyderabad": {
-   "days": 584,
+   "days": 585,
    "correlation": 0.902,
    "mean_difference_ours_minus_official": 1.7,
    "mean_absolute_difference": 5.5,
    "median_difference": 1.7,
    "within_20pct": 94.9,
-   "period": "2025-02-20..2026-11-16"
+   "period": "2025-02-20..2026-11-17"
   },
   "Kolkata": {
-   "days": 538,
+   "days": 539,
    "correlation": 0.988,
    "mean_difference_ours_minus_official": -3.1,
    "mean_absolute_difference": 5.8,
    "median_difference": -2.9,
-   "within_20pct": 90.1,
-   "period": "2025-02-20..2026-11-16"
+   "within_20pct": 90.2,
+   "period": "2025-02-20..2026-11-17"
   },
   "Mumbai": {
-   "days": 583,
+   "days": 584,
    "correlation": 0.981,
    "mean_difference_ours_minus_official": -2.5,
    "mean_absolute_difference": 5.6,
    "median_difference": -3.1,
-   "within_20pct": 93.1,
-   "period": "2025-02-20..2026-11-16"
+   "within_20pct": 93.2,
+   "period": "2025-02-20..2026-11-17"
   }
  },
  "delhi_diwali_2025": {
@@ -133,11 +133,11 @@
  },
  "new_bulletins_after_2026-10-25": {
   "Bengaluru": {
-   "bulletins": 22,
-   "compared (PM prominent, estimate available)": 19,
-   "mean_difference_ours_minus_official": 1.2,
-   "mean_absolute_difference": 6.8,
-   "within_20pct": 94.7,
+   "bulletins": 23,
+   "compared (PM prominent, estimate available)": 20,
+   "mean_difference_ours_minus_official": 1.4,
+   "mean_absolute_difference": 6.7,
+   "within_20pct": 95.0,
    "rows": [
     {
      "bulletin_date": "2026-10-26",
@@ -292,15 +292,22 @@
      "estimate": 111.4,
      "stations_in_estimate": 5,
      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
+    },
+    {
+     "bulletin_date": "2026-11-17",
+     "official": 133,
+     "estimate": 138.2,
+     "stations_in_estimate": 6,
+     "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
     }
    ]
   },
   "Chennai": {
-   "bulletins": 22,
-   "compared (PM prominent, estimate available)": 19,
-   "mean_difference_ours_minus_official": 1.2,
-   "mean_absolute_difference": 7.4,
-   "within_20pct": 94.7,
+   "bulletins": 23,
+   "compared (PM prominent, estimate available)": 20,
+   "mean_difference_ours_minus_official": 0.6,
+   "mean_absolute_difference": 7.5,
+   "within_20pct": 95.0,
    "rows": [
     {
      "bulletin_date": "2026-10-26",
@@ -455,15 +462,22 @@
      "estimate": 111.0,
      "stations_in_estimate": 5,
      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
+    },
+    {
+     "bulletin_date": "2026-11-17",
+     "official": 150,
+     "estimate": 139.9,
+     "stations_in_estimate": 4,
+     "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
     }
    ]
   },
   "Delhi": {
-   "bulletins": 22,
-   "compared (PM prominent, estimate available)": 18,
-   "mean_difference_ours_minus_official": 29.1,
-   "mean_absolute_difference": 29.1,
-   "within_20pct": 94.4,
+   "bulletins": 23,
+   "compared (PM prominent, estimate available)": 19,
+   "mean_difference_ours_minus_official": 28.4,
+   "mean_absolute_difference": 28.4,
+   "within_20pct": 94.7,
    "rows": [
     {
      "bulletin_date": "2026-10-26",
@@ -618,14 +632,21 @@
      "estimate": 337.6,
      "stations_in_estimate": 37,
      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
+    },
+    {
+     "bulletin_date": "2026-11-17",
+     "official": 204,
+     "estimate": 218.5,
+     "stations_in_estimate": 36,
+     "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
     }
    ]
   },
   "Hyderabad": {
-   "bulletins": 22,
-   "compared (PM prominent, estimate available)": 19,
-   "mean_difference_ours_minus_official": -0.3,
-   "mean_absolute_difference": 3.9,
+   "bulletins": 23,
+   "compared (PM prominent, estimate available)": 20,
+   "mean_difference_ours_minus_official": -0.5,
+   "mean_absolute_difference": 4.0,
    "within_20pct": 100.0,
    "rows": [
     {
@@ -781,15 +802,22 @@
      "estimate": 72.7,
      "stations_in_estimate": 9,
      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
+    },
+    {
+     "bulletin_date": "2026-11-17",
+     "official": 76,
+     "estimate": 70.2,
+     "stations_in_estimate": 9,
+     "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
     }
    ]
   },
   "Kolkata": {
-   "bulletins": 22,
-   "compared (PM prominent, estimate available)": 18,
-   "mean_difference_ours_minus_official": -8.3,
-   "mean_absolute_difference": 8.3,
-   "within_20pct": 94.4,
+   "bulletins": 23,
+   "compared (PM prominent, estimate available)": 19,
+   "mean_difference_ours_minus_official": -7.9,
+   "mean_absolute_difference": 7.9,
+   "within_20pct": 94.7,
    "rows": [
     {
      "bulletin_date": "2026-10-26",
@@ -944,14 +972,21 @@
      "estimate": 108.2,
      "stations_in_estimate": 7,
      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
+    },
+    {
+     "bulletin_date": "2026-11-17",
+     "official": 191,
+     "estimate": 188.7,
+     "stations_in_estimate": 7,
+     "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
     }
    ]
   },
   "Mumbai": {
-   "bulletins": 22,
-   "compared (PM prominent, estimate available)": 19,
+   "bulletins": 23,
+   "compared (PM prominent, estimate available)": 20,
    "mean_difference_ours_minus_official": -6.3,
-   "mean_absolute_difference": 8.2,
+   "mean_absolute_difference": 8.1,
    "within_20pct": 100.0,
    "rows": [
     {
@@ -1105,6 +1140,13 @@
      "bulletin_date": "2026-11-16",
      "official": 132,
      "estimate": 120.9,
+     "stations_in_estimate": 21,
+     "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
+    },
+    {
+     "bulletin_date": "2026-11-17",
+     "official": 147,
+     "estimate": 140.6,
      "stations_in_estimate": 21,
      "source": "CPCB daily AQI bulletin PDF (cpcb.gov.in)"
     }
