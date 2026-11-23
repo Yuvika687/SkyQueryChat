@@ -1,5 +1,5 @@
 {
- "built_utc": "2026-11-22T09:19:59+00:00",
+ "built_utc": "2026-11-23T10:14:36+00:00",
  "cities": [
   "Delhi",
   "Mumbai",
@@ -10,24 +10,24 @@
  ],
  "openaq_requested": [
   "2025-02-18",
-  "2026-11-21"
+  "2026-11-22"
  ],
- "openaq_data_end": "2026-11-21",
+ "openaq_data_end": "2026-11-22",
  "not_yet_published": [],
- "openaq_archive_end": "2026-11-18",
+ "openaq_archive_end": "2026-11-19",
  "openaq_api_topup": {
   "dates": [
-   "2026-11-19",
    "2026-11-20",
-   "2026-11-21"
+   "2026-11-21",
+   "2026-11-22"
   ],
-  "location_days": 288,
+  "location_days": 285,
   "requests": 204,
   "note": "API readings are used only for location-days the archive had not published; a later refresh replaces them with archive files."
  },
  "build": {
   "mode": "incremental",
-  "reprocessed_from": "2026-11-17"
+  "reprocessed_from": "2026-11-18"
  },
  "sources": {
   "openaq": "updated",
@@ -63,9 +63,10 @@
    "2026-11-18",
    "2026-11-19",
    "2026-11-20",
-   "2026-11-21"
+   "2026-11-21",
+   "2026-11-22"
   ],
-  "end": "2026-11-21"
+  "end": "2026-11-22"
  },
  "rules": {
   "valid_hour_fraction": 0.75,
@@ -79,23 +80,23 @@
  },
  "rows": {
   "stations": 204,
-  "station_hourly": 3583868,
-  "station_daily": 162134,
-  "city_daily": 7056,
-  "city_daily_aqi": 24188,
+  "station_hourly": 3587875,
+  "station_daily": 162310,
+  "city_daily": 7068,
+  "city_daily_aqi": 24194,
   "network_gaps": 1423,
-  "date_quality": 5225,
+  "date_quality": 5232,
   "recurring_gap_hours": 192,
   "diwali": 54,
   "data_status_reasons": 6,
-  "cleaning_log": 111461,
+  "cleaning_log": 111636,
   "opencity_blanks": 54154
  },
  "all_cities_bulletins": {
   "cities": 330,
-  "rows": 152161,
+  "rows": 152432,
   "start": "2025-02-18",
-  "end": "2026-11-21",
+  "end": "2026-11-22",
   "dropped_duplicate_city_days": [
    "Kalyan 2026-11-06",
    "Kalyan 2026-11-08",
@@ -111,7 +112,8 @@
    "Kalyan 2026-11-18",
    "Kalyan 2026-11-19",
    "Kalyan 2026-11-20",
-   "Kalyan 2026-11-21"
+   "Kalyan 2026-11-21",
+   "Kalyan 2026-11-22"
   ]
  },
  "other_sensor_rows_ignored": 0,
