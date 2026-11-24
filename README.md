@@ -6,7 +6,7 @@
 
 [![Live demo](https://img.shields.io/badge/Live_demo-sky--query--chat.vercel.app-2DD4BF?style=flat-square&logo=vercel&logoColor=white)](https://sky-query-chat.vercel.app) ![Next.js](https://img.shields.io/badge/Next.js-16.4-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688?style=flat-square&logo=fastapi&logoColor=white) ![Gemini](https://img.shields.io/badge/Gemini-3.5_Flash--Lite-8E75B2?style=flat-square&logo=googlegemini&logoColor=white) ![MapLibre](https://img.shields.io/badge/MapLibre_GL-6.16-396CB2?style=flat-square&logo=maplibre&logoColor=white) ![Lighthouse](https://img.shields.io/badge/Lighthouse-99%E2%80%93100-F44B21?style=flat-square&logo=lighthouse&logoColor=white) ![Tests](https://img.shields.io/badge/Tests-317_backend-22C55E?style=flat-square&logo=pytest&logoColor=white)
 
-**[Live site](https://sky-query-chat.vercel.app)** · **[How it works](#how-the-agent-works)** · **[Evaluation](#evaluation)**
+**[Live site](https://sky-query-chat.vercel.app)** · **[Screenshots](#screenshots)** · **[How it works](#how-the-agent-works)** · **[Evaluation](#evaluation)** · **[Run locally](#run-locally)**
 
 </div>
 
@@ -15,8 +15,16 @@
 <p align="center">
   <img src="docs/readme/home.png" width="100%" alt="SkyQueryChat home page: the latest available PM2.5 for six Indian cities on a map of India">
   <br>
-  <sub>Home: the latest available 24-hour PM2.5 for Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad.</sub>
+  <sub>Home: the latest available 24-hour PM2.5 for Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad, beside the official AQI for every CPCB bulletin city.</sub>
 </p>
+
+<div align="center">
+
+| 🎯 Main eval, first pass | 🧪 Unseen questions | 🔢 Numbers traced | ✅ Backend tests | ⚡ Lighthouse |
+|:---:|:---:|:---:|:---:|:---:|
+| **47 / 51** | **11 / 11** | **100%** | **317** | **99–100** |
+
+</div>
 
 For a full description of the architecture, data, agent, methods and results, see the
 [project overview](docs/project-overview.md).
@@ -54,6 +62,31 @@ overlap. Weather results are associations, never causes.
 The boundary of India as per the Survey of India, real monitoring stations only, gaps kept as gaps, and no values
 drawn between stations.
 
+</td>
+</tr>
+</table>
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/screenshots/review/after/desktop-diwali.png" alt="Ask: an answer about Delhi's air on Diwali 2025 with checked numbers, key-number cards and the evidence chart">
+<p align="center"><b>Ask</b>: a plain-language answer; every underlined number opens its proof</p>
+</td>
+<td width="50%" valign="top">
+<img src="docs/readme/explore.png" alt="Explore: every Delhi monitoring station on a map with its 24-hour PM2.5 value and a 30-day timeline">
+<p align="center"><b>Explore</b>: every monitoring station, with 30 days you can play back</p>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/readme/city.png" alt="Delhi city page: the latest PM2.5, the official CPCB AQI and a 30-day trend with a Mann-Kendall test">
+<p align="center"><b>City pages</b>: latest value, official AQI and a tested 30-day trend</p>
+</td>
+<td width="50%" valign="top">
+<img src="docs/readme/compare.png" alt="Compare: Delhi and Mumbai side by side with means, ratio and a daily PM2.5 chart">
+<p align="center"><b>Compare</b>: cities side by side over the same dates</p>
 </td>
 </tr>
 </table>
