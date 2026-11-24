@@ -1,5 +1,5 @@
 {
- "built_utc": "2026-11-23T10:14:36+00:00",
+ "built_utc": "2026-11-24T12:01:17+00:00",
  "cities": [
   "Delhi",
   "Mumbai",
@@ -10,24 +10,24 @@
  ],
  "openaq_requested": [
   "2025-02-18",
-  "2026-11-22"
+  "2026-11-23"
  ],
- "openaq_data_end": "2026-11-22",
+ "openaq_data_end": "2026-11-23",
  "not_yet_published": [],
- "openaq_archive_end": "2026-11-19",
+ "openaq_archive_end": "2026-11-20",
  "openaq_api_topup": {
   "dates": [
-   "2026-11-20",
    "2026-11-21",
-   "2026-11-22"
+   "2026-11-22",
+   "2026-11-23"
   ],
-  "location_days": 285,
+  "location_days": 284,
   "requests": 204,
   "note": "API readings are used only for location-days the archive had not published; a later refresh replaces them with archive files."
  },
  "build": {
   "mode": "incremental",
-  "reprocessed_from": "2026-11-18"
+  "reprocessed_from": "2026-11-19"
  },
  "sources": {
   "openaq": "updated",
@@ -64,9 +64,10 @@
    "2026-11-19",
    "2026-11-20",
    "2026-11-21",
-   "2026-11-22"
+   "2026-11-22",
+   "2026-11-23"
   ],
-  "end": "2026-11-22"
+  "end": "2026-11-23"
  },
  "rules": {
   "valid_hour_fraction": 0.75,
@@ -80,23 +81,23 @@
  },
  "rows": {
   "stations": 204,
-  "station_hourly": 3587875,
-  "station_daily": 162310,
-  "city_daily": 7068,
-  "city_daily_aqi": 24194,
+  "station_hourly": 3591857,
+  "station_daily": 162491,
+  "city_daily": 7080,
+  "city_daily_aqi": 24200,
   "network_gaps": 1423,
-  "date_quality": 5232,
+  "date_quality": 5239,
   "recurring_gap_hours": 192,
   "diwali": 54,
   "data_status_reasons": 6,
-  "cleaning_log": 111636,
+  "cleaning_log": 111817,
   "opencity_blanks": 54154
  },
  "all_cities_bulletins": {
   "cities": 330,
-  "rows": 152432,
+  "rows": 152713,
   "start": "2025-02-18",
-  "end": "2026-11-22",
+  "end": "2026-11-23",
   "dropped_duplicate_city_days": [
    "Kalyan 2026-11-06",
    "Kalyan 2026-11-08",
