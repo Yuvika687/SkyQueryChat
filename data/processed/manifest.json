@@ -1,5 +1,5 @@
 {
- "built_utc": "2026-11-24T12:01:17+00:00",
+ "built_utc": "2026-11-25T10:53:21+00:00",
  "cities": [
   "Delhi",
   "Mumbai",
@@ -10,16 +10,16 @@
  ],
  "openaq_requested": [
   "2025-02-18",
-  "2026-11-23"
+  "2026-11-24"
  ],
- "openaq_data_end": "2026-11-23",
+ "openaq_data_end": "2026-11-24",
  "not_yet_published": [],
- "openaq_archive_end": "2026-11-20",
+ "openaq_archive_end": "2026-11-21",
  "openaq_api_topup": {
   "dates": [
-   "2026-11-21",
    "2026-11-22",
-   "2026-11-23"
+   "2026-11-23",
+   "2026-11-24"
   ],
   "location_days": 284,
   "requests": 204,
@@ -27,7 +27,7 @@
  },
  "build": {
   "mode": "incremental",
-  "reprocessed_from": "2026-11-19"
+  "reprocessed_from": "2026-11-20"
  },
  "sources": {
   "openaq": "updated",
@@ -65,9 +65,10 @@
    "2026-11-20",
    "2026-11-21",
    "2026-11-22",
-   "2026-11-23"
+   "2026-11-23",
+   "2026-11-24"
   ],
-  "end": "2026-11-23"
+  "end": "2026-11-24"
  },
  "rules": {
   "valid_hour_fraction": 0.75,
@@ -81,23 +82,23 @@
  },
  "rows": {
   "stations": 204,
-  "station_hourly": 3591857,
-  "station_daily": 162491,
-  "city_daily": 7080,
-  "city_daily_aqi": 24200,
-  "network_gaps": 1423,
-  "date_quality": 5239,
+  "station_hourly": 3595833,
+  "station_daily": 162674,
+  "city_daily": 7092,
+  "city_daily_aqi": 24206,
+  "network_gaps": 1427,
+  "date_quality": 5246,
   "recurring_gap_hours": 192,
   "diwali": 54,
   "data_status_reasons": 6,
-  "cleaning_log": 111817,
+  "cleaning_log": 112000,
   "opencity_blanks": 54154
  },
  "all_cities_bulletins": {
   "cities": 330,
-  "rows": 152713,
+  "rows": 152995,
   "start": "2025-02-18",
-  "end": "2026-11-23",
+  "end": "2026-11-24",
   "dropped_duplicate_city_days": [
    "Kalyan 2026-11-06",
    "Kalyan 2026-11-08",
@@ -114,7 +115,8 @@
    "Kalyan 2026-11-19",
    "Kalyan 2026-11-20",
    "Kalyan 2026-11-21",
-   "Kalyan 2026-11-22"
+   "Kalyan 2026-11-22",
+   "Kalyan 2026-11-24"
   ]
  },
  "other_sensor_rows_ignored": 0,
