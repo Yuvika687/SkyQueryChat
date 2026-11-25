@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="450" viewBox="0 0 1280 450" role="img" aria-labelledby="t d">
+<title id="t">SkyQueryChat evaluation</title><desc id="d">First-pass scores: main 47 of 51, unseen holdout 11 of 11, first unseen 11 of 11, Diwali 2026 9 of 9, statistics and comparisons 11 of 12, conversation 14 of 15; 100% of numbers traced in every set.</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B1428"/><stop offset="1" stop-color="#060A14"/></linearGradient>
+<radialGradient id="g1" cx="0.08" cy="0" r="0.6"><stop offset="0" stop-color="#2DD4BF" stop-opacity="0.20"/><stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/></radialGradient>
+<radialGradient id="g2" cx="1" cy="1" r="0.6"><stop offset="0" stop-color="#A3E635" stop-opacity="0.18"/><stop offset="1" stop-color="#A3E635" stop-opacity="0"/></radialGradient>
+<linearGradient id="acc" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2DD4BF"/><stop offset="1" stop-color="#A3E635"/></linearGradient>
+<pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#1e293b" stroke-opacity="0.35"/></pattern>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="clip"><rect width="1280" height="450" rx="22"/></clipPath>
+</defs>
+<g clip-path="url(#clip)">
+<rect width="1280" height="450" fill="url(#bg)"/><rect width="1280" height="450" fill="url(#grid)"/>
+<rect width="1280" height="450" fill="url(#g1)"/><rect width="1280" height="450" fill="url(#g2)"/>
+<rect x="0" y="0" width="1280" height="2" fill="url(#acc)" opacity="0.8"><animate attributeName="opacity" values="0.35;0.9;0.35" dur="4s" repeatCount="indefinite"/></rect>
+<text x="48" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" letter-spacing="3" fill="#2DD4BF">EVALUATION</text><text x="46" y="98" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="32" font-weight="800" fill="#f8fafc" letter-spacing="-0.5">Scored, not vibes</text><text x="48" y="126" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16" fill="#94a3b8">Every set: first pass only, reruns kept apart. Every number in every answer traced back to a tool result.</text>
+<text x="380" y="165" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#F2F5FB" text-anchor="end" >Main set</text>
+<text x="380" y="181" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#7F8CA8" text-anchor="end" >51 questions</text>
+<rect x="400" y="152" width="640" height="18" rx="9" fill="#111c34"/>
+<rect x="400" y="152" width="589.8" height="18" rx="9.0" fill="url(#acc)" opacity="1"><animate attributeName="width" values="0;0;589.8" keyTimes="0;0.187;1" begin="0s" dur="1.60s" fill="freeze" calcMode="spline" keySplines="0 0 1 1;0.2 0.8 0.2 1"/></rect>
+
+<g><animate attributeName="opacity" values="0;0;1" keyTimes="0;0.667;1" dur="1.80s" begin="0s" fill="freeze"/><text x="1056" y="167" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="800" fill="#F2F5FB" text-anchor="start" >47 / 51</text><text x="1130" y="167" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#A3E635" text-anchor="start" >100% traced</text></g>
+<text x="380" y="211" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#F2F5FB" text-anchor="end" >Unseen (holdout 2)</text>
+<text x="380" y="227" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#7F8CA8" text-anchor="end" >never used for tuning</text>
+<rect x="400" y="198" width="640" height="18" rx="9" fill="#111c34"/>
+<rect x="400" y="198" width="640.0" height="18" rx="9.0" fill="url(#acc)" opacity="1"><animate attributeName="width" values="0;0;640.0" keyTimes="0;0.257;1" begin="0s" dur="1.75s" fill="freeze" calcMode="spline" keySplines="0 0 1 1;0.2 0.8 0.2 1"/></rect>
+
+<g><animate attributeName="opacity" values="0;0;1" keyTimes="0;0.692;1" dur="1.95s" begin="0s" fill="freeze"/><text x="1056" y="213" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="800" fill="#F2F5FB" text-anchor="start" >11 / 11</text><text x="1130" y="213" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#A3E635" text-anchor="start" >100% traced</text></g>
+<text x="380" y="257" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#F2F5FB" text-anchor="end" >First unseen (retired)</text>
+<rect x="400" y="244" width="640" height="18" rx="9" fill="#111c34"/>
+<rect x="400" y="244" width="640.0" height="18" rx="9.0" fill="url(#acc)" opacity="1"><animate attributeName="width" values="0;0;640.0" keyTimes="0;0.316;1" begin="0s" dur="1.90s" fill="freeze" calcMode="spline" keySplines="0 0 1 1;0.2 0.8 0.2 1"/></rect>
+
+<g><animate attributeName="opacity" values="0;0;1" keyTimes="0;0.714;1" dur="2.10s" begin="0s" fill="freeze"/><text x="1056" y="259" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="800" fill="#F2F5FB" text-anchor="start" >11 / 11</text><text x="1130" y="259" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#A3E635" text-anchor="start" >100% traced</text></g>
+<text x="380" y="303" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#F2F5FB" text-anchor="end" >Diwali 2026</text>
+<rect x="400" y="290" width="640" height="18" rx="9" fill="#111c34"/>
+<rect x="400" y="290" width="640.0" height="18" rx="9.0" fill="url(#acc)" opacity="1"><animate attributeName="width" values="0;0;640.0" keyTimes="0;0.366;1" begin="0s" dur="2.05s" fill="freeze" calcMode="spline" keySplines="0 0 1 1;0.2 0.8 0.2 1"/></rect>
+
+<g><animate attributeName="opacity" values="0;0;1" keyTimes="0;0.733;1" dur="2.25s" begin="0s" fill="freeze"/><text x="1056" y="305" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="800" fill="#F2F5FB" text-anchor="start" >9 / 9</text><text x="1130" y="305" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#A3E635" text-anchor="start" >100% traced</text></g>
+<text x="380" y="349" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#F2F5FB" text-anchor="end" >Statistics and comparisons</text>
+<rect x="400" y="336" width="640" height="18" rx="9" fill="#111c34"/>
+<rect x="400" y="336" width="586.7" height="18" rx="9.0" fill="url(#acc)" opacity="1"><animate attributeName="width" values="0;0;586.7" keyTimes="0;0.409;1" begin="0s" dur="2.20s" fill="freeze" calcMode="spline" keySplines="0 0 1 1;0.2 0.8 0.2 1"/></rect>
+
+<g><animate attributeName="opacity" values="0;0;1" keyTimes="0;0.750;1" dur="2.40s" begin="0s" fill="freeze"/><text x="1056" y="351" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="800" fill="#F2F5FB" text-anchor="start" >11 / 12</text><text x="1130" y="351" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#A3E635" text-anchor="start" >100% traced</text></g>
+<text x="380" y="395" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#F2F5FB" text-anchor="end" >Conversation</text>
+<text x="380" y="411" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#7F8CA8" text-anchor="end" >15 turns</text>
+<rect x="400" y="382" width="640" height="18" rx="9" fill="#111c34"/>
+<rect x="400" y="382" width="597.3" height="18" rx="9.0" fill="url(#acc)" opacity="1"><animate attributeName="width" values="0;0;597.3" keyTimes="0;0.447;1" begin="0s" dur="2.35s" fill="freeze" calcMode="spline" keySplines="0 0 1 1;0.2 0.8 0.2 1"/></rect>
+
+<g><animate attributeName="opacity" values="0;0;1" keyTimes="0;0.765;1" dur="2.55s" begin="0s" fill="freeze"/><text x="1056" y="397" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="16" font-weight="800" fill="#F2F5FB" text-anchor="start" >14 / 15</text><text x="1130" y="397" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#A3E635" text-anchor="start" >100% traced</text></g>
+<text x="48" y="432" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#7F8CA8" text-anchor="start" >First-pass scores: one complete run of each set, scored against references computed separately in plain pandas and scipy.</text>
+</g>
+<rect x="0.5" y="0.5" width="1279" height="449" rx="22" fill="none" stroke="#1e293b"/>
+</svg>

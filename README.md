@@ -6,92 +6,41 @@
 
 [![Live demo](https://img.shields.io/badge/Live_demo-sky--query--chat.vercel.app-2DD4BF?style=flat-square&logo=vercel&logoColor=white)](https://sky-query-chat.vercel.app) ![Next.js](https://img.shields.io/badge/Next.js-16.4-000000?style=flat-square&logo=nextdotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white) ![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688?style=flat-square&logo=fastapi&logoColor=white) ![Gemini](https://img.shields.io/badge/Gemini-3.5_Flash--Lite-8E75B2?style=flat-square&logo=googlegemini&logoColor=white) ![MapLibre](https://img.shields.io/badge/MapLibre_GL-6.16-396CB2?style=flat-square&logo=maplibre&logoColor=white) ![Lighthouse](https://img.shields.io/badge/Lighthouse-99%E2%80%93100-F44B21?style=flat-square&logo=lighthouse&logoColor=white) ![Tests](https://img.shields.io/badge/Tests-317_backend-22C55E?style=flat-square&logo=pytest&logoColor=white)
 
-**[Live site](https://sky-query-chat.vercel.app)** · **[Screenshots](#screenshots)** · **[How it works](#how-the-agent-works)** · **[Evaluation](#evaluation)** · **[Run locally](#run-locally)**
+**[🌐 Live site](https://sky-query-chat.vercel.app)** · **[🤖 How it works](#how-the-agent-works)** · **[📊 Evaluation](#evaluation)** · **[🚀 Run locally](#run-locally)**
+
+<br>
+
+<b>Ask India's air anything.</b> SkyQueryChat is an agentic AI analyst for six Indian cities, plus the official AQI for every<br>
+city in CPCB's daily bulletin. It answers in plain words, and <b>every number links to the data it came from</b>.
 
 </div>
 
 <br>
 
-<p align="center">
-  <img src="docs/readme/home.png" width="100%" alt="SkyQueryChat home page: the latest available PM2.5 for six Indian cities on a map of India">
-  <br>
-  <sub>Home: the latest available 24-hour PM2.5 for Delhi, Mumbai, Kolkata, Chennai, Bengaluru and Hyderabad, beside the official AQI for every CPCB bulletin city.</sub>
-</p>
+<img src="docs/readme/stats.svg" width="100%" alt="At a glance: 47 of 51 on the main evaluation first pass, 11 of 11 unseen questions, 100% of numbers traced, 317 backend tests, Lighthouse 99 to 100">
 
-<div align="center">
+<br>
 
-| 🎯 Main eval, first pass | 🧪 Unseen questions | 🔢 Numbers traced | ✅ Backend tests | ⚡ Lighthouse |
-|:---:|:---:|:---:|:---:|:---:|
-| **47 / 51** | **11 / 11** | **100%** | **317** | **99–100** |
+<img src="docs/readme/why.svg" width="100%" alt="Why it's different: proof for every number, a real agent with tools, honest statistics, an official India map">
 
-</div>
-
-For a full description of the architecture, data, agent, methods and results, see the
-[project overview](docs/project-overview.md).
-
-## Why it's different
+## ✨ What you can do
 
 <table>
 <tr>
-<td width="50%" valign="top">
-
-### 🔎 Proof for every number
-Click any number in an answer to see the rows or bulletins it came from, the formula and the source. A checker
-matches every number and date against the analysis before an answer is shown.
-
-</td>
-<td width="50%" valign="top">
-
-### 🤖 A real agent with tools
-The model plans and calls typed tools; Python does every calculation. Wrong numbers, causal wording or a plan instead
-of an answer are sent back to the model to fix.
-
-</td>
+<td width="33%" valign="top"><h3>🏠 Home</h3>Latest PM2.5 for six metros on an India map, and a search over every CPCB bulletin city.</td>
+<td width="33%" valign="top"><h3>💬 Ask</h3>Plain-language questions; answers with a chart, evidence and a proof behind every number.</td>
+<td width="33%" valign="top"><h3>🗺️ Explore</h3>Every monitoring station on a map, with 30 days you can play back.</td>
 </tr>
 <tr>
-<td width="50%" valign="top">
-
-### 📊 Honest statistics
-Mann-Kendall trends with Sen's slope, 95% ranges from a weekly block bootstrap, and "too close to call" when cities
-overlap. Weather results are associations, never causes.
-
-</td>
-<td width="50%" valign="top">
-
-### 🗺️ An official India map
-The boundary of India as per the Survey of India, real monitoring stations only, gaps kept as gaps, and no values
-drawn between stations.
-
-</td>
+<td width="33%" valign="top"><h3>🏙️ City pages</h3>Trend with significance, calendar heatmap, Diwali AQI, unusual days and weather links.</td>
+<td width="33%" valign="top"><h3>⚖️ Compare</h3>2–6 cities over the same dates, with 95% ranges and “too close to call”.</td>
+<td width="33%" valign="top"><h3>🔬 Data &amp; accuracy</h3>Sources, coverage, test scores and known limits in one panel.</td>
 </tr>
 </table>
 
-## Screenshots
-
-<table>
-<tr>
-<td width="50%" valign="top">
-<img src="docs/screenshots/review/after/desktop-diwali.png" alt="Ask: an answer about Delhi's air on Diwali 2025 with checked numbers, key-number cards and the evidence chart">
-<p align="center"><b>Ask</b>: a plain-language answer; every underlined number opens its proof</p>
-</td>
-<td width="50%" valign="top">
-<img src="docs/readme/explore.png" alt="Explore: every Delhi monitoring station on a map with its 24-hour PM2.5 value and a 30-day timeline">
-<p align="center"><b>Explore</b>: every monitoring station, with 30 days you can play back</p>
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-<img src="docs/readme/city.png" alt="Delhi city page: the latest PM2.5, the official CPCB AQI and a 30-day trend with a Mann-Kendall test">
-<p align="center"><b>City pages</b>: latest value, official AQI and a tested 30-day trend</p>
-</td>
-<td width="50%" valign="top">
-<img src="docs/readme/compare.png" alt="Compare: Delhi and Mumbai side by side with means, ratio and a daily PM2.5 chart">
-<p align="center"><b>Compare</b>: cities side by side over the same dates</p>
-</td>
-</tr>
-</table>
-
-## Features
+<details>
+<summary><b>Every feature, in detail</b></summary>
+<br>
 
 <details>
 <summary><b>Home</b>: the latest available PM2.5 for six cities on a map of India</summary>
@@ -153,8 +102,17 @@ drawn between stations.
 - The latest available date, cities and stations, and first-pass evaluation scores.
 - How the number checker works, the CPCB cross-check and the known limits.
 </details>
+</details>
 
-## How the agent works
+<a id="how-the-agent-works"></a>
+
+<br>
+
+<img src="docs/readme/agent.svg" width="100%" alt="How the agent works: question, model plans, typed tools, Python maths, named fields, model writes, number checker; a mismatch goes back to the model; matching answers are shown with their proof">
+
+<details>
+<summary><b>The agent, step by step</b></summary>
+<br>
 
 1. The model reads the question and plans which typed tools to call (resolve the city, the dates and the event;
    then trend, comparison, Diwali, unusual days or weather).
@@ -165,32 +123,24 @@ drawn between stations.
    wording or trend wording that contradicts the trend test goes back to the model to fix.
 5. The page builds the cards, the chart and the proof for each number from the same results, and streams each step
    live over Server-Sent Events.
+</details>
 
-```mermaid
-flowchart TD
-  Q([Question]) --> P[Model plans]
-  P --> T[Typed tools]
-  T --> C[Python calculates]
-  C --> F[Named fields]
-  F --> W[Model writes answer]
-  W --> V{Number checker}
-  V -- mismatch --> W
-  V -- all match --> A([Answer + proof])
-```
+<br>
 
-## Evaluation
+<img src="docs/readme/dataflow.svg" width="100%" alt="Data flow: OpenAQ, CPCB bulletins, Open-Meteo and OpenCity feed a daily GitHub Actions refresh into Parquet and DuckDB, served by FastAPI on Render to the Next.js site on Vercel">
 
-First-pass scores: one complete run of a whole question set, scored against reference values computed separately in
+<a id="evaluation"></a>
+
+<br>
+
+<img src="docs/readme/evaluation.svg" width="100%" alt="Evaluation, first pass: main 47 of 51, unseen 11 of 11, first unseen 11 of 11, Diwali 2026 9 of 9, statistics and comparisons 11 of 12, conversation 14 of 15, 100% of numbers traced in every set">
+
+<details>
+<summary><b>How the evaluation works</b></summary>
+<br>
+
+First-pass scores are one complete run of a whole question set, scored against reference values computed separately in
 plain pandas and scipy. Reruns are kept apart.
-
-| Set | First pass | Numbers traced | Run date | Wording |
-|---|---:|---:|---|---|
-| Main (51 questions) | **47 / 51** | 100% | 14 Nov 2026 | earlier |
-| Unseen (holdout 2) | **11 / 11** | 100% | 13 Nov 2026 | earlier |
-| First unseen (retired) | **11 / 11** | 100% | 5 Nov 2026 | earlier |
-| Diwali 2026 | **9 / 9** | 100% | 14 Nov 2026 | earlier |
-| Statistics and comparisons (12) | **11 / 12** | 100% | 16 Nov 2026 | current |
-| Conversation (15 turns) | **14 / 15** | 100% | 16 Nov 2026 | current |
 
 The current answer wording dates from 16 Nov 2026 (comparison answers lead with the higher city, difference, ratio and
 period). In the latest runs, Gemini wrote every headline except one in the statistics set, where the checked
@@ -199,8 +149,11 @@ sets (10/12 and 12/14) stay on record in `evals/runs/`.
 Evaluations run on a frozen copy of the data (`evals/data/`, to 11 Nov 2026), so scores stay reproducible while the site's
 data refreshes daily. Runs are in `evals/runs/`; the scoreboard is
 `evals/scoreboard.json`.
+</details>
 
-## Data and honesty rules
+For the full architecture, data, agent, methods and results, see the [project overview](docs/project-overview.md).
+
+## 🧭 Data and honesty rules
 
 - Real data only: nothing is invented or interpolated between stations, and gaps stay as gaps.
 - Measured PM, official AQI (an index) and modelled weather are kept apart; AQI and PM never share a chart.
@@ -208,7 +161,7 @@ data refreshes daily. Runs are in `evals/runs/`; the scoreboard is
 - Delhi Diwali PM for 2024 and 2025 is a lower bound (the source blanks values above 999 µg/m³) and never a percentage.
 - Every result states its stations and coverage; comparisons use only days where every city has a value.
 
-## Tech stack
+## 🧰 Tech stack
 
 | Layer | Tools |
 |---|---|
@@ -217,7 +170,9 @@ data refreshes daily. Runs are in `evals/runs/`; the scoreboard is
 | Agent | Pydantic AI with Gemini 3.5 Flash-Lite, then 3.1 Flash Lite and 3.8 Flash; one shared quota limiter |
 | Tests | 317 backend tests, 73 frontend unit tests, 120 Playwright tests (104 run, 16 size-specific skips) with axe accessibility checks (zero serious or critical issues), all on 16 Nov 2026 |
 
-## Run locally
+<a id="run-locally"></a>
+
+## 🚀 Run locally
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
@@ -234,7 +189,7 @@ backend, Vercel with root directory `frontend` for the site).
 Rebuild only the all-cities official AQI table (the daily refresh does this too):
 `python scripts/build_city_aqi_all.py`; city locations: `python -I scripts/build_city_coordinates.py <GeoNames IN.zip>`.
 
-## Limits
+## ⚠️ Limits
 
 - The free AI quota is shared by all visitors; when it runs out, Ask says so, and Explore, the city pages and Compare
   still work.
@@ -242,7 +197,7 @@ Rebuild only the all-cities official AQI table (the daily refresh does this too)
   associations.
 - The number checker verifies numbers and dates, not the meaning of every sentence.
 
-## Credits and licences
+## 📜 Credits and licences
 
 - **Measured PM:** [OpenAQ](https://openaq.org) archive (CPCB, AirNow and AirGradient); licence set by each provider.
 - **Official AQI:** CPCB daily bulletins via [UrbanEmissions](https://github.com/urbanemissionsinfo/AQI_bulletins) and
