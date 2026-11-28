@@ -1,5 +1,5 @@
 {
- "built_utc": "2026-11-26T10:26:28+00:00",
+ "built_utc": "2026-11-28T09:48:01+00:00",
  "cities": [
   "Delhi",
   "Mumbai",
@@ -10,24 +10,24 @@
  ],
  "openaq_requested": [
   "2025-02-18",
-  "2026-11-25"
+  "2026-11-27"
  ],
- "openaq_data_end": "2026-11-25",
+ "openaq_data_end": "2026-11-27",
  "not_yet_published": [],
- "openaq_archive_end": "2026-11-22",
+ "openaq_archive_end": "2026-11-24",
  "openaq_api_topup": {
   "dates": [
-   "2026-11-23",
-   "2026-11-24",
-   "2026-11-25"
+   "2026-11-25",
+   "2026-11-26",
+   "2026-11-27"
   ],
-  "location_days": 286,
+  "location_days": 284,
   "requests": 204,
   "note": "API readings are used only for location-days the archive had not published; a later refresh replaces them with archive files."
  },
  "build": {
   "mode": "incremental",
-  "reprocessed_from": "2026-11-21"
+  "reprocessed_from": "2026-11-22"
  },
  "sources": {
   "openaq": "updated",
@@ -67,9 +67,11 @@
    "2026-11-22",
    "2026-11-23",
    "2026-11-24",
-   "2026-11-25"
+   "2026-11-25",
+   "2026-11-26",
+   "2026-11-27"
   ],
-  "end": "2026-11-25"
+  "end": "2026-11-27"
  },
  "rules": {
   "valid_hour_fraction": 0.75,
@@ -83,23 +85,23 @@
  },
  "rows": {
   "stations": 204,
-  "station_hourly": 3599961,
-  "station_daily": 162855,
-  "city_daily": 7104,
-  "city_daily_aqi": 24212,
-  "network_gaps": 1430,
-  "date_quality": 5253,
+  "station_hourly": 3607896,
+  "station_daily": 163216,
+  "city_daily": 7128,
+  "city_daily_aqi": 24224,
+  "network_gaps": 1437,
+  "date_quality": 5267,
   "recurring_gap_hours": 192,
   "diwali": 54,
   "data_status_reasons": 6,
-  "cleaning_log": 112181,
+  "cleaning_log": 112542,
   "opencity_blanks": 54154
  },
  "all_cities_bulletins": {
   "cities": 330,
-  "rows": 153274,
+  "rows": 153829,
   "start": "2025-02-18",
-  "end": "2026-11-25",
+  "end": "2026-11-27",
   "dropped_duplicate_city_days": [
    "Kalyan 2026-11-06",
    "Kalyan 2026-11-08",
@@ -118,7 +120,9 @@
    "Kalyan 2026-11-21",
    "Kalyan 2026-11-22",
    "Kalyan 2026-11-24",
-   "Kalyan 2026-11-25"
+   "Kalyan 2026-11-25",
+   "Kalyan 2026-11-26",
+   "Kalyan 2026-11-27"
   ]
  },
  "other_sensor_rows_ignored": 0,
